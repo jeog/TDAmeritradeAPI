@@ -1,0 +1,9 @@
+*.so
+*.lib
+*.dll
+*.o
+*.d
+.settings/*
+*.cproject
+*.project
+*.creds
