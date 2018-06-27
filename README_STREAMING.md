@@ -32,8 +32,8 @@ StreamingSession::Create( Credentials& creds,
                                  stdout when received
 ```
 The authenticated user will pass their Credentials struct and account id (as
-they did for the [HTTPS Get Interface](README_GET.md), a callback function, and
-some optional timeout and display args.
+they did for the [HTTPS Get Interface](README_GET.md)), a callback function, and
+some optional timeout and output args.
 
 When completely done the session should be destroyed to log the user out.
 ```

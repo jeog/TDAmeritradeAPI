@@ -45,40 +45,40 @@ This project would not be possible without some of the great open-source project
 #### Getting Started
 - - -
 
-##### Build
-
 TDAmeritradeAPI is a shared library currently only available on unix-like systems 
-with C++11 compiler support. 
+with C++11 compiler support. *(A more portable version w/ a more robust build system should be available shortly.)*
 
-- download libssl and the development files if you don't have them:
-   - from a package manager like apt:  
-      ```user@host:~$ sudo apt-get install libssl-dev```     
-   - -or- clone from github:  
-      ```user@host:~$ git clone https://github.com/openssl/openssl.git``` *
-   - -or- directly from [openssl.org](https://www.openssl.org/source) *
+##### Install Dependencies
 
-- download libcurl and the development files if you don't have them:
-   - from a package manager like apt:  
-      ```user@host:~$ sudo apt-get install libcurl4-openssl-dev```
-   - -or- clone from github:  
-      ```user@host:~$ git clone https://github.com/curl/curl.git``` *
-   - -or- directly from [curl.haxx.se](https://curl.haxx.se/download.html) *
+- If using a package manager like apt installing libcurl should install libssl:  
+    ```user@host:~$ sudo apt-get install libcurl4-openssl-dev```
 
-\* *you'll need to follow the build/install instructions in the README/INSTALL files*
+- *-or-* you can clone the github projects **  
+    ```user@host:~$ git clone https://github.com/openssl/openssl.git```  
+    ```user@host:~$ git clone https://github.com/curl/curl.git```   
+
+- *-or-* download them directly: [openssl](https://www.openssl.org/source), [libcurl](https://curl.haxx.se/download.html) ** 
+
+\*\* *you'll need to follow the build/install instructions in the README/INSTALL files*
+
+##### Build
 
 The Eclipse/CDT generated makefiles are in the  'Debug' and 'Release' subdirectories. You may need to tweek for non-GNU/Linux environments.
 
 ```user@host:~/dev/TDAmeritradeAPI/Release$ make```
 
-*(A more portable version w/ a more robust build system should be available shortly.)*
-
 ##### Using the library
 
-1. include "tdma_api_get.h" for the 'HTTPS Get' interface and/or "tdma_api_streaming.h" for streaming; be sure the compiler can find them (headers/source use relative include links, don't change the directory structure)
-2. use the Library/API calls(see below) in your code
+1. include headers:
+    - "tdma_api_get.h" for the 'HTTPS Get' interface 
+    - "tdma_api_streaming.h" for the 'Streaming' interface 
+    - make sure the compiler can find them (```-I"path/to/headers"```)
+    - *(headers/source use relative include links, don't change the directory structure)*
+2. add Library/API calls to your code
 3. compile 
-4. link with libTDAmeritradeAPI.so (move the file to a place the dynamic linker can find
-or indicate its location to the compiler/linker)
+4. link your code with libTDAmeritradeAPI.so (```-L"/path/to/lib", -lTDAmeritradeAPI```)
+    - move the file to a place the dynamic linker can find (e.g /usr/local/lib)
+    - *-or-* indicate its location to the compiler/linker (```-Wl,-rpath,"/path/to/lib"```)
 5. run 
 
 
