@@ -9,7 +9,7 @@ using namespace tdma;
 
 Streaming functionality is implemented with ```StreamingSession``` *(streaming/streaming_session.cpp)* on top of ```WebSocketClient``` *(websocket_connect.cpp)*, built using the uWebSocket *(src/uWebSocket/)* library.
 
-Each authenticated user can create one (and only one) StreamingSession instance using the factory method:
+Each authenticated user can create one (and only one) StreamingSession instance:
 ```
 static StreamingSession*
 StreamingSession::Create( Credentials& creds,
@@ -31,25 +31,70 @@ StreamingSession::Create( Credentials& creds,
     request_response_to_cout ::  print login/logout/subscription response info to 
                                  stdout when received
 ```
-
 The authenticated user will pass their Credentials struct and account id (as
-they did for the HTTPS requests) as well as a callback function.
+they did for the [HTTPS Get Interface](README_GET.md), a callback function, and
+some optional timeout and display args.
 
+When completely done the session should be destroyed to log the user out.
+```
+static void
+StreamingSession::Destroy( StreamingSession* session );
+```
+
+A safer way to manage the session:
+```
+class SharedSession{
+    ...
+public:
+    SharedSession( Credentials& creds,
+                   const std::string& account_id,
+                   streaming_cb_ty callback,
+                   std::chrono::milliseconds connect_timeout=
+                       std::chrono::milliseconds(3000),
+                   std::chrono::milliseconds listening_timeout=
+                       std::chrono::milliseconds(30000),
+                   std::chrono::milliseconds subscribe_timeout=
+                       std::chrono::milliseconds(1500),
+                   bool request_response_to_cout = true );
+
+    StreamingSession*
+    operator->();
+};
+```
+```SharedSession``` takes the same args as ```::Create``` but it manages the 
+underlying session much like a ```shared_ptr``` would by allowing for copy/move/assignment
+and calling ```::Destroy``` when there are no more references to it.
+
+Use the '->' operator to access the session's methods:
+```
+{
+    SharedSession ss(c, id, cb);
+    ss->start(subscription);
+
+    SharedSession ss2 = move(ss); // moves the session
+    try{
+        ss->stop
+    }catch(StreamingException& e){
+        // the session has moved to ss2 so the -> operator will throw
+    }
+} // on leaving the block the session held by ss2 will be automatically destroyed
+```
 
 #### Callback 
 
-The primary means of signaling changes in session state (start->stop, errors, 
+The primary means of signaling changes in session state (start-->stop, errors, 
 timeouts etc.) and returning data to the user is via the callback function. As you'll 
-see, the current design is a bit confusing and error prone so expect changes.
+see, the current design is a bit confusing and error prone so expect changes. 
+*(We may shift to a safer thread-safe queue approach in the future.)*
 
 ```
 typedef std::function<void(StreamingCallbackType cb_type, StreamerService,
                            unsigned long long, json)> streaming_cb_ty;
 ```
 
-- **DO NOT** call back into StreamingSession from inside the callback (e.g ```.start()```)
-- **DO NOT** block the callback thread for extended periods
-- **DO NOT** assume exceptions will get handled higher up (assume program termination)
+**DO NOT** call back into StreamingSession from inside the callback (e.g ```.start()```)  
+**DO NOT** block the callback thread for extended periods  
+**DO NOT** assume exceptions will get handled higher up (assume program termination)  
 
 The first argument to the callback will be the callback type:
 ```
@@ -62,71 +107,83 @@ enum class StreamingCallbackType : unsigned int {
     error
 ```
 
-```::listening_start``` and ```::listening_stop``` are simple signals about the 
+***```::listening_start``` ```::listening_stop```*** - are simple signals about the 
 listening state of the session and *should* occur after you call ```.start()```
-and ```.stop()```, respectively. None of the other args to the callback will be
-relevant.
+and ```.stop()```, respectively
 
-```::error``` indicates some type of error/exception state that has propaged
+***```::error```*** - indicates some type of error/exception state that has propagated
 up from the listening thread and caused it to close. The 4th arg will be a json
 object of the form ```{{"error": <error message>}}```
 
-```::timeout``` indicates the listening thread hasn't received a message in 
-*listening_timeout* milliseconds (passed to constructor or 30,000 default) and
-has shutdown. You'll need to restart the session ***from the original thread***.
+***```::timeout```*** - indicates the listening thread hasn't received a message in 
+*listening_timeout* milliseconds (defaults to 30000) and has shutdown. You'll need 
+to restart the session ***from the original thread*** or destroy it.
 
-```::notify``` indicates some type of 'urgent' message from the server. The 
+***```::notify```*** - indicates some type of 'urgent' message from the server. The 
 actual message will be in json form and passed to the 4th arg.
 
-```::data``` will be the bulk of the callbacks and contain the subscribed-to data (see below).
-The second argument will contain the service type of the data as:
+***```::data```*** - will be the bulk of the callbacks and contain the subscribed-to data (see below).
 
-```
-class StreamerService{    
-public:
-    enum class type : unsigned int{
-        NONE,                       /* NULL FOR INTERNAL/CALLBACK USE */
-        //ACCT_ACTIVITY,            /* NOT IMPLEMENTED YET */
-        ADMIN,
-        ACTIVES_NASDAQ,
-        ACTIVES_NYSE,
-        ACTIVES_OTCBB,
-        ACTIVES_OPTIONS,
-        //FOREX_BOOK,               /* NOT DOCUMENTED */
-        //FUTURES_BOOK,             /* NOT DOCUMENTED */
-        //LISTED_BOOK,              /* NOT DOCUMENTED */
-        //NASDAQ_BOOK,              /* NOT DOCUMENTED */
-        //OPTIONS_BOOK,             /* NOT DOCUMENTED */
-        //FUTURES_OPTION_BOOK,      /* NOT DOCUMENTED */
-        CHART_EQUITY,
-        //CHART_FOREX,              /* NOT WORKING */
-        CHART_FUTURES,
-        CHART_OPTIONS,
-        //CHART_HISTORY_FUTURES,    /* NOT IMPLEMENTED YET */
-        QUOTE,
-        LEVELONE_FUTURES,
-        LEVELONE_FOREX,
-        LEVELONE_FUTURES_OPTIONS,
-        OPTION,
-        //LEVELTWO_FUTURES,         /* NOT DOCUMENTED */
-        NEWS_HEADLINE,
-        //NEWS_STORY,               /* NOT DOCUMENTED */
-        //NEWS_HEADLINE_LIST,       /* NOT DOCUMENTED */ 
-        //STREAMER_SERVER,          /* NOT DOCUMENTED - OLD HTTP VERSION ?*/
-        TIMESALE_EQUITY,
-        TIMESALE_FUTURES,
-        //TIMESALE_FOREX,           /* NOT WORKING */
-        TIMESALE_OPTIONS
+
+The second argument will contain the service type of the data (for ```::data``` type only):
+
+    ```
+    class StreamerService{    
+    public:
+        enum class type : unsigned int{
+            NONE,                       /* NULL FOR INTERNAL/CALLBACK USE */
+            //ACCT_ACTIVITY,            /* NOT IMPLEMENTED YET */
+            ADMIN,
+            ACTIVES_NASDAQ,
+            ACTIVES_NYSE,
+            ACTIVES_OTCBB,
+            ACTIVES_OPTIONS,
+            //FOREX_BOOK,               /* NOT DOCUMENTED */
+            //FUTURES_BOOK,             /* NOT DOCUMENTED */
+            //LISTED_BOOK,              /* NOT DOCUMENTED */
+            //NASDAQ_BOOK,              /* NOT DOCUMENTED */
+            //OPTIONS_BOOK,             /* NOT DOCUMENTED */
+            //FUTURES_OPTION_BOOK,      /* NOT DOCUMENTED */
+            CHART_EQUITY,
+            //CHART_FOREX,              /* NOT WORKING */
+            CHART_FUTURES,
+            CHART_OPTIONS,
+            //CHART_HISTORY_FUTURES,    /* NOT IMPLEMENTED YET */
+            QUOTE,
+            LEVELONE_FUTURES,
+            LEVELONE_FOREX,
+            LEVELONE_FUTURES_OPTIONS, 
+            OPTION,
+            //LEVELTWO_FUTURES,         /* NOT DOCUMENTED */
+            NEWS_HEADLINE,
+            //NEWS_STORY,               /* NOT DOCUMENTED */
+            //NEWS_HEADLINE_LIST,       /* NOT DOCUMENTED */ 
+            //STREAMER_SERVER,          /* NOT DOCUMENTED - OLD HTTP VERSION ?*/
+            TIMESALE_EQUITY,
+            TIMESALE_FUTURES,
+            //TIMESALE_FOREX,           /* NOT WORKING */
+            TIMESALE_OPTIONS
+        };
+        ...
     };
-    ...
-};
-```
+    ```
 
-The third argument is a timestamp of the data in milliseconds since the epoch. 
+The third argument is a timestamp from the server in milliseconds since the epoch that
+is (currently) only relevant for ```::data``` callbacks. 
 
 The fourth argument is a json object containing the actual data. Its structure is 
 dependent on the service type. In order to understand how to parse the object you'll 
 need to refer to the relevant section in [Ameritrade's Streaming documentation](https://developer.tdameritrade.com/content/streaming-data) and the [json library documentation](https://github.com/nlohmann/json).
+
+##### Summary
+StreamingCallbackType   | StreamingService  | timestamp   | json 
+------------------------|-------------------|-------------|-----
+```::listening_start``` | ```::NONE```      | 0           | {}
+```::listening_stop```  | ```::NONE```      | 0           | {}
+```::data```            | *YES*             | *YES*       | *StreamingService dependent*
+```::notify```          | ```::NONE```      | 0           | *Message Type dependent*
+```::timeout```         | ```::NONE```      | 0           | {}
+```::error```           | ```::NONE```      | 0           | {{"error", "error message"}}
 
 #### Start / Stop
 
@@ -136,15 +193,22 @@ it must have at least one subscription (see below).
 
 ```
 deque<bool> 
-start(const vector<StreamingSubscription>& subscriptions);
+StreamingSession::start(const vector<StreamingSubscription>& subscriptions);
 ```
 ```
 bool
-start(const StreamingSubscription& subscriptions);
+StreamingSession::start(const StreamingSubscription& subscriptions);
 ```
 
 These methods return the success/failure state of each subscription in the
-order they were passed. **Other errors result in a ```StreamingException```**.
+order they were passed. Other errors result in a ```StreamingException```.
+
+To stop a session:
+
+```
+void
+StreamingSession::stop();
+```
 
 #### Subscriptions
 
@@ -159,27 +223,39 @@ Each ```StreamerService::type``` has a corresponding 'Subscription' object that 
 ```
 
 
-A number of the objects contain a ```::FieldType``` enum that consists of a 
-(sometimes large) number of fields that can be passed to the constructor. 
+Many of the objects contain enum definitions that consist of the available arguments
+for construction. For example, if we want the inside bid/ask for emini S&P500 and gold 
+futures we'd instantiate the following subscription:
+```
+    using ft = LevelOneFuturesSubscription::FieldType;
 
-You can add multiple subscriptions but instances of the same type ***usually***
-override older ones.
+    set<ft> fields{ft::symbol, ft::bid_price, ft::ask_price};
+    set<string> symbols{"/ES", "/GC"};
+ 
+    LevelOneFuturesSubscription sub(symbols, fields);
 
-Documents from the older http/binary version of the API indicate various subscription 
-commands ('SUBS', 'ADD', 'VIEW' etc.) but the newer WebSocket docs generally only mention 
-'SUBS', so that's all we've implemented for now. Therefore users shouldn't worry 
-about commands at this point.
+    // now we'd pass 'sub' to .start() or .add_subscription()
+```
+
+To add subscriptions **to a started session**:
+
+```
+std::deque<bool> 
+StreamingSession::add_subscriptions(const vector<StreamingSubscription>& subscription);
+
+bool
+StreamingSession::add_subscription(const StreamingSubscription& subscription);
+```
+
+If you try to add a subscription to a stopped session it will throw ```StreamingException```
+
+You can add multiple subscription instances but instances of the same type ***usually***
+override older/preceding ones.
 
 To replace a subscription you can override it by adding a new subscription of
 the same type(this appears to work but haven't tried every possible combination so
-there's no guarantee) or by stopping the session with:
-
-```
-void
-StreamingSession::stop();
-```
-
-...and then restarting with new subscriptions. 
+there's no guarantee) or by stopping the session with ```.stop()``` and then restarting 
+with new subscriptions. 
 
 It's best to avoid doing this frequently because the session object will go through 
 a somewhat costly life-cycle:
@@ -194,17 +270,6 @@ a somewhat costly life-cycle:
         ._start_listener_thread()
         ._subscribe()
 ```
-To add subscriptions **to a started session**:
-
-```
-std::deque<bool> 
-StreamingSession::add_subscriptions(const vector<StreamingSubscription>& subscription);
-
-bool
-StreamingSession::add_subscription(const StreamingSubscription& subscription);
-```
-
-If you try to add a subscription to a stopped session it will throw ```StreamingException```.
 
 #### Quality-Of-Service
 
@@ -227,12 +292,6 @@ enum class QOSType : unsigned int {
     slow,      /* 3000 ms */
     delayed    /* 5000 ms */
 };
-```
-
-When done ***be sure to destroy the session so you get logged out***:
-```
-static void
-StreamingSession::Destroy( StreamingSession* session );
 ```
 
 #### Subscription Classes

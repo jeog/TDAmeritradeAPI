@@ -55,7 +55,7 @@ GetQuote(Credentials& creds, string symbol)
 ```
 
 The API docs indicate a limit of two requests per second so we implement a throttling/blocking 
-mechanism **accross ALL Getter objects** with a default wait of 500 milliseconds. If, for instance, we use the default
+mechanism **across ALL Getter objects** with a default wait of 500 milliseconds. If, for instance, we use the default
 wait and make five ```.get()``` calls in immediate succession the group of calls will take
 ~2500 milliseconds to complete. This wait time can be accessed with:
 ```

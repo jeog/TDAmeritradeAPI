@@ -47,11 +47,30 @@ This project would not be possible without some of the great open-source project
 
 ##### Build
 
-Currently only available on unix-like systems with C++11 compiler support. The Eclipse/CDT generated makefiles are in the  'Debug' and 'Release' subdirectories. You may need to tweek for non-GNU/Linux environments.
+TDAmeritradeAPI is a shared library currently only available on unix-like systems 
+with C++11 compiler support. 
+
+- download libssl and the development files if you don't have them:
+   - from a package manager like apt:  
+      ```user@host:~$ sudo apt-get install libssl-dev```     
+   - -or- clone from github:  
+      ```user@host:~$ git clone https://github.com/openssl/openssl.git``` *
+   - -or- directly from [openssl.org](https://www.openssl.org/source) *
+
+- download libcurl and the development files if you don't have them:
+   - from a package manager like apt:  
+      ```user@host:~$ sudo apt-get install libcurl4-openssl-dev```
+   - -or- clone from github:  
+      ```user@host:~$ git clone https://github.com/curl/curl.git``` *
+   - -or- directly from [curl.haxx.se](https://curl.haxx.se/download.html) *
+
+\* *you'll need to follow the build/install instructions in the README/INSTALL files*
+
+The Eclipse/CDT generated makefiles are in the  'Debug' and 'Release' subdirectories. You may need to tweek for non-GNU/Linux environments.
 
 ```user@host:~/dev/TDAmeritradeAPI/Release$ make```
 
-A more portable version w/ a more robust build system should be available shortly.
+*(A more portable version w/ a more robust build system should be available shortly.)*
 
 ##### Using the library
 
@@ -98,7 +117,7 @@ for the derived classes)
 
 Authentication is done through OAuth2 using your account login information. 
 
-1. [Follow Ameritrades' Getting Started guide](https://developer.tdameritrade.com/content/getting-started) 
+1. [Follow Ameritrade's Getting Started guide](https://developer.tdameritrade.com/content/getting-started) 
 to setup a developer account.
     
 2. Get an access code using your account info:

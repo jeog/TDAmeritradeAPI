@@ -865,4 +865,28 @@ StreamingSession::StreamingRequests::StreamingRequests(
     }
 }
 
+
+SharedSession::SharedSession( Credentials& creds,
+                                  const std::string& account_id,
+                                  streaming_cb_ty callback,
+                                  std::chrono::milliseconds connect_timeout,
+                                  std::chrono::milliseconds listening_timeout,
+                                  std::chrono::milliseconds subscribe_timeout,
+                                  bool request_response_to_cout )
+    :
+        _s( StreamingSession::Create( creds, account_id, callback,
+                 connect_timeout, listening_timeout, subscribe_timeout,
+                 request_response_to_cout ),
+            Deleter() )
+    {
+    }
+
+StreamingSession*
+SharedSession::operator->()
+{
+    if( !_s )
+        throw StreamingException("null session");
+    return _s.get();
+}
+
 } /*tdma*/

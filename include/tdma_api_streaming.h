@@ -985,12 +985,12 @@ private:
                  PendingResponse::response_cb_ty callback = nullptr );
 
     StreamingSession( const StreamerInfo& streamer_info,
-                      const std::string& account_id,
-                      streaming_cb_ty callback,
-                      std::chrono::milliseconds connect_timeout,
-                      std::chrono::milliseconds listening_timeout,
-                      std::chrono::milliseconds subscribe_timeout,
-                      bool request_response_to_cout );
+                        const std::string& account_id,
+                        streaming_cb_ty callback,
+                        std::chrono::milliseconds connect_timeout,
+                        std::chrono::milliseconds listening_timeout,
+                        std::chrono::milliseconds subscribe_timeout,
+                        bool request_response_to_cout );
 
     virtual
     ~StreamingSession();
@@ -1040,6 +1040,32 @@ public:
 
     bool
     set_qos(const QOSType& qos);
+};
+
+
+class SharedSession{
+    struct Deleter{
+        void
+        operator()(StreamingSession *s)
+        { StreamingSession::Destroy(s); }
+    };
+
+    std::shared_ptr<StreamingSession> _s;
+
+public:
+    SharedSession( Credentials& creds,
+                     const std::string& account_id,
+                     streaming_cb_ty callback,
+                     std::chrono::milliseconds connect_timeout=
+                         std::chrono::milliseconds(3000),
+                     std::chrono::milliseconds listening_timeout=
+                         std::chrono::milliseconds(30000),
+                     std::chrono::milliseconds subscribe_timeout=
+                         std::chrono::milliseconds(1500),
+                     bool request_response_to_cout = true );
+
+    StreamingSession*
+    operator->();
 };
 
 
