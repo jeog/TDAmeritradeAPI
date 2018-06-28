@@ -56,9 +56,12 @@ using namespace std;
 
 const string StreamingSession::VERSION("1.0");
 
-const chrono::milliseconds StreamingSession::MIN_TIMEOUT_MSEC(1000);
-const chrono::milliseconds StreamingSession::MIN_LISTENING_TIMEOUT_MSEC(10000);
-const chrono::milliseconds StreamingSession::LOGOUT_TIMEOUT_MSEC(1000);
+const chrono::milliseconds StreamingSession::MIN_TIMEOUT(1000);
+const chrono::milliseconds StreamingSession::MIN_LISTENING_TIMEOUT(10000);
+const chrono::milliseconds StreamingSession::LOGOUT_TIMEOUT(1000);
+const chrono::milliseconds StreamingSession::DEF_CONNECT_TIMEOUT(3000);
+const chrono::milliseconds StreamingSession::DEF_LISTENING_TIMEOUT(30000);
+const chrono::milliseconds StreamingSession::DEF_SUBSCRIBE_TIMEOUT(1500);
 
 const string StreamingSession::ListenerThreadTarget::RESPONSE_TO_REQUEST("response");
 const string StreamingSession::ListenerThreadTarget::RESPONSE_NOTIFY("notify");
@@ -130,9 +133,9 @@ StreamingSession::StreamingSession( const StreamerInfo& streamer_info,
         _account_id( account_id ),
         _client(nullptr),
         _callback( callback ),
-        _connect_timeout( max(connect_timeout, MIN_TIMEOUT_MSEC) ),
-        _listening_timeout( max(listening_timeout, MIN_LISTENING_TIMEOUT_MSEC) ),
-        _subscribe_timeout( max(listening_timeout, MIN_TIMEOUT_MSEC) ),
+        _connect_timeout( max(connect_timeout, MIN_TIMEOUT) ),
+        _listening_timeout( max(listening_timeout, MIN_LISTENING_TIMEOUT) ),
+        _subscribe_timeout( max(listening_timeout, MIN_TIMEOUT) ),
         _listener_thread(),
         _server_id(),
         _next_request_id(0),        
@@ -473,7 +476,7 @@ StreamingSession::_logout()
     _client->send( requests.to_json().dump() );
 
     auto t_beg = steady_clock::now();
-    auto t_remaining = LOGOUT_TIMEOUT_MSEC;
+    auto t_remaining = LOGOUT_TIMEOUT;
     while( t_remaining.count() >= 0 ){ //timeout outside recv
         /*
          * use a different wait/block mechanism in here so we can process each
@@ -520,7 +523,7 @@ StreamingSession::_logout()
         }
 
         auto t_elapsed = duration_cast<milliseconds>(steady_clock::now() - t_beg);
-        t_remaining = LOGOUT_TIMEOUT_MSEC - t_elapsed;
+        t_remaining = LOGOUT_TIMEOUT - t_elapsed;
     }
 
     cerr<< "logout failed for lack of response" << endl;

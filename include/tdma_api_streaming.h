@@ -827,9 +827,12 @@ typedef std::function<void(StreamingCallbackType cb_type, StreamerService,
 class StreamingSession{
 public:
     static const std::string VERSION; // = "1.0"
-    static const std::chrono::milliseconds MIN_TIMEOUT_MSEC; // 1000;
-    static const std::chrono::milliseconds MIN_LISTENING_TIMEOUT_MSEC; // 10000;
-    static const std::chrono::milliseconds LOGOUT_TIMEOUT_MSEC; // 1000
+    static const std::chrono::milliseconds MIN_TIMEOUT; // 1000;
+    static const std::chrono::milliseconds MIN_LISTENING_TIMEOUT; // 10000;
+    static const std::chrono::milliseconds LOGOUT_TIMEOUT; // 1000
+    static const std::chrono::milliseconds DEF_CONNECT_TIMEOUT; // 3000
+    static const std::chrono::milliseconds DEF_LISTENING_TIMEOUT; // 30000
+    static const std::chrono::milliseconds DEF_SUBSCRIBE_TIMEOUT; // 1500
 
 private:
     class AdminSubscription
@@ -1001,12 +1004,9 @@ public:
     Create( Credentials& creds,
              const std::string& account_id,
              streaming_cb_ty callback,
-             std::chrono::milliseconds connect_timeout=
-                 std::chrono::milliseconds(3000),
-             std::chrono::milliseconds listening_timeout=
-                 std::chrono::milliseconds(30000),
-             std::chrono::milliseconds subscribe_timeout=
-                 std::chrono::milliseconds(1500),
+             std::chrono::milliseconds connect_timeout=DEF_CONNECT_TIMEOUT,
+             std::chrono::milliseconds listening_timeout=DEF_LISTENING_TIMEOUT,
+             std::chrono::milliseconds subscribe_timeout=DEF_SUBSCRIBE_TIMEOUT,
              bool request_response_to_cout = true );
 
     static void
@@ -1056,12 +1056,12 @@ public:
     SharedSession( Credentials& creds,
                      const std::string& account_id,
                      streaming_cb_ty callback,
-                     std::chrono::milliseconds connect_timeout=
-                         std::chrono::milliseconds(3000),
-                     std::chrono::milliseconds listening_timeout=
-                         std::chrono::milliseconds(30000),
-                     std::chrono::milliseconds subscribe_timeout=
-                         std::chrono::milliseconds(1500),
+                     std::chrono::milliseconds connect_timeout
+                         = StreamingSession::DEF_CONNECT_TIMEOUT,
+                     std::chrono::milliseconds listening_timeout
+                         = StreamingSession::DEF_LISTENING_TIMEOUT,
+                     std::chrono::milliseconds subscribe_timeout
+                         = StreamingSession::DEF_SUBSCRIBE_TIMEOUT,
                      bool request_response_to_cout = true );
 
     StreamingSession*

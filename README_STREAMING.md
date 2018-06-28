@@ -12,13 +12,13 @@ Streaming functionality is implemented with ```StreamingSession``` *(streaming/s
 Each authenticated user can create one (and only one) StreamingSession instance:
 ```
 static StreamingSession*
-StreamingSession::Create( Credentials& creds,
-                          const string& account_id,
-                          streaming_cb_ty callback,
-                          chrono::milliseconds connect_timeout = chrono::milliseconds(3000),
-                          chrono::milliseconds listening_timeout = chrono::milliseconds(30000),
-                          chrono::milliseconds subscribe_timeout = chrono::milliseconds(1500),
-                          bool request_response_to_cout = true );
+Create( Credentials& creds,
+        const std::string& account_id,
+        streaming_cb_ty callback,
+        std::chrono::milliseconds connect_timeout=DEF_CONNECT_TIMEOUT,
+        std::chrono::milliseconds listening_timeout=DEF_LISTENING_TIMEOUT,
+        std::chrono::milliseconds subscribe_timeout=DEF_SUBSCRIBE_TIMEOUT,
+        bool request_response_to_cout = true );
 
     creds                    ::  credentials struct received from RequestAccessToken 
                                  / LoadCredentials / CredentialsManager.credentials
@@ -49,12 +49,12 @@ public:
     SharedSession( Credentials& creds,
                    const std::string& account_id,
                    streaming_cb_ty callback,
-                   std::chrono::milliseconds connect_timeout=
-                       std::chrono::milliseconds(3000),
-                   std::chrono::milliseconds listening_timeout=
-                       std::chrono::milliseconds(30000),
-                   std::chrono::milliseconds subscribe_timeout=
-                       std::chrono::milliseconds(1500),
+                   std::chrono::milliseconds connect_timeout 
+                       = StreamingSession::DEF_CONNECT_TIMEOUT,
+                   std::chrono::milliseconds listening_timeout
+                       = StreamingSession::DEF_LISTENING_TIMEOUT,
+                   std::chrono::milliseconds subscribe_timeout
+                       = StreamingSession::DEF_SUBSCRIBE_TIMEOUT,
                    bool request_response_to_cout = true );
 
     StreamingSession*

@@ -4,5 +4,5 @@
 
 USER_OBJS :=
 
-LIBS := -lssl -lcurl -lpthread -lutil -ldl
+LIBS := -lssl -lz -lcurl -lpthread -lutil -ldl
 

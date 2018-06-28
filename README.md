@@ -5,6 +5,8 @@
 A C++ front-end for the recently expanded TDAmeritrade API that will eventually include Python, and potentially other, bindings. It provides object-oriented access to the simple HTTPS/JSON interface using 
 *[libcurl](https://curl.haxx.se/libcurl)* and to the Streaming interface using *[uWebSockets](https://github.com/uNetworking/uWebSockets)*.
 
+If you have an Ameritrade account you *should* be able to gain access to the API by following the instructions in the Authentication section below. 
+
 The library is designed to abstract away many of the lower level details of 
 accessing the API while still providing almost complete control over authentication,
 access, data handling, and order execution.
@@ -12,17 +14,16 @@ access, data handling, and order execution.
 - It does not provide complete OAuth2 authentication management, allowing users to 
 customize for their particular needs. The user retrieves an access code(see below), 
 and then uses the library to request an access token, which is refreshed automatically.
+
 - It does not parse returned data, returning [json](https://github.com/nlohmann/json) objects for the user to handle as they see fit.
 
-If you have an Ameritrade account you *should* be able to gain access to the API by following the instructions in the Authentication section below. A few things to keep in mind:
-
 - This is a new library, built by a single developer, for an API that is still in flux. As such you should expect plenty of bumps along the way, with changes to both the interface and the implementation.       
-    - *constructive* criticism is always welcome
-    - please report bugs via issues: be desciptive and try to replicate if possible
-    - if you're capable of and interested in contributing please communicate your intentions first
-    - feel free to share samples, tests, bindings, wrappers, extensions, ideas, whatever
 
-- Communicating w/ 3rd party servers, accessing financial accounts, and automating trade execution are all operations that present risk and require responsibility. ***By using this software you agree that you understand and accept these risks and responsibilities. You accept sole responsibility for the results of said use. You completely absolve the author of any damages, financial or otherwise, incurred personally or by 3rd parties, directly or indirectly, by using this software - even those resulting from the gross negligence of the author. All communication with TDAmeritrade servers, access of accounts, and execution of orders must adhere to their policies and terms of service and is your repsonsibility, and yours alone.***
+- Please report bugs via issues: be desciptive and try to replicate if possible. 
+
+- If you're capable of and interested in contributing please communicate your intentions first.
+
+*Communicating w/ 3rd party servers, accessing financial accounts, and automating trade execution are all operations that present risk and require responsibility. **By using this software you agree that you understand and accept these risks and responsibilities. You accept sole responsibility for the results of said use. You completely absolve the author of any damages, financial or otherwise, incurred personally or by 3rd parties, directly or indirectly, by using this software - even those resulting from the gross negligence of the author. All communication with TDAmeritrade servers, access of accounts, and execution of orders must adhere to their policies and terms of service and is your repsonsibility, and yours alone.***
 
  
 #### Dependencies
@@ -31,10 +32,11 @@ If you have an Ameritrade account you *should* be able to gain access to the API
 This project would not be possible without some of the great open-source projects listed below.
 
 - [libcurl](https://curl.haxx.se/libcurl) - Client-side C library supporting a ton of transfer protocols
-- [openssl](https://github.com/openssl/openssl) - C library for tls/ssl and crypto 
+- [openssl](https://www.openssl.org) - C library for tls/ssl and crypto 
+- [zlib](https://zlib.net) - Compression library
+- [libuv](https://libuv.org) - Cross-platform asynchronous I/O
 - [uWebSockets](https://github.com/uNetworking/uWebSockets) - A simple and efficient C++ WebSocket library. The source is included, compiled and archived with our library to limit dependency issues.
 - [nlohmann::json](https://github.com/nlohmann/json) : - An extensive C++ json library that only requires adding a single header file. ***You'll need to review their documentation for handling returned data from this library.***
-- dl, util, pthread 
 
 #### Coming Soon
 - - -
@@ -48,24 +50,37 @@ This project would not be possible without some of the great open-source project
 TDAmeritradeAPI is a shared library currently only available on unix-like systems 
 with C++11 compiler support. *(A more portable version w/ a more robust build system should be available shortly.)*
 
+> **IMPORTANT Note on C++ Libraries and Binary Interfaces**
+> 
+> There are certain binary compatibility issues when exporting C++ code accross compilations(from name mangling, differing runtimes, changes to STL implementations etc.). If, for instance, we return an std::vector in an earlier version of a library, its implementation changes, and code that imports the library is compiled against a new version of the STL, there can be an issue.
+> 
+> **Because of this you need to be sure you use the same compiler/settings for your code and link to the same libraries as libTDAmeritrade does.** For this reason we don't include any pre-built binaries. You should (re)compile this library alongside your code if you change compilers, settings, runtimes etc. 
+> 
+> In the future we may include some type of stable ABI layer on top of the core library to limit these issues.
+
+
 ##### Install Dependencies
 
-- If using a package manager like apt installing libcurl should install libssl:  
-    ```user@host:~$ sudo apt-get install libcurl4-openssl-dev```
+If using a package manager like apt installing libcurl should install libssl and libz:  
 
-- *-or-* you can clone the github projects **  
-    ```user@host:~$ git clone https://github.com/openssl/openssl.git```  
-    ```user@host:~$ git clone https://github.com/curl/curl.git```   
+        user@host:~$ sudo apt-get install libcurl4-openssl-dev
 
-- *-or-* download them directly: [openssl](https://www.openssl.org/source), [libcurl](https://curl.haxx.se/download.html) ** 
+*...or* you can clone the github projects **  
 
+        user@host:~$ git clone https://github.com/openssl/openssl.git
+        user@host:~$ git clone https://github.com/curl/curl.git   
+        user@host:~$ git clone https://github.com/madler/zlib.git
+
+*...or* download them directly: [openssl](https://www.openssl.org/source), [libcurl](https://curl.haxx.se/download.html), [zlib](https://zlib.net) ** 
+
+\* *[libuv](https://github/com/libuv/libuv.git) is not necessary if epoll is available (linux)*  
 \*\* *you'll need to follow the build/install instructions in the README/INSTALL files*
 
 ##### Build
 
-The Eclipse/CDT generated makefiles are in the  'Debug' and 'Release' subdirectories. You may need to tweek for non-GNU/Linux environments.
+The Eclipse/CDT generated makefiles are in the  'Debug' and 'Release' subdirectories. 
 
-```user@host:~/dev/TDAmeritradeAPI/Release$ make```
+    user@host:~/dev/TDAmeritradeAPI/Release$ make
 
 ##### Using the library
 
@@ -75,7 +90,7 @@ The Eclipse/CDT generated makefiles are in the  'Debug' and 'Release' subdirecto
     - make sure the compiler can find them (```-I"path/to/headers"```)
     - *(headers/source use relative include links, don't change the directory structure)*
 2. add Library/API calls to your code
-3. compile 
+3. compile *(read the message above on binary compatibility)*
 4. link your code with libTDAmeritradeAPI.so (```-L"/path/to/lib", -lTDAmeritradeAPI```)
     - move the file to a place the dynamic linker can find (e.g /usr/local/lib)
     - *-or-* indicate its location to the compiler/linker (```-Wl,-rpath,"/path/to/lib"```)
