@@ -273,25 +273,40 @@ class APIGetter{
     throttled_get(APIGetter& getter);
 
     api_on_error_cb_ty _on_error_callback;
-    Credentials& _credentials;
+    std::reference_wrapper<Credentials> _credentials;
     conn::HTTPSGetConnection _connection;
 
 protected:
     APIGetter(Credentials& creds, api_on_error_cb_ty on_error_callback);
 
+    /*
+     * restrict copy and assign (for now at least):
+     *
+     *   1) should there ever be more than one of the same exact getter?
+     *   2) want to restrict copy/assign of the underlying connection
+     *      object to simplify things so if we share refs to it:
+     *         a) one ref can close() on another
+     *         b) destruction becomes more complicated
+     *
+     * allow move (consistent w/ underlying connection objects)
+     */
+
+    APIGetter( APIGetter&& ) = default;
+
+    APIGetter&
+    operator=( APIGetter&& ) = default;
+
     virtual
     ~APIGetter(){}
 
     void
-    set_url(std::string url)
-    { _connection.SET_url(url); }
+    set_url(std::string url);
 
 public:
     static const std::chrono::milliseconds DEF_WAIT_MSEC;
 
     static std::chrono::milliseconds
-    get_wait_msec()
-    { return wait_msec; }
+    get_wait_msec();
 
     static void
     set_wait_msec(std::chrono::milliseconds msec);
@@ -300,8 +315,7 @@ public:
     get();
 
     void
-    close()
-    { _connection.close(); }
+    close();
 };
 
 

@@ -26,6 +26,7 @@ along with this program.  If not, see http://www.gnu.org/licenses.
 #include <assert.h>
 #include <mutex>
 #include <tuple>
+#include <memory>
 
 #include "curl/curl.h"
 
@@ -37,21 +38,15 @@ typedef std::chrono::steady_clock clock_ty;
 static_assert( static_cast<double>(clock_ty::period::num)
                / clock_ty::period::den <= .001, "invalid tick size of clock" );
 
-class CurlConnection {
-    friend std::ostream&
-    operator<<(std::ostream& out, CurlConnection& session);
 
-    struct curl_slist *_header;
-    CURL *_handle;
-    std::map<CURLoption, std::string> _options;
-
-    /* to string overloads for our different stored option values */
-    template<typename T, typename Dummy=void>
-    struct to;
+class CurlConnectionImpl_
+#ifndef THIS_EXPORTS_INTERFACE
+; /* forward declare for the exported CurlConnection interface */
+#else
+{ /* for the CurlConnection impl */
 
     static struct Init{
-        Init()
-        { curl_global_init(CURL_GLOBAL_ALL); }
+        Init() { curl_global_init(CURL_GLOBAL_ALL); }
         /*
          * IMPORTANT
          *
@@ -60,12 +55,19 @@ class CurlConnection {
          * EVP_get_digestbyname("ssl2-md5") returns null which seg faults in
          * SSL_CTX_ctrl in versions < 1.1.0
          */
-        ~Init()
-        { curl_global_cleanup(); }
+        ~Init() { curl_global_cleanup(); }
     }_init;
 
-public:
-    static const std::map<CURLoption, std::string> option_strings;
+    friend std::ostream&
+    operator<<(std::ostream& out, CurlConnectionImpl_& session);
+
+    struct curl_slist *_header;
+    CURL *_handle;
+    std::map<CURLoption, std::string> _options;
+
+    /* to string overloads for our different stored option values */
+    template<typename T, typename Dummy=void>
+    struct to;
 
     struct WriteCallback{
         std::stringbuf _buf;
@@ -82,15 +84,31 @@ public:
         { _buf.str(""); }
     };
 
-    CurlConnection();
-    CurlConnection(std::string url);
+public:
+    CurlConnectionImpl_();
+
+    CurlConnectionImpl_(std::string url);
+
+    CurlConnectionImpl_( CurlConnectionImpl_&& );
+
+    CurlConnectionImpl_&
+    operator=( CurlConnectionImpl_&& );
+
+    // NO COPY
+
+    // NO ASSIGN
 
     virtual
-    ~CurlConnection();
+    ~CurlConnectionImpl_();
+
+    bool
+    operator==( const CurlConnectionImpl_& connection );
+
+    bool
+    operator!=( const CurlConnectionImpl_& connection );
 
     const std::map<CURLoption, std::string>&
-    get_option_strings() const
-    { return _options; }
+    get_option_strings() const;
 
     template<typename T>
     void
@@ -104,12 +122,9 @@ public:
     close();
 
     bool
-    is_closed() const
-    { return _handle == nullptr; }
+    is_closed() const;
 
-    operator
-    bool() const
-    { return !is_closed(); }
+    operator bool() const;
 
     void
     SET_url(std::string url);
@@ -136,16 +151,120 @@ public:
     RESET_headers();
 
     bool
-    has_headers()
-    { return _header != nullptr; }
+    has_headers();
+
+    void
+    SET_fields(const std::vector<std::pair<std::string,std::string>>& fields);
 
     void
     RESET_options();
 };
 
 
-// TODO check valid HTTPS
-class HTTPSConnection
+template<typename T, typename Dummy>
+struct CurlConnectionImpl_::to{
+    static std::string str(T t)
+    { return std::to_string(t); }
+};
+
+template<typename Dummy>
+struct CurlConnectionImpl_::to<const char*, Dummy>{
+    static std::string str(const char* s)
+    { return std::string(s); }
+};
+
+template<typename T, typename Dummy>
+struct CurlConnectionImpl_::to<T*, Dummy>{
+    static std::string str(T* p)
+    { return std::to_string(reinterpret_cast<unsigned long long>(p)); }
+};
+#endif /* THIS_EXPORTS_INTERFACE */
+
+
+class CurlConnection {
+    friend std::ostream&
+    operator<<(std::ostream& out, CurlConnection& session);
+
+protected:
+    CurlConnectionImpl_ *_pimpl;
+
+public:
+    static const std::map<CURLoption, std::string> option_strings;
+
+    CurlConnection();
+
+    CurlConnection(std::string url);
+
+    // NO COPY
+
+    // NO ASSIGN
+
+    CurlConnection( CurlConnection&& connection );
+
+    CurlConnection&
+    operator=( CurlConnection&& connection );
+
+    virtual
+    ~CurlConnection();
+
+    bool
+    operator==( const CurlConnection& connection );
+
+    bool
+    operator!=( const CurlConnection& connection );
+
+    const std::map<CURLoption, std::string>&
+    get_option_strings() const;
+
+    template<typename T>
+    void
+    set_option(CURLoption option, T param);
+
+    // <status code, data, time>
+    std::tuple<long, std::string, clock_ty::time_point>
+    execute();
+
+    void
+    close();
+
+    bool
+    is_closed() const;
+
+    operator bool() const;
+
+    void
+    SET_url(std::string url);
+
+    void
+    SET_ssl_verify();
+
+    void
+    SET_ssl_verify_using_ca_bundle(std::string path);
+
+    void
+    SET_ssl_verify_using_ca_certs(std::string dir);
+
+    void
+    SET_encoding(std::string enc);
+
+    void
+    SET_keepalive();
+
+    void
+    ADD_headers(const std::vector<std::pair<std::string,std::string>>& headers);
+
+    void
+    RESET_headers();
+
+    bool
+    has_headers();
+
+    void
+    RESET_options();
+};
+
+
+class HTTPSConnection // TODO check valid HTTPS
         : public CurlConnection{
 public:
     static const std::string DEFAULT_ENCODING;
@@ -156,6 +275,7 @@ public:
 
 class HTTPSGetConnection
         : public HTTPSConnection{
+    void _set();
 public:
     HTTPSGetConnection();
     HTTPSGetConnection(std::string url);
@@ -164,6 +284,7 @@ public:
 
 class HTTPSPostConnection
         : public HTTPSConnection{
+    void _set();
 public:
     HTTPSPostConnection();
     HTTPSPostConnection(std::string url);
@@ -173,16 +294,15 @@ public:
 };
 
 
+#ifdef THIS_EXPORTS_INTERFACE
+
 class CurlException
         : public std::exception{
     std::string _what;
 public:
-    CurlException(std::string what)
-        : _what(what)
-    {}
+    CurlException(std::string what);
     const char*
-    what() const noexcept
-    { return _what.c_str(); }
+    what() const noexcept;
 };
 
 
@@ -206,7 +326,7 @@ public:
 
 template<typename T>
 void
-CurlConnection::set_option(CURLoption option, T param)
+CurlConnectionImpl_::set_option(CURLoption option, T param)
 {
     static_assert( !std::is_same<T,std::string>::value,
                    "CurlConnection::set_option doesn't accept string" );
@@ -225,28 +345,7 @@ CurlConnection::set_option(CURLoption option, T param)
     _options[option] = to<T>::str(param);
 }
 
-template<typename T, typename Dummy>
-struct CurlConnection::to{
-    static std::string str(T t)
-    { return std::to_string(t); }
-};
-
-template<typename Dummy>
-struct CurlConnection::to<const char*, Dummy>{
-    static std::string str(const char* s)
-    { return std::string(s); }
-};
-
-template<typename T, typename Dummy>
-struct CurlConnection::to<T*, Dummy>{
-    static std::string str(T* p)
-    { return std::to_string(reinterpret_cast<unsigned long long>(p)); }
-};
-
-
-std::ostream&
-operator<<(std::ostream& out, CurlConnection& connection);
-
+#endif /* THIS_EXPORTS_INTERFACE */
 
 } /* conn */
 

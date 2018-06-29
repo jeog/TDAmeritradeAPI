@@ -129,8 +129,8 @@ curl_execute(HTTPSConnection& connection)
 
 pair<json, conn::clock_ty::time_point>
 api_execute( HTTPSConnection& connection,
-             Credentials& creds,
-             api_on_error_cb_ty on_error_cb )
+              Credentials& creds,
+              api_on_error_cb_ty on_error_cb )
 {
     if( creds.access_token.empty() )
         throw LocalCredentialException("creds.access_token is empty");
@@ -207,9 +207,11 @@ APIGetter::APIGetter(Credentials& creds, api_on_error_cb_ty on_error_callback)
         _on_error_callback(on_error_callback),
         _credentials(creds),
         _connection()
-    {       
-    }
+    {}
 
+void
+APIGetter::set_url(string url)
+{ _connection.SET_url(url); }
 
 json
 APIGetter::get()
@@ -220,6 +222,10 @@ APIGetter::get()
     assert( !_connection.is_closed() );
     return APIGetter::throttled_get(*this);
 }
+
+void
+APIGetter::close()
+{ _connection.close(); }
 
 
 json
@@ -265,6 +271,10 @@ APIGetter::set_wait_msec(milliseconds msec)
     lock_guard<mutex> _(get_mtx);
     wait_msec = msec;
 }
+
+chrono::milliseconds
+APIGetter::get_wait_msec()
+{ return wait_msec; }
 
 
 bool
