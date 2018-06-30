@@ -39,15 +39,17 @@ get_user_principals_for_streaming(Credentials& creds)
 StreamerInfo
 get_streamer_info(Credentials& creds);
 
+/*
 void
 default_api_on_error_callback( long code,
                                const std::string& data,
                                bool allow_refresh );
+*/
 
 std::pair<json, conn::clock_ty::time_point>
 api_execute( conn::HTTPSConnection& connection,
               Credentials& creds,
-              api_on_error_cb_ty on_error_cb = default_api_on_error_callback );
+              api_on_error_cb_ty on_error_cb );//= default_api_on_error_callback );
 
 
 json

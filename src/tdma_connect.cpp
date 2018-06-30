@@ -29,71 +29,66 @@ using namespace std;
 using namespace conn;
 using namespace chrono;
 
-
-/*
- *  The responses don't appear completely consistent w/ the docs so
- *  we have to define different callbacks. 
- */
-void
-default_api_on_error_callback( long code,
-                                   const string& data,
-                                   bool allow_refresh )
+bool
+base_on_error_callback(long code, const string& data, bool allow_refresh)
 {
     /*
-     *  500/expired token errors for the data calls require an unescape of the 
-     *  leading '{'. (A bug that should be fixed in v2 of API)
+     *  ***THE FOLLOWING CHANGED on Jun 30 2018 ***
      *
-     *  This version *seems* to work with:
-     *     quotes
-     *     historical
-     *     options
+     *    500/expired token errors for the data calls require an unescape of the
+     *    leading '{'. (A bug that should be fixed in v2 of API)
      *
-     *  SUCCESS_OK -> true
-     *  500 & "Access Token expired" -> false
-     *  everything else throws
+     *    This version *seems* to work with:
+     *       quotes
+     *       historical
+     *       options
      *
-     *  NOTE - WE SHOULD ONLY GET OUT OF HERE IF WE CAN REFRESH THE TOKEN
+     *    SUCCESS_OK -> true
+     *    500 & "Access Token expired" -> false
+     *    everything else throws
+     *
+     *  *** THE FOLLOWING IS RELEVANT AFETER Jun 30 2018 ***
+     *
+     *    For ALL getters the server responds with 401 error to indicate
+     *    an expired access token.
+     *
+     *  RETURN TRUE IF WE CAN REFRESH, FALSE IF WE DONT THROW FROM HERE
      */
     json data_json;
     string data_uesc, err_msg;
 
     switch(code){
-    case 500:
-        //"\n      \{\n     "error":"Access Token expired"\n    \t\t}\n     "
+    case 401:
         if( !allow_refresh ){
-            throw APIExecutionException("unknow exception", code);
+            throw APIExecutionException("not allowed to refresh token", code);
         }
-        data_uesc = unescape_returned_post_data(data);
-        data_json = json::parse(data_uesc);
+        data_json = json::parse(data);
         err_msg = data_json["error"];
-        if( err_msg != "Access Token expired" ){
+        if( !error_msg_about_token_expiration(err_msg) ){
             throw APIExecutionException("unknow exception: " + err_msg, code);
         }
-        return; /* REFRESH TOKEN */
-    case 503:
-        throw ServerError("server (temporarily) unavailable", code);
-    case 400:
-        throw InvalidRequest("bad/malformed request", code);
-    case 401:
-        throw InvalidRequest("unauthorized", code);
+        return true ; /* REFRESH TOKEN */
     case 403:
         throw InvalidRequest("forbidden", code);
     case 404:
         throw InvalidRequest("not found", code);
-    case 406:
-        throw InvalidRequest("invalid regex or excessive requests", code);
-    default:
-        throw APIExecutionException("unknow exception", code);
-
+    case 500:
+        // do we still need to unescape this ??
+        data_uesc = unescape_returned_post_data(data);
+        data_json = json::parse(data_uesc);
+        err_msg = data_json["error"];
+        throw ServerError("unexpected server error: " + err_msg, code);
+    case 503:
+        throw ServerError("server (temporarily) unavailable", code);
     };
+    return false;
 }
-
 
 bool
 on_api_return( long code,
-               const string& data,
-               bool allow_refresh,
-               api_on_error_cb_ty on_error_cb )
+                 const string& data,
+                 bool allow_refresh,
+                 api_on_error_cb_ty on_error_cb )
 {
     if( code == HTTP_RESPONSE_OK )
         return true;
@@ -102,11 +97,19 @@ on_api_return( long code,
     if( data.empty() )
         throw APIExecutionException("no return message", code);
 
-    /* 
-     * on_error_cb *should* only return if we need to refresh token
-     * otherwise it throws some derivative of APIExecutionException 
-     */
-    on_error_cb(code, data, allow_refresh);
+    if( !base_on_error_callback(code, data, allow_refresh) ){
+        /*
+         * base callback will either:
+         *   1) throw
+         *   2) return true if needs to refresh token
+         *   3) return false if it doesn't handle the error and should be
+         *      passed off to the appropriate callback
+         */
+        on_error_cb(code, data);
+        /* callback may not handle the error and throw so... */
+        throw APIExecutionException("unknown exception", code);
+    }
+
     cerr<< "access token expired; try to refresh..." << endl;
     return false;
 }

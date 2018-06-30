@@ -79,16 +79,16 @@ CurlConnectionImpl_::operator=( CurlConnectionImpl_&& connection )
 
 bool
 CurlConnectionImpl_::operator==( const CurlConnectionImpl_& connection )
-{
-    return ! ( _handle != connection._handle ||
-               _header != connection._header ||
-               _options != connection._options );
-}
+{ return !operator!=(connection); }
+
 
 bool
 CurlConnectionImpl_::operator!=( const CurlConnectionImpl_& connection )
-{ return !operator==(connection); }
-
+{
+    return ( _handle != connection._handle ||
+             _header != connection._header ||
+             _options != connection._options );
+}
 
 size_t
 CurlConnectionImpl_::WriteCallback::write( char* input,

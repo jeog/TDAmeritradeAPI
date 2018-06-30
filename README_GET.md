@@ -1,6 +1,7 @@
 ### HTTPS Get Interface
 - - -
 
+> **IMPORTANT - On Jun 30 2018 API behavior was changed to fix a bug w/ expired token messages. This will result in an ```InvalidRequest``` exception being thrown with error code 401 in older versions of the library (commit eb59c1 and earlier). If so upgrade to a newer version of the library.**
 ```
 #include "tdma_api_get.h"
 

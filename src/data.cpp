@@ -29,9 +29,23 @@ using namespace std;
 
 const string URL_MARKETDATA = URL_BASE + "marketdata/";
 
+void
+data_api_on_error_callback(long code, const string& data)
+{
+    /*
+     *  codes 500, 503, 401, 403, 404 handled by base callback
+     */
+    switch(code){
+    case 400:
+        throw InvalidRequest("bad/malformed request", code);
+    case 406:
+        throw InvalidRequest("invalid regex or excessive requests", code);
+    };
+}
+
 QuoteGetter::QuoteGetter( Credentials& creds, const string& symbol )
     :
-        APIGetter(creds, default_api_on_error_callback),
+        APIGetter(creds, data_api_on_error_callback),
         _symbol(symbol)
     {
         if( symbol.empty() )
@@ -67,7 +81,7 @@ QuoteGetter::set_symbol(const string& symbol)
 
 QuotesGetter::QuotesGetter( Credentials& creds, const set<string>& symbols)
     :
-        APIGetter(creds, default_api_on_error_callback),
+        APIGetter(creds, data_api_on_error_callback),
         _symbols(symbols)
     {
         if( symbols.empty() )
@@ -108,7 +122,7 @@ MarketHoursGetter::MarketHoursGetter( Credentials& creds,
                                       MarketType market_type,
                                       const string& date )
     :
-        APIGetter(creds, default_api_on_error_callback),
+        APIGetter(creds, data_api_on_error_callback),
         _market_type(market_type),
         _date(date)
     {
@@ -155,7 +169,7 @@ MoversGetter::MoversGetter( Credentials& creds,
                             MoversDirectionType direction_type,
                             MoversChangeType change_type )
     :
-        APIGetter(creds, default_api_on_error_callback),
+        APIGetter(creds, data_api_on_error_callback),
         _index(index),
         _direction_type(direction_type),
         _change_type(change_type)
@@ -215,7 +229,7 @@ HistoricalGetterBase::HistoricalGetterBase( Credentials& creds,
                                             unsigned int frequency,
                                             bool extended_hours )
     :
-        APIGetter(creds, default_api_on_error_callback),
+        APIGetter(creds, data_api_on_error_callback),
         _symbol(symbol),
         _frequency_type(frequency_type),
         _frequency(frequency),
@@ -411,7 +425,7 @@ OptionChainGetter::OptionChainGetter( Credentials& creds,
                                       OptionExpMonth exp_month,
                                       OptionType option_type )
     :
-        APIGetter(creds, default_api_on_error_callback),
+        APIGetter(creds, data_api_on_error_callback),
         _symbol(symbol),
         _strikes(strikes),
         _contract_type(contract_type),

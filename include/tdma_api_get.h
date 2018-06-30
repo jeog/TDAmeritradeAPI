@@ -262,7 +262,7 @@ std::unordered_map<FrequencyType, std::set<unsigned int>, EnumHash<FrequencyType
 VALID_FREQUENCIES_BY_FREQUENCY_TYPE;
 
 
-typedef std::function<void(long, const std::string&, bool)> api_on_error_cb_ty;
+typedef std::function<void(long, const std::string&)> api_on_error_cb_ty;
 
 class APIGetter{
     static std::chrono::milliseconds wait_msec; // DEF_WAIT_MSEC

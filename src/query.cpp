@@ -24,50 +24,18 @@ using namespace std;
 
 const string URL_INSTRUMENTS = URL_BASE + "instruments";
 
-/*
- *  The responses don't appear completely consistent w/ the docs so
- *  we have to define different callbacks. 
- */
+
 void
-query_api_on_error_callback(long code, const string& data, bool allow_refresh)
+query_api_on_error_callback(long code, const string& data)
 {
     /*
-     *  The server responds with 401 error to indicate an expired access token. 
-     *  We also don't need to unencode the opening '{'.
-     *
-     *  NOTE - WE SHOULD ONLY GET OUT OF HERE IF WE CAN REFRESH THE TOKEN
+     *  codes 500, 503, 401, 403, 404 handled by base callback
      */
-    json data_json;
-    string data_uesc, err_msg;
-
     switch(code){
-    case 500:
-        data_uesc = unescape_returned_post_data(data);
-        data_json = json::parse(data_uesc);
-        err_msg = data_json["error"];
-        throw ServerError("unexpected server error: " + err_msg, code);
-    case 503:
-        throw ServerError("server (temporarily) unavailable", code);
     case 400:
         throw InvalidRequest("validation problem", code);
-    case 401:
-        if( !allow_refresh ){
-            throw APIExecutionException("not allowed to refresh token", code);
-        }
-        data_json = json::parse(data);
-        err_msg = data_json["error"];
-        if( !error_msg_about_token_expiration(err_msg) ){
-            throw APIExecutionException("unknow exception: " + err_msg, code);
-        }
-        return; /* REFRESH TOKEN */
-    case 403:
-        throw InvalidRequest("forbidden", code);
-    case 404:
-        throw InvalidRequest("not found", code);
     case 406:
         throw InvalidRequest("invalid regex or excessive requests", code);
-    default:
-        throw APIExecutionException("unknown exception", code);
     };
 }
 
