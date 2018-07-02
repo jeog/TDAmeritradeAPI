@@ -1,0 +1,176 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="uWebSockets">
+      <UniqueIdentifier>{8dcb22ee-9344-4a2e-8975-63939f4332dc}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\include\_tdma_api.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\curl_connect.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\json.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\tdma_api_get.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\tdma_api_streaming.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\tdma_common.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\threadsafe_hashmap.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\threadsafe_queue.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\util.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\websocket_connect.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\uWebSockets\Asio.h">
+      <Filter>uWebSockets</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\uWebSockets\Backend.h">
+      <Filter>uWebSockets</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\uWebSockets\Epoll.h">
+      <Filter>uWebSockets</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\uWebSockets\Extensions.h">
+      <Filter>uWebSockets</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\uWebSockets\Group.h">
+      <Filter>uWebSockets</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\uWebSockets\HTTPSocket.h">
+      <Filter>uWebSockets</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\uWebSockets\Hub.h">
+      <Filter>uWebSockets</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\uWebSockets\Libuv.h">
+      <Filter>uWebSockets</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\uWebSockets\Networking.h">
+      <Filter>uWebSockets</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\uWebSockets\Node.h">
+      <Filter>uWebSockets</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\uWebSockets\Room.h">
+      <Filter>uWebSockets</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\uWebSockets\Socket.h">
+      <Filter>uWebSockets</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\uWebSockets\uWS.h">
+      <Filter>uWebSockets</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\uWebSockets\WebSocket.h">
+      <Filter>uWebSockets</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\uWebSockets\WebSocketProtocol.h">
+      <Filter>uWebSockets</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\_common.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\src\streaming\streaming_info.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\streaming\streaming_session.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\streaming\streaming_subscriptions.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\account.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\auth.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\curl_connect.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\data.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\params.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\query.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\tdma_connect.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\trade.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\util.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\websocket_connect.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\uWebSockets\Epoll.cpp">
+      <Filter>uWebSockets</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\uWebSockets\Extensions.cpp">
+      <Filter>uWebSockets</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\uWebSockets\Group.cpp">
+      <Filter>uWebSockets</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\uWebSockets\HTTPSocket.cpp">
+      <Filter>uWebSockets</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\uWebSockets\Hub.cpp">
+      <Filter>uWebSockets</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\uWebSockets\Networking.cpp">
+      <Filter>uWebSockets</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\uWebSockets\Node.cpp">
+      <Filter>uWebSockets</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\uWebSockets\Room.cpp">
+      <Filter>uWebSockets</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\uWebSockets\Socket.cpp">
+      <Filter>uWebSockets</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\uWebSockets\WebSocket.cpp">
+      <Filter>uWebSockets</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\README.md" />
+    <None Include="..\..\README_GET.md" />
+    <None Include="..\..\README_STREAMING.md" />
+  </ItemGroup>
+</Project>

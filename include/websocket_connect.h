@@ -25,6 +25,7 @@ along with this program.  If not, see http://www.gnu.org/licenses.
 #include <condition_variable>
 #include <signal.h>
 
+#include "_common.h"
 #include "../include/util.h"
 #include "threadsafe_queue.h"
 
@@ -81,7 +82,9 @@ class WebSocketClient{
 
         void
         operator()(){
+#ifndef _WIN32
             util::SignalBlocker _({SIGPIPE});
+#endif
             _wsc->_hub.connect(_wsc->_url, nullptr, {}, _timeout.count());
             _wsc->_hub.run();
         }

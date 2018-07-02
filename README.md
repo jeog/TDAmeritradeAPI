@@ -40,15 +40,13 @@ This project would not be possible without some of the great open-source project
 
 #### Coming Soon
 - - -
-- cross platform support
+
 - account update and trade execution functionality
 - Python bindings
+- simplified build/install
 
-#### Getting Started
+### Getting Started
 - - -
-
-TDAmeritradeAPI is a shared library currently only available on unix-like systems 
-with C++11 compiler support. *(A more portable version w/ a more robust build system should be available shortly.)*
 
 > **IMPORTANT Note on C++ Libraries and Binary Interfaces**
 > 
@@ -58,10 +56,23 @@ with C++11 compiler support. *(A more portable version w/ a more robust build sy
 > 
 > In the future we may include some type of stable ABI layer on top of the core library to limit these issues.
 
+The current build setup is a bit messy. Hopefully things will get a little simpler in the future.
+You can currently build on Unix-like systems and Windows. The makefiles may need some tweaks for
+non-GNU/Linux systems. For Mac OS/X you'll have to download/install the necessary libraries
+and adjust the makefiles. (If you build sucessfully on Mac feel free to share and we can 
+include it in the docs.)
+
+- Compilers need to support C++11.
+
+- If you have a build issue file an issue or send an email.
+
+#### Unix-like
+
+*Tested on GNU/Linux Debian-8 using 'libcurl4-openssl-dev' package via apt and stock packages.*
 
 ##### Install Dependencies
 
-If using a package manager like apt installing libcurl should install libssl and libz:  
+If using a package manager like apt installing libcurl should install libssl and libz*:  
 
         user@host:~$ sudo apt-get install libcurl4-openssl-dev
 
@@ -82,18 +93,63 @@ The Eclipse/CDT generated makefiles are in the  'Debug' and 'Release' subdirecto
 
     user@host:~/dev/TDAmeritradeAPI/Release$ make
 
-##### Using the library
+#### Windows
+
+*Tested on 32 and 64 bit Windows7 using pre-built dependencies.*
+
+##### Install Dependencies
+
+Dealing with dependencies on Windows can be more complicated. Pre-built binaries(x86 and x64 release builds of openssl, curl, zlib, and uv) are included in the *vsbuild/deps/libs* directory to make things easier. 
+
+If you'd still like to download and build them yourselves visit the links from the unix-like build 
+section above.
+
+##### Build
+The solution provided was created in VisualStudio2017 using toolset v141. If it doesn't work in 
+your version of VS you'll need to tweak the project settings and/or source.
+
+1. Open vsbuild/vsbuild.sln
+2. Select an x64 or Win32 Release build configuration. *(If you want a debug configuration 
+you'll have to edit the 'Additional Library Directories' in Properties->Linker->General for
+the TDAmeritradeAPI project so it looks for Release builds of the dependencies. In the path strings change '$(Configuration)' to 'Release\\' .)*
+3. Build->Build Solution. 
+ 
+If sucessful the TDAmeritradeAPI library files AND the pre-built 
+dependencies will be in vsbuild\\x64 or vsbuild\\Win32. (If you built/installed your own dependencies you can ignore these.)
+
+*(The 'test project' is just a hodge-podge for checking basic functionality and linking. 
+The executable it produces takes three args: account id, path to credentials file, and a password to decrypt credentials. It requires a valid credentials file which you would need to create via
+the instructions in the Authorization section below BEFORE using.)*
+
+
+#### Managing the libraries
+
+Once you've built all the dependencies AND TDAmeritradeAPI you'll need to make sure they
+ are in a location the linker can find, or tell the linker where to look.
+
+If you've installed the dependencies to the default location you shouldn't need to do anything 
+else except deal with TDAmeritradeAPI. If not you'll to have deal with ALL the libraries.
+
+- move them to a folder where the linker will automatically look
+	- e.g. if moving a 32bit(Win32) DLL to C:\Windows\SysWow64\, copy there and run:  
+	```(Admin) C:Windows\SysWow64\regsvr32.exe <dll name>```
+	- e.g. if moving a 64bit(x64) DLL to C:\Windows\System32, copy there and run:  
+	```(Admin) C:Windows\System32\regsvr32.exe <dll name>```
+- *-or-* indicate to the linker where they can be found 
+    - e.g. for GCC '-L/path/to/lib -Wl,-rpath,/path/to/lib'    
+- *-or-* keep them in the same folder as your executable 
+- *-or-* add their folder to your PATH(windows) or LD_LIBRARY_PATH(linux).
+
+#### Using the TDAmeritradeAPI library
 
 1. include headers:
     - "tdma_api_get.h" for the 'HTTPS Get' interface 
     - "tdma_api_streaming.h" for the 'Streaming' interface 
-    - make sure the compiler can find them (```-I"path/to/headers"```)
+    - make sure the compiler can find them 
     - *(headers/source use relative include links, don't change the directory structure)*
 2. add Library/API calls to your code
 3. compile *(read the message above on binary compatibility)*
-4. link your code with libTDAmeritradeAPI.so (```-L"/path/to/lib", -lTDAmeritradeAPI```)
-    - move the file to a place the dynamic linker can find (e.g /usr/local/lib)
-    - *-or-* indicate its location to the compiler/linker (```-Wl,-rpath,"/path/to/lib"```)
+4. link your code with libTDAmeritradeAPI *(be sure the linker can find it)*
 5. run 
 
 
@@ -179,6 +235,8 @@ In the future construct a new Credentials struct from the saved credentials file
         password  ::  the password used above
 ```        
     
+> **The format of the encrypted credentials file was changed in the commit following b75586**
+
 To avoid having to manually load and save each time your code runs use ```CredentialsManager```
 to automatically load and store on construction and destruction.  
 ```

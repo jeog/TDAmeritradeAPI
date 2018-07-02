@@ -23,6 +23,7 @@ along with this program.  If not, see http://www.gnu.org/licenses.
 #include <sstream>
 #include <chrono>
 
+#include "_common.h"
 #include "util.h"
 #include "tdma_api_get.h"
 #include "tdma_api_streaming.h"

@@ -26,14 +26,18 @@ along with this program.  If not, see http://www.gnu.org/licenses.
 #include <chrono>
 #include <signal.h>
 
+#include "_common.h"
+
 namespace util{
 
+#ifndef _WIN32
 class SignalBlocker {
     sigset_t _mask, _mask_old;
 public:
     SignalBlocker( std::set<int> signums );
     virtual ~SignalBlocker();
 };
+#endif
 
 void
 debug_out(std::string tag, std::string message, std::ostream& out=std::cout);

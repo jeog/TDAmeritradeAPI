@@ -23,13 +23,14 @@ along with this program.  If not, see http://www.gnu.org/licenses.
 #include <thread>
 #include <memory>
 
+#include "_common.h"
 #include "websocket_connect.h"
 #include "threadsafe_hashmap.h"
 #include "tdma_common.h"
 
 namespace tdma{
 
-class StreamerService{    
+class DLL_SPEC_ StreamerService{    
 public:
     /* NOTE as we add these need to update the constructor in streaming.cpp
             and the to_string overload in params.cpp */
@@ -68,16 +69,18 @@ public:
         TIMESALE_OPTIONS
     };
 
-    StreamerService(std::string service_name);
+    explicit StreamerService(std::string service_name);
 
+    explicit StreamerService(unsigned int i)
+        : _service( static_cast<type>(i) ) {}
+    
     StreamerService(type service_type)
         : _service(service_type) {}
 
-    StreamerService(unsigned int i)
-        : _service( static_cast<type>(i) ) {}
+    StreamerService(nullptr_t)
+        : _service(type::NONE) {}
 
-    operator type
-    (){ return _service; }
+    operator type () const { return _service; }  
 
 private:
     type _service;
@@ -99,24 +102,30 @@ enum class QOSType : unsigned int {
     delayed    /* 5000 ms */
 };
 
-std::string
-to_string(const StreamerService::type& service);
+//DLL_SPEC_ std::string
+//to_string(const StreamerService::type& service);
 
-std::string
+DLL_SPEC_ std::string
+to_string(const StreamerService& service);
+
+DLL_SPEC_ std::string
 to_string(const AdminCommandType& command);
 
-std::string
+DLL_SPEC_ std::string
 to_string(const QOSType& qos);
 
 using std::to_string;
 
-std::ostream&
-operator<<(std::ostream& out, const StreamerService::type& service);
+//DLL_SPEC_ std::ostream&
+//operator<<(std::ostream& out, const StreamerService::type& service);
 
-std::ostream&
+DLL_SPEC_ std::ostream&
+operator<<(std::ostream& out, const StreamerService& service);
+
+DLL_SPEC_ std::ostream&
 operator<<(std::ostream& out, const AdminCommandType& command);
 
-std::ostream&
+DLL_SPEC_ std::ostream&
 operator<<(std::ostream& out, const QOSType& qos);
 
 struct StreamerCredentials{
@@ -144,7 +153,7 @@ struct StreamerInfo{
 };
 
 
-class StreamingSubscription{
+class DLL_SPEC_ StreamingSubscription{
     StreamerService::type _service;
     std::string _command;
     std::map<std::string, std::string> _parameters;
@@ -172,7 +181,7 @@ public:
 };
 
 
-class SubscriptionBySymbolBase
+class DLL_SPEC_ SubscriptionBySymbolBase
         : public StreamingSubscription {
     std::set<std::string> _symbols;
 
@@ -201,7 +210,7 @@ protected:
 };
 
 
-class QuotesSubscription
+class DLL_SPEC_ QuotesSubscription
         : public SubscriptionBySymbolBase {
 public:
     enum class FieldType : unsigned int {
@@ -273,7 +282,7 @@ public:
 };
 
 
-class ActivesSubscriptionBase
+class DLL_SPEC_ ActivesSubscriptionBase
         : public StreamingSubscription {
 public:
     enum class DurationType : unsigned int {
@@ -307,7 +316,7 @@ operator<<( std::ostream& out,
             const ActivesSubscriptionBase::DurationType& duration );
 
 
-class NasdaqActivesSubscription
+class DLL_SPEC_ NasdaqActivesSubscription
         : public ActivesSubscriptionBase {
 public:
     NasdaqActivesSubscription(DurationType duration)
@@ -316,7 +325,7 @@ public:
     {}
 };
 
-class NYSEActivesSubscription
+class DLL_SPEC_ NYSEActivesSubscription
         : public ActivesSubscriptionBase {
 public:
     NYSEActivesSubscription(DurationType duration)
@@ -325,7 +334,7 @@ public:
     {}
 };
 
-class OTCBBActivesSubscription
+class DLL_SPEC_ OTCBBActivesSubscription
         : public ActivesSubscriptionBase {
 public:
     OTCBBActivesSubscription(DurationType duration)
@@ -334,7 +343,7 @@ public:
     {}
 };
 
-class OptionActivesSubscription
+class DLL_SPEC_ OptionActivesSubscription
         : public ActivesSubscriptionBase {
 public:
     enum class VenueType : unsigned int {
@@ -364,7 +373,7 @@ std::ostream&
 operator<<(std::ostream& out, const OptionActivesSubscription::VenueType& venue);
 
 
-class OptionsSubscription
+class DLL_SPEC_ OptionsSubscription
         : public SubscriptionBySymbolBase {
 public:
     enum class FieldType : unsigned int {
@@ -425,7 +434,7 @@ public:
 };
 
 
-class LevelOneFuturesSubscription
+class DLL_SPEC_ LevelOneFuturesSubscription
         : public SubscriptionBySymbolBase {
 public:
     enum class FieldType : unsigned int {
@@ -480,7 +489,7 @@ public:
 };
 
 
-class LevelOneForexSubscription
+class DLL_SPEC_ LevelOneForexSubscription
         : public SubscriptionBySymbolBase {
 public:
     enum class FieldType : unsigned int {
@@ -529,7 +538,7 @@ public:
 };
 
 
-class LevelOneFuturesOptionsSubscription
+class DLL_SPEC_ LevelOneFuturesOptionsSubscription
         : public SubscriptionBySymbolBase {
 public:
     enum class FieldType : unsigned int {
@@ -584,7 +593,7 @@ public:
 };
 
 
-class NewsHeadlineSubscription
+class DLL_SPEC_ NewsHeadlineSubscription
         : public SubscriptionBySymbolBase {
 public:
     enum class FieldType : unsigned int {
@@ -615,7 +624,7 @@ public:
 
 
 // TODO implement ADD command
-class ChartEquitySubscription
+class DLL_SPEC_ ChartEquitySubscription
         : public SubscriptionBySymbolBase {
 public:
     enum class FieldType : unsigned int {
@@ -643,7 +652,7 @@ public:
 };
 
 
-class ChartSubscriptionBase
+class DLL_SPEC_ ChartSubscriptionBase
         : public SubscriptionBySymbolBase {
 public:
     enum class FieldType : unsigned int {
@@ -673,7 +682,7 @@ protected:
 /*
  * NOT WORKING - EUR/USD repsonse: error 22, msg 'Bad command formatting'
  *
-class ChartForexSubscription
+class DLL_SPEC_ ChartForexSubscription
         : public ChartSubscriptionBase {   
 public:
     ChartForexSubscription( const std::set<std::string>& symbols,
@@ -684,7 +693,7 @@ public:
 };
 */
 
-class ChartFuturesSubscription
+class DLL_SPEC_ ChartFuturesSubscription
         : public ChartSubscriptionBase {
 public:
     ChartFuturesSubscription( const std::set<std::string>& symbols,
@@ -695,7 +704,7 @@ public:
 };
 
 
-class ChartOptionsSubscription
+class DLL_SPEC_ ChartOptionsSubscription
         : public ChartSubscriptionBase {
 public:
     ChartOptionsSubscription( const std::set<std::string>& symbols,
@@ -706,7 +715,7 @@ public:
 };
 
 
-class TimesalesSubscriptionBase
+class DLL_SPEC_ TimesalesSubscriptionBase
         : public SubscriptionBySymbolBase {
 public:
     enum FieldType : unsigned int{
@@ -732,7 +741,7 @@ protected:
 };
 
 
-class TimesaleEquitySubscription
+class DLL_SPEC_ TimesaleEquitySubscription
         : public TimesalesSubscriptionBase {
 public:
     TimesaleEquitySubscription( const std::set<std::string>& symbols,
@@ -744,7 +753,7 @@ public:
 
 /*
  *  * NOT WORKING - EUR/USD repsonse: error 22, msg 'Bad command formatting'
-class TimesaleForexSubscription
+class DLL_SPEC_ TimesaleForexSubscription
         : public TimesalesSubscriptionBase {
 public:
     TimesaleForexSubscription( const std::set<std::string>& symbols,
@@ -755,7 +764,7 @@ public:
 };
 */
 
-class TimesaleFuturesSubscription
+class DLL_SPEC_ TimesaleFuturesSubscription
         : public TimesalesSubscriptionBase {
 public:
     TimesaleFuturesSubscription( const std::set<std::string>& symbols,
@@ -765,7 +774,7 @@ public:
     {}
 };
 
-class TimesaleOptionsSubscription
+class DLL_SPEC_ TimesaleOptionsSubscription
         : public TimesalesSubscriptionBase {
 public:
     TimesaleOptionsSubscription( const std::set<std::string>& symbols,
@@ -785,12 +794,12 @@ enum class StreamingCallbackType : unsigned int {
     error
 };
 
-std::string
+DLL_SPEC_ std::string
 to_string(const StreamingCallbackType& callback_type);
 
 using std::to_string;
 
-std::ostream&
+DLL_SPEC_ std::ostream&
 operator<<(std::ostream& out, const StreamingCallbackType& callback_type);
 
 /* 
@@ -824,7 +833,7 @@ typedef std::function<void(StreamingCallbackType cb_type, StreamerService,
                            unsigned long long, json)> streaming_cb_ty;
 
 
-class StreamingSession{
+class DLL_SPEC_ StreamingSession{
 public:
     static const std::string VERSION; // = "1.0"
     static const std::chrono::milliseconds MIN_TIMEOUT; // 1000;
@@ -1043,7 +1052,7 @@ public:
 };
 
 
-class SharedSession{
+class DLL_SPEC_ SharedSession{
     struct Deleter{
         void
         operator()(StreamingSession *s)

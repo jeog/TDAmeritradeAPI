@@ -22,6 +22,7 @@ along with this program.  If not, see http://www.gnu.org/licenses.
 #include <unordered_map>
 #include <iostream>
 
+#include "_common.h"
 #include "curl_connect.h"
 #include "tdma_common.h"
 
@@ -143,85 +144,85 @@ enum class MoversChangeType : unsigned int{
 };
 
 
-std::string
+DLL_SPEC_ std::string
 to_string(const PeriodType& ptype);
 
-std::string
+DLL_SPEC_ std::string
 to_string(const FrequencyType& ftype);
 
-std::string
+DLL_SPEC_ std::string
 to_string(const OptionContractType& contract_type);
 
-std::string
+DLL_SPEC_ std::string
 to_string(const OptionStrategyType& strategy);
 
-std::string
+DLL_SPEC_ std::string
 to_string(const OptionRangeType& range);
 
-std::string
+DLL_SPEC_ std::string
 to_string(const OptionExpMonth& exp_month);
 
-std::string
+DLL_SPEC_ std::string
 to_string(const OptionType& option_type);
 
-std::string
+DLL_SPEC_ std::string
 to_string(const TransactionType& transaction_type);
 
-std::string
+DLL_SPEC_ std::string
 to_string(const InstrumentSearchType& search_type);
 
-std::string
+DLL_SPEC_ std::string
 to_string(const MarketType& market_type);
 
-std::string
+DLL_SPEC_ std::string
 to_string(const MoversIndex& index);
 
-std::string
+DLL_SPEC_ std::string
 to_string(const MoversDirectionType& direction_type);
 
-std::string
+DLL_SPEC_ std::string
 to_string(const MoversChangeType& change_type);
 
 using std::to_string;
 
 
-std::ostream&
+DLL_SPEC_ std::ostream&
 operator<<(std::ostream& out, const PeriodType& period_type);
 
-std::ostream&
+DLL_SPEC_ std::ostream&
 operator<<(std::ostream& out, const FrequencyType& frequency_type);
 
-std::ostream&
+DLL_SPEC_ std::ostream&
 operator<<(std::ostream& out, const OptionContractType& contract_type);
 
-std::ostream&
+DLL_SPEC_ std::ostream&
 operator<<(std::ostream& out, const OptionStrategyType& strategy);
 
-std::ostream&
+DLL_SPEC_ std::ostream&
 operator<<(std::ostream& out, const OptionRangeType& range);
 
-std::ostream&
+DLL_SPEC_ std::ostream&
 operator<<(std::ostream& out, const OptionExpMonth& exp_month);
 
-std::ostream&
+DLL_SPEC_ std::ostream&
 operator<<(std::ostream& out, const OptionType& option_type);
 
-std::ostream&
+DLL_SPEC_ std::ostream&
 operator<<(std::ostream& out, const TransactionType& transaction_type);
 
-std::ostream&
+DLL_SPEC_ std::ostream&
 operator<<(std::ostream& out, const InstrumentSearchType& search_type);
 
-std::ostream&
+DLL_SPEC_ std::ostream&
 operator<<(std::ostream& out, const MarketType& market_type);
 
-std::ostream&
+DLL_SPEC_ std::ostream&
 operator<<(std::ostream& out,const MoversIndex& index);
 
-std::ostream&
+DLL_SPEC_ std::ostream&
 operator<<(std::ostream& out,const MoversDirectionType& direction_type);
 
-std::ostream&
+DLL_SPEC_ std::ostream&
 operator<<(std::ostream& out,const MoversChangeType& change_type);
 
 
@@ -248,23 +249,24 @@ struct EnumCompare : public EnumTypeAssert<E> {
 };
 
 
-extern const
+DLL_SPEC_ extern const
 std::unordered_map<PeriodType, std::set<unsigned int>, EnumHash<PeriodType>>
 VALID_PERIODS_BY_PERIOD_TYPE;
 
-extern const
+DLL_SPEC_ extern const
 std::unordered_map<PeriodType, std::set<FrequencyType, EnumCompare<FrequencyType>>,
                    EnumHash<PeriodType> >
 VALID_FREQUENCY_TYPES_BY_PERIOD_TYPE;
 
-extern const
+DLL_SPEC_ extern const
 std::unordered_map<FrequencyType, std::set<unsigned int>, EnumHash<FrequencyType>>
 VALID_FREQUENCIES_BY_FREQUENCY_TYPE;
 
 
 typedef std::function<void(long, const std::string&)> api_on_error_cb_ty;
 
-class APIGetter{
+// TODO Pimpl
+class DLL_SPEC_  APIGetter{
     static std::chrono::milliseconds wait_msec; // DEF_WAIT_MSEC
     static std::chrono::milliseconds last_get_msec; // 0
     static std::mutex get_mtx;
@@ -319,7 +321,7 @@ public:
 };
 
 
-class QuoteGetter
+class DLL_SPEC_ QuoteGetter
         : public APIGetter {
     std::string _symbol;
 
@@ -346,7 +348,7 @@ GetQuote(Credentials& creds, const std::string& symbol)
 { return QuoteGetter(creds, symbol).get(); }
 
 
-class QuotesGetter
+class DLL_SPEC_ QuotesGetter
         : public APIGetter {
     std::set<std::string> _symbols;
 
@@ -375,7 +377,7 @@ GetQuotes(Credentials& creds, const std::set<std::string>& symbols)
 
 // note we only implement the single MarketType version
 // could just add an 'all' field to MarketType enum
-class MarketHoursGetter
+class DLL_SPEC_ MarketHoursGetter
         : public APIGetter {
     MarketType _market_type;
     std::string _date;
@@ -413,7 +415,7 @@ GetMarketHours( Credentials& creds,
 { return MarketHoursGetter(creds, market_type, date).get(); }
 
 
-class MoversGetter
+class DLL_SPEC_ MoversGetter
         : public APIGetter{
     MoversIndex _index;
     MoversDirectionType _direction_type;
@@ -461,7 +463,7 @@ GetMovers( Credentials& creds,
 { return MoversGetter(creds, index, direction_type, change_type).get(); }
 
 
-class HistoricalGetterBase
+class DLL_SPEC_ HistoricalGetterBase
         : public APIGetter {
     std::string _symbol;
     FrequencyType _frequency_type;
@@ -515,7 +517,7 @@ public:
 
 // TODO MAKE CLEAR IN DOCS THE ORDER WE NEED TO CHANGE PERIODS/FREQUENCIES
 //      BECUASE OF THE INTERNAL CHECKS/CONTINGENCIES
-class HistoricalPeriodGetter
+class DLL_SPEC_ HistoricalPeriodGetter
         : public HistoricalGetterBase {
     PeriodType _period_type;
     unsigned int _period;
@@ -566,7 +568,7 @@ GetHistoricalPeriod( Credentials& creds,
 
 
 
-class HistoricalRangeGetter
+class DLL_SPEC_ HistoricalRangeGetter
         : public HistoricalGetterBase {
     unsigned long long _start_msec_since_epoch;
     unsigned long long _end_msec_since_epoch;
@@ -619,7 +621,7 @@ GetHistoricalRange( Credentials& creds,
 }
 
 
-class OptionStrikes {
+class DLL_SPEC_ OptionStrikes {
 public:
     enum class Type : unsigned int {
         n_atm,
@@ -665,15 +667,15 @@ public:
     Range(OptionRangeType range);
 };
 
-std::string
+DLL_SPEC_ std::string
 to_string(const OptionStrikes& strikes);
 
-std::ostream&
+DLL_SPEC_ std::ostream&
 operator<<(std::ostream& out, const OptionStrikes& strikes);
 
 
 
-class OptionStrategy {
+class DLL_SPEC_ OptionStrategy {
     OptionStrategyType _strategy;
     double _spread_interval;
 
@@ -730,14 +732,14 @@ public:
     { return {OptionStrategyType::roll, spread_interval}; }
 };
 
-std::string
+DLL_SPEC_ std::string
 to_string(const OptionStrategy& strategy);
 
-std::ostream&
+DLL_SPEC_ std::ostream&
 operator<<(std::ostream& out, const OptionStrategy& strikes);
 
 
-class OptionChainGetter
+class DLL_SPEC_ OptionChainGetter
         : public APIGetter {
     std::string _symbol;
     OptionStrikes _strikes;
@@ -843,7 +845,7 @@ GetOptionChain( Credentials& creds,
 }
 
 
-class OptionChainStrategyGetter
+class DLL_SPEC_ OptionChainStrategyGetter
         : public OptionChainGetter {
     OptionStrategy _strategy;
 
@@ -896,7 +898,7 @@ GetOptionChainStrategy( Credentials& creds,
 }
 
 
-class OptionChainAnalyticalGetter
+class DLL_SPEC_ OptionChainAnalyticalGetter
         : public OptionChainGetter {
     double _volatility;
     double _underlying_price;
@@ -982,7 +984,7 @@ GetOptionChainAnalytical( Credentials& creds,
 }
 
 
-class AccountGetterBase
+class DLL_SPEC_ AccountGetterBase
         : public APIGetter{
     std::string _account_id;
 
@@ -1003,7 +1005,7 @@ public:
 };
 
 
-class AccountInfoGetter
+class DLL_SPEC_ AccountInfoGetter
         : public AccountGetterBase{
     std::string _account_id;
     bool _positions;
@@ -1044,7 +1046,7 @@ GetAccountInfo( Credentials& creds,
 { return AccountInfoGetter(creds, account_id, positions, orders).get(); }
 
 
-class PreferencesGetter
+class DLL_SPEC_ PreferencesGetter
         : public AccountGetterBase{
     void
     _build();
@@ -1061,7 +1063,7 @@ GetPreferences(Credentials& creds, const std::string& account_id)
 { return PreferencesGetter(creds, account_id).get(); }
 
 
-class UserPrincipalsGetter
+class DLL_SPEC_ UserPrincipalsGetter
         : public APIGetter{
     bool _streamer_subscription_keys;
     bool _streamer_connection_info;
@@ -1123,7 +1125,7 @@ GetUserPrincipals( Credentials& creds,
 }
 
 
-class StreamerSubscriptionKeysGetter
+class DLL_SPEC_ StreamerSubscriptionKeysGetter
         : public AccountGetterBase{
     void
     _build();
@@ -1141,7 +1143,7 @@ GetStreamerSubscriptionKeys(Credentials& creds, const std::string& account_id)
 { return StreamerSubscriptionKeysGetter(creds, account_id).get(); }
 
 
-class TransactionHistoryGetter
+class DLL_SPEC_ TransactionHistoryGetter
         : public AccountGetterBase{
     std::string _transaction_id;
     TransactionType _transaction_type;
@@ -1206,7 +1208,7 @@ GetTransactionHistory( Credentials& creds,
 }
 
 
-class IndividualTransactionHistoryGetter
+class DLL_SPEC_ IndividualTransactionHistoryGetter
         : public AccountGetterBase {
     std::string _transaction_id;
 
@@ -1240,7 +1242,7 @@ GetIndividualTransactionHistory( Credentials& creds,
 }
 
 
-class InstrumentInfoGetter
+class DLL_SPEC_ InstrumentInfoGetter
         : public APIGetter {
     std::string _query_string;
     InstrumentSearchType _search_type;

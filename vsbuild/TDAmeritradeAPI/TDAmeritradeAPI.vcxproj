@@ -1,0 +1,233 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{BB954EE7-058E-442F-BAC6-87A7452C4627}</ProjectGuid>
+    <RootNamespace>TDAmeritradeAPI</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0.17134.0</WindowsTargetPlatformVersion>
+    <ProjectName>TDAmeritradeAPI</ProjectName>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <TargetName>TDAmeritradeAPI</TargetName>
+    <ExtensionsToDeleteOnClean>$(ExtensionsToDeleteOnClean)</ExtensionsToDeleteOnClean>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <OutDir>$(SolutionDir)$(Platform)\$(Configuration)\</OutDir>
+    <TargetName>TDAmeritradeAPI</TargetName>
+    <IntDir>$(Platform)\$(Configuration)\</IntDir>
+    <ExtensionsToDeleteOnClean>$(ExtensionsToDeleteOnClean)</ExtensionsToDeleteOnClean>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <OutDir>$(SolutionDir)$(Platform)\$(Configuration)\</OutDir>
+    <TargetName>TDAmeritradeAPI</TargetName>
+    <IntDir>$(Platform)\$(Configuration)\</IntDir>
+    <ExtensionsToDeleteOnClean>$(ExtensionsToDeleteOnClean)</ExtensionsToDeleteOnClean>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <TargetName>TDAmeritradeAPI</TargetName>
+    <ExtensionsToDeleteOnClean>$(ExtensionsToDeleteOnClean)</ExtensionsToDeleteOnClean>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <SDLCheck>false</SDLCheck>
+      <AdditionalIncludeDirectories>$(SolutionDir)deps\includes\curl;$(SolutionDir)deps\includes\z;$(SolutionDir)deps\includes\ssl;$(SolutionDir)deps\includes\uv;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>THIS_EXPORTS_INTERFACE;DEF_CERTIFICATE_BUNDLE_PATH=(R"($(SolutionDir)..\cacert.pem)");%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>$(SolutionDir)\deps\libs\$(Platform)\$(Configuration)\ssl;$(SolutionDir)\deps\libs\$(Platform)\$(Configuration)\curl;$(SolutionDir)\deps\libs\$(Platform)\$(Configuration)\z;$(SolutionDir)\deps\libs\$(Platform)\$(Configuration)\uv;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libcurl_debug.lib;libuv.lib;libssl.lib;libcrypto.lib;zlibwapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+    <PostBuildEvent>
+      <Command>for /R $(SolutionDir)deps\libs\$(Platform)\$(Configuration) %%f in (*.dll *.exe) do copy %%f $(SolutionDir)$(Platform)\$(Configuration)</Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <SDLCheck>false</SDLCheck>
+      <AdditionalIncludeDirectories>$(SolutionDir)deps\includes\curl;$(SolutionDir)deps\includes\z;$(SolutionDir)deps\includes\ssl;$(SolutionDir)deps\includes\uv;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp14</LanguageStandard>
+      <CompileAs>CompileAsCpp</CompileAs>
+      <PreprocessorDefinitions>THIS_EXPORTS_INTERFACE;DEF_CERTIFICATE_BUNDLE_PATH=(R"($(SolutionDir)..\cacert.pem)");%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>$(SolutionDir)\deps\libs\$(Platform)\$(Configuration)\ssl;$(SolutionDir)\deps\libs\$(Platform)\$(Configuration)\curl;$(SolutionDir)\deps\libs\$(Platform)\$(Configuration)\z;$(SolutionDir)\deps\libs\$(Platform)\$(Configuration)\uv;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libcurl_debug.lib;libuv.lib;libssl.lib;libcrypto.lib;zlibwapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
+    </Link>
+    <PostBuildEvent>
+      <Command>for /R $(SolutionDir)deps\libs\$(Platform)\$(Configuration) %%f in (*.dll *.exe) do copy %%f $(SolutionDir)$(Platform)\$(Configuration)</Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>false</SDLCheck>
+      <AdditionalIncludeDirectories>$(SolutionDir)deps\includes\curl;$(SolutionDir)deps\includes\z;$(SolutionDir)deps\includes\ssl;$(SolutionDir)deps\includes\uv;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>THIS_EXPORTS_INTERFACE;DEF_CERTIFICATE_BUNDLE_PATH=(R"($(SolutionDir)..\cacert.pem)");ZLIB_WINAPI;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalLibraryDirectories>$(SolutionDir)\deps\libs\$(Platform)\$(Configuration)\ssl;$(SolutionDir)\deps\libs\$(Platform)\$(Configuration)\curl;$(SolutionDir)\deps\libs\$(Platform)\$(Configuration)\z;$(SolutionDir)\deps\libs\$(Platform)\$(Configuration)\uv;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libcurl.lib;libuv.lib;libssl.lib;libcrypto.lib;zlibwapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+    <PostBuildEvent>
+      <Command>for /R $(SolutionDir)deps\libs\$(Platform)\$(Configuration) %%f in (*.dll *.exe) do copy %%f $(SolutionDir)$(Platform)\$(Configuration)</Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>false</SDLCheck>
+      <AdditionalIncludeDirectories>$(SolutionDir)deps\includes\curl;$(SolutionDir)deps\includes\z;$(SolutionDir)deps\includes\ssl;$(SolutionDir)deps\includes\uv;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>THIS_EXPORTS_INTERFACE;DEF_CERTIFICATE_BUNDLE_PATH=(R"($(SolutionDir)..\cacert.pem)");%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalLibraryDirectories>$(SolutionDir)\deps\libs\$(Platform)\$(Configuration)\ssl;$(SolutionDir)\deps\libs\$(Platform)\$(Configuration)\curl;$(SolutionDir)\deps\libs\$(Platform)\$(Configuration)\z;$(SolutionDir)\deps\libs\$(Platform)\$(Configuration)\uv;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libcurl.lib;libuv.lib;libssl.lib;libcrypto.lib;zlibwapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+    <PostBuildEvent>
+      <Command>for /R $(SolutionDir)deps\libs\$(Platform)\$(Configuration) %%f in (*.dll *.exe) do copy %%f $(SolutionDir)$(Platform)\$(Configuration)</Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\include\curl_connect.h" />
+    <ClInclude Include="..\..\include\json.hpp" />
+    <ClInclude Include="..\..\include\tdma_api_get.h" />
+    <ClInclude Include="..\..\include\tdma_api_streaming.h" />
+    <ClInclude Include="..\..\include\tdma_common.h" />
+    <ClInclude Include="..\..\include\threadsafe_hashmap.h" />
+    <ClInclude Include="..\..\include\threadsafe_queue.h" />
+    <ClInclude Include="..\..\include\util.h" />
+    <ClInclude Include="..\..\include\websocket_connect.h" />
+    <ClInclude Include="..\..\include\_common.h" />
+    <ClInclude Include="..\..\include\_tdma_api.h" />
+    <ClInclude Include="..\..\uWebSockets\Asio.h" />
+    <ClInclude Include="..\..\uWebSockets\Backend.h" />
+    <ClInclude Include="..\..\uWebSockets\Epoll.h" />
+    <ClInclude Include="..\..\uWebSockets\Extensions.h" />
+    <ClInclude Include="..\..\uWebSockets\Group.h" />
+    <ClInclude Include="..\..\uWebSockets\HTTPSocket.h" />
+    <ClInclude Include="..\..\uWebSockets\Hub.h" />
+    <ClInclude Include="..\..\uWebSockets\Libuv.h" />
+    <ClInclude Include="..\..\uWebSockets\Networking.h" />
+    <ClInclude Include="..\..\uWebSockets\Node.h" />
+    <ClInclude Include="..\..\uWebSockets\Room.h" />
+    <ClInclude Include="..\..\uWebSockets\Socket.h" />
+    <ClInclude Include="..\..\uWebSockets\uWS.h" />
+    <ClInclude Include="..\..\uWebSockets\WebSocket.h" />
+    <ClInclude Include="..\..\uWebSockets\WebSocketProtocol.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\src\account.cpp" />
+    <ClCompile Include="..\..\src\auth.cpp" />
+    <ClCompile Include="..\..\src\curl_connect.cpp" />
+    <ClCompile Include="..\..\src\data.cpp" />
+    <ClCompile Include="..\..\src\params.cpp" />
+    <ClCompile Include="..\..\src\query.cpp" />
+    <ClCompile Include="..\..\src\streaming\streaming_info.cpp" />
+    <ClCompile Include="..\..\src\streaming\streaming_session.cpp" />
+    <ClCompile Include="..\..\src\streaming\streaming_subscriptions.cpp" />
+    <ClCompile Include="..\..\src\tdma_connect.cpp" />
+    <ClCompile Include="..\..\src\trade.cpp" />
+    <ClCompile Include="..\..\src\util.cpp" />
+    <ClCompile Include="..\..\src\websocket_connect.cpp" />
+    <ClCompile Include="..\..\uWebSockets\Epoll.cpp" />
+    <ClCompile Include="..\..\uWebSockets\Extensions.cpp" />
+    <ClCompile Include="..\..\uWebSockets\Group.cpp" />
+    <ClCompile Include="..\..\uWebSockets\HTTPSocket.cpp" />
+    <ClCompile Include="..\..\uWebSockets\Hub.cpp" />
+    <ClCompile Include="..\..\uWebSockets\Networking.cpp" />
+    <ClCompile Include="..\..\uWebSockets\Node.cpp" />
+    <ClCompile Include="..\..\uWebSockets\Room.cpp" />
+    <ClCompile Include="..\..\uWebSockets\Socket.cpp" />
+    <ClCompile Include="..\..\uWebSockets\WebSocket.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\README.html">
+      <DependentUpon>..\..\README.md</DependentUpon>
+    </None>
+    <None Include="..\..\README.md" />
+    <None Include="..\..\README_GET.md" />
+    <None Include="..\..\README_STREAMING.md" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

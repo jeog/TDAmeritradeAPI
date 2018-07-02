@@ -23,11 +23,42 @@ along with this program.  If not, see http://www.gnu.org/licenses.
 #include <chrono>
 #include <random>
 
-#include "openssl/evp.h"
-#include "openssl/conf.h"
 #include "../include/_tdma_api.h"
 
+#include "openssl/evp.h"
+#include "openssl/conf.h"
+
+std::string certificate_bundle_path;
+/*
+ * Empty certificate_bundle_path means we let curl use the default store. 
+ * If that works w/ openssl great, otherwise (if client doesn't set it
+ * w/ SetCertificateBundlePath() ) we'll fail w/ CURLE_SSL_CACERT and throw 
+ */
+
 namespace tdma{
+
+
+/*
+ *  encrypted credentials file: IV + BODY + (IV + BODY CHECKSUM)
+ *
+ *  NOTE - FORMAT WAS CHANGED IN THE COMMIT FOLLOWING b75586
+
+ *  IV (PLAIN TEXT, 16 bytes)
+
+ *  BODY (ENCRYPTED/BINARY, n bytes)
+ *       access token (string)
+ *       \n
+ *       refresh token (string)
+ *       \n
+ *       epoch sec (string)
+ *       \n
+ *       client id (string)
+ *       \n
+ *       plaintext body checksum (binary, 32 bytes)
+ *       \n
+ *
+ *  IV + BODY CHECKSUM (binary, 32 bytes)
+ */
 
 using namespace std;
 using namespace conn;
@@ -38,7 +69,8 @@ const vector<pair<string,string>> AUTH_HEADERS = {
     {"Content-Type", "application/x-www-form-urlencoded"}
 };
 
-const int CRYPT_IV_LENGTH = 16;
+const int CREDS_IV_LENGTH = 16;
+const int CREDS_CHECKSUM_LENGTH = 32;
 
 const long TOKEN_EXPIRATION_MARGIN_SEC = 60 *60 * 24; // 1 day
 
@@ -82,19 +114,62 @@ public:
         return *this;
     }
 
-    SmartBuffer(const vector<T>& v)
+    explicit SmartBuffer(const vector<T>& v)
         : _buffer(v)
         {}
 
     template<typename A>
-    SmartBuffer(const basic_string<A>& s)
+    explicit SmartBuffer(const basic_string<A>& s)
+        :
+            _buffer()
     {
         for(auto ss : s)
             _buffer.push_back( static_cast<T>(ss) );        
     }
 
+    template<typename A, size_t SZ>
+    explicit SmartBuffer(const A (&array)[SZ])
+        :
+            _buffer()
+    {
+        for(int i = 0; i < SZ; ++i)
+            _buffer.push_back(static_cast<T>(array[i]));
+    }
+
     virtual
     ~SmartBuffer(){}
+
+    typename vector<T>::const_iterator
+    begin() const 
+    { return _buffer.begin(); }
+
+    typename vector<T>::const_iterator
+    end() const
+    { return _buffer.end(); }
+    
+    template<typename A>
+    SmartBuffer(const SmartBuffer<A>& sb)
+        : _buffer()
+    {
+        for(auto s : sb)
+            _buffer.push_back(static_cast<T>(s));
+    }
+
+    SmartBuffer
+    operator+(const SmartBuffer& sb)
+    {
+        SmartBuffer<T> tmp(_buffer);      
+        tmp._buffer.insert(tmp._buffer.end(), sb._buffer.begin(), sb._buffer.end());
+        return tmp;
+    }
+
+    bool
+    operator==(const SmartBuffer& sb)
+    { return _buffer == sb._buffer; }
+
+    bool
+    operator!=(const SmartBuffer& sb)
+    { return !operator==(sb); }
 
     T*
     get()
@@ -114,17 +189,17 @@ public:
 
     SmartBuffer
     sub_buffer(size_t pos, size_t n)
-    { return vector<T>(_buffer.begin() + pos, _buffer.begin() + pos + n); }
+    { return SmartBuffer(vector<T>(_buffer.begin() + pos, _buffer.begin() + pos + n)); }
 
     SmartBuffer
     sub_buffer(size_t pos)
-    { return vector<T>(_buffer.begin() + pos, _buffer.end()); }
+    { return SmartBuffer(vector<T>(_buffer.begin() + pos, _buffer.end())); }
 };
 typedef SmartBuffer<unsigned char> SmartByteBuffer;
 
 
 SmartByteBuffer
-hash_sha256(const std::string& in)
+hash_sha256(SmartByteBuffer& in)
 {
     EVP_MD_CTX *ctx = EVP_MD_CTX_create();
     if( !ctx )
@@ -132,8 +207,8 @@ hash_sha256(const std::string& in)
 
     if( EVP_DigestInit(ctx, EVP_sha256()) != 1 )
         throw LocalCredentialException("failed to init digest");
-
-    if( EVP_DigestUpdate(ctx, in.c_str(), in.length()) != 1)
+    
+    if( EVP_DigestUpdate(ctx, in.get(), in.size()) != 1)
         throw LocalCredentialException("failed to update digest");
 
     int sz = EVP_MD_size(EVP_sha256());
@@ -150,17 +225,24 @@ hash_sha256(const std::string& in)
     return out;
 }
 
+SmartByteBuffer
+hash_sha256(const std::string& in)
+{
+    return hash_sha256(SmartByteBuffer(in));
+}
+
 
 // <IV, ciphertext>
 pair<SmartByteBuffer, SmartByteBuffer>
 encrypt(std::string in, std::string key)
 {
     std::default_random_engine engine( (std::random_device())() );
-    std::uniform_int_distribution<unsigned char> distr(0,255);
+    /* msvc complains if we use unsigned char */
+    std::uniform_int_distribution<unsigned int> distr(0,255);
 
     SmartByteBuffer iv;
-    for(int i = 0; i < CRYPT_IV_LENGTH; ++i){
-        iv.push_back( distr(engine) );
+    for(int i = 0; i < CREDS_IV_LENGTH; ++i){
+        iv.push_back( static_cast<unsigned char>(distr(engine))  );
     }
     SmartByteBuffer hashed_key = hash_sha256(key);
 
@@ -172,7 +254,7 @@ encrypt(std::string in, std::string key)
         throw LocalCredentialException("failed to init credential encryption");
 
     SmartByteBuffer in_b(in);
-    SmartByteBuffer result(in_b.size() + CRYPT_IV_LENGTH);
+    SmartByteBuffer result(in_b.size() + CREDS_IV_LENGTH);
 
     int result_len, len;
     if( EVP_EncryptUpdate(ctx, result.get(), &len, in_b.get(), in_b.size()) != 1 ){
@@ -192,10 +274,14 @@ encrypt(std::string in, std::string key)
 }
 
 
-std::string
+class DecryptFinalException
+    : public LocalCredentialException {
+};
+
+SmartByteBuffer
 decrypt(SmartByteBuffer in, SmartByteBuffer iv, string key)
 {
-    if( in.size() <= CRYPT_IV_LENGTH )
+    if( in.size() <= CREDS_IV_LENGTH )
         throw LocalCredentialException("not enough input to decrypt");
 
     EVP_CIPHER_CTX *ctx = EVP_CIPHER_CTX_new();
@@ -219,13 +305,13 @@ decrypt(SmartByteBuffer in, SmartByteBuffer iv, string key)
 
     if( EVP_DecryptFinal(ctx, result.get() + len, &len) != 1){
         EVP_CIPHER_CTX_free(ctx);
-        throw LocalCredentialException("failed to finalize credential decryption");
+        throw DecryptFinalException();
     }
     result.resize(result_len + len);
     result.push_back(0);
 
     EVP_CIPHER_CTX_free(ctx);
-    return string(reinterpret_cast<const char*>(result.get()));
+    return result;
 }
 
 
@@ -243,15 +329,25 @@ store_credentials(string path, string password, const Credentials& creds)
           << creds.refresh_token << endl
           << to_string(creds.epoch_sec_token_expiration) << endl
           << creds.client_id << endl;
+    string input_str = input.str();
+
+    auto input_checksum = hash_sha256(input_str);   
+    input.write(reinterpret_cast<const char*>(input_checksum.get()),
+                input_checksum.size());
+    input << endl;
+    input_str = input.str();
 
     SmartByteBuffer iv;
-    SmartByteBuffer ctext;
-    string input_str = input.str();
+    SmartByteBuffer ctext;    
     tie(iv, ctext) = encrypt(input_str, password);
+
+    auto iv_body_checksum = hash_sha256(iv + ctext);
 
     try{
         file.write(reinterpret_cast<const char*>(iv.get()), iv.size());
         file.write(reinterpret_cast<const char*>(ctext.get()), ctext.size());
+        file.write(reinterpret_cast<const char*>(iv_body_checksum.get()),
+                   iv_body_checksum.size());
         return true;
     }catch( ios_base::failure& f ){
         cerr<< "failed to store credentials in " + path << endl
@@ -263,40 +359,88 @@ store_credentials(string path, string password, const Credentials& creds)
 
 Credentials
 load_credentials(fstream& file, string path, string password)
-{
-    file.exceptions(ios_base::eofbit | ios_base::badbit | ios_base::failbit);
-
-    Credentials creds;
+{      
+    string f_str;
     try{
-        string f_str( (std::istreambuf_iterator<char>(file)),
-                      std::istreambuf_iterator<char>() );
+        file.exceptions(ios_base::eofbit | ios_base::badbit | ios_base::failbit);
+        f_str = string( (std::istreambuf_iterator<char>(file)), 
+                         std::istreambuf_iterator<char>() );
+    }catch (ios_base::failure& f) {
+        throw LocalCredentialException( "failed to load credentials from " + path
+                                        + " - ios_base::failure - " + f.what() );        
+    }
 
-        if( f_str.size() <= CRYPT_IV_LENGTH ){
-            cerr<< "failed to load credentials from " + path << endl
-                << "  input string too small" << endl;
-            return {"","",0,""};
-        }
+    if( f_str.size() <= (CREDS_IV_LENGTH + CREDS_CHECKSUM_LENGTH) ){
+        throw LocalCredentialException("failed to load credentials from " 
+                                        + path + " - input too small");
+    }
 
-        SmartByteBuffer input(f_str);
-        auto iv = input.sub_buffer(0, CRYPT_IV_LENGTH);
-        auto ctext = input.sub_buffer(CRYPT_IV_LENGTH);
+    SmartByteBuffer input(f_str);
+    auto civ = input.sub_buffer(0, CREDS_IV_LENGTH);
+    size_t body_sz = input.size() - CREDS_IV_LENGTH - CREDS_CHECKSUM_LENGTH;             
+    auto ctext = input.sub_buffer(CREDS_IV_LENGTH, body_sz);
+    auto cchecksum = input.sub_buffer(CREDS_IV_LENGTH + body_sz);
 
-        stringstream ss( decrypt(ctext, iv, password) );
+    if( hash_sha256(civ + ctext) != cchecksum) 
+        throw LocalCredentialException("corrupted credentials file(checksum");        
+
+    SmartByteBuffer dbody;
+    try {
+        dbody = decrypt(ctext, civ, password);
+    }catch( LocalCredentialException& ) {
+        cerr << "failed to decrypt credential file: " << path << endl;
+        throw;
+    }            
+            
+    Credentials creds;
+    SmartByteBuffer derived_checksum, bchecksum;
+    try{
+        stringstream ss;
+        ss.write(reinterpret_cast<const char*>(dbody.get()), dbody.size());
         ss.exceptions(ios_base::eofbit | ios_base::badbit | ios_base::failbit);
-
+        
         getline(ss, creds.access_token);
         getline(ss, creds.refresh_token);
         string tmp;
         getline(ss, tmp);
         creds.epoch_sec_token_expiration = std::stoll(tmp);
-        getline(ss, creds.client_id);
+        getline(ss, creds.client_id); 
+        
+        char bchecksum_str[CREDS_CHECKSUM_LENGTH];
+        ss.read(bchecksum_str, CREDS_CHECKSUM_LENGTH);
+        bchecksum = SmartByteBuffer(bchecksum_str);
+        assert(!ss.eof()); // terminating new line
 
-        store_credentials(path + ".backup", password, creds); // save a backup
+        ss.str("");
+        ss << creds.access_token << endl
+           << creds.refresh_token << endl
+           << tmp << endl
+           << creds.client_id << endl;
+        derived_checksum = hash_sha256(ss.str());
+
     }catch( ios_base::failure& f ){
-        cerr<< "failed to load credentials from " + path << endl
-            << "  " << f.what() << endl;
-        creds = {"","",0,""};
+        throw LocalCredentialException( string("failed to read credentials")
+                                        + " - ios_base::failure - " + f.what());
     }
+
+    // this will fail in decrypt before we even get here  
+    if( bchecksum.size() == 0 || derived_checksum != bchecksum ) {
+        /*
+        cerr << "derived checksum: ";
+        for (auto e : derived_checksum)
+        cerr << (int)e << ' ';
+        cerr << endl;
+        cerr << "body checksum: ";
+        for (auto e : bchecksum)
+        cerr << (int)e << ' ';
+        cerr << endl;
+        */
+        throw LocalCredentialException("invalid credentials(checksum)");
+    }
+
+    if( !store_credentials(path + ".backup", password, creds) )
+        cerr << "failed to write backup credentials file" << endl;
+
     return creds;
 }
 
@@ -306,44 +450,63 @@ LoadCredentials(string path, string password)
 {
     fstream file(path, ios_base::in | ios_base::binary );
     if( file.is_open() ){
-        return load_credentials(file, path, password);
+        try {
+            return load_credentials(file, path, password);
+
+        }catch (DecryptFinalException& e) {
+            /* if bad password don't try the backup */
+            throw LocalCredentialException("BAD PASSWORD");
+
+        }catch (LocalCredentialException& e) {
+            cerr << "failed to load primary credentials file: " << endl
+                 << "  LocalCredentialsException caught: " << e.what() << endl;
+        }
+    }else {
+        cerr << "no credentials file at " + path << endl;
     }
 
     string path2(path + ".backup");
-    cerr<< "no credentials file at " + path + " trying " + path2 << endl;
+    cerr<< "trying backup credentials file at " + path2 << endl;
 
     fstream file2(path2, ios_base::in | ios_base::binary);
-    if( !file2.is_open() )
-        throw LocalCredentialException("no credentials file at " + path
-                                       + " or " + path2);
-
-    return load_credentials(file2, path2, password);
+    if (!file2.is_open()) 
+        throw LocalCredentialException("no backup credentials file at " + path2);
+    
+    try {
+        return load_credentials(file2, path2, password);
+    }catch (DecryptFinalException&) {
+        throw LocalCredentialException("BAD PASSWORD");
+    }
 }
 
 
-void
+bool
 copy_credentials_file(string from_path, string to_path)
 {
     fstream fout(to_path, ios_base::out | ios_base::trunc | ios_base::binary);
-    if( !fout.is_open() ){
-        throw LocalCredentialException("no credentials file at " + to_path);
+    if( !fout.is_open() ) {
+        cerr << "no credentials file at " + to_path << endl;
+        return false;
     }
-    fout.exceptions(ios_base::badbit | ios_base::failbit);
 
     fstream fin(from_path, ios_base::in | ios_base::binary );
-    if( !fin.is_open() ){
-        throw LocalCredentialException("no credentials file at " + from_path );
+    if (!fin.is_open()) {
+        cerr << "no credentials file at " + from_path << endl;
+        return false;
     }
+    
+    fout.exceptions(ios_base::badbit | ios_base::failbit);
     fin.exceptions(ios_base::eofbit | ios_base::badbit | ios_base::failbit);
-
     try{
         fout<< string( (std::istreambuf_iterator<char>(fin)),
                         std::istreambuf_iterator<char>() );
     }catch( ios_base::failure& f ){
-        cerr<< "failed to copy credentials from " + from_path
-            << " to " << to_path << endl
-            << "  " << f.what() << endl;
+        cerr << "failed to copy credentials from " << from_path 
+             << " to " << to_path << " - ios_base::failure - " << f.what();   
+        return false;
     }
+
+    return true;
 }
 
 
@@ -352,7 +515,14 @@ StoreCredentials(string path, string password, const Credentials& creds)
 {
     if( !store_credentials(path, password, creds) ){
         cerr << "  " << "revert to " << path + ".backup" << endl;
-        copy_credentials_file(path + ".backup", path);
+        /*
+         * If initial store attempt fails from a write error just try to 
+         * overwrite w/ backup. Allow LocalCredentialExceptions to
+         * propogate from store_credentials() or copy_credentials_file()
+         * since there's the store op is beyond saving at that point.
+         */
+        if( !copy_credentials_file(path + ".backup", path) )
+            throw LocalCredentialException("failed to store credentials");
     }
 }
 
@@ -465,6 +635,24 @@ RefreshAccessToken(Credentials& creds)
     if( creds.access_token.empty() ){
         throw LocalCredentialException("creds.access_token is empty");
     }
+}
+
+
+void
+SetCertificateBundlePath(const std::string& path)
+{    
+    size_t sz = path.size(); 
+    // .pem suffix with at least one char before
+    if (sz < 5 || path[sz - 1] != 'm' || path[sz - 2] != 'e'
+               || path[sz - 3] != 'p' || path[sz - 4] != '.')
+    {
+        throw ValueException("certicate bundle path is not valid '.pem' file path");
+    }
+
+    if( !fstream(path).is_open() )
+        throw ValueException("invalid certificate bundle file");
+
+    certificate_bundle_path = path;
 }
 
 

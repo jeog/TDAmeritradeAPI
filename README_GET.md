@@ -16,7 +16,22 @@ The Get Interface consists of 'Getter' objects that all derive from ```APIGetter
     - ```conn::HTTPSConnection``` 
         - ```conn::HTTPSGetConnection``` 
 
-**To use:**
+**SSL Certificates**
+
+Certificates are required to validate the hosts. If using GNU/Linux or the 
+pre-built dependencies on Windows the default certificate store *should* take care of this for you. If this doesn't happen an ```APIExecutionException```  will be thrown with code CURLE_SSL_CACERT(60). If this happens you'll have to use your own certificates via:
+```
+void
+SetCertificateBundlePath(const std::string& path)
+
+    path :: the path to a certificate bundle file (.pem)
+```
+
+There is a default 'cacert.pem' file in the base directory extracted from Firefox that you can use. 
+(You can get updated versions from the [curl site](https://curl.haxx.se/docs/caextract.html).) The 
+path of this file can be obtained at compile-time via the DEF_CERTIFICATE_BUNDLE_PATH definition.
+
+**Using Getter Objects**
 
 1. construct a Getter object passing a reference to the Credentials struct and the 
 relevant arguments.

@@ -21,244 +21,313 @@ along with this program.  If not, see http://www.gnu.org/licenses.
 #include <iomanip>
 #include <iostream>
 
+
 #include "../include/curl_connect.h"
 
 namespace conn{
 
 using namespace std;
 
-CurlConnectionImpl_::Init CurlConnectionImpl_::_init;
+class CurlConnection::CurlConnectionImpl_ { 
+    static struct Init {
+        Init() { curl_global_init(CURL_GLOBAL_ALL); }
+        /*
+        * IMPORTANT
+        *
+        * need to be sure we don't cleanup libcurl before accessing streamer
+        * or it creates issues when uWebSockets tries to create an SSL context;
+        * EVP_get_digestbyname("ssl2-md5") returns null which seg faults in
+        * SSL_CTX_ctrl in versions < 1.1.0
+        */
+        ~Init() { curl_global_cleanup(); }
+    }_init;
 
-CurlConnectionImpl_::CurlConnectionImpl_(string url)
-    : CurlConnectionImpl_()
-    { SET_url(url); }
+    struct curl_slist *_header;
+    CURL *_handle;
+    std::map<CURLoption, std::string> _options;
+ 
+    /* to string overloads for our different stored option values */
+    template<typename T, typename Dummy = void>
+    struct to;
 
+    struct WriteCallback {
+        std::stringbuf _buf;
 
-CurlConnectionImpl_::CurlConnectionImpl_()
-    :
-        _header(nullptr),
-        _handle( curl_easy_init() )
+        static size_t
+        CurlConnectionImpl_::WriteCallback::write( char* input, 
+                                                   size_t sz, 
+                                                   size_t n, 
+                                                   void* output )
+        {
+            stringbuf& buf = ((WriteCallback*)output)->_buf;
+            streamsize ssz = buf.sputn(input, sz*n);
+            assert(ssz >= 0);
+            return ssz;
+        }
+
+        std::string
+        str()
+        { return _buf.str(); }
+
+        void
+        clear()
+        { _buf.str(""); }
+    };
+
+public:
+    CurlConnectionImpl_(string url)
+        : CurlConnectionImpl_()
+        { SET_url(url); }
+    
+    CurlConnectionImpl_()
+        :
+            _header(nullptr),
+            _handle(curl_easy_init())
+        { set_option(CURLOPT_NOSIGNAL, 1L); }
+    
+    ~CurlConnectionImpl_()
+        { close(); }
+    
+    // NO COPY
+
+    // NO ASSIGN
+
+    CurlConnectionImpl_(CurlConnectionImpl_&& connection)
+        :
+            _header(connection._header),
+            _handle(connection._handle),
+            _options(move(connection._options))
+        {
+            connection._header = nullptr;
+            connection._handle = nullptr;
+        }
+    
+    CurlConnectionImpl_&
+    operator=(CurlConnectionImpl_&& connection)
     {
-        set_option(CURLOPT_NOSIGNAL, 1L);
+        if (*this != connection) {
+            if (_header)
+                curl_slist_free_all(_header);
+
+            if (_handle)
+                curl_easy_cleanup(_handle);
+
+            _header = connection._header;
+            _handle = connection._handle;
+            _options = move(connection._options);
+            connection._header = nullptr;
+            connection._handle = nullptr;
+        }
+        return *this;
     }
 
-
-CurlConnectionImpl_::~CurlConnectionImpl_()
-    { close(); }
-
-
-CurlConnectionImpl_::CurlConnectionImpl_( CurlConnectionImpl_&& connection )
-    :
-        _header(connection._header),
-        _handle(connection._handle),
-        _options( move(connection._options) )
+    bool
+    operator!=(const CurlConnectionImpl_& connection)
     {
-        connection._header = nullptr;
-        connection._handle = nullptr;
+        return (_handle != connection._handle ||
+                _header != connection._header ||
+                _options != connection._options);
     }
 
+    bool
+    operator==(const CurlConnectionImpl_& connection)
+    { return !operator!=(connection); }
 
-CurlConnectionImpl_&
-CurlConnectionImpl_::operator=( CurlConnectionImpl_&& connection )
-{
-    if( *this != connection ){
-        if( _header )
+    const map<CURLoption, string>&
+    get_option_strings() const
+    { return _options; }
+
+    template<typename T>
+    void
+    set_option(CURLoption option, T param)
+    {
+        static_assert(!std::is_same<T, std::string>::value,
+            "CurlConnection::set_option doesn't accept string");
+        if (!_handle) {
+            throw CurlException("connection/handle has been closed");
+        }
+        if (curl_easy_setopt(_handle, option, param) != CURLE_OK) {
+            throw CurlOptionException(option, to<T>::str(param));
+        }
+        /*
+        * NOTE we don't do anything special with function pointers
+        *      (e.g CURLOPT_WRITEFUNCTION) or list poiners
+        *      (e.g CURLOPT_HTTPHEADER) except store the address.
+        *      See 'to' struct specializations.
+        */
+        _options[option] = to<T>::str(param);
+    }
+    
+    // <status code, data, time>
+    tuple<long, string, clock_ty::time_point>
+    execute()
+    {
+        if (!_handle)
+            throw CurlException("connection/handle has been closed");
+
+        WriteCallback cb;
+        set_option(CURLOPT_WRITEFUNCTION, &WriteCallback::write);
+        set_option(CURLOPT_WRITEDATA, &cb);
+
+        CURLcode ccode = curl_easy_perform(_handle);
+        auto tp = clock_ty::now();
+        if (ccode != CURLE_OK) {
+            throw CurlConnectionError(ccode);
+        }
+
+        string res = cb.str();
+        cb.clear();
+        long c;
+        curl_easy_getinfo(_handle, CURLINFO_RESPONSE_CODE, &c);
+
+        return make_tuple(c, res, tp);
+    }
+    
+    void
+    close()
+    {
+        if (_header) {
             curl_slist_free_all(_header);
-
-        if( _handle )
+            _header = nullptr;
+        }
+        if (_handle) {
             curl_easy_cleanup(_handle);
-
-        _header = connection._header;
-        _handle = connection._handle;
-        _options = move(connection._options);
-        connection._header = nullptr;
-        connection._handle = nullptr;
-    }
-    return *this;
-}
-
-bool
-CurlConnectionImpl_::operator==( const CurlConnectionImpl_& connection )
-{ return !operator!=(connection); }
-
-
-bool
-CurlConnectionImpl_::operator!=( const CurlConnectionImpl_& connection )
-{
-    return ( _handle != connection._handle ||
-             _header != connection._header ||
-             _options != connection._options );
-}
-
-size_t
-CurlConnectionImpl_::WriteCallback::write( char* input,
-                                      size_t sz,
-                                      size_t n,
-                                      void* output )
-{
-    stringbuf& buf = ((WriteCallback*)output)->_buf;
-    streamsize ssz = buf.sputn(input, sz*n);
-    assert( ssz >= 0 );
-    return ssz;
-}
-
-
-const map<CURLoption, string>&
-CurlConnectionImpl_::get_option_strings() const
-{ return _options; }
-
-
-tuple<long, string, clock_ty::time_point>
-CurlConnectionImpl_::execute()
-{
-    if( !_handle )
-        throw CurlException("connection/handle has been closed");
-
-    WriteCallback cb;
-    set_option(CURLOPT_WRITEFUNCTION, &WriteCallback::write);
-    set_option(CURLOPT_WRITEDATA, &cb);
-
-    CURLcode ccode = curl_easy_perform(_handle);
-    auto tp = clock_ty::now();
-    if( ccode != CURLE_OK ){
-        throw CurlConnectionError(ccode);
+            _handle = nullptr;
+        }
+        _options.clear();
     }
 
-    string res = cb.str();
-    cb.clear();
-    long c;
-    curl_easy_getinfo(_handle, CURLINFO_RESPONSE_CODE, &c);
+    bool
+    is_closed() const
+    { return _handle == nullptr; }
+    
+    operator bool() const
+    { return !is_closed(); }
+    
+    void
+    SET_url(string url)
+    { set_option(CURLOPT_URL, url.c_str()); }
 
-    return make_tuple(c, res, tp);
-}
+    void
+    SET_ssl_verify()
+    {
+        set_option(CURLOPT_SSL_VERIFYPEER, 1L);
+        set_option(CURLOPT_SSL_VERIFYHOST, 2L);
+    }
 
+    void
+    SET_ssl_verify_using_ca_bundle(string path)
+    {
+        SET_ssl_verify();
+        set_option(CURLOPT_CAINFO, path.c_str());
+    }
 
-void
-CurlConnectionImpl_::close()
-{
-    if( _header ){
+    void
+    SET_ssl_verify_using_ca_certs(string dir)
+    {
+        SET_ssl_verify();
+        set_option(CURLOPT_CAPATH, dir.c_str());
+    }
+
+    void
+    SET_encoding(string enc)
+    { set_option(CURLOPT_ACCEPT_ENCODING, enc.c_str()); }
+    
+    void
+    SET_keepalive()
+    { set_option(CURLOPT_TCP_KEEPALIVE, 1L); }
+
+    /* CAREFUL */
+    void
+    ADD_headers(const vector<pair<string, string>>& headers)
+    {
+        if (!_handle)
+            throw CurlException("connection/handle has been closed");
+
+        if (headers.empty())
+            return;
+
+        for (auto& h : headers) {
+            string s = h.first + ": " + h.second;
+            _header = curl_slist_append(_header, s.c_str());
+            if (!_header) {
+                throw CurlOptionException("curl_slist_append failed trying to "
+                    "add header", CURLOPT_HEADER, s);
+            }
+        }
+
+        return set_option(CURLOPT_HTTPHEADER, _header);
+    }
+    
+    void
+    RESET_headers()
+    {
         curl_slist_free_all(_header);
         _header = nullptr;
+        _options.erase(CURLOPT_HTTPHEADER);
     }
-    if( _handle ){
-        curl_easy_cleanup(_handle);
-        _handle = nullptr;
-    }
-    _options.clear(); 
-}
-
-bool
-CurlConnectionImpl_::is_closed() const
-{ return _handle == nullptr; }
-
-
-CurlConnectionImpl_::operator bool() const
-{ return !is_closed(); }
-
-void
-CurlConnectionImpl_::SET_url(string url)
-{ set_option(CURLOPT_URL, url.c_str()); }
-
-void
-CurlConnectionImpl_::SET_ssl_verify()
-{
-    set_option(CURLOPT_SSL_VERIFYPEER, 1L);
-    set_option(CURLOPT_SSL_VERIFYHOST, 2L);   
-}
-
-void
-CurlConnectionImpl_::SET_ssl_verify_using_ca_bundle(string path)
-{
-    SET_ssl_verify();
-    set_option(CURLOPT_CAINFO, path.c_str());
-}
-
-void
-CurlConnectionImpl_::SET_ssl_verify_using_ca_certs(string dir)
-{
-    SET_ssl_verify();
-    set_option(CURLOPT_CAPATH, dir.c_str());
-}
-
-void
-CurlConnectionImpl_::SET_encoding(string enc)
-{ set_option(CURLOPT_ACCEPT_ENCODING, enc.c_str()); }
-
-
-void
-CurlConnectionImpl_::SET_keepalive()
-{ set_option(CURLOPT_TCP_KEEPALIVE, 1L); }
-
-
-/* CAREFUL */
-void
-CurlConnectionImpl_::ADD_headers(const vector<pair<string,string>>& headers)
-{
-    if( !_handle )
-        throw CurlException("connection/handle has been closed");
     
-    if( headers.empty() )
-        return;    
+    bool
+    has_headers()
+    {
+        return _header != nullptr;
+    }
+    
+    void
+    SET_fields(const vector<pair<string, string>>& fields)
+    {
+        if (is_closed())
+            throw CurlException("connection/handle has been closed");
 
-    for(auto& h : headers){
-        string s = h.first + ": " + h.second;
-        _header = curl_slist_append(_header, s.c_str());
-        if( !_header ){
-            throw CurlOptionException("curl_slist_append failed trying to "
-                                      "add header", CURLOPT_HEADER, s);
+        /* CURLOPT_POST FIELDS DOES NOT COPY STRING */
+        if (!fields.empty()) {
+            stringstream ss;
+            for (auto& f : fields) {
+                ss << f.first << "=" << f.second << "&";
+            }
+            string s(ss.str());
+            if (!s.empty()) {
+                assert(s.back() == '&');
+                s.erase(s.end() - 1, s.end());
+            }
+            set_option(CURLOPT_COPYPOSTFIELDS, s.c_str());
         }
     }
-
-    return set_option(CURLOPT_HTTPHEADER, _header);
-}
-
-
-void
-CurlConnectionImpl_::RESET_headers()
-{
-    curl_slist_free_all(_header);
-    _header = nullptr;
-    _options.erase(CURLOPT_HTTPHEADER);
-}
-
-
-bool
-CurlConnectionImpl_::has_headers()
-{ return _header != nullptr; }
-
-
-
-void
-CurlConnectionImpl_::SET_fields(const vector<pair<string,string>>& fields)
-{
-    if( is_closed() )
-        throw CurlException("connection/handle has been closed");
-
-    /* CURLOPT_POST FIELDS DOES NOT COPY STRING */
-    if( !fields.empty() ){
-        stringstream ss;
-        for(auto& f : fields){
-            ss<< f.first << "=" << f.second << "&";
+    
+    void
+    RESET_options()
+    {
+        RESET_headers();
+        if (_handle) {
+            curl_easy_reset(_handle);
         }
-        string s(ss.str());
-        if( !s.empty() ){
-            assert( s.back() == '&' );
-            s.erase(s.end()-1, s.end());
-        }
-        set_option(CURLOPT_COPYPOSTFIELDS,s.c_str());
+        _options.clear();
     }
-}
 
+    ostream&
+    to_out(ostream& out);
+};
 
-void
-CurlConnectionImpl_::RESET_options()
-{
-    RESET_headers();
-    if(_handle){
-        curl_easy_reset(_handle);
-    }    
-    _options.clear();
-}
+CurlConnection::CurlConnectionImpl_::Init CurlConnection::CurlConnectionImpl_::_init;
+
+template<typename T, typename Dummy>
+struct CurlConnection::CurlConnectionImpl_::to {
+    static std::string str(T t)
+    { return std::to_string(t); }
+};
+
+template<typename Dummy>
+struct CurlConnection::CurlConnectionImpl_::to<const char*, Dummy> {
+    static std::string str(const char* s)
+    { return std::string(s); }
+};
+
+template<typename T, typename Dummy>
+struct CurlConnection::CurlConnectionImpl_::to<T*, Dummy> {
+    static std::string str(T* p)
+    { return std::to_string(reinterpret_cast<unsigned long long>(p)); }
+};
+
 
 CurlConnection::CurlConnection()
     : _pimpl( new CurlConnectionImpl_() )
@@ -374,11 +443,24 @@ const string HTTPSConnection::DEFAULT_ENCODING("gzip");
 
 HTTPSConnection::HTTPSConnection()
     : CurlConnection()
-    { SET_ssl_verify(); }
+    { _set(); }
 
 HTTPSConnection::HTTPSConnection(string url)
     : CurlConnection(url)
-    { SET_ssl_verify(); }
+    { _set(); }
+
+void
+HTTPSConnection::_set()
+{
+    if( certificate_bundle_path.empty() ) {
+/*
+        cerr << "no 'certificate_bundle_path' w/ non-native SSL support - "
+                "CurlConnectionError(CURLE_SSL_CACERT) likely..." << endl;
+*/
+        SET_ssl_verify();
+    } else 
+         SET_ssl_verify_using_ca_bundle(certificate_bundle_path);    
+}
 
 
 HTTPSGetConnection::HTTPSGetConnection()
@@ -500,47 +582,45 @@ header_list_to_map(struct curl_slist *hlist)
 
 
 ostream&
-operator<<(ostream& out, CurlConnection& session)
-{ return operator<<(out, *session._pimpl); }
-
+operator<<(ostream& out, const CurlConnection& session)
+{ return session._pimpl->to_out(out); }
 
 ostream&
-operator<<(ostream& out, CurlConnectionImpl_& connection)
+CurlConnection::CurlConnectionImpl_::to_out(ostream& out)
 {
-    for( auto& opt : connection.get_option_strings() ){
+    for (auto& opt : get_option_strings()) {
 
-        auto oiter = CurlConnection::option_strings.find(opt.first);
-        if( oiter == CurlConnection::option_strings.end() ){
-            out<< "\tUNKNOWN" << endl;
+        auto oiter = option_strings.find(opt.first);
+        if (oiter == option_strings.end()) {
+            out << "\tUNKNOWN" << endl;
             continue;
         }
 
-        switch(opt.first){
+        switch (opt.first) {
         case CURLOPT_COPYPOSTFIELDS:
-            out<< "\t" << oiter->second << ":" << endl;
-            for(auto p : fields_str_to_map(opt.second)){
-                out<< "\t\t" << p.first << "\t" << p.second << endl;
+            out << "\t" << oiter->second << ":" << endl;
+            for (auto p : fields_str_to_map(opt.second)) {
+                out << "\t\t" << p.first << "\t" << p.second << endl;
             }
             continue;
         case CURLOPT_HTTPHEADER:
-            out<< "\t" << oiter->second << ":" << endl;
-            for(auto p : header_list_to_map(connection._header)){
-                out<< "\t\t" << p.first << "\t" << p.second << endl;
+            out << "\t" << oiter->second << ":" << endl;
+            for (auto p : header_list_to_map(_header)) {
+                out << "\t\t" << p.first << "\t" << p.second << endl;
             }
             continue;
         case CURLOPT_WRITEDATA:
         case CURLOPT_WRITEFUNCTION:
-            out<< "\t" << oiter->second << "\t" << hex
-               << stoull(opt.second) << dec << endl;
+            out << "\t" << oiter->second << "\t" << hex
+                << stoull(opt.second) << dec << endl;
             continue;
         default:
-            out<< "\t" << oiter->second << "\t" << opt.second << endl;
+            out << "\t" << oiter->second << "\t" << opt.second << endl;
         }
     }
 
     return out;
 }
-
 
 const map<CURLoption, string> CurlConnection::option_strings = {
     { CURLOPT_SSL_VERIFYPEER, "CURLOPT_SSL_VERIFYPEER"},

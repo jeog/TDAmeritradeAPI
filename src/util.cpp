@@ -30,7 +30,7 @@ namespace util {
 
 using namespace std;
 
-
+#ifndef _WIN32
 SignalBlocker::SignalBlocker( std::set<int> signums )
     :
         _mask()
@@ -58,7 +58,7 @@ SignalBlocker::~SignalBlocker()
     if( pthread_sigmask(SIG_SETMASK, &_mask_old, 0) == -1 )
         throw runtime_error("pthread_sigmask failed: " + to_string(errno));
 }
-
+#endif
 
 void
 debug_out(std::string tag, std::string message, std::ostream& out)

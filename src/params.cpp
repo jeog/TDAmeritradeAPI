@@ -464,9 +464,9 @@ operator<<(std::ostream& out, const OptionActivesSubscription::VenueType& venue)
 
 
 string
-to_string(const StreamerService::type& service)
+to_string(const StreamerService& service)
 {
-    switch(service){
+    switch( static_cast<StreamerService::type>(service) ){
     case StreamerService::type::NONE: return "NONE";
     case StreamerService::type::ADMIN: return "ADMIN";
     case StreamerService::type::ACTIVES_NASDAQ: return "ACTIVES_NASDAQ";
@@ -493,11 +493,12 @@ to_string(const StreamerService::type& service)
 }
 
 std::ostream&
-operator<<(std::ostream& out, const StreamerService::type& service)
+operator<<(std::ostream& out, const StreamerService& service)
 {
     out << to_string(service);
     return out;
 }
+
 
 string
 to_string(const StreamingCallbackType& callback_type)
@@ -520,5 +521,7 @@ operator<<(std::ostream& out, const StreamingCallbackType& callback_type)
     out << to_string(callback_type);
     return out;
 }
+
+
 
 } /* tdma */

@@ -275,7 +275,7 @@ APIGetter::set_wait_msec(milliseconds msec)
     wait_msec = msec;
 }
 
-chrono::milliseconds
+milliseconds
 APIGetter::get_wait_msec()
 { return wait_msec; }
 

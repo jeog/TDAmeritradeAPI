@@ -22,6 +22,7 @@ along with this program.  If not, see http://www.gnu.org/licenses.
 #include <mutex>
 #include <condition_variable>
 
+#include "_common.h"
 
 template<typename T>
 class ThreadSafeQueue {

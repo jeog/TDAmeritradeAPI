@@ -20,6 +20,7 @@ along with this program.  If not, see http://www.gnu.org/licenses.
 
 #include <string>
 
+#include "_common.h"
 #include "json.hpp"
 #include "util.h"
 
@@ -27,7 +28,7 @@ using json = nlohmann::json;
 
 namespace tdma{
 
-struct Credentials{
+struct DLL_SPEC_ Credentials{
     std::string access_token;
     std::string refresh_token;
     long long epoch_sec_token_expiration;
@@ -35,14 +36,14 @@ struct Credentials{
 };
 
 
-Credentials
+DLL_SPEC_ Credentials
 LoadCredentials(std::string path, std::string password);
 
-void
+DLL_SPEC_ void
 StoreCredentials(std::string path, std::string password, const Credentials& creds);
 
 
-struct CredentialsManager{
+struct DLL_SPEC_ CredentialsManager{
     Credentials credentials;
     std::string path;
     std::string password;
@@ -56,16 +57,18 @@ struct CredentialsManager{
 };
 
 
-Credentials
+DLL_SPEC_ Credentials
 RequestAccesToken( std::string code,
                    std::string client_id,
                    std::string redirect_uri = "https://127.0.0.1");
 
-void
+DLL_SPEC_ void
 RefreshAccessToken(Credentials& creds);
 
+DLL_SPEC_ void
+SetCertificateBundlePath(const std::string& path);
 
-class APIException
+class DLL_SPEC_ APIException
         : public std::exception{
     std::string _what;
 public:
@@ -80,8 +83,10 @@ public:
 };
 
 
-class LocalCredentialException
+class DLL_SPEC_ LocalCredentialException
         : public APIException{
+protected:
+    LocalCredentialException() = default;
 public:
     LocalCredentialException(std::string what)
         : APIException(what)
@@ -89,7 +94,7 @@ public:
 };
 
 
-class ValueException
+class DLL_SPEC_ ValueException
         : public APIException{
 public:
     ValueException(std::string what)
@@ -98,7 +103,7 @@ public:
 };
 
 
-class APIExecutionException
+class DLL_SPEC_ APIExecutionException
         : public APIException{
 public:
     const long code;
@@ -109,7 +114,7 @@ public:
 };
 
 
-class AuthenticationException
+class DLL_SPEC_ AuthenticationException
         : public APIExecutionException{
 public:
     AuthenticationException(std::string what, long code)
@@ -118,7 +123,7 @@ public:
 };
 
 
-class InvalidRequest
+class DLL_SPEC_ InvalidRequest
         : public APIExecutionException{
 public:
     InvalidRequest(std::string what, long code)
@@ -127,7 +132,7 @@ public:
 };
 
 
-class ServerError
+class DLL_SPEC_ ServerError
         : public APIExecutionException{
 public:
     ServerError(std::string what, long code)
@@ -136,7 +141,7 @@ public:
 };
 
 
-class StreamingException
+class DLL_SPEC_ StreamingException
         : public APIException {
 public:
     StreamingException()
