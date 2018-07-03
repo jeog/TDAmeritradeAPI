@@ -24,12 +24,12 @@ along with this program.  If not, see http://www.gnu.org/licenses.
 #else 
 #define DLL_SPEC_ __declspec(dllimport)
 #endif /* THIS_EXPORTS_INTERFACE */
-
 #ifndef _WIN64
 #define ZLIB_WINAPI
 #endif /* _WIN64 */
-
-#endif  /* _WIN32 */
+#else
+#define DLL_SPEC_
+#endif /* _WIN32 */
 
 #include <string>
 

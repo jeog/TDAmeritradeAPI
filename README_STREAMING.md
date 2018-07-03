@@ -297,6 +297,25 @@ enum class QOSType : unsigned int {
 #### Subscription Classes
 - - -
 
+[QuotesSubscription](#quotessubscription)  
+[OptionsSubscription](#optionssubscription)  
+[LevelOneFuturesSubscription](#levelonefuturessubscription)  
+[LevelOneForexSubscription](#leveloneforexsubscription)  
+[LevelOneFuturesOptionsSubscription](#levelonefuturesoptionssubscription)  
+[ChartEquitySubscription](#chartequitysubscription)  
+[ChartFuturesSubscription](#chartfuturessubscription)  
+[ChartOptionsSubscription](#chartoptionssubscription)  
+[TimesaleEquitySubscription](#timesaleequitysubscription)  
+[TimesaleFuturesSubscription](#timesalefuturessubscription)  
+[TimesaleOptionsSubscription](#timesaleoptionssubscription)  
+[NasdaqActivesSubscription](#nasdaqactivessubscription)  
+[NYSEActivesSubscription](#nyseactivessubscription)  
+[OTCBBActivesSubscription](#otcbbactivessubscription)  
+[OptionActivesSubscription](#optionactivessubscription)  
+[NewsHeadlineSubscription](#newsheadlinesubscription)  
+
+
+
 ##### QuotesSubscription
 
 Streaming market data that calls back when changed.

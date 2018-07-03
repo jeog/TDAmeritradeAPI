@@ -37,6 +37,17 @@ std::string certificate_bundle_path;
 
 namespace tdma{
 
+/* this should all be done during build */
+#ifdef _WIN32
+const std::string DEF_CERTIFICATE_BUNDLE_PATH(std::string(TDMA_API_ROOT_DIR) + "\\cacert.pem");
+#elif defined(__GNUC__)
+const std::string DEF_CERTIFICATE_BUNDLE_PATH(
+    std::string(__FILE__).substr(0, std::string(__FILE__).rfind("/include/"))
+    + "/cacert.pem"
+);
+#else
+    #warning "'DEF_CERTIFICATE_BUNDLE_PATH' not defined!"
+#endif
 
 /*
  *  encrypted credentials file: IV + BODY + (IV + BODY CHECKSUM)
@@ -127,12 +138,13 @@ public:
             _buffer.push_back( static_cast<T>(ss) );        
     }
 
+
     template<typename A, size_t SZ>
     explicit SmartBuffer(const A (&array)[SZ])
         :
             _buffer()
     {
-        for(int i = 0; i < SZ; ++i)
+        for(size_t i = 0; i < SZ; ++i)
             _buffer.push_back(static_cast<T>(array[i]));
     }
 
@@ -156,7 +168,7 @@ public:
     }
 
     SmartBuffer
-    operator+(const SmartBuffer& sb)
+    operator+(const SmartBuffer& sb) const
     {
         SmartBuffer<T> tmp(_buffer);      
         tmp._buffer.insert(tmp._buffer.end(), sb._buffer.begin(), sb._buffer.end());
@@ -164,11 +176,11 @@ public:
     }
 
     bool
-    operator==(const SmartBuffer& sb)
+    operator==(const SmartBuffer& sb) const
     { return _buffer == sb._buffer; }
 
     bool
-    operator!=(const SmartBuffer& sb)
+    operator!=(const SmartBuffer& sb) const
     { return !operator==(sb); }
 
     T*
@@ -228,7 +240,8 @@ hash_sha256(SmartByteBuffer& in)
 SmartByteBuffer
 hash_sha256(const std::string& in)
 {
-    return hash_sha256(SmartByteBuffer(in));
+    SmartByteBuffer buf(in);
+    return hash_sha256(buf);
 }
 
 
@@ -341,7 +354,8 @@ store_credentials(string path, string password, const Credentials& creds)
     SmartByteBuffer ctext;    
     tie(iv, ctext) = encrypt(input_str, password);
 
-    auto iv_body_checksum = hash_sha256(iv + ctext);
+    auto iv_and_ctext= iv + ctext;
+    auto iv_body_checksum = hash_sha256(iv_and_ctext);
 
     try{
         file.write(reinterpret_cast<const char*>(iv.get()), iv.size());
@@ -381,7 +395,8 @@ load_credentials(fstream& file, string path, string password)
     auto ctext = input.sub_buffer(CREDS_IV_LENGTH, body_sz);
     auto cchecksum = input.sub_buffer(CREDS_IV_LENGTH + body_sz);
 
-    if( hash_sha256(civ + ctext) != cchecksum) 
+    auto civ_and_ctext = civ + ctext;
+    if( hash_sha256(civ_and_ctext) != cchecksum)
         throw LocalCredentialException("corrupted credentials file(checksum");        
 
     SmartByteBuffer dbody;

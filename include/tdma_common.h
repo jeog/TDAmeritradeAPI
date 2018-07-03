@@ -36,6 +36,8 @@ struct DLL_SPEC_ Credentials{
 };
 
 
+DLL_SPEC_ extern const std::string DEF_CERTIFICATE_BUNDLE_PATH;
+
 DLL_SPEC_ Credentials
 LoadCredentials(std::string path, std::string password);
 

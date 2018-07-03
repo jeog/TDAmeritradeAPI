@@ -172,5 +172,6 @@
     <None Include="..\..\README.md" />
     <None Include="..\..\README_GET.md" />
     <None Include="..\..\README_STREAMING.md" />
+    <None Include="..\..\README.html" />
   </ItemGroup>
 </Project>

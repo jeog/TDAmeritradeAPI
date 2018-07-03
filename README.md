@@ -52,7 +52,7 @@ This project would not be possible without some of the great open-source project
 > 
 > There are certain binary compatibility issues when exporting C++ code accross compilations(from name mangling, differing runtimes, changes to STL implementations etc.). If, for instance, we return an std::vector in an earlier version of a library, its implementation changes, and code that imports the library is compiled against a new version of the STL, there can be an issue.
 > 
-> **Because of this you need to be sure you use the same compiler/settings for your code and link to the same libraries as libTDAmeritrade does.** For this reason we don't include any pre-built binaries. You should (re)compile this library alongside your code if you change compilers, settings, runtimes etc. 
+> **Because of this you need to be sure you use the same compiler/settings for your code and link to the same libraries as the TDAmeritradeAPI library does.** For this reason we don't include any pre-built binaries. You should (re)compile this library alongside your code if you change compilers, settings, runtimes etc. 
 > 
 > In the future we may include some type of stable ABI layer on top of the core library to limit these issues.
 

@@ -29,7 +29,7 @@ SetCertificateBundlePath(const std::string& path)
 
 There is a default 'cacert.pem' file in the base directory extracted from Firefox that you can use. 
 (You can get updated versions from the [curl site](https://curl.haxx.se/docs/caextract.html).) The 
-path of this file can be obtained at compile-time via the DEF_CERTIFICATE_BUNDLE_PATH definition.
+path of this file can be found in the DEF_CERTIFICATE_BUNDLE_PATH string.
 
 **Using Getter Objects**
 
@@ -131,6 +131,25 @@ Example Usage:
 
 #### Getter Objects
 - - -
+
+[QuoteGetter](#quotegetter--getquote)  
+[QuotesGetter](#quotesgetter--getquotes)  
+[MarketHoursGetter](#markethoursgetter--getmarkethours)  
+[MoversGetter](#moversgetter--getmovers)  
+[HistoricalPeriodGetter](#historicalperiodgetter--gethistoricalperiod)  
+[HistoricalRangeGetter](#historicalrangegetter--gethistoricalrange)  
+[OptionChainGetter](#optionchaingetter--getoptionchain)  
+[OptionChainStrategyGetter](#optionchainstrategygetter--getoptionchainstrategy)  
+[OptionChainAnalyticalGetter](#optionchainanalyticalgetter--getoptionchainanalytical)  
+[AccountInfoGetter](#accountinfogetter--getaccountinfo)  
+[PreferencesGetter](#preferencesgetter--getpreferences)  
+[UserPrincipalsGetter](#userprincipalsgetter--getuserprincipals)  
+[StreamerSubscriptionKeysGetter](#streamersubscriptionkeysgetter--getstreamersubscriptionkeys)  
+[TransactionHistoryGetter](#transactionhistorygetter--gettransactionhistory)  
+[IndividualTransactionHistoryGetter](#individualtransactionhistorygetter--getindividualtransactionhistory)  
+[InstrumentInfoGetter](#instrumentinfogetter--getinstrumentinfo)  
+
+
 
 ##### QuoteGetter / GetQuote
 
@@ -1564,7 +1583,7 @@ GetAccountPreferences( Credentials& creds, const string& account_id );
 ```
 - - -
 
-##### UserPricincipalsGetter / GetUserPrincipals
+##### UserPrincipalsGetter / GetUserPrincipals
 
 User Principal details. [TDAmeritrade docs.](https://developer.tdameritrade.com/user-principal/apis/get/userprincipals-0)
 

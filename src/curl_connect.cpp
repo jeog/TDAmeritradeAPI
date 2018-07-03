@@ -54,10 +54,7 @@ class CurlConnection::CurlConnectionImpl_ {
         std::stringbuf _buf;
 
         static size_t
-        CurlConnectionImpl_::WriteCallback::write( char* input, 
-                                                   size_t sz, 
-                                                   size_t n, 
-                                                   void* output )
+        write( char* input, size_t sz, size_t n, void* output )
         {
             stringbuf& buf = ((WriteCallback*)output)->_buf;
             streamsize ssz = buf.sputn(input, sz*n);
