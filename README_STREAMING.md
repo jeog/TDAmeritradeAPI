@@ -1,5 +1,32 @@
 ### Streaming Interface
 - - -
+- [Overview](#overview)
+- [Callback](#callback)
+    - [Args](#callback-args)
+    - [Summary Table](#summary)
+- [Start / Stop](#start--stop)
+- [Subscriptions](#subscriptions)
+- [Quality-Of-Service](#quality-of-service)
+- [Subscription Classes](#subscription-classes)
+    - [QuotesSubscription](#quotessubscription)  
+    - [OptionsSubscription](#optionssubscription)  
+    - [LevelOneFuturesSubscription](#levelonefuturessubscription)  
+    - [LevelOneForexSubscription](#leveloneforexsubscription)  
+    - [LevelOneFuturesOptionsSubscription](#levelonefuturesoptionssubscription)  
+    - [ChartEquitySubscription](#chartequitysubscription)  
+    - [ChartFuturesSubscription](#chartfuturessubscription)  
+    - [ChartOptionsSubscription](#chartoptionssubscription)  
+    - [TimesaleEquitySubscription](#timesaleequitysubscription)  
+    - [TimesaleFuturesSubscription](#timesalefuturessubscription)  
+    - [TimesaleOptionsSubscription](#timesaleoptionssubscription)  
+    - [NasdaqActivesSubscription](#nasdaqactivessubscription)  
+    - [NYSEActivesSubscription](#nyseactivessubscription)  
+    - [OTCBBActivesSubscription](#otcbbactivessubscription)  
+    - [OptionActivesSubscription](#optionactivessubscription)  
+    - [NewsHeadlineSubscription](#newsheadlinesubscription)  
+- - -
+
+#### Overview
 
 ```
 #include "tdma_api_streaming.h"
@@ -22,7 +49,7 @@ Create( Credentials& creds,
 
     creds                    ::  credentials struct received from RequestAccessToken 
                                  / LoadCredentials / CredentialsManager.credentials
-    account_id               ::  id string of account to get transactions for
+    account_id               ::  id string of account to use
     callback                 ::  callback for when session receives data, times
                                  out etc. (see below)
     connect_timeout          ::  milliseconds to wait for a connection
@@ -92,40 +119,42 @@ typedef std::function<void(StreamingCallbackType cb_type, StreamerService,
                            unsigned long long, json)> streaming_cb_ty;
 ```
 
-**DO NOT** call back into StreamingSession from inside the callback (e.g ```.start()```)  
-**DO NOT** block the callback thread for extended periods  
-**DO NOT** assume exceptions will get handled higher up (assume program termination)  
+- **DO NOT** call back into StreamingSession from inside the callback (e.g ```.start()```)  
+- **DO NOT** block the callback thread for extended periods  
+- **DO NOT** assume exceptions will get handled higher up (assume program termination)  
 
-The first argument to the callback will be the callback type:
-```
-enum class StreamingCallbackType : unsigned int {
-    listening_start,
-    listening_stop,
-    data,
-    notify,
-    timeout,
-    error
-```
+##### Callback Args 
 
-***```::listening_start``` ```::listening_stop```*** - are simple signals about the 
-listening state of the session and *should* occur after you call ```.start()```
-and ```.stop()```, respectively
+1. The first argument to the callback will be the callback type:
+    ```
+    enum class StreamingCallbackType : unsigned int {
+        listening_start,
+        listening_stop,
+        data,
+        notify,
+        timeout,
+        error
+    ```
 
-***```::error```*** - indicates some type of error/exception state that has propagated
-up from the listening thread and caused it to close. The 4th arg will be a json
-object of the form ```{{"error": <error message>}}```
+    ***```::listening_start``` ```::listening_stop```*** - are simple signals about the 
+    listening state of the session and *should* occur after you call ```.start()```
+    and ```.stop()```, respectively
 
-***```::timeout```*** - indicates the listening thread hasn't received a message in 
-*listening_timeout* milliseconds (defaults to 30000) and has shutdown. You'll need 
-to restart the session ***from the original thread*** or destroy it.
+    ***```::error```*** - indicates some type of error/exception state that has propagated
+    up from the listening thread and caused it to close. The 4th arg will be a json
+    object of the form ```{{"error": <error message>}}```
 
-***```::notify```*** - indicates some type of 'urgent' message from the server. The 
-actual message will be in json form and passed to the 4th arg.
+    ***```::timeout```*** - indicates the listening thread hasn't received a message in 
+    *listening_timeout* milliseconds (defaults to 30000) and has shutdown. You'll need 
+    to restart the session ***from the original thread*** or destroy it.
 
-***```::data```*** - will be the bulk of the callbacks and contain the subscribed-to data (see below).
+    ***```::notify```*** - indicates some type of 'urgent' message from the server. The 
+    actual message will be in json form and passed to the 4th arg.
+
+    ***```::data```*** - will be the bulk of the callbacks and contain the subscribed-to data (see below).
 
 
-The second argument will contain the service type of the data (for ```::data``` type only):
+2. The second argument will contain the service type of the data (for ```::data``` type only):
 
     ```
     class StreamerService{    
@@ -168,10 +197,10 @@ The second argument will contain the service type of the data (for ```::data``` 
     };
     ```
 
-The third argument is a timestamp from the server in milliseconds since the epoch that
+3. The third argument is a timestamp from the server in milliseconds since the epoch that
 is (currently) only relevant for ```::data``` callbacks. 
 
-The fourth argument is a json object containing the actual data. Its structure is 
+4. The fourth argument is a json object containing the actual data. Its structure is 
 dependent on the service type. In order to understand how to parse the object you'll 
 need to refer to the relevant section in [Ameritrade's Streaming documentation](https://developer.tdameritrade.com/content/streaming-data) and the [json library documentation](https://github.com/nlohmann/json).
 
@@ -294,29 +323,10 @@ enum class QOSType : unsigned int {
 };
 ```
 
-#### Subscription Classes
+### Subscription Classes
 - - -
 
-[QuotesSubscription](#quotessubscription)  
-[OptionsSubscription](#optionssubscription)  
-[LevelOneFuturesSubscription](#levelonefuturessubscription)  
-[LevelOneForexSubscription](#leveloneforexsubscription)  
-[LevelOneFuturesOptionsSubscription](#levelonefuturesoptionssubscription)  
-[ChartEquitySubscription](#chartequitysubscription)  
-[ChartFuturesSubscription](#chartfuturessubscription)  
-[ChartOptionsSubscription](#chartoptionssubscription)  
-[TimesaleEquitySubscription](#timesaleequitysubscription)  
-[TimesaleFuturesSubscription](#timesalefuturessubscription)  
-[TimesaleOptionsSubscription](#timesaleoptionssubscription)  
-[NasdaqActivesSubscription](#nasdaqactivessubscription)  
-[NYSEActivesSubscription](#nyseactivessubscription)  
-[OTCBBActivesSubscription](#otcbbactivessubscription)  
-[OptionActivesSubscription](#optionactivessubscription)  
-[NewsHeadlineSubscription](#newsheadlinesubscription)  
-
-
-
-##### QuotesSubscription
+#### QuotesSubscription
 
 Streaming market data that calls back when changed.
 - Listed (NYSE, AMEX, Pacific quotes and trades)
@@ -418,9 +428,9 @@ SubscriptionBySymbolBase::get_symbols() const;
 set<FieldType>
 QuotesSubscription::get_fields() const;
 ```
-- - -
+<br>
 
-##### OptionsSubscription
+#### OptionsSubscription
 
 Streaming option data that calls back when changed.
 
@@ -505,10 +515,10 @@ SubscriptionBySymbolBase::get_symbols() const;
 set<FieldType>
 OptionsSubscription::get_fields() const;
 ```
-- - -
+<br>
 
 
-##### LevelOneFuturesSubscription
+#### LevelOneFuturesSubscription
 
 Streaming futures data that calls back when changed.
 
@@ -589,10 +599,10 @@ SubscriptionBySymbolBase::get_symbols() const;
 set<FieldType>
 LevelOneFuturesSubscription::get_fields() const;
 ```
-- - -
+<br>
 
 
-##### LevelOneForexSubscription
+#### LevelOneForexSubscription
 
 Streaming forex data that calls back when changed.
 
@@ -667,10 +677,10 @@ SubscriptionBySymbolBase::get_symbols() const;
 set<FieldType>
 LevelOneForexSubscription::get_fields() const;
 ```
-- - -
+<br>
 
 
-##### LevelOneFuturesOptionsSubscription
+#### LevelOneFuturesOptionsSubscription
 
 Streaming futures-options data calls back when changed.
 
@@ -751,11 +761,11 @@ SubscriptionBySymbolBase::get_symbols() const;
 set<FieldType>
 LevelOneFuturesOptionsSubscription::get_fields() const;
 ```
-- - -
+<br>
 
 
 
-##### ChartEquitySubscription
+#### ChartEquitySubscription
 Streaming 1-minute OHLCV equity values as a sequence. The bar falls on the 0 
 second and includes data between 0 and 59 seconds. (e.g 9:30 bar is 9:30:00 -> 9:30:59)
 
@@ -809,9 +819,9 @@ SubscriptionBySymbolBase::get_symbols() const;
 set<FieldType>
 ChartEquitySubscription::get_fields() const;
 ```
-- - -
+<br>
 
-##### ChartFuturesSubscription
+#### ChartFuturesSubscription
 Streaming 1-minute OHLCV futures values as a sequence. The bar falls on the 0 
 second and includes data between 0 and 59 seconds. (e.g 9:30 bar is 9:30:00 -> 9:30:59)
 
@@ -866,9 +876,9 @@ SubscriptionBySymbolBase::get_symbols() const;
 set<FieldType>
 ChartSubscriptionBase::get_fields() const;
 ```
-- - -
+<br>
 
-##### ChartOptionsSubscription
+#### ChartOptionsSubscription
 Streaming 1-minute OHLCV option values as a sequence. The bar falls on the 0 
 second and includes data between 0 and 59 seconds. (e.g 9:30 bar is 9:30:00 -> 9:30:59)
 
@@ -923,10 +933,10 @@ SubscriptionBySymbolBase::get_symbols() const;
 set<FieldType>
 ChartSubscriptionBase::get_fields() const;
 ```
-- - -
+<br>
 
 
-##### TimesaleEquitySubscription
+#### TimesaleEquitySubscription
 Streaming time & sales equity trades as a sequence.
 
 **constructors**
@@ -977,9 +987,9 @@ SubscriptionBySymbolBase::get_symbols() const;
 set<FieldType>
 TimesalesSubscriptionBase::get_fields() const;
 ```
-- - -
+<br>
 
-##### TimesaleFuturesSubscription
+#### TimesaleFuturesSubscription
 Streaming time & sales futures trades as a sequence.
 
 **constructors**
@@ -1030,10 +1040,10 @@ SubscriptionBySymbolBase::get_symbols() const;
 set<FieldType>
 TimesalesSubscriptionBase::get_fields() const;
 ```
-- - -
+<br>
 
 
-##### TimesaleOptionsSubscription
+#### TimesaleOptionsSubscription
 Streaming time & sales option trades as a sequence.
 
 **constructors**
@@ -1084,11 +1094,11 @@ SubscriptionBySymbolBase::get_symbols() const;
 set<FieldType>
 TimesalesSubscriptionBase::get_fields() const;
 ```
-- - -
+<br>
 
 
 
-##### NasdaqActivesSubscription
+#### NasdaqActivesSubscription
 
 Most active NASDAQ traded securies for various durations.
 
@@ -1134,9 +1144,9 @@ StreamingSubscription::get_parameters() const;
 DurationType
 ActivesSubscriptionBase::get_duration() const;
 ```
-- - -
+<br>
 
-##### NYSEActivesSubscription
+#### NYSEActivesSubscription
 
 Most active NYSE traded securies for various durations.
 
@@ -1182,9 +1192,9 @@ StreamingSubscription::get_parameters() const;
 DurationType
 ActivesSubscriptionBase::get_duration() const;
 ```
-- - -
+<br>
 
-##### OTCBBActivesSubscription
+#### OTCBBActivesSubscription
 
 Most active OTCBB traded securies for various durations.
 
@@ -1230,10 +1240,10 @@ StreamingSubscription::get_parameters() const;
 DurationType
 ActivesSubscriptionBase::get_duration() const;
 ```
-- - -
+<br>
 
 
-##### OptionActivesSubscription
+#### OptionActivesSubscription
 
 Most active Options of various types and durations traded.
 
@@ -1295,11 +1305,11 @@ ActivesSubscriptionBase::get_duration() const;
 VenueType
 OptionActivesSubscription::get_venue() const;
 ```
-- - -
+<br>
 
 
 
-##### NewsHeadlineSubscription
+#### NewsHeadlineSubscription
 
 Streaming news headlines as a sequence.
 
@@ -1356,5 +1366,5 @@ SubscriptionBySymbolBase::get_symbols() const;
 set<FieldType>
 NewsHeadlineSubscription::get_fields() const;
 ```
-- - -
+<br>
 

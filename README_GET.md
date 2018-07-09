@@ -1,25 +1,47 @@
 ### HTTPS Get Interface
 - - -
 
-> **IMPORTANT - On Jun 30 2018 API behavior was changed to fix a bug w/ expired token messages. This will result in an ```InvalidRequest``` exception being thrown with error code 401 in older versions of the library (commit eb59c1 and earlier). If so upgrade to a newer version of the library.**
+- [Overview](#overview)
+    - [Certificates](#certificates)
+    - [Using Getter Objects](#using-getter-objects)
+- [Throttling](#throttling)
+- [Example Usage](#example-usage)
+- [Getter Classes](#getter-classes)
+    - [QuoteGetter](#quotegetter)  
+    - [QuotesGetter](#quotesgetter)  
+    - [MarketHoursGetter](#markethoursgetter)  
+    - [MoversGetter](#moversgetter)  
+    - [HistoricalPeriodGetter](#historicalperiodgetter)  
+    - [HistoricalRangeGetter](#historicalrangegetter)  
+    - [OptionChainGetter](#optionchaingetter)  
+    - [OptionChainStrategyGetter](#optionchainstrategygetter)  
+    - [OptionChainAnalyticalGetter](#optionchainanalyticalgetter)  
+    - [AccountInfoGetter](#accountinfogetter)  
+    - [PreferencesGetter](#preferencesgetter)  
+    - [UserPrincipalsGetter](#userprincipalsgetter)  
+    - [StreamerSubscriptionKeysGetter](#streamersubscriptionkeysgetter)  
+    - [TransactionHistoryGetter](#transactionhistorygetter)  
+    - [IndividualTransactionHistoryGetter](#individualtransactionhistorygetter)  
+    - [InstrumentInfoGetter](#instrumentinfogetter)  
+
+*UPDATES*
+
+- *On Jun 30 2018 API behavior was changed (by Ameritrade) to fix a bug w/ expired token messages. This will result in an ```InvalidRequest``` exception being thrown with error code 401 in older versions of the library (commit eb59c1 and earlier). If so upgrade to a newer version of the library.*
+- - - 
+
+#### Overview
+
 ```
 #include "tdma_api_get.h"
 
 using namespace tdma;
 ```
 
-The Get Interface consists of 'Getter' objects that all derive from ```APIGetter```, and related convenience functions.
+The Get Interface consists of 'Getter' objects that derive from ```APIGetter```, and related convenience functions. ```APIGetter``` is built on ```conn::CurlConnection```: an object-oriented wrapper to libcurl  in curl_connect.h/cpp.
 
-```APIGetter``` uses the following connection hierarchy from curl_connect.h/cpp:
+##### Certificates
 
-- ```conn::CurlConnection``` : simplified object-oriented wrapper to libcurl
-    - ```conn::HTTPSConnection``` 
-        - ```conn::HTTPSGetConnection``` 
-
-**SSL Certificates**
-
-Certificates are required to validate the hosts. If using GNU/Linux or the 
-pre-built dependencies on Windows the default certificate store *should* take care of this for you. If this doesn't happen an ```APIExecutionException```  will be thrown with code CURLE_SSL_CACERT(60). If this happens you'll have to use your own certificates via:
+Certificates are required to validate the hosts. If libcurl is built against the native ssl lib(e.g openssl on linux) or you use the pre-built dependencies for Windows(we built libcurl with -ENABLE_WINSSL) the default certificate store ***should*** take care of this for you. If this doesn't happen an ```APIExecutionException```  will be thrown with code CURLE_SSL_CACERT(60) and you'll have to use your own certificates via:
 ```
 void
 SetCertificateBundlePath(const std::string& path)
@@ -29,9 +51,9 @@ SetCertificateBundlePath(const std::string& path)
 
 There is a default 'cacert.pem' file in the base directory extracted from Firefox that you can use. 
 (You can get updated versions from the [curl site](https://curl.haxx.se/docs/caextract.html).) The 
-path of this file can be found in the DEF_CERTIFICATE_BUNDLE_PATH string.
+path of this file, *hard-coded during compilation*, can be found in the DEF_CERTIFICATE_BUNDLE_PATH string.
 
-**Using Getter Objects**
+##### Using Getter Objects
 
 1. construct a Getter object passing a reference to the Credentials struct and the 
 relevant arguments.
@@ -44,6 +66,8 @@ those to be used in subsequent ```.get()``` call.
 
 If you only need to make the call once, each 'Getter' object has a similarly name 'Get' function
 that wraps the object and calls its ```.get()``` method once before destruction. 
+
+To make this more concrete here is the Getter interface for individual price quotes:
 
 ```
 class QuoteGetter
@@ -70,6 +94,8 @@ GetQuote(Credentials& creds, string symbol)
 { return QuoteGetter(creds, symbol).get(); }
 ```
 
+#### Throttling
+
 The API docs indicate a limit of two requests per second so we implement a throttling/blocking 
 mechanism **across ALL Getter objects** with a default wait of 500 milliseconds. If, for instance, we use the default
 wait and make five ```.get()``` calls in immediate succession the group of calls will take
@@ -83,10 +109,10 @@ wait and make five ```.get()``` calls in immediate succession the group of calls
     APIGetter::set_wait_msec(chrono::milliseconds msec);
 ```
 
-***This interface should not be used for streaming data, i.e. repeatedly making getter calls -  
-use [StreamingSession](README_STREAMING.md) for that.***
+This interface should not be used for streaming data, i.e. repeatedly making getter calls -  
+use [StreamingSession](README_STREAMING.md) for that.
 
-Example Usage:
+#### Example Usage
 ```
     #include <string>
     #include <chrono>
@@ -99,59 +125,42 @@ Example Usage:
     
     ...    
     
-    /* 
-     * this could throw LocalCredentialsException (e.g empty access token in 
-     * Credentials struct) or ValueException (e.g empty symbol string) 
-     */
-    QuoteGetter qg(credentials_manager.credentials, "SPY");
-    
-    json j;
-    try{
-        j = qg.get();
-    }catch( InvalidRequest& e){
-        // invalid symbol ?
-    }catch( APIExecutionException& e ){
-        // something more serious 
-    }
-    
-    cout<< qg.get_symbol() << ' ' << j << endl;
-    this_thread::sleep_for( chrono::seconds(2) );
-    
-    j = qg.get()
-    cout<< qg.get_symbol() << ' ' << j << endl;
-    this_thread::sleep_for( chrono::seconds(2) );
-    
-    qg.set_symbol("QQQ");
-    j = qg.get();    
-    cout<< qg.get_symbol() << ' ' << j << endl;
+        /* 
+         * this could throw LocalCredentialsException (e.g empty access token in 
+         * Credentials struct) or ValueException (e.g empty symbol string) 
+         */
+        QuoteGetter qg(credentials_manager.credentials, "SPY");
+        
+        json j;
+        try{
+            j = qg.get();
+        }catch( InvalidRequest& e){
+            // invalid symbol ?
+        }catch( APIExecutionException& e ){
+            // something more serious 
+        }
+        
+        cout<< qg.get_symbol() << ' ' << j << endl;
+        this_thread::sleep_for( chrono::seconds(2) );
+        
+        j = qg.get()
+        cout<< qg.get_symbol() << ' ' << j << endl;
+        this_thread::sleep_for( chrono::seconds(2) );
+        
+        qg.set_symbol("QQQ");
+        j = qg.get();    
+        cout<< qg.get_symbol() << ' ' << j << endl;
     
     ...
     
 ```
 
-#### Getter Objects
+
+### Getter Classes
 - - -
 
-[QuoteGetter](#quotegetter--getquote)  
-[QuotesGetter](#quotesgetter--getquotes)  
-[MarketHoursGetter](#markethoursgetter--getmarkethours)  
-[MoversGetter](#moversgetter--getmovers)  
-[HistoricalPeriodGetter](#historicalperiodgetter--gethistoricalperiod)  
-[HistoricalRangeGetter](#historicalrangegetter--gethistoricalrange)  
-[OptionChainGetter](#optionchaingetter--getoptionchain)  
-[OptionChainStrategyGetter](#optionchainstrategygetter--getoptionchainstrategy)  
-[OptionChainAnalyticalGetter](#optionchainanalyticalgetter--getoptionchainanalytical)  
-[AccountInfoGetter](#accountinfogetter--getaccountinfo)  
-[PreferencesGetter](#preferencesgetter--getpreferences)  
-[UserPrincipalsGetter](#userprincipalsgetter--getuserprincipals)  
-[StreamerSubscriptionKeysGetter](#streamersubscriptionkeysgetter--getstreamersubscriptionkeys)  
-[TransactionHistoryGetter](#transactionhistorygetter--gettransactionhistory)  
-[IndividualTransactionHistoryGetter](#individualtransactionhistorygetter--getindividualtransactionhistory)  
-[InstrumentInfoGetter](#instrumentinfogetter--getinstrumentinfo)  
 
-
-
-##### QuoteGetter / GetQuote
+#### QuoteGetter
 
 Retrieve a single quote for a single security. [TDAmeritrade docs.](https://developer.tdameritrade.com/quotes/apis/get/marketdata/{symbol}/quotes)
 
@@ -188,9 +197,9 @@ QuoteGetter::set_symbol(string symbol);
 inline json
 GetQuote(Credentials& creds, string symbol);
 ```
-- - -
+<br>
 
-##### QuotesGetter / GetQuotes
+#### QuotesGetter
 
 Retrieve a single quote for multiple securities. [TDAmeritrade docs.](https://developer.tdameritrade.com/quotes/apis/get/marketdata/quotes)
 
@@ -227,9 +236,9 @@ QuotesGetter::set_symbols(const set<string>& symbols);
 inline json
 GetQuotes(Credentials& creds, const set<string>& symbols);
 ```
-- - -
+<br>
 
-##### MarketHoursGetter / GetMarketHours
+#### MarketHoursGetter
 
 Retrieve market hours for a single market. [TDAmeritrade docs.](https://developer.tdameritrade.com/market-hours/apis/get/marketdata/{market}/hours)
 
@@ -288,11 +297,11 @@ MarketHoursGetter::set_market_type(MarketType market_type);
 inline json
 GetMarketHours(Credentials& creds, MarketType market_type, const string& date);
 ```
-- - -
+<br>
 
 
 
-##### MoversGetter / GetMovers
+#### MoversGetter
 
 Top 10 up or down movers by value or %. [TDAmeritrade docs.](https://developer.tdameritrade.com/movers/apis/get/marketdata/{index}/movers)
 
@@ -375,10 +384,10 @@ GetMovers( Credentials& creds,
            MoversDirectionType direction_type,
            MoversChangeType change_type );
 ```
-- - -
+<br>
 
 
-##### HistoricalPeriodGetter / GetHistoricalPeriod
+#### HistoricalPeriodGetter
 
 Price history over a certain period for a single security. [TDAmeritrade docs.](https://developer.tdameritrade.com/price-history/apis/get/marketdata/{symbol}/pricehistory)
 
@@ -527,9 +536,9 @@ GetHistoricalPeriod( Credentials& creds,
                      unsigned int frequency,
                      bool extended_hours );
 ```
-- - -
+<br>
 
-##### HistoricalRangeGetter / GetHistoricalRange 
+#### HistoricalRangeGetter
 
 Price history between a date range for a single security. [TDAmeritrade docs.](https://developer.tdameritrade.com/price-history/apis/get/marketdata/{symbol}/pricehistory)
 
@@ -652,10 +661,10 @@ GetHistoricalRange( Credentials& creds,
                     unsigned long long end_msec_since_epoch,
                     bool extended_hours );
 ```
-- - -
+<br>
 
 
-##### OptionChainGetter / GetOptionChain
+#### OptionChainGetter
 
 Traditional Option chain for a single security. [TDAmeritrade docs.](https://developer.tdameritrade.com/option-chains/apis/get/marketdata/chains)
 
@@ -883,9 +892,9 @@ GetOptionChain( Credentials& creds,
                 OptionExpMonth exp_month = OptionExpMonth::all,
                 OptionType option_type = OptionType::all );
 ```
-- - -
+<br>
 
-##### OptionChainStrategyGetter / GetOptionChainStrategy 
+#### OptionChainStrategyGetter
 
 Option chains of strategies (spreads) for a single security. [TDAmeritrade docs.](https://developer.tdameritrade.com/option-chains/apis/get/marketdata/chains)
 
@@ -1205,9 +1214,9 @@ GetOptionChainStrategy( Credentials& creds,
                         OptionExpMonth exp_month = OptionExpMonth::all,
                         OptionType option_type = OptionType::all );
 ```
-- - -
+<br>
 
-##### OptionChainAnalyticalGetter / GetOptionChainAnalytical 
+#### OptionChainAnalyticalGetter
 
 Option chains with analytics, for a single security. [TDAmeritrade docs.](https://developer.tdameritrade.com/option-chains/apis/get/marketdata/chains)
 
@@ -1479,9 +1488,9 @@ GetOptionChainAnalytical( Credentials& creds,
                           OptionExpMonth exp_month = OptionExpMonth::all,
                           OptionType option_type = OptionType::all  );
 ```
-- - -
+<br>
 
-##### AccountInfoGetter / GetAccountInfo
+#### AccountInfoGetter
 
 Account balances, positions, and orders. [TDAmeritrade docs.](https://developer.tdameritrade.com/account-access/apis/get/accounts/{accountId}-0)
 
@@ -1541,10 +1550,10 @@ GetAccountInfo( Credentials& creds,
                 bool positions,
                 bool orders );
 ```
-- - -
+<br>
 
 
-##### PreferencesGetter / GetPreferences
+#### PreferencesGetter
 
 Account preferences. [TDAmeritrade docs.](https://developer.tdameritrade.com/user-principal/apis/get/accounts/{accountId}/preferences-0)
 
@@ -1581,9 +1590,9 @@ AccountGetterBase::set_account_id(const string& account_id);
 inline json
 GetAccountPreferences( Credentials& creds, const string& account_id );
 ```
-- - -
+<br>
 
-##### UserPrincipalsGetter / GetUserPrincipals
+#### UserPrincipalsGetter
 
 User Principal details. [TDAmeritrade docs.](https://developer.tdameritrade.com/user-principal/apis/get/userprincipals-0)
 
@@ -1658,9 +1667,9 @@ GetUserPrincipals( Credentials& creds,
                    bool preferences,
                    bool surrogate_ids );
 ```
-- - -
+<br>
 
-##### StreamerSubscriptionKeysGetter / GetStreamerSubscriptionKeys 
+#### StreamerSubscriptionKeysGetter
 
 Subscription keys. [TDAmeritrade docs.](https://developer.tdameritrade.com/user-principal/apis/get/userprincipals/streamersubscriptionkeys-0)
 
@@ -1699,10 +1708,10 @@ AccountGetterBase::set_account_id(const string& account_id);
 inline json
 GetStreamerSubscriptionKeys( Credentials& creds, const string& account_id );
 ```
-- - -
+<br>
 
 
-##### TransactionHistoryGetter / GetTransactionHistory 
+#### TransactionHistoryGetter
 
 Transactions within a date range. [TDAmeritrade docs.](https://developer.tdameritrade.com/transaction-history/apis/get/accounts/{accountId}/transactions-0)
 
@@ -1802,9 +1811,9 @@ GetTransactionHistory( Credentials& creds,
                        const string& start_date="",
                        const string& end_date="" );    
 ```
-- - -
+<br>
 
-##### IndividualTransactionHistoryGetter / GetIndividualTransactionHistory 
+#### IndividualTransactionHistoryGetter
 
 Transactions by id. [TDAmeritrade docs.](https://developer.tdameritrade.com/transaction-history/apis/get/accounts/{accountId}/transactions/{transactionId}-0)
 
@@ -1856,9 +1865,9 @@ GetIndividualTransactionHistory( Credentials& creds,
                                  const string& account_id 
                                  const string& transaction_id );
 ```
-- - -
+<br>
 
-##### InstrumentInfoGetter / GetInstrumentInfo 
+#### InstrumentInfoGetter
 
 Instrument information. [TDAmeritrade docs.](https://developer.tdameritrade.com/instruments/apis)
 
