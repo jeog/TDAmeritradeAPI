@@ -27,7 +27,7 @@ and then uses the library to request an access token, which is refreshed automat
 
 
 
-#### Index
+### Index
 - - -
 - [Dependencies](#dependencies)
 - [Binary Compatibility](#binary-compatibility)
@@ -49,7 +49,7 @@ and then uses the library to request an access token, which is refreshed automat
 <br>
 
  
-#### Dependencies
+### Dependencies
 - - -
 This project would not be possible without some of the great open-source projects listed below.
 
@@ -61,7 +61,7 @@ This project would not be possible without some of the great open-source project
 - [nlohmann::json](https://github.com/nlohmann/json) : - An extensive C++ json library that only requires adding a single header file. ***You'll need to review their documentation for handling returned data from this library.***
 
 
-#### Binary Compatibility
+### Binary Compatibility
 - - -
 ***IMPORTANT*** - There are certain binary compatibility issues when exporting C++ code accross compilations(from name mangling, differing runtimes, changes to STL implementations etc.). If, for instance, we return an std::vector in an earlier version of a library, its implementation changes, and code that imports the library is compiled against a new version of the STL, there can be an issue.
 
@@ -70,7 +70,7 @@ This project would not be possible without some of the great open-source project
 In the future we may include some type of stable ABI layer on top of the core library to limit these issues(see below).
 
 
-#### Language Bindings
+### Language Bindings
 - - -
 Look for Python, and potentially other, bindings in the near future. 
 
@@ -93,7 +93,7 @@ These will be implemented through a binary-compatible C interface model that loo
 .. or by using a tool like SWIG to simplify things.
 
 
-#### Getting Started
+### Getting Started
 - - -
 The current build setup is a bit messy. Hopefully things will get a little simpler in the future.
 You can currently build on Unix-like systems and Windows. For Mac OS/X you'll have to download/install the necessary libraries and adjust the makefiles. (If you build sucessfully on Mac feel free to share and we can 
@@ -189,11 +189,11 @@ else except deal with TDAmeritradeAPI. If not you'll to have deal with ALL the l
 5. run 
 
 
-#### Namespaces
+### Namespaces
 - - -
 All front-end library code is in namespace ```tdma```. We mostly exclude it in the docs.
 
-#### Errors & Exceptions
+### Errors & Exceptions
 - - -
 Before discussing authentication and access it's important to understand how the library 
 handles errors and exceptional states. Almost all exceptional/error states will cause exceptions
@@ -217,7 +217,7 @@ for the derived classes)
 - There are no guarantees of exception safety.             
 
 
-#### Authentication
+### Authentication
 - - -
 Authentication is done through OAuth2 using your account login information. 
 
@@ -292,7 +292,7 @@ lifetime of the program, storing the credentials on exit. Just use the
 ```.credentials``` member as an argument for the following API calls, where required. Keep in mind, with this approach the password will be stored in memory, in plain-text, for 
 the life of the ```CredentialsManager``` object.
     
-#### Access
+### Access
 - - -
 
 - ##### *HTTPS Get*
@@ -308,7 +308,7 @@ the life of the ```CredentialsManager``` object.
     For updating your account and executing trades you'll make HTTPS Put/Post/Delete requests that have yet to be implemented. *As soon as the get calls are determined stable and there's a means to test execution outside of live trading they will be added.*
 
 
-#### LICENSING & WARRANTY
+### LICENSING & WARRANTY
 - - -
 
 *TDAmeritradeAPI is released under the GNU General Public License(GPL); a copy (LICENSE.txt) should be included. If not, see http://www.gnu.org/licenses. The author reserves the right to issue current and/or future versions of TDAmeritradeAPI under other licensing agreements. Any party that wishes to use TDAmeritradeAPI, in whole or in part, in any way not explicitly stipulated by the GPL - including, but not limited to, commercial use - is thereby required to obtain a separate license from the author. The author reserves all other rights.*
