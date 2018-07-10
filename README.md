@@ -25,10 +25,32 @@ and then uses the library to request an access token, which is refreshed automat
 
 *Communicating w/ 3rd party servers, accessing financial accounts, and automating trade execution are all operations that present risk and require responsibility. **By using this software you agree that you understand and accept these risks and responsibilities. You accept sole responsibility for the results of said use. You completely absolve the author of any damages, financial or otherwise, incurred personally or by 3rd parties, directly or indirectly, by using this software - even those resulting from the gross negligence of the author. All communication with TDAmeritrade servers, access of accounts, and execution of orders must adhere to their policies and terms of service and is your repsonsibility, and yours alone.***
 
+
+
+#### Index
+- - -
+- [Dependencies](#dependencies)
+- [Binary Compatibility](#binary-compatibility)
+- [Language Bindings](#language-bindings)
+- [Getting Started](#getting-started)
+    - [Unix-Like Systems](#unix-like)
+    - [Windows](#windows)
+    - [Managing the Libraries](#managing-the-libraries)
+    - [Using the TDAmeritradeAPI Library ](#using-the-tdameritradeapi-library)
+- [Namespaces](#namespaces)
+- [Errors & Exceptions](#errors--exceptions)
+- [Authentication](#authentication)
+- [Access](#access)
+    - [HTTPS Get](#https-get)
+    - [Streaming](#streaming)
+    - [HTTPS Update/Execute](#https-updateexecute)
+- [Licensing & Warranty](#licensing--warranty)
+
+<br>
+
  
 #### Dependencies
 - - -
-
 This project would not be possible without some of the great open-source projects listed below.
 
 - [libcurl](https://curl.haxx.se/libcurl) - Client-side C library supporting a ton of transfer protocols
@@ -38,37 +60,50 @@ This project would not be possible without some of the great open-source project
 - [uWebSockets](https://github.com/uNetworking/uWebSockets) - A simple and efficient C++ WebSocket library. The source is included, compiled and archived with our library to limit dependency issues.
 - [nlohmann::json](https://github.com/nlohmann/json) : - An extensive C++ json library that only requires adding a single header file. ***You'll need to review their documentation for handling returned data from this library.***
 
-#### Coming Soon
+
+#### Binary Compatibility
 - - -
+***IMPORTANT*** - There are certain binary compatibility issues when exporting C++ code accross compilations(from name mangling, differing runtimes, changes to STL implementations etc.). If, for instance, we return an std::vector in an earlier version of a library, its implementation changes, and code that imports the library is compiled against a new version of the STL, there can be an issue.
 
-- account update and trade execution functionality
-- Python bindings
-- simplified build/install
+***For the time being you need to be sure to use the same compiler/settings and link to the same libraries as the TDAmeritradeAPI library does.*** For this reason we don't include any pre-built binaries. You should (re)compile this library alongside your code if you change compilers, settings, runtimes etc. 
 
-### Getting Started
+In the future we may include some type of stable ABI layer on top of the core library to limit these issues(see below).
+
+
+#### Language Bindings
 - - -
+Look for Python, and potentially other, bindings in the near future. 
 
-> **IMPORTANT Note on C++ Libraries and Binary Interfaces**
-> 
-> There are certain binary compatibility issues when exporting C++ code accross compilations(from name mangling, differing runtimes, changes to STL implementations etc.). If, for instance, we return an std::vector in an earlier version of a library, its implementation changes, and code that imports the library is compiled against a new version of the STL, there can be an issue.
-> 
-> **Because of this you need to be sure you use the same compiler/settings for your code and link to the same libraries as the TDAmeritradeAPI library does.** For this reason we don't include any pre-built binaries. You should (re)compile this library alongside your code if you change compilers, settings, runtimes etc. 
-> 
-> In the future we may include some type of stable ABI layer on top of the core library to limit these issues.
+These will be implemented through a binary-compatible C interface model that looks something like :
 
+     
+    |--------------------------------------|-----------------|------------|
+    |      client python, java etc.        |   client C++    |  client C  |
+    |--------------------------------------|                 |            | 
+    |          extension layer             |                 |            |
+    |--------------------------------------|-----------------|            |
+    | C-lib interface (e.g ctypes.py, JNA) | C++ Proxy Layer |            |
+    |=====================================================================|
+    |                   (binary compatible) C interface                   |
+    |---------------------------------------------------------------------|
+    |       (non binary compatible) C++ interface to TDAmeritradeAPI      |
+    |---------------------------------------------------------------------|
+
+
+.. or by using a tool like SWIG to simplify things.
+
+
+#### Getting Started
+- - -
 The current build setup is a bit messy. Hopefully things will get a little simpler in the future.
-You can currently build on Unix-like systems and Windows. The makefiles may need some tweaks for
-non-GNU/Linux systems. For Mac OS/X you'll have to download/install the necessary libraries
-and adjust the makefiles. (If you build sucessfully on Mac feel free to share and we can 
+You can currently build on Unix-like systems and Windows. For Mac OS/X you'll have to download/install the necessary libraries and adjust the makefiles. (If you build sucessfully on Mac feel free to share and we can 
 include it in the docs.)
 
 - Compilers need to support C++11.
 
 - If you have a build issue file an issue or send an email.
 
-#### Unix-like
-
-*Tested on GNU/Linux Debian-8 using 'libcurl4-openssl-dev' package via apt and stock packages.*
+#### Unix-Like
 
 ##### Install Dependencies
 
@@ -89,13 +124,13 @@ If using a package manager like apt installing libcurl should install libssl and
 
 ##### Build
 
-The Eclipse/CDT generated makefiles are in the  'Debug' and 'Release' subdirectories. 
+The Eclipse/CDT generated makefiles are in the  'Debug' and 'Release' subdirectories. *(The makefiles may need some tweaks for non-linux systems.)*
 
     user@host:~/dev/TDAmeritradeAPI/Release$ make
 
-#### Windows
+\* *Tested on GNU/Linux Debian-8 using 'libcurl4-openssl-dev' package via apt and stock packages.*
 
-*Tested on 32 and 64 bit Windows7 using pre-built dependencies.*
+#### Windows
 
 ##### Install Dependencies
 
@@ -117,14 +152,15 @@ the TDAmeritradeAPI project so it looks for Release builds of the dependencies. 
 If sucessful the TDAmeritradeAPI library files AND the pre-built 
 dependencies will be in vsbuild\\x64 or vsbuild\\Win32. (If you built/installed your own dependencies you can ignore these.)
 
-*(The 'test project' is just a hodge-podge for checking basic functionality and linking. 
+\* *The 'test' project is just a hodge-podge for checking basic functionality and linking. 
 The executable it produces takes three args: account id, path to credentials file, and a password to decrypt credentials. It requires a valid credentials file which you would need to create via
-the instructions in the Authorization section below BEFORE using.)*
+the instructions in the Authorization section below BEFORE using.*
 
+\*\* *Tested on 32 and 64 bit Windows7 using pre-built dependencies.*
 
-#### Managing the libraries
+#### Managing the Libraries
 
-Once you've built all the dependencies AND TDAmeritradeAPI you'll need to make sure they
+Once you've built all the dependencies *AND* TDAmeritradeAPI you'll need to make sure they
  are in a location the linker can find, or tell the linker where to look.
 
 If you've installed the dependencies to the default location you shouldn't need to do anything 
@@ -140,7 +176,7 @@ else except deal with TDAmeritradeAPI. If not you'll to have deal with ALL the l
 - *-or-* keep them in the same folder as your executable 
 - *-or-* add their folder to your PATH(windows) or LD_LIBRARY_PATH(linux).
 
-#### Using the TDAmeritradeAPI library
+#### Using the TDAmeritradeAPI Library
 
 1. include headers:
     - "tdma_api_get.h" for the 'HTTPS Get' interface 
@@ -155,12 +191,10 @@ else except deal with TDAmeritradeAPI. If not you'll to have deal with ALL the l
 
 #### Namespaces
 - - -
-
 All front-end library code is in namespace ```tdma```. We mostly exclude it in the docs.
 
 #### Errors & Exceptions
 - - -
-
 Before discussing authentication and access it's important to understand how the library 
 handles errors and exceptional states. Almost all exceptional/error states will cause exceptions
 to be thrown:
@@ -185,7 +219,6 @@ for the derived classes)
 
 #### Authentication
 - - -
-
 Authentication is done through OAuth2 using your account login information. 
 
 1. [Follow Ameritrade's Getting Started guide](https://developer.tdameritrade.com/content/getting-started) 
@@ -260,22 +293,23 @@ lifetime of the program, storing the credentials on exit. Just use the
 the life of the ```CredentialsManager``` object.
     
 #### Access
-- - - 
+- - -
+Access is seperated into three different interfaces:
 
-##### *HTTPS Get*
+- ##### *HTTPS Get*
 
-For queries, (non-streaming) real-time data, and account information you'll make HTTPS Get requests through 'Getter' objects and convenience functions that internally use libcurl and return json objects. [Please review the full documentation](README_GET.md).
+    For queries, (non-streaming) real-time data, and account information you'll make HTTPS Get requests through 'Getter' objects and convenience functions that internally use libcurl and return json objects. [Please review the full documentation](README_GET.md).
 
-##### *Streaming*
+- ##### *Streaming*
 
-For real-time, low(er)-latency streaming data you'll establish a long-lived WebSocket connection through the StreamingSession class that will callback with json objects. *StreamingSession is currently a work in progress; you should anticipate bugs and substantive changes to both the interface and implementation going forward.* [Please review the full documentation](README_STREAMING.md).
+    For real-time, low(er)-latency streaming data you'll establish a long-lived WebSocket connection through the StreamingSession class that will callback with json objects. *StreamingSession is currently a work in progress; you should anticipate bugs and substantive changes to both the interface and implementation going forward.* [Please review the full documentation](README_STREAMING.md).
 
-##### *HTTPS Update/Execute* 
+- ##### *HTTPS Update/Execute* 
 
-For updating your account and executing trades you'll make HTTPS Put/Post/Delete requests that have yet to be implemented. *As soon as the get calls are determined stable and there's a means to test execution outside of live trading they will be added.*
+    For updating your account and executing trades you'll make HTTPS Put/Post/Delete requests that have yet to be implemented. *As soon as the get calls are determined stable and there's a means to test execution outside of live trading they will be added.*
 
 
-### LICENSING & WARRANTY
+#### LICENSING & WARRANTY
 - - -
 
 *TDAmeritradeAPI is released under the GNU General Public License(GPL); a copy (LICENSE.txt) should be included. If not, see http://www.gnu.org/licenses. The author reserves the right to issue current and/or future versions of TDAmeritradeAPI under other licensing agreements. Any party that wishes to use TDAmeritradeAPI, in whole or in part, in any way not explicitly stipulated by the GPL - including, but not limited to, commercial use - is thereby required to obtain a separate license from the author. The author reserves all other rights.*
