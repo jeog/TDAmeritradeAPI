@@ -26,7 +26,7 @@
 
 *UPDATES*
 
-- *On Jun 30 2018 API behavior was changed (by Ameritrade) to fix a bug w/ expired token messages. This will result in an ```InvalidRequest``` exception being thrown with error code 401 in older versions of the library (commit eb59c1 and earlier). If so upgrade to a newer version of the library.*
+- *On Jun 30 2018 API behavior was changed (by Ameritrade) to fix a bug w/ expired token messages. This will result in an ```InvalidRequest``` exception being thrown with error code 401 in older versions of the library (before commit b75586). If so upgrade to a newer version of the library.*
 - - - 
 
 #### Overview
