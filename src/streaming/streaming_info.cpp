@@ -17,6 +17,7 @@ along with this program.  If not, see http://www.gnu.org/licenses.
 
 #include <sstream>
 #include <ctime>
+#include <string>
 
 #include "../../include/_tdma_api.h"
 

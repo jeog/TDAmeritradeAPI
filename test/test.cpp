@@ -68,15 +68,24 @@ int main(int argc, char* argv[])
 
     try {
         CredentialsManager cmanager(creds_path, password);
-    
+
+        Credentials ccc;
+        ccc = cmanager.credentials;
+        Credentials ccc2( ccc );
+
+        ccc2 = move(ccc);
+        Credentials ccc4( move(ccc2 ));
+
         cout<< "*** SET WAIT ***" << endl;
         cout<< APIGetter::get_wait_msec().count() << " --> ";
         APIGetter::set_wait_msec( milliseconds(1500) );
         cout<< APIGetter::get_wait_msec().count() << endl;
 
         cout<< "*** QUOTE DATA ***" << endl;
-        quote_getters(cmanager.credentials);            
-        historical_getters(cmanager.credentials);    
+        quote_getters(cmanager.credentials);
+        return 0; /*DEBUG*/
+
+        //historical_getters(cmanager.credentials);
         this_thread::sleep_for( seconds(3) );
 
         QuotesSubscription spy_quote_sub({"SPY"}, {ft::symbol, ft::last_price});
@@ -88,18 +97,18 @@ int main(int argc, char* argv[])
         ss->start( {spy_quote_sub, actives_sub} );
 
         cout<< "*** OPTION DATA ***" << endl;
-        option_chain_getter(cmanager.credentials);
-        option_chain_strategy_getter(cmanager.credentials);
-        option_chain_analytical_getter(cmanager.credentials);
+        //option_chain_getter(cmanager.credentials);
+        //option_chain_strategy_getter(cmanager.credentials);
+        //option_chain_analytical_getter(cmanager.credentials);
         this_thread::sleep_for( seconds(3) );
 
         QuotesSubscription qqq_quote_sub({"QQQ"}, {ft::symbol, ft::last_size});
         ss->add_subscription(qqq_quote_sub);
 
         cout<< "*** MARKET DATA ***" << endl;
-        instrument_info_getter(cmanager.credentials);
-        market_hours_getter(cmanager.credentials);
-        movers_getter(cmanager.credentials);
+        //instrument_info_getter(cmanager.credentials);
+        //market_hours_getter(cmanager.credentials);
+        //movers_getter(cmanager.credentials);
         this_thread::sleep_for( seconds(3) );
 
         try{
@@ -110,10 +119,10 @@ int main(int argc, char* argv[])
         ss->stop();
 
         cout<< "*** ACCOUNT DATA ***" << endl;
-        account_info_getter(account_id, cmanager.credentials);
-        preferences_getter(account_id, cmanager.credentials);
-        user_principals_getter(cmanager.credentials);
-        subscription_keys_getter(account_id, cmanager.credentials);
+        //account_info_getter(account_id, cmanager.credentials);
+        //preferences_getter(account_id, cmanager.credentials);
+        //user_principals_getter(cmanager.credentials);
+        //subscription_keys_getter(account_id, cmanager.credentials);
         this_thread::sleep_for( seconds(3) );
 
         TimesaleFuturesSubscription sp_quote_sub( {"/ES"}, {tsft::symbol,
@@ -122,8 +131,8 @@ int main(int argc, char* argv[])
         ss->start( sp_quote_sub );
 
         cout<< "*** TRANSACTION DATA ***" << endl;
-        transaction_history_getter(account_id, cmanager.credentials);
-        individual_transaction_history_getter(account_id, cmanager.credentials);
+        //transaction_history_getter(account_id, cmanager.credentials);
+        //individual_transaction_history_getter(account_id, cmanager.credentials);
 
         string in;
         cin >> in;
@@ -268,7 +277,7 @@ streaming(string id, Credentials& c)
 
 }
 
-
+/*
 
 void
 transaction_history_getter(string id, Credentials& c)
@@ -548,7 +557,7 @@ historical_getters(Credentials& c)
                                start, end, true);
     cout<< hrg << hrg.get() << endl << endl;
 }
-
+*/
 void
 quote_getters(Credentials& c)
 {
@@ -558,10 +567,8 @@ quote_getters(Credentials& c)
     QuoteGetter qg2(move(qg));
     qg2.set_symbol("QQQ");
 
-    qg = move(qg2);
-
-    cout<< qg.get_symbol() << endl << qg.get() << endl << endl;
-
+    cout<< qg2.get_symbol() << endl << qg2.get() << endl << endl;
+/*
     QuotesGetter qsg(c, {"SPY", "QQQ"});
     for( auto s: qsg.get_symbols() ){
         cout<< s << ' ';
@@ -573,6 +580,7 @@ quote_getters(Credentials& c)
         cout<< s << ' ';
     }
     cout<< endl << qsg.get() << endl << endl;
+    */
 }
 
 long long

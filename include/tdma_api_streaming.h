@@ -20,13 +20,17 @@ along with this program.  If not, see http://www.gnu.org/licenses.
 
 #include <map>
 #include <set>
-#include <thread>
 #include <memory>
+#include <thread>
+#include <string>
 
 #include "_common.h"
+#include "json.hpp"
 #include "websocket_connect.h"
 #include "threadsafe_hashmap.h"
 #include "tdma_common.h"
+
+using json = nlohmann::json;
 
 namespace tdma{
 

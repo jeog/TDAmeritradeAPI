@@ -18,13 +18,20 @@ along with this program.  If not, see http://www.gnu.org/licenses.
 #ifndef TDMA_API_GET_H
 #define TDMA_API_GET_H
 
+#include "_common.h"
+#include "tdma_common.h"
+
+#ifdef __cplusplus
+
 #include <set>
 #include <unordered_map>
 #include <iostream>
 
-#include "_common.h"
-#include "curl_connect.h"
-#include "tdma_common.h"
+#include "json.hpp"
+//#include "curl_connect.h"
+
+
+using json = nlohmann::json;
 
 namespace tdma{
 
@@ -249,6 +256,8 @@ struct EnumCompare : public EnumTypeAssert<E> {
 };
 
 
+// TODO C versions
+
 DLL_SPEC_ extern const
 std::unordered_map<PeriodType, std::set<unsigned int>, EnumHash<PeriodType>>
 VALID_PERIODS_BY_PERIOD_TYPE;
@@ -265,89 +274,296 @@ VALID_FREQUENCIES_BY_FREQUENCY_TYPE;
 
 typedef std::function<void(long, const std::string&)> api_on_error_cb_ty;
 
-// TODO Pimpl
-class DLL_SPEC_  APIGetter{
-    static std::chrono::milliseconds wait_msec; // DEF_WAIT_MSEC
-    static std::chrono::milliseconds last_get_msec; // 0
-    static std::mutex get_mtx;
+} /* tdma */
 
-    static json
-    throttled_get(APIGetter& getter);
+#endif /* __cplusplus */
 
-    api_on_error_cb_ty _on_error_callback;
-    std::reference_wrapper<Credentials> _credentials;
-    conn::HTTPSGetConnection _connection;
 
+/*
+ * C / ABI bridge objects
+ *
+ * these are simple C objects that hold a pointer to the underlying
+ * C++ Getter implementation object and a type id field we can check
+ * in the C or ABI layer for additional type safety
+ *
+ * NOTE - APIGetter is a protected base so we can simply pass its corresponding
+ *        impl pointer around as void* if easier
+ *
+ * NOTE - objects pointed to by 'obj' are allocated by library (probably
+ *        using new) and SHOULD NOT be dealloced by the client
+ */
+
+typedef struct {
+    void *obj;
+    int type_id; // 0
+} Getter_C;
+
+typedef struct {
+    void *obj;
+    int type_id; // 1
+} QuoteGetter_C;
+
+/*
+ * ABI bridge functions
+ *
+ *
+ * How we provide C and C++ interface w/ a stable ABI
+ * (e.g for QuoteGetter)
+ *
+ *            Interface      -->         ABI Bridge         -->     Implementation
+ *
+ *  C   QuoteGetter_GetSymbol()   QuoteGetter_GetSymbol_ABI()
+ *  C++ QuoteGetter.get_symbol()                               QuoteGetterImpl.get_symbol()
+ *
+ *  Errors:
+ *
+ *  C        Error Code      <--        Error Code         <--      Exception
+ *  C++      Exception       <--        Exception          <--      Exception
+ *
+ *
+ * INLINE interface calls  so they stay on client-side of ABI
+ */
+
+EXTERN_C_SPEC_ DLL_SPEC_ int
+APIGetter_Get_ABI( Getter_C *pgetter,
+                     char** buf,
+                     size_t *n,
+                     int allow_exceptions );
+
+EXTERN_C_SPEC_ DLL_SPEC_ int
+APIGetter_Close_ABI(Getter_C *pgetter, int allow_exceptions);
+
+EXTERN_C_SPEC_ DLL_SPEC_ int
+APIGetter_SetWaitMSec_ABI(unsigned long long msec, int allow_exceptions);
+
+EXTERN_C_SPEC_ DLL_SPEC_ int
+APIGetter_GetWaitMSec_ABI(unsigned long long *msec, int allow_exceptions);
+
+EXTERN_C_SPEC_ DLL_SPEC_ int
+APIGetter_GetDefWaitMSec_ABI(unsigned long long *msec, int allow_exceptions);
+
+
+EXTERN_C_SPEC_ DLL_SPEC_ int
+QuoteGetter_Create_ABI( struct Credentials *pcreds,
+                           const char* symbol,
+                           QuoteGetter_C *pgetter,
+                           int allow_exceptions );
+
+EXTERN_C_SPEC_ DLL_SPEC_ int
+QuoteGetter_Destroy_ABI(QuoteGetter_C *pgetter, int allow_exceptions);
+
+EXTERN_C_SPEC_ DLL_SPEC_ int
+QuoteGetter_GetSymbol_ABI( QuoteGetter_C *pgetter,
+                              char **buf,
+                              size_t *n,
+                              int allow_exceptions);
+
+EXTERN_C_SPEC_ DLL_SPEC_ int
+QuoteGetter_SetSymbol_ABI( QuoteGetter_C *pgetter,
+                              const char *symbol,
+                              int allow_exceptions );
+
+
+/*
+ * C interface
+ *
+ * all calls return error status and populate vars/buffers
+ *
+ * char** buf - assigned a heap-allocated pointer to string w/ NULL term
+ * size_t* n  - the size of the string AND NULL term
+ *
+ * CLIENTS NEED TO DEALLOC (CALL FREE) WHEN DONE, BEFORE USING AGAIN
+ *
+ *
+ * Getter objects created by Create need to be destroyed w/ Destroy
+ *
+ * NOTE - for Get and Close client can use the versions associate with the
+ *        getter type or the 'base' versions: APIGetter_Get and APIGetter_Close
+ *
+ */
+
+/* APIGetter -> APIGetterImpl */
+inline int
+APIGetter_Get(Getter_C *pgetter, char** buf, size_t *n)
+{ return APIGetter_Get_ABI(pgetter, buf, n, false); }
+
+inline int
+APIGetter_Close(Getter_C *pgetter)
+{ return APIGetter_Close_ABI(pgetter, false); }
+
+inline int
+APIGetter_SetWaitMSec(unsigned long long msec)
+{ return APIGetter_SetWaitMSec_ABI(msec, false); }
+
+inline int
+APIGetter_GetWaitMSec(unsigned long long *msec)
+{ return APIGetter_GetWaitMSec_ABI(msec, false); }
+
+inline int
+APIGetter_GetDefWaitMSec(unsigned long long *msec)
+{ return APIGetter_GetDefWaitMSec_ABI(msec, false); }
+
+
+/* QuoteGetter -> QuoteGetterImpl */
+inline int
+QuoteGetter_Create( struct Credentials *pcreds,
+                      const char* symbol,
+                      QuoteGetter_C *pgetter )
+{ return QuoteGetter_Create_ABI(pcreds, symbol, pgetter, false); }
+
+inline int
+QuoteGetter_Destroy(QuoteGetter_C *getter)
+{ return QuoteGetter_Destroy_ABI(getter, false); }
+
+inline int
+QuoteGetter_Get(QuoteGetter_C *pgetter, char** buf, size_t *n)
+{ return APIGetter_Get_ABI( (Getter_C*)pgetter, buf, n, false); }
+
+inline int
+QuoteGetter_Close(QuoteGetter_C *pgetter)
+{ return APIGetter_Close_ABI( (Getter_C*)pgetter, false); }
+
+inline int
+QuoteGetter_GetSymbol(QuoteGetter_C *getter, char **buf, size_t *n)
+{ return QuoteGetter_GetSymbol_ABI(getter, buf, n, false); }
+
+inline int
+QuoteGetter_SetSymbol(QuoteGetter_C *getter, const char *symbol)
+{ return QuoteGetter_SetSymbol_ABI(getter, symbol, false); }
+
+
+/* C++ Interface */
+
+#ifdef __cplusplus
+
+namespace tdma{
+
+inline const char*
+CPP_to_C(const std::string& in)
+{ return in.c_str(); }
+
+inline Credentials*
+CPP_to_C(Credentials& in)
+{ return &in; }
+
+
+
+class APIGetter{
 protected:
-    APIGetter(Credentials& creds, api_on_error_cb_ty on_error_callback);
+    std::unique_ptr<Getter_C> _pgetter;
 
-    /*
-     * restrict copy and assign (for now at least):
-     *
-     *   1) should there ever be more than one of the same exact getter?
-     *   2) want to restrict copy/assign of the underlying connection
-     *      object to simplify things so if we share refs to it:
-     *         a) one ref can close() on another
-     *         b) destruction becomes more complicated
-     *
-     * allow move (consistent w/ underlying connection objects)
-     */
+    template<typename CTy>
+    CTy*
+    cgetter() const
+    {
+        return reinterpret_cast<CTy*>(
+            const_cast<Getter_C*>(_pgetter.get())
+            );
+    }
 
-    APIGetter( APIGetter&& ) = default;
+    // can we deduce CTy from F ?
+    template<typename CTy, typename F, typename... Args>
+    APIGetter(CTy _, F func, Args... args)
+        :
+            _pgetter(new Getter_C)
+        {
+            static_assert(sizeof(CTy) == sizeof(Getter_C), "invalid C getters");
+            func(args..., cgetter<CTy>(), true);
+        }
 
-    APIGetter&
-    operator=( APIGetter&& ) = default;
+    APIGetter( APIGetter&& getter )
+        : _pgetter( move(getter._pgetter) )
+    {}
 
     virtual
     ~APIGetter(){}
 
-    void
-    set_url(std::string url);
-
 public:
-    static const std::chrono::milliseconds DEF_WAIT_MSEC;
+    static std::chrono::milliseconds
+    get_def_wait_msec()
+    {
+        unsigned long long w;
+        APIGetter_GetDefWaitMSec_ABI(&w, true);
+        return std::chrono::milliseconds(w);
+    }
 
     static std::chrono::milliseconds
-    get_wait_msec();
+    get_wait_msec()
+    {
+        unsigned long long w;
+        APIGetter_GetWaitMSec_ABI(&w, true);
+        return std::chrono::milliseconds(w);
+    }
 
     static void
-    set_wait_msec(std::chrono::milliseconds msec);
+    set_wait_msec(std::chrono::milliseconds msec)
+    {
+        APIGetter_SetWaitMSec_ABI(
+            static_cast<unsigned long long>(msec.count()), true
+            );
+    }
 
     json
-    get();
+    get()
+    {
+        char *buf;
+        size_t n;
+        APIGetter_Get_ABI(_pgetter.get(), &buf, &n, true);
+        json j(n > 1 ? buf : "");
+        if(buf)
+            free(buf);
+        return j;
+    }
 
     void
-    close();
+    close()
+    { APIGetter_Close_ABI(_pgetter.get(), true); }
+
 };
 
 
-class DLL_SPEC_ QuoteGetter
+
+class QuoteGetter
         : public APIGetter {
-    std::string _symbol;
-
-    void
-    _build();
-
-    virtual void
-    build();
-
 public:
-    QuoteGetter( Credentials& creds,
-                  const std::string& symbol );
+    static const int TYPE_ID = 1;
+
+    QuoteGetter( Credentials& creds, const std::string& symbol )
+        :
+            APIGetter( QuoteGetter_C{}, QuoteGetter_Create_ABI,
+                       CPP_to_C(creds), CPP_to_C(symbol) )
+    {}
+
+    ~QuoteGetter()
+    {
+        if( _pgetter && _pgetter->obj )
+            QuoteGetter_Destroy_ABI(cgetter<QuoteGetter_C>(), true);
+    }
+
+    QuoteGetter( QuoteGetter&& ) = default;
 
     std::string
     get_symbol() const
-    { return _symbol; }
+    {
+        char *buf;
+        size_t n;
+        QuoteGetter_GetSymbol_ABI(cgetter<QuoteGetter_C>(), &buf, &n, true);
+        std::string s(buf, n-1);
+        if(buf)
+            free(buf);
+        return s;
+    }
 
     void
-    set_symbol(const std::string& symbol);
+    set_symbol(const std::string& symbol)
+    { QuoteGetter_SetSymbol_ABI(cgetter<QuoteGetter_C>(), symbol.c_str(), true); }
 };
 
 inline json
 GetQuote(Credentials& creds, const std::string& symbol)
 { return QuoteGetter(creds, symbol).get(); }
 
-
+/*
 class DLL_SPEC_ QuotesGetter
         : public APIGetter {
     std::set<std::string> _symbols;
@@ -525,7 +741,7 @@ class DLL_SPEC_ HistoricalPeriodGetter
     void
     _build();
 
-    /*virtual*/ void
+    /*virtual*//* void
     build();
 
 public:
@@ -576,7 +792,7 @@ class DLL_SPEC_ HistoricalRangeGetter
     void
     _build();
 
-    /*virtual*/ void
+    /*virtual*//* void
     build();
 
 public:
@@ -620,8 +836,9 @@ GetHistoricalRange( Credentials& creds,
                                   extended_hours ).get();
 }
 
+*/
 
-class DLL_SPEC_ OptionStrikes {
+class OptionStrikes {
 public:
     enum class Type : unsigned int {
         n_atm,
@@ -667,15 +884,15 @@ public:
     Range(OptionRangeType range);
 };
 
-DLL_SPEC_ std::string
+std::string
 to_string(const OptionStrikes& strikes);
 
-DLL_SPEC_ std::ostream&
+std::ostream&
 operator<<(std::ostream& out, const OptionStrikes& strikes);
 
 
 
-class DLL_SPEC_ OptionStrategy {
+class OptionStrategy {
     OptionStrategyType _strategy;
     double _spread_interval;
 
@@ -732,12 +949,13 @@ public:
     { return {OptionStrategyType::roll, spread_interval}; }
 };
 
-DLL_SPEC_ std::string
+std::string
 to_string(const OptionStrategy& strategy);
 
-DLL_SPEC_ std::ostream&
+std::ostream&
 operator<<(std::ostream& out, const OptionStrategy& strikes);
 
+/*
 
 class DLL_SPEC_ OptionChainGetter
         : public APIGetter {
@@ -852,7 +1070,7 @@ class DLL_SPEC_ OptionChainStrategyGetter
     void
     _build();
 
-    /*virtual*/ void
+    /*virtual*//* void
     build();
 
 protected:
@@ -908,7 +1126,7 @@ class DLL_SPEC_ OptionChainAnalyticalGetter
     void
     _build();
 
-    /*virtual*/ void
+    /*virtual*//* void
     build();
 
 protected:
@@ -1014,7 +1232,7 @@ class DLL_SPEC_ AccountInfoGetter
     void
     _build();
 
-    /*virtual*/ void
+    /*virtual*//* void
     build();
 
 public:
@@ -1051,7 +1269,7 @@ class DLL_SPEC_ PreferencesGetter
     void
     _build();
 
-    /*virtual*/ void
+    /*virtual*//* void
     build();
 
 public:
@@ -1073,7 +1291,7 @@ class DLL_SPEC_ UserPrincipalsGetter
     void
     _build();
 
-    /*virtual*/ void
+    /*virtual*//* void
     build();
 
 public:
@@ -1130,7 +1348,7 @@ class DLL_SPEC_ StreamerSubscriptionKeysGetter
     void
     _build();
 
-    /*virtual*/ void
+    /*virtual*//* void
     build();
 
 public:
@@ -1154,7 +1372,7 @@ class DLL_SPEC_ TransactionHistoryGetter
     void
     _build();
 
-    /*virtual*/ void
+    /*virtual*//* void
     build();
 
 public:
@@ -1215,7 +1433,7 @@ class DLL_SPEC_ IndividualTransactionHistoryGetter
     void
     _build();
 
-    /*virtual*/ void
+    /*virtual*//* void
     build();
 
 public:
@@ -1250,7 +1468,7 @@ class DLL_SPEC_ InstrumentInfoGetter
     void
     _build();
 
-    /*virtual*/ void
+    /*virtual*//* void
     build();
 
 public:
@@ -1275,8 +1493,11 @@ GetInstrumentInfo( Credentials& creds,
                    InstrumentSearchType search_type,
                    const std::string& query_string )
 { return InstrumentInfoGetter(creds, search_type, query_string).get(); }
+*/
 
 
-} /* amtd */
+} /* tdma */
+
+#endif /* __cplusplus */
 
 #endif // TDMA_API_GET_H

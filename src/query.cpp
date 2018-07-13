@@ -39,6 +39,7 @@ query_api_on_error_callback(long code, const string& data)
     };
 }
 
+/*
 
 InstrumentInfoGetter::InstrumentInfoGetter( Credentials& creds,
                                             InstrumentSearchType search_type ,
@@ -73,7 +74,7 @@ InstrumentInfoGetter::_build()
 }
 
 
-/*virtual*/ void
+virtual void
 InstrumentInfoGetter::build()
 { _build(); }
 
@@ -86,6 +87,7 @@ InstrumentInfoGetter::set_query( InstrumentSearchType search_type,
     _query_string = query_string;
     build();
 }
+*/
 
 
 } /* tdma */

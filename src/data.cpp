@@ -20,12 +20,13 @@ along with this program.  If not, see http://www.gnu.org/licenses.
 #include <iostream>
 #include <tuple>
 #include <cctype>
+#include <string>
 
 #include "../include/_tdma_api.h"
 
-namespace tdma {
-
 using namespace std;
+
+namespace tdma {
 
 const string URL_MARKETDATA = URL_BASE + "marketdata/";
 
@@ -43,40 +44,200 @@ data_api_on_error_callback(long code, const string& data)
     };
 }
 
-QuoteGetter::QuoteGetter( Credentials& creds, const string& symbol )
-    :
-        APIGetter(creds, data_api_on_error_callback),
-        _symbol(symbol)
+
+class QuoteGetterImpl
+        : public APIGetterImpl {
+    std::string _symbol;
+
+    void
+    _build()
+    {
+        string url = URL_MARKETDATA + util::url_encode(_symbol) + "/quotes";
+        APIGetterImpl::set_url(url);
+    }
+
+    virtual void
+    build()
+    { _build(); }
+
+public:
+    QuoteGetterImpl( Credentials& creds, const string& symbol )
+        :
+            APIGetterImpl(creds, data_api_on_error_callback),
+            _symbol(symbol)
+        {
+            if( symbol.empty() )
+                throw ValueException("empty symbol string");
+
+            _build();
+        }
+
+    std::string
+    get_symbol() const
+    { return _symbol; }
+
+    void
+    set_symbol(const string& symbol)
     {
         if( symbol.empty() )
             throw ValueException("empty symbol string");
 
-        _build();
+        _symbol = symbol;
+        build();
+    }
+};
+
+} /* tdma */
+
+
+
+int
+QuoteGetter_Create_ABI( Credentials *pcreds,
+                           const char* symbol,
+                           QuoteGetter_C *pgetter,
+                           int allow_exceptions )
+{
+    if( !pgetter ){
+        if( allow_exceptions ){
+            throw tdma::ValueException("pgetter can not be null");
+        }
+        return TDMA_API_VALUE_ERROR;
     }
 
+    if( !pcreds || !symbol ){
+        pgetter->obj = nullptr;
+        pgetter->type_id = -1;
+        if( allow_exceptions ){
+            throw tdma::ValueException("pcreds/symbol can not be null");
+        }
+        return TDMA_API_VALUE_ERROR;
+    }
 
-void
-QuoteGetter::_build()
-{
-    string url = URL_MARKETDATA + util::url_encode(_symbol) + "/quotes";
-    APIGetter::set_url(url);
+    if( !pcreds->access_token | !pcreds->refresh_token | !pcreds->client_id ){
+        pgetter->obj = nullptr;
+        pgetter->type_id = -1;
+        if( allow_exceptions ){
+            throw tdma::LocalCredentialException("invalid Credentials struct");
+        }
+        return TDMA_API_CRED_ERROR;
+    }
+
+    static auto meth = +[](Credentials *c, const char* s){
+        return new tdma::QuoteGetterImpl(*c, s);
+    };
+
+    tdma::QuoteGetterImpl *obj;
+    int err;
+    tie(obj, err) = tdma::CallImplFromABI(allow_exceptions, meth, pcreds, symbol);
+    if( err ){
+        pgetter->obj = nullptr;
+        pgetter->type_id = -1;
+        return err;
+    }
+
+    pgetter->obj = reinterpret_cast<void*>(obj);
+    pgetter->type_id = tdma::QuoteGetter::TYPE_ID;
+    return 0;
 }
 
-
-/*virtual*/ void
-QuoteGetter::build()
-{ _build(); }
-
-
-void
-QuoteGetter::set_symbol(const string& symbol)
+int
+QuoteGetter_Destroy_ABI(QuoteGetter_C *pgetter, int allow_exceptions)
 {
-    if( symbol.empty() )
-        throw ValueException("empty symbol string");
+    if( !pgetter || !pgetter->obj ){
+        if( allow_exceptions ){
+            throw tdma::ValueException("pgetter can not be null");
+        }
+        return TDMA_API_VALUE_ERROR;
+    }
 
-    _symbol = symbol;
-    build();
+    if( pgetter->type_id != tdma::QuoteGetter::TYPE_ID ){
+        if( allow_exceptions ){
+            throw tdma::TypeException("pgetter has invalid type id");
+        }
+        return TDMA_API_TYPE_ERROR;
+    }
+
+    static auto meth = +[](void* obj){
+        delete reinterpret_cast<tdma::QuoteGetterImpl*>(obj);
+    };
+
+    return tdma::CallImplFromABI(allow_exceptions, meth, pgetter->obj);
 }
+
+int
+QuoteGetter_GetSymbol_ABI( QuoteGetter_C *pgetter,
+                              char **buf,
+                              size_t *n,
+                              int allow_exceptions)
+{
+    if( !pgetter || !pgetter->obj || !buf || !n ){
+        if( allow_exceptions ){
+            throw tdma::ValueException("pgetter/buffer/n can not be null");
+        }
+        return TDMA_API_VALUE_ERROR;
+    }
+
+    if( pgetter->type_id != tdma::QuoteGetter::TYPE_ID ){
+        if( allow_exceptions ){
+            throw tdma::TypeException("pgetter has invalid type id");
+        }
+        return TDMA_API_TYPE_ERROR;
+    }
+
+    static auto meth = +[](void* obj){
+        return reinterpret_cast<tdma::QuoteGetterImpl*>(obj)->get_symbol();
+    };
+
+    string r;
+    int err;
+    tie(r,err) = tdma::CallImplFromABI(allow_exceptions, meth, pgetter->obj);
+    if( err )
+        return err;
+
+    *n = r.size() + 1;
+    *buf = reinterpret_cast<char*>(malloc(*n));
+    if( !buf ){
+        if( allow_exceptions ){
+            throw tdma::MemoryError("failed to allocate buffer memory");
+        }
+        return TDMA_API_MEMORY_ERROR;
+    }
+    (*buf)[(*n)-1] = 0;
+    strncpy(*buf, r.c_str(), (*n)-1);
+    return 0;
+}
+
+int
+QuoteGetter_SetSymbol_ABI( QuoteGetter_C *pgetter,
+                              const char *symbol,
+                              int allow_exceptions )
+{
+    if( !pgetter || !pgetter->obj || !symbol ){
+        if( allow_exceptions ){
+            throw tdma::ValueException("pgetter/symbol can not be null");
+        }
+        return TDMA_API_VALUE_ERROR;
+    }
+
+    if( pgetter->type_id != tdma::QuoteGetter::TYPE_ID ){
+        if( allow_exceptions ){
+            throw tdma::TypeException("pgetter has invalid type id");
+        }
+        return TDMA_API_TYPE_ERROR;
+    }
+
+    static auto meth = +[](void* obj, const char* symbol){
+        return reinterpret_cast<tdma::QuoteGetterImpl*>(obj)->set_symbol(symbol);
+    };
+
+    return tdma::CallImplFromABI(allow_exceptions, meth, pgetter->obj, symbol);
+}
+
+namespace tdma {
+
+
+
+/*
 
 
 QuotesGetter::QuotesGetter( Credentials& creds, const set<string>& symbols)
@@ -102,7 +263,7 @@ QuotesGetter::_build()
 }
 
 
-/*virtual*/ void
+virtual void
 QuotesGetter::build()
 { _build(); }
 
@@ -140,7 +301,7 @@ MarketHoursGetter::_build()
 }
 
 
-/*virtual*/ void
+virtual void
 MarketHoursGetter::build()
 { _build(); }
 
@@ -194,7 +355,7 @@ MoversGetter::_build()
 }
 
 
-/*virtual*/ void
+virtual void
 MoversGetter::build()
 { _build(); }
 
@@ -311,7 +472,7 @@ HistoricalPeriodGetter::_build()
 }
 
 
-/*virtual*/ void
+virtual void
 HistoricalPeriodGetter::build()
 { _build(); }
 
@@ -341,7 +502,7 @@ HistoricalPeriodGetter::set_frequency(FrequencyType frequency_type,
         throw ValueException("invalid frequency type");
     }
     HistoricalGetterBase::set_frequency_type(frequency_type);
-    /* need to change frequency type first so we can pass check */
+     need to change frequency type first so we can pass check
     HistoricalGetterBase::set_frequency(frequency);
     build();
 }
@@ -379,7 +540,7 @@ HistoricalRangeGetter::_build()
 }
 
 
-/*virtual*/ void
+virtual void
 HistoricalRangeGetter::build()
 { _build(); }
 
@@ -409,7 +570,7 @@ HistoricalRangeGetter::set_frequency( FrequencyType frequency_type,
                                       unsigned int frequency )
 {
     HistoricalGetterBase::set_frequency_type(frequency_type);
-    /* need to change frequency type first so we can pass check */
+     need to change frequency type first so we can pass check
     HistoricalGetterBase::set_frequency(frequency);
     build();
 }
@@ -493,7 +654,7 @@ OptionChainGetter::_build()
 }
 
 
-/*virtual*/ void
+virtual void
 OptionChainGetter::build()
 { _build(); }
 
@@ -613,7 +774,7 @@ OptionChainStrategyGetter::_build()
 }
 
 
-/*virtual*/ void
+virtual void
 OptionChainStrategyGetter::build()
 { _build(); }
 
@@ -679,7 +840,7 @@ OptionChainAnalyticalGetter::_build()
 }
 
 
-/*virtual*/ void
+virtual void
 OptionChainAnalyticalGetter::build()
 { _build(); }
 
@@ -769,5 +930,6 @@ OptionStrategy::OptionStrategy(OptionStrategyType strategy,
     }
 
 
+*/
 
 } /* tdma */

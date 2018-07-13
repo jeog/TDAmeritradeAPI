@@ -31,8 +31,14 @@ along with this program.  If not, see http://www.gnu.org/licenses.
 #define DLL_SPEC_
 #endif /* _WIN32 */
 
+#ifdef __cplusplus
 #include <string>
-
 extern std::string certificate_bundle_path;
+#define EXTERN_C_SPEC_ extern "C"
+#else
+#include <stddef.h>
+#include <stdbool.h>
+#define EXTERN_C_SPEC_
+#endif /* __cplusplus */
 
 #endif /* COMMON_H_ */

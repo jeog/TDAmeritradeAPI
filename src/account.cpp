@@ -36,6 +36,7 @@ account_api_on_error_callback(long code, const string& data)
         throw InvalidRequest("validation problem", code);
 }
 
+/*
 
 AccountGetterBase::AccountGetterBase( Credentials& creds,
                                       const string& account_id )
@@ -86,7 +87,7 @@ AccountInfoGetter::_build()
     APIGetter::set_url(url);
 }
 
-/*virtual*/ void
+virtual void
 AccountInfoGetter::build()
 { _build(); }
 
@@ -121,11 +122,11 @@ PreferencesGetter::_build()
     APIGetter::set_url(url);
 }
 
-/*virtual*/ void
+virtual void
 PreferencesGetter::build()
 { _build(); }
 
-/*
+
 void
 UpdatePreferences( Credentials& creds, string account_id)
 {
@@ -139,7 +140,7 @@ UpdatePreferences( Credentials& creds, string account_id)
 
     throw runtime_error("NOT IMPLEMENTED");
 }
-*/
+
 
 
 UserPrincipalsGetter::UserPrincipalsGetter( Credentials& creds,                                           
@@ -180,7 +181,7 @@ UserPrincipalsGetter::_build()
     APIGetter::set_url(url);
 }
 
-/*virtual*/ void
+virtual void
 UserPrincipalsGetter::build()
 { _build(); }
 
@@ -217,7 +218,7 @@ UserPrincipalsGetter::return_surrogate_ids(bool surrogate_ids)
 }
 
 
-/* should go to streaming.cpp ? */
+ should go to streaming.cpp ?
 StreamerSubscriptionKeysGetter::StreamerSubscriptionKeysGetter(
         Credentials& creds,
         const string& account_id
@@ -237,7 +238,7 @@ StreamerSubscriptionKeysGetter::_build()
     APIGetter::set_url(url);
 }
 
-/*virtual*/ void
+virtual void
 StreamerSubscriptionKeysGetter::build()
 { _build(); }
 
@@ -284,7 +285,7 @@ TransactionHistoryGetter::_build()
     APIGetter::set_url(url);
 }
 
-/*virtual*/ void
+virtual void
 TransactionHistoryGetter::build()
 { _build(); }
 
@@ -349,7 +350,7 @@ IndividualTransactionHistoryGetter::_build()
     APIGetter::set_url(url);
 }
 
-/*virtual*/ void
+virtual void
 IndividualTransactionHistoryGetter::build()
 { _build(); }
 
@@ -365,5 +366,6 @@ IndividualTransactionHistoryGetter::set_transaction_id(
     build();
 }
 
+*/
 
 } /* tdma */
