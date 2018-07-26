@@ -139,7 +139,7 @@ CopyCredentials(const struct Credentials* from, struct Credentials *to)
 
 #define TDMA_API_EXEC_ERROR 101
 #define TDMA_API_AUTH_ERROR 102
-#define TDMA_API_REQEST_ERROR 103
+#define TDMA_API_REQUEST_ERROR 103
 #define TDMA_API_SERVER_ERROR 104
 
 #define TDMA_API_STREAM_ERROR 201

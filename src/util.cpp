@@ -30,35 +30,40 @@ namespace util {
 
 using namespace std;
 
-#ifndef _WIN32
+#ifdef USE_SIGNAL_BLOCKER_
 SignalBlocker::SignalBlocker( std::set<int> signums )
     :
-        _mask()
+        _mask(),
+        _active(false)
     {
-        sigemptyset(&_mask);
-        for(auto sig : signums){
-            sigaddset(&_mask, sig);
+        if( !signums.empty() ){
+            sigemptyset(&_mask);
+            for(auto sig : signums){
+                sigaddset(&_mask, sig);
+            }
+            if( pthread_sigmask(SIG_BLOCK, &_mask, &_mask_old) )
+                throw std::runtime_error("pthread_sigmask failed");
+            _active = true;
         }
-        if( pthread_sigmask(SIG_BLOCK, &_mask, &_mask_old) )
-            throw std::runtime_error("pthread_sigmask failed");
     }
-
 
 SignalBlocker::~SignalBlocker()
 {
-    timespec t{};
+    if( _active ){
+        timespec t{};
 
-    /* grab the pending signals */
-    while( sigtimedwait(&_mask, 0, &t) > 0 )
-    {}
-    if( errno != EAGAIN )
-        throw runtime_error("sigtimedwait failed: " + to_string(errno));
+        /* grab the pending signals */
+        while( sigtimedwait(&_mask, 0, &t) > 0 )
+        {}
+        if( errno != EAGAIN )
+            throw runtime_error("sigtimedwait failed: " + to_string(errno));
 
-    /* reset to original state */
-    if( pthread_sigmask(SIG_SETMASK, &_mask_old, 0) == -1 )
-        throw runtime_error("pthread_sigmask failed: " + to_string(errno));
+        /* reset to original state */
+        if( pthread_sigmask(SIG_SETMASK, &_mask_old, 0) == -1 )
+            throw runtime_error("pthread_sigmask failed: " + to_string(errno));
+    }
 }
-#endif
+#endif /* USE_SIGNAL_BLOCKER_ */
 
 void
 debug_out(std::string tag, std::string message, std::ostream& out)

@@ -2,7 +2,7 @@
 ### TDAmeritradeAPI
 - - -
 
-A C++ front-end for the recently expanded TDAmeritrade API that will eventually include Python, and potentially other, bindings. It provides object-oriented access to the simple HTTPS/JSON interface using 
+C and C++ front-end for the recently expanded TDAmeritrade API that will eventually include Python, and potentially other, bindings. It provides object-oriented access to the simple HTTPS/JSON interface using 
 *[libcurl](https://curl.haxx.se/libcurl)* and to the Streaming interface using *[uWebSockets](https://github.com/uNetworking/uWebSockets)*.
 
 If you have an Ameritrade account you *should* be able to gain access to the API by following the instructions in the Authentication section below. 
@@ -15,7 +15,7 @@ access, data handling, and order execution.
 customize for their particular needs. The user retrieves an access code(see below), 
 and then uses the library to request an access token, which is refreshed automatically.
 
-- It does not parse returned data, returning [json](https://github.com/nlohmann/json) objects for the user to handle as they see fit.
+- It does not parse returned data, returning [json](https://github.com/nlohmann/json) objects (C++) for the user to handle as they see fit. (Un-parsed json strings for the C interface.)
 
 - This is a new library, built by a single developer, for an API that is still in flux. As such you should expect plenty of bumps along the way, with changes to both the interface and the implementation.       
 
@@ -65,10 +65,9 @@ This project would not be possible without some of the great open-source project
 - - -
 ***IMPORTANT*** - There are certain binary compatibility issues when exporting C++ code accross compilations(from name mangling, differing runtimes, changes to STL implementations etc.). If, for instance, we return an std::vector in an earlier version of a library, its implementation changes, and code that imports the library is compiled against a new version of the STL, there can be an issue.
 
-***For the time being you need to be sure to use the same compiler/settings and link to the same libraries as the TDAmeritradeAPI library does.*** For this reason we don't include any pre-built binaries. You should (re)compile this library alongside your code if you change compilers, settings, runtimes etc. 
+***UPDATE*** - The Getter interface has been refactored to 1) add a C interface and 2) allow the C++ interface to go through a stable ABI layer that *should* allow seamless access across compilations. *(This was a major change so please report any issues.)*
 
-In the future we may include some type of stable ABI layer on top of the core library to limit these issues(see below).
-
+***To access the Streaming interface you need to be sure to use the same compiler/settings and link to the same libraries as the TDAmeritradeAPI library does.*** For this reason we don't include any pre-built binaries. You should (re)compile this library alongside your code if you change compilers, settings, runtimes etc. 
 
 #### Language Bindings
 - - -
@@ -90,11 +89,10 @@ These will be implemented through a binary-compatible C interface model that loo
     |---------------------------------------------------------------------|
 
 
-.. or by using a tool like SWIG to simplify things.
-
-
 #### Getting Started
 - - -
+***The Getter interface has been expanded to export C calls and the Streaming interface should follow shortly. The current instructions are for C++ but should only require minor changes for C.***
+
 The current build setup is a bit messy. Hopefully things will get a little simpler in the future.
 You can currently build on Unix-like systems and Windows. For Mac OS/X you'll have to download/install the necessary libraries and adjust the makefiles. (If you build sucessfully on Mac feel free to share and we can 
 include it in the docs.)
@@ -191,7 +189,7 @@ else except deal with TDAmeritradeAPI. If not you'll to have deal with ALL the l
 
 #### Namespaces
 - - -
-All front-end library code is in namespace ```tdma```. We mostly exclude it in the docs.
+All front-end C++ library code is in namespace ```tdma```. We mostly exclude it in the docs.
 
 #### Errors & Exceptions
 - - -
@@ -214,8 +212,24 @@ exceptions tend to be the result of some low(er) level failure with the connecti
     - ```json::exception``` : base class for exceptions from the json library (review the documentation
 for the derived classes)
 
-- There are no guarantees of exception safety.             
+- There are no guarantees of exception safety.    
 
+- The C interface has corresponding error codes:
+    ```
+    #define TDMA_API_ERROR 1
+    #define TDMA_API_CRED_ERROR 2
+    #define TDMA_API_VALUE_ERROR 3
+    #define TDMA_API_TYPE_ERROR 4
+    #define TDMA_API_MEMORY_ERROR 5
+
+    #define TDMA_API_EXEC_ERROR 101
+    #define TDMA_API_AUTH_ERROR 102
+    #define TDMA_API_REQUEST_ERROR 103
+    #define TDMA_API_SERVER_ERROR 104
+
+    #define TDMA_API_STREAM_ERROR 201
+    ```
+         
 
 #### Authentication
 - - -
@@ -231,6 +245,7 @@ to setup a developer account.
 
 3. use ```RequestAccessToken``` to get an access token stored in a ```Credentials``` struct (**only has to be done once, until the refresh token expires in 3 months**)
 ```
+    [C++]
     Credentials 
     RequestAccessToken(string code, string client_id, string redirect_uri="127.0.0.1");
     
@@ -238,34 +253,70 @@ to setup a developer account.
        client_id     ::  the client id from #1
        redirect_uri  ::  the redirect uri from #1    
        
-       
+    [C]
+    inline int
+    RequestAccessToken( const char* code,
+                        const char* client_id,
+                        const char* redirect_uri,
+                        struct Credentials* pcreds );
+
+        ...
+        pcreds :: a pointer to a Credentials struct to be populated
+        returns -> 0 on success, error code on failure
+
+    [C, C++]
     struct Credentials{
-        string access_token;
-        string refresh_token;
+        char *access_token;
+        char *refresh_token;
         long long epoch_sec_token_expiration;
-        string client_id;
-    };     
+        char *client_id;
+    };
+
+
+
 ```
 
 The ```Credentials``` object is used throughout for accessing the API so keep it 
 available. It will be updated internally as the access token is refreshed. When done, 
 securely store your credentials:
 ```
+    [C++]
     void 
     StoreCredentials(string path, string password, const Credentials& creds)
     
         path      ::  the full path of the file to store in
         password  ::  the password used for AES256_CBC encryption
         creds     ::  the Credentials struct returned from 'RequestAccessToken'
+
+    [C]
+    inline int
+    StoreCredentials( const char* path,
+                      const char* password,
+                      const struct Credentials* pcreds )
+
+        ...
+        pcreds :: a pointer to the Credentials struct to store
+        returns -> 0 on success, error code on failure
 ```        
     
 In the future construct a new Credentials struct from the saved credentials file:
 ```
+    [C++]
     Credentials
     LoadCredentials(string path, string password)
     
         path      ::  the full path of the file previously stored in
         password  ::  the password used above
+
+    [C]
+    inline int
+    LoadCredentials( const char* path,
+                     const char* password,
+                     const struct Credentials* pcreds )
+
+        ...
+        pcreds :: a pointer to the Credentials struct to load into
+        returns -> 0 on success, error code on failure
 ```        
     
 > **The format of the encrypted credentials file was changed in the commit following b75586**
@@ -273,6 +324,7 @@ In the future construct a new Credentials struct from the saved credentials file
 To avoid having to manually load and save each time your code runs use ```CredentialsManager```
 to automatically load and store on construction and destruction.  
 ```
+    [C++]
     struct CredentialsManager{
         Credentials credentials;
         string path;

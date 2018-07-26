@@ -35,6 +35,8 @@ int main(int argc, char* argv[])
 {
     using namespace chrono;
 
+    //cout << Test::name1 << endl;
+
     if (argc < 4 ) {
         cerr << "invalid # of args" << endl;
         cerr << "  args: [account id] [path to credentials filed] [password]" << endl;
@@ -67,6 +69,7 @@ int main(int argc, char* argv[])
     using tsft = TimesalesSubscriptionBase::FieldType;
 
     try {
+
         CredentialsManager cmanager(creds_path, password);
 
         Credentials ccc;
@@ -83,9 +86,8 @@ int main(int argc, char* argv[])
 
         cout<< "*** QUOTE DATA ***" << endl;
         quote_getters(cmanager.credentials);
-        return 0; /*DEBUG*/
 
-        //historical_getters(cmanager.credentials);
+        historical_getters(cmanager.credentials);
         this_thread::sleep_for( seconds(3) );
 
         QuotesSubscription spy_quote_sub({"SPY"}, {ft::symbol, ft::last_price});
@@ -97,19 +99,20 @@ int main(int argc, char* argv[])
         ss->start( {spy_quote_sub, actives_sub} );
 
         cout<< "*** OPTION DATA ***" << endl;
-        //option_chain_getter(cmanager.credentials);
-        //option_chain_strategy_getter(cmanager.credentials);
-        //option_chain_analytical_getter(cmanager.credentials);
+        option_chain_getter(cmanager.credentials);
+        option_chain_strategy_getter(cmanager.credentials);
+        option_chain_analytical_getter(cmanager.credentials);
         this_thread::sleep_for( seconds(3) );
 
         QuotesSubscription qqq_quote_sub({"QQQ"}, {ft::symbol, ft::last_size});
         ss->add_subscription(qqq_quote_sub);
 
         cout<< "*** MARKET DATA ***" << endl;
-        //instrument_info_getter(cmanager.credentials);
-        //market_hours_getter(cmanager.credentials);
-        //movers_getter(cmanager.credentials);
+        instrument_info_getter(cmanager.credentials);
+        market_hours_getter(cmanager.credentials);
+        movers_getter(cmanager.credentials);
         this_thread::sleep_for( seconds(3) );
+
 
         try{
             ss->start(spy_quote_sub);
@@ -118,11 +121,12 @@ int main(int argc, char* argv[])
         }
         ss->stop();
 
+
         cout<< "*** ACCOUNT DATA ***" << endl;
-        //account_info_getter(account_id, cmanager.credentials);
-        //preferences_getter(account_id, cmanager.credentials);
-        //user_principals_getter(cmanager.credentials);
-        //subscription_keys_getter(account_id, cmanager.credentials);
+        account_info_getter(account_id, cmanager.credentials);
+        preferences_getter(account_id, cmanager.credentials);
+        user_principals_getter(cmanager.credentials);
+        subscription_keys_getter(account_id, cmanager.credentials);
         this_thread::sleep_for( seconds(3) );
 
         TimesaleFuturesSubscription sp_quote_sub( {"/ES"}, {tsft::symbol,
@@ -131,8 +135,12 @@ int main(int argc, char* argv[])
         ss->start( sp_quote_sub );
 
         cout<< "*** TRANSACTION DATA ***" << endl;
-        //transaction_history_getter(account_id, cmanager.credentials);
-        //individual_transaction_history_getter(account_id, cmanager.credentials);
+        try{
+            transaction_history_getter(account_id, cmanager.credentials);
+            individual_transaction_history_getter(account_id, cmanager.credentials);
+        }catch( ServerError& e){
+            cout<<"caught server error: " << e.what() << " (" << e.code << ")" << endl;
+        }
 
         string in;
         cin >> in;
@@ -277,7 +285,7 @@ streaming(string id, Credentials& c)
 
 }
 
-/*
+
 
 void
 transaction_history_getter(string id, Credentials& c)
@@ -313,18 +321,18 @@ void
 account_info_getter(string id, Credentials& c)
 {
     AccountInfoGetter o(c, id, false, false);
-    cout<< o.get_account_id() << ' ' << o.returns_orders() << ' '
+    cout<< o.get_account_id() << ' ' << o.returns_positions() << ' '
         << o.returns_orders() << endl;
     cout<< o.get() << endl << endl;
 
     o.return_orders(true);
     o.return_positions(true);
-    cout<< o.get_account_id() << ' ' << o.returns_orders() << ' '
+    cout<< o.get_account_id() << ' ' << o.returns_positions() << ' '
         << o.returns_orders() << endl;
     cout<< o.get() << endl << endl;
 
     o.set_account_id("BAD_ACCOUNT_ID");
-    cout<< o.get_account_id() << ' ' << o.returns_orders() << ' '
+    cout<< o.get_account_id() << ' ' << o.returns_positions() << ' '
         << o.returns_orders() << endl;
     try{
         cout<< o.get() << endl << endl;
@@ -390,11 +398,11 @@ movers_getter(Credentials& c)
 void
 market_hours_getter(Credentials& c)
 {
-    MarketHoursGetter o(c, MarketType::bond, "2018-07-04");
+    MarketHoursGetter o(c, MarketType::bond, "2019-07-04");
     cout<< o.get_date() << ' ' << o.get_market_type() << endl
         << o.get() << endl << endl;
 
-    o.set_date("2018-07-05");
+    o.set_date("2019-07-05");
     o.set_market_type(MarketType::equity);
     cout<< o.get_date() << ' ' << o.get_market_type() << endl
         << o.get() << endl << endl;
@@ -557,7 +565,7 @@ historical_getters(Credentials& c)
                                start, end, true);
     cout<< hrg << hrg.get() << endl << endl;
 }
-*/
+
 void
 quote_getters(Credentials& c)
 {
@@ -568,19 +576,19 @@ quote_getters(Credentials& c)
     qg2.set_symbol("QQQ");
 
     cout<< qg2.get_symbol() << endl << qg2.get() << endl << endl;
-/*
+
     QuotesGetter qsg(c, {"SPY", "QQQ"});
     for( auto s: qsg.get_symbols() ){
         cout<< s << ' ';
     }
     cout<< endl << qsg.get() << endl << endl;
 
-    qsg.set_symbols( {"/ES","SPY_072718C276"} );
+    qsg.set_symbols( {"/ES","SPY_081718C276"} );
     for( auto s: qsg.get_symbols() ){
         cout<< s << ' ';
     }
     cout<< endl << qsg.get() << endl << endl;
-    */
+
 }
 
 long long

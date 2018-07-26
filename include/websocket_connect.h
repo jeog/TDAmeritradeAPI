@@ -82,9 +82,6 @@ class WebSocketClient{
 
         void
         operator()(){
-#ifndef _WIN32
-            util::SignalBlocker _({SIGPIPE});
-#endif
             _wsc->_hub.connect(_wsc->_url, nullptr, {}, _timeout.count());
             _wsc->_hub.run();
         }

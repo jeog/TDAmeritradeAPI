@@ -27,6 +27,14 @@ along with this program.  If not, see http://www.gnu.org/licenses.
 using namespace std;
 using namespace chrono;
 
+
+#ifdef USE_SIGNAL_BLOCKER_
+namespace{
+util::SignalBlocker signal_blocker({SIGPIPE});
+};
+#endif
+
+
 namespace tdma{
 
 using namespace conn;
@@ -82,8 +90,48 @@ base_on_error_callback(long code, const string& data, bool allow_refresh)
         throw ServerError("unexpected server error: " + err_msg, code);
     case 503:
         throw ServerError("server (temporarily) unavailable", code);
+    case 504:
+        throw ServerError("unknown server error: " + err_msg, code);
     };
     return false;
+}
+
+void
+data_api_on_error_callback(long code, const string& data)
+{
+    /*
+     *  codes 500, 503, 401, 403, 404 handled by base callback
+     */
+    switch(code){
+    case 400:
+        throw InvalidRequest("bad/malformed request", code);
+    case 406:
+        throw InvalidRequest("invalid regex or excessive requests", code);
+    };
+}
+
+void
+account_api_on_error_callback(long code, const string& data)
+{
+    /*
+     *  codes 500, 503, 401, 403, 404 handled by base callback
+     */
+    if( code == 400 )
+        throw InvalidRequest("validation problem", code);
+}
+
+void
+query_api_on_error_callback(long code, const string& data)
+{
+    /*
+     *  codes 500, 503, 401, 403, 404 handled by base callback
+     */
+    switch(code){
+    case 400:
+        throw InvalidRequest("validation problem", code);
+    case 406:
+        throw InvalidRequest("invalid regex or excessive requests", code);
+    };
 }
 
 bool
@@ -221,7 +269,7 @@ APIGetterImpl::set_url(string url)
 string
 APIGetterImpl::get()
 {
-    if( !_connection )
+    if( is_closed() )
         throw APIException("connection is closed");
 
     assert( !_connection.is_closed() );
@@ -232,6 +280,9 @@ void
 APIGetterImpl::close()
 { _connection.close(); }
 
+bool
+APIGetterImpl::is_closed() const
+{ return !_connection; }
 
 string
 APIGetterImpl::throttled_get(APIGetterImpl& getter)
@@ -307,6 +358,7 @@ unescape_returned_post_data(const string& s)
     return ss.str();
 }
 
+
 } /* tdma */
 
 
@@ -364,6 +416,25 @@ APIGetter_Close_ABI(Getter_C *pgetter, int allow_exceptions)
 }
 
 int
+APIGetter_IsClosed_ABI(Getter_C *pgetter, int*b, int allow_exceptions)
+{
+    if( !pgetter || !pgetter->obj || !b ){
+        if( allow_exceptions ){
+            throw tdma::ValueException("pgetter/b can not be null");
+        }
+        return TDMA_API_VALUE_ERROR;
+    }
+
+    static auto meth = +[](void* obj){
+        return reinterpret_cast<tdma::APIGetterImpl*>(obj)->is_closed();
+    };
+
+    int err;
+    tie(*b, err) = tdma::CallImplFromABI(allow_exceptions, meth, pgetter->obj);
+    return err ? err : 0;
+}
+
+int
 APIGetter_SetWaitMSec_ABI(unsigned long long msec, int allow_exceptions)
 {
     return tdma::CallImplFromABI( allow_exceptions,
@@ -407,3 +478,5 @@ APIGetter_GetDefWaitMSec_ABI(unsigned long long *msec, int allow_exceptions)
         );
     return 0;
 }
+
+

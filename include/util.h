@@ -30,14 +30,18 @@ along with this program.  If not, see http://www.gnu.org/licenses.
 
 namespace util{
 
-#ifndef _WIN32
+#ifdef USE_SIGNAL_BLOCKER_
 class SignalBlocker {
     sigset_t _mask, _mask_old;
+    bool _active;
 public:
     SignalBlocker( std::set<int> signums );
+    SignalBlocker( SignalBlocker& sb ) = delete;
+    SignalBlocker&
+    operator=( SignalBlocker& sb ) = delete;
     virtual ~SignalBlocker();
 };
-#endif
+#endif /* USE_SIGNAL_BLOCKER_ */
 
 void
 debug_out(std::string tag, std::string message, std::ostream& out=std::cout);
