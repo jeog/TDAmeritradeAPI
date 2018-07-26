@@ -2724,6 +2724,7 @@ GetHistoricalRange( Credentials& creds,
                                   extended_hours ).get();
 }
 
+// TODO move inline OptionStrikes / OptionStrategy defs out of header
 
 class OptionStrikes {
 public:
@@ -2773,20 +2774,59 @@ public:
     { return (_type == Type::range) ? _value.range : OptionRangeType::null; }
 
     static OptionStrikes
-    N_ATM(unsigned int n);
+    N_ATM(unsigned int n)
+    {
+        if (n < 1)
+            throw ValueException("number of strikes can not be < 1");
+        OptionStrikes o(Type::n_atm);
+        o._value.n_atm = n;
+        return o;
+    }
 
     static OptionStrikes
-    Single(double price);
+    Single(double price)
+    {
+        if (price < 0.1)
+            throw ValueException("strike price can not be < 0.1");
+        OptionStrikes o(Type::single);
+        o._value.single = price;
+        return o;
+    }
 
     static OptionStrikes
-    Range(OptionRangeType range);
+    Range(OptionRangeType range)
+    {
+        if (range == OptionRangeType::null)
+            throw ValueException("strike range can not be 'null'");
+        OptionStrikes o(Type::range);
+        o._value.range = range;
+        return o;
+    }
 };
 
-std::string
-to_string(const OptionStrikes& strikes);
+inline std::string // TODO move out of header
+to_string(const OptionStrikes& strikes)
+{
+    switch (strikes.get_type()) {
+    case OptionStrikes::Type::n_atm:
+        return "n_atm(" + std::to_string(strikes.get_n_atm()) + ")";
+    case OptionStrikes::Type::single:
+        return "single(" + std::to_string(strikes.get_single()) + ")";
+    case OptionStrikes::Type::range:
+        return "range(" + to_string(strikes.get_range()) + ")";
+    case OptionStrikes::Type::none:
+        return "none()";
+    default:
+        throw std::runtime_error("invalid OptionStrikes::Type");
+    }
+}
 
-std::ostream&
-operator<<(std::ostream& out, const OptionStrikes& strikes);
+inline std::ostream&
+operator<<(std::ostream& out, const OptionStrikes& strikes)
+{
+    out << to_string(strikes);
+    return out;
+}
 
 
 class OptionStrategy {
@@ -2797,10 +2837,25 @@ public:
     /* our impl of the ABI layer requires def cnstr but not good conceptually */
     OptionStrategy()
         : _strategy(OptionStrategyType::vertical), _spread_interval(0)
-    {}
+        {}
 
-    OptionStrategy(OptionStrategyType strategy);
-    OptionStrategy(OptionStrategyType strategy, double spread_interval);
+    OptionStrategy(OptionStrategyType strategy)
+        : _strategy(strategy), _spread_interval(0.0)
+        {}
+
+    OptionStrategy(OptionStrategyType strategy, double spread_interval)
+        :
+            _strategy(strategy),
+            _spread_interval(spread_interval)
+        {
+            if (strategy != OptionStrategyType::covered &&
+                strategy != OptionStrategyType::calendar &&
+                spread_interval < .01)
+            {
+                throw ValueException(to_string(strategy)
+                    + " strategy requires spread interval >= .01");
+            }
+        }
 
     OptionStrategyType
     get_strategy() const
@@ -2851,11 +2906,20 @@ public:
     { return {OptionStrategyType::roll, spread_interval}; }
 };
 
-std::string
-to_string(const OptionStrategy& strategy);
+inline std::string // TODO move out of header
+to_string(const OptionStrategy& strategy)
+{
+    double d = strategy.get_spread_interval();
+    std::string s = to_string(strategy.get_strategy());
+    return d ? (s + "(" + std::to_string(d) + ")") : s;
+}
 
-std::ostream&
-operator<<(std::ostream& out, const OptionStrategy& strategy);
+inline std::ostream&
+operator<<(std::ostream& out, const OptionStrategy& strategy)
+{
+    out << to_string(strategy);
+    return out;
+}
 
 
 class OptionChainGetter
@@ -3834,6 +3898,7 @@ GetInstrumentInfo( Credentials& creds,
                    const std::string& query_string )
 { return InstrumentInfoGetter(creds, search_type, query_string).get(); }
 
+using std::to_string;
 
 } /* tdma */
 

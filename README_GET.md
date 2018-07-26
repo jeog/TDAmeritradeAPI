@@ -122,7 +122,7 @@ QuoteGetter_Create( struct Credentials *pcreds,
     returns -> 0 on success, error code on failure
 ```
 
-2. use the ```pgetter``` from above from above to get requested data, e.g:
+2. use the ```pgetter``` from above to return (un-parsed) json data, e.g:
 ```
 inline int
 QuoteGetter_Get(QuoteGetter_C *getter, char **buf, size_t *n)

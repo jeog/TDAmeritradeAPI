@@ -374,46 +374,6 @@ OptionStrikesType_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptio
 namespace tdma{
 
 string
-to_string(const OptionStrikes& strikes)
-{
-    switch( strikes.get_type() ){
-    case tdma::OptionStrikes::Type::n_atm:
-        return "n_atm(" + to_string(strikes.get_n_atm()) + ")";
-    case tdma::OptionStrikes::Type::single:
-        return "single(" + to_string(strikes.get_single()) + ")";
-    case tdma::OptionStrikes::Type::range:
-        return "range(" + to_string(strikes.get_range()) + ")";
-    case tdma::OptionStrikes::Type::none:
-        return "none()";
-    default:
-        throw runtime_error("invalid OptionStrikes::Type");
-    }
-}
-
-std::ostream&
-operator<<(std::ostream& out, const OptionStrikes& strikes)
-{
-    out << to_string(strikes);
-    return out;
-}
-
-string
-to_string(const OptionStrategy& strategy)
-{
-    unsigned int i = strategy.get_spread_interval();
-    string s = to_string(strategy.get_strategy());
-    return i ? (s + "(" + to_string(i) + ")") : s;
-}
-
-std::ostream&
-operator<<(std::ostream& out, const OptionStrategy& strategy)
-{
-    out << to_string(strategy);
-    return out;
-}
-
-
-string
 to_string(const AdminCommandType& command)
 {
     switch(command){

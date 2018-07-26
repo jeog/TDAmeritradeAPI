@@ -28,62 +28,6 @@ using namespace std;
 
 namespace tdma {
 
-OptionStrikes
-OptionStrikes::N_ATM(unsigned int n)
-{
-    if( n < 1 )
-        throw ValueException("number of strikes can not be < 1");
-    OptionStrikes o(Type::n_atm);
-    o._value.n_atm = n;
-    return o;
-}
-
-
-OptionStrikes
-OptionStrikes::Single(double price)
-{
-    if( price < 0.1 )
-        throw ValueException("strike price can not be < 0.1");
-    OptionStrikes o(Type::single);
-    o._value.single = price;
-    return o;
-}
-
-
-OptionStrikes
-OptionStrikes::Range(OptionRangeType range)
-{
-    if( range == OptionRangeType::null )
-        throw ValueException("strike range can not be 'null'");
-    OptionStrikes o(Type::range);
-    o._value.range = range;
-    return o;
-}
-
-OptionStrategy::OptionStrategy(OptionStrategyType strategy)
-    :
-         _strategy(strategy),
-         _spread_interval(0.0)
-    {
-    }
-
-
-OptionStrategy::OptionStrategy(OptionStrategyType strategy,
-                                   double spread_interval)
-    :
-         _strategy(strategy),
-         _spread_interval(spread_interval)
-    {
-        if( strategy != OptionStrategyType::covered &&
-            strategy != OptionStrategyType::calendar &&
-            spread_interval < .01 )
-            {
-                throw ValueException( to_string(strategy)
-                    + " strategy requires spread interval >= .01");
-            }
-    }
-
-
 class OptionChainGetterImpl
         : public APIGetterImpl {
     std::string _symbol;

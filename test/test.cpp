@@ -35,8 +35,6 @@ int main(int argc, char* argv[])
 {
     using namespace chrono;
 
-    //cout << Test::name1 << endl;
-
     if (argc < 4 ) {
         cerr << "invalid # of args" << endl;
         cerr << "  args: [account id] [path to credentials filed] [password]" << endl;

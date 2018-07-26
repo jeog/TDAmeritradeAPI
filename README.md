@@ -58,7 +58,7 @@ This project would not be possible without some of the great open-source project
 - [zlib](https://zlib.net) - Compression library
 - [libuv](https://libuv.org) - Cross-platform asynchronous I/O
 - [uWebSockets](https://github.com/uNetworking/uWebSockets) - A simple and efficient C++ WebSocket library. The source is included, compiled and archived with our library to limit dependency issues.
-- [nlohmann::json](https://github.com/nlohmann/json) : - An extensive C++ json library that only requires adding a single header file. ***You'll need to review their documentation for handling returned data from this library.***
+- [nlohmann::json](https://github.com/nlohmann/json) : - An extensive C++ json library that only requires adding a single header file. ***You'll need to review their documentation for handling returned data from the C++ version of this library.***
 
 
 #### Binary Compatibility
@@ -312,7 +312,7 @@ In the future construct a new Credentials struct from the saved credentials file
     inline int
     LoadCredentials( const char* path,
                      const char* password,
-                     const struct Credentials* pcreds )
+                     struct Credentials* pcreds )
 
         ...
         pcreds :: a pointer to the Credentials struct to load into
