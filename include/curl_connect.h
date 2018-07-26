@@ -39,8 +39,8 @@ typedef std::chrono::steady_clock clock_ty;
 static_assert( static_cast<double>(clock_ty::period::num)
                / clock_ty::period::den <= .001, "invalid tick size of clock" );
 
-class DLL_SPEC_ CurlConnection {
-    DLL_SPEC_ friend std::ostream&
+class CurlConnection {
+    friend std::ostream&
     operator<<(std::ostream& out, const CurlConnection& session);       
 
 protected:
@@ -123,7 +123,7 @@ public:
 };
 
 
-class DLL_SPEC_ HTTPSConnection // TODO check valid HTTPS
+class HTTPSConnection // TODO check valid HTTPS
         : public CurlConnection{
     void _set();
 public:
@@ -133,7 +133,7 @@ public:
 };
 
 
-class DLL_SPEC_ HTTPSGetConnection
+class HTTPSGetConnection
         : public HTTPSConnection{
     void _set();
 public:
@@ -142,7 +142,7 @@ public:
 };
 
 
-class DLL_SPEC_ HTTPSPostConnection
+class HTTPSPostConnection
         : public HTTPSConnection{
     void _set();
 public:

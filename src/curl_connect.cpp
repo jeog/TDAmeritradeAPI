@@ -23,6 +23,7 @@ along with this program.  If not, see http://www.gnu.org/licenses.
 
 
 #include "../include/curl_connect.h"
+#include "../include/util.h"
 
 namespace conn{
 

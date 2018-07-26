@@ -4,32 +4,35 @@
 
 # Add inputs and outputs from these tool invocations to the build variables 
 CPP_SRCS += \
-../src/auth.cpp \
-../src/curl_connect.cpp \
-../src/params.cpp \
-../src/tdma_connect.cpp \
-../src/util.cpp \
-../src/websocket_connect.cpp 
+../src/getters/account.cpp \
+../src/getters/historical.cpp \
+../src/getters/instrument_info.cpp \
+../src/getters/market_hours.cpp \
+../src/getters/movers.cpp \
+../src/getters/options.cpp \
+../src/getters/quotes.cpp 
 
 OBJS += \
-./src/auth.o \
-./src/curl_connect.o \
-./src/params.o \
-./src/tdma_connect.o \
-./src/util.o \
-./src/websocket_connect.o 
+./src/getters/account.o \
+./src/getters/historical.o \
+./src/getters/instrument_info.o \
+./src/getters/market_hours.o \
+./src/getters/movers.o \
+./src/getters/options.o \
+./src/getters/quotes.o 
 
 CPP_DEPS += \
-./src/auth.d \
-./src/curl_connect.d \
-./src/params.d \
-./src/tdma_connect.d \
-./src/util.d \
-./src/websocket_connect.d 
+./src/getters/account.d \
+./src/getters/historical.d \
+./src/getters/instrument_info.d \
+./src/getters/market_hours.d \
+./src/getters/movers.d \
+./src/getters/options.d \
+./src/getters/quotes.d 
 
 
 # Each subdirectory must supply rules for building sources it contributes
-src/%.o: ../src/%.cpp
+src/getters/%.o: ../src/getters/%.cpp
 	@echo 'Building file: $<'
 	@echo 'Invoking: GCC C++ Compiler'
 	g++ -std=c++0x -DTHIS_EXPORTS_INTERFACE -O0 -g3 -Wall -c -fmessage-length=0 -DDEBUG -fPIC -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@)" -o "$@" "$<"

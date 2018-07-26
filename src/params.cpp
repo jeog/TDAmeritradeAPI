@@ -22,16 +22,19 @@ along with this program.  If not, see http://www.gnu.org/licenses.
 
 #include "../include/_tdma_api.h"
 
+
+#ifdef __cplusplus
+
 namespace tdma{
 
 using namespace std;
 
-const unordered_map<PeriodType, set<unsigned int>, EnumHash<PeriodType>>
+const unordered_map<PeriodType, set<int>, EnumHash<PeriodType>>
 VALID_PERIODS_BY_PERIOD_TYPE = {
-    {PeriodType::day, set<unsigned int>{1,2,3,4,5,10}},
-    {PeriodType::month, set<unsigned int>{1,2,3,6}},
-    {PeriodType::year, set<unsigned int>{1,2,3,5,10,15,20}},
-    {PeriodType::ytd, set<unsigned int>{1}},
+    {PeriodType::day, set<int>{1,2,3,4,5,10}},
+    {PeriodType::month, set<int>{1,2,3,6}},
+    {PeriodType::year, set<int>{1,2,3,5,10,15,20}},
+    {PeriodType::ytd, set<int>{1}},
 };
 
 
@@ -46,337 +49,329 @@ VALID_FREQUENCY_TYPES_BY_PERIOD_TYPE ={
 };
 
 
-const unordered_map<FrequencyType, set<unsigned int>, EnumHash<FrequencyType>>
+const unordered_map<FrequencyType, set<int>, EnumHash<FrequencyType>>
 VALID_FREQUENCIES_BY_FREQUENCY_TYPE = {
-    {FrequencyType::minute, set<unsigned int>{1,5,10,30}},
-    {FrequencyType::daily, set<unsigned int>{1}},
-    {FrequencyType::weekly, set<unsigned int>{1}},
-    {FrequencyType::monthly, set<unsigned int>{1}},
+    {FrequencyType::minute, set<int>{1,5,10,30}},
+    {FrequencyType::daily, set<int>{1}},
+    {FrequencyType::weekly, set<int>{1}},
+    {FrequencyType::monthly, set<int>{1}},
 };
 
+} /* tdma */
 
 
-string
-to_string(const PeriodType& ptype)
+#endif /* __cplusplus */
+
+
+int
+alloc_C_str(const std::string& s, char** buf, size_t* n, bool raise_exception)
 {
-    switch(ptype){
-    case PeriodType::day: return "day";
-    case PeriodType::month: return "month";
-    case PeriodType::year: return "year";
-    case PeriodType::ytd: return "ytd";
-    default: throw runtime_error("invalid PeriodType");
+    assert(buf);
+    assert(n);
+    *n = s.size() + 1;
+    *buf = reinterpret_cast<char*>(malloc(*n));
+    if( !*(buf) ){
+        if( raise_exception ){
+            throw tdma::MemoryError("not enough memory to allocate enum string");
+        }
+        return TDMA_API_MEMORY_ERROR;
+    }
+    strncpy(*buf, s.c_str(), (*n)-1);
+    (*buf)[(*n)-1] = 0;
+    return 0;
+}
+
+int
+PeriodType_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
+{
+    switch(static_cast<tdma::PeriodType>(v)){
+    case tdma::PeriodType::day:
+        return alloc_C_str("day", buf, n, allow_exceptions);
+    case tdma::PeriodType::month:
+        return alloc_C_str("month", buf, n, allow_exceptions);
+    case tdma::PeriodType::year:
+        return alloc_C_str("year", buf, n, allow_exceptions);
+    case tdma::PeriodType::ytd:
+        return alloc_C_str("ytd", buf, n, allow_exceptions);
+    default:
+        throw std::runtime_error("invalid PeriodType");
     }
 }
 
-ostream&
-operator<<(ostream& out, const PeriodType& period_type)
+int
+FrequencyType_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
 {
-    out<< to_string(period_type);
-    return out;
-}
-
-
-string
-to_string(const FrequencyType& ftype)
-{
-    switch(ftype){
-    case FrequencyType::minute: return "minute";
-    case FrequencyType::daily: return "daily";
-    case FrequencyType::weekly: return "weekly";
-    case FrequencyType::monthly: return "monthly";
-    default: throw runtime_error("invalid FrequencyType");
+    switch(static_cast<tdma::FrequencyType>(v)){
+    case tdma::FrequencyType::minute:
+        return alloc_C_str("minute", buf, n, allow_exceptions);
+    case tdma::FrequencyType::daily:
+        return alloc_C_str("daily", buf, n, allow_exceptions);
+    case tdma::FrequencyType::weekly:
+        return alloc_C_str("weekly", buf, n, allow_exceptions);
+    case tdma::FrequencyType::monthly:
+        return alloc_C_str("monthly", buf, n, allow_exceptions);
+    default:
+        throw std::runtime_error("invalid FrequencyType");
     }
 }
 
-ostream&
-operator<<(ostream& out, const FrequencyType& frequency_type)
+int
+OptionContractType_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
 {
-    out<< to_string(frequency_type);
-    return out;
-}
-
-
-string
-to_string(const OptionContractType& contract_type)
-{
-    switch(contract_type){
-    case OptionContractType::call: return "CALL";
-    case OptionContractType::put: return "PUT";
-    case OptionContractType::all: return "ALL";
-    default: throw runtime_error("invalid OptionContractType");
+    switch(static_cast<tdma::OptionContractType>(v)){
+    case tdma::OptionContractType::call:
+        return alloc_C_str("CALL", buf, n, allow_exceptions);
+    case tdma::OptionContractType::put:
+        return alloc_C_str("PUT", buf, n, allow_exceptions);
+    case tdma::OptionContractType::all:
+        return alloc_C_str("ALL", buf, n, allow_exceptions);
+    default:
+        throw std::runtime_error("invalid OptionContractType");
     }
 }
 
-ostream&
-operator<<(ostream& out, const OptionContractType& contract_type)
+int
+OptionStrategyType_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
 {
-    out<< to_string(contract_type);
-    return out;
-}
-
-
-string
-to_string(const OptionStrategyType& strategy)
-{
-    switch(strategy){
+    switch(static_cast<tdma::OptionStrategyType>(v)){
     //case OptionStrategyType::single: return "SINGLE";
     //case OptionStrategyType::analytical: return "ANALYTICAL";
-    case OptionStrategyType::covered: return "COVERED";
-    case OptionStrategyType::vertical: return "VERTICAL";
-    case OptionStrategyType::calendar: return "CALENDAR";
-    case OptionStrategyType::strangle: return "STRANGLE";
-    case OptionStrategyType::straddle: return "STRADDLE";
-    case OptionStrategyType::butterfly: return "BUTTERFLY";
-    case OptionStrategyType::condor: return "CONDOR";
-    case OptionStrategyType::diagonal: return "DIAGONAL";
-    case OptionStrategyType::collar: return "COLLAR";
-    case OptionStrategyType::roll: return "ROLL";
-    default: throw runtime_error("invalid OptionStrategyType");
-    }
-}
-
-ostream&
-operator<<(ostream& out, const OptionStrategyType& strategy)
-{
-    out<< to_string(strategy);
-    return out;
-}
-
-
-string
-to_string(const OptionRangeType& range)
-{
-    switch(range){
-    case OptionRangeType::null: return "";
-    case OptionRangeType::itm: return "ITM";
-    case OptionRangeType::ntm: return "NTM";
-    case OptionRangeType::otm: return "OTM";
-    case OptionRangeType::sak: return "SAK";
-    case OptionRangeType::sbk: return "SBK";
-    case OptionRangeType::snk: return "SNK";
-    case OptionRangeType::all: return "ALL";
-    default: throw runtime_error("invalid OptionRangeType");
-    }
-}
-
-ostream&
-operator<<(ostream& out, const OptionRangeType& range)
-{
-    out<< to_string(range);
-    return out;
-}
-
-
-string
-to_string(const OptionExpMonth& exp_month)
-{
-    switch(exp_month){
-    case OptionExpMonth::jan: return "JAN";
-    case OptionExpMonth::feb: return "FEB";
-    case OptionExpMonth::mar: return "MAR";
-    case OptionExpMonth::apr: return "APR";
-    case OptionExpMonth::may: return "MAY";
-    case OptionExpMonth::jun: return "JUN";
-    case OptionExpMonth::jul: return "JUL";
-    case OptionExpMonth::aug: return "AUG";
-    case OptionExpMonth::sep: return "SEP";
-    case OptionExpMonth::oct: return "OCT";
-    case OptionExpMonth::nov: return "NOV";
-    case OptionExpMonth::dec: return "DEC";
-    case OptionExpMonth::all: return "ALL";
-    default: throw runtime_error("invalid OptionExpMonth");
-    }
-}
-
-ostream&
-operator<<(ostream& out, const OptionExpMonth& exp_month)
-{
-    out<< to_string(exp_month);
-    return out;
-}
-
-
-string
-to_string(const OptionType& option_type)
-{
-    switch(option_type){
-    case OptionType::s: return "S";
-    case OptionType::ns: return "NS";
-    case OptionType::all: return "ALL";
-    default: throw runtime_error("invalid OptionType");
-    }
-}
-
-ostream&
-operator<<(ostream& out, const OptionType& option_type)
-{
-    out<< to_string(option_type);
-    return out;
-}
-
-
-string
-to_string(const TransactionType& transaction_type)
-{
-    switch(transaction_type){
-    case TransactionType::all: return "ALL";
-    case TransactionType::trade: return "TRADE";
-    case TransactionType::buy_only: return "BUY_ONLY";
-    case TransactionType::sell_only: return "SELL_ONLY";
-    case TransactionType::cash_in_or_cash_out: return "CASH_IN_OR_CASH_OUT";
-    case TransactionType::checking: return "CHECKING";
-    case TransactionType::dividend: return "DIVIDEND";
-    case TransactionType::interest: return "INTEREST";
-    case TransactionType::other: return "OTHER";
-    case TransactionType::advisor_fees: return "ADVISOR_FEES";
-    default: throw runtime_error("invliad TransactionType");
-    }
-}
-
-ostream&
-operator<<(ostream& out, const TransactionType& transaction_type)
-{
-    out<< to_string(transaction_type);
-    return out;
-}
-
-
-string
-to_string(const InstrumentSearchType& search_type)
-{
-    switch(search_type){
-    case InstrumentSearchType::symbol_exact: return "fundamental";
-    case InstrumentSearchType::symbol_search: return "symbol-search";
-    case InstrumentSearchType::symbol_regex: return "symbol-regex";
-    case InstrumentSearchType::description_search: return "desc-search";
-    case InstrumentSearchType::description_regex: return "desc-regex";
-    case InstrumentSearchType::cusip: return "cusip";
-    default: throw runtime_error("invalid InstrumentSearchType");
-    }
-}
-
-ostream&
-operator<<(ostream& out, const InstrumentSearchType& search_type)
-{
-    out<< to_string(search_type);
-    return out;
-}
-
-
-string
-to_string(const MarketType& market_type)
-{
-    switch(market_type){
-    case MarketType::equity: return "EQUITY";
-    case MarketType::option: return "OPTION";
-    case MarketType::future: return "FUTURE";
-    case MarketType::bond: return "BOND";
-    case MarketType::forex: return "FOREX";
-    default: throw runtime_error("Invalid MarketType");
-    }
-}
-
-ostream&
-operator<<(ostream& out, const MarketType& market_type)
-{
-    out << to_string(market_type);
-    return out;
-}
-
-string
-to_string(const OptionStrikes& strikes)
-{
-    switch( strikes.get_type() ){
-    case OptionStrikes::Type::n_atm:
-        return "n_atm(" + to_string(strikes.get_n_atm()) + ")";
-    case OptionStrikes::Type::single:
-        return "single(" + to_string(strikes.get_single()) + ")";
-    case OptionStrikes::Type::range:
-        return "range(" + to_string(strikes.get_range()) + ")";
+    case tdma::OptionStrategyType::covered:
+        return alloc_C_str("COVERED", buf, n, allow_exceptions);
+    case tdma::OptionStrategyType::vertical:
+        return alloc_C_str("VERTICAL", buf, n, allow_exceptions);
+    case tdma::OptionStrategyType::calendar:
+        return alloc_C_str("CALENDAR", buf, n, allow_exceptions);
+    case tdma::OptionStrategyType::strangle:
+        return alloc_C_str("STRANGLE", buf, n, allow_exceptions);
+    case tdma::OptionStrategyType::straddle:
+        return alloc_C_str("STRADDLE", buf, n, allow_exceptions);
+    case tdma::OptionStrategyType::butterfly:
+        return alloc_C_str("BUTTERFLY", buf, n, allow_exceptions);
+    case tdma::OptionStrategyType::condor:
+        return alloc_C_str("CONDOR", buf, n, allow_exceptions);
+    case tdma::OptionStrategyType::diagonal:
+        return alloc_C_str("DIAGONAL", buf, n, allow_exceptions);
+    case tdma::OptionStrategyType::collar:
+        return alloc_C_str("COLLAR", buf, n, allow_exceptions);
+    case tdma:: OptionStrategyType::roll:
+        return alloc_C_str("ROLL", buf, n, allow_exceptions);
     default:
-        throw runtime_error("invalid OptionStrikes::Type");
+        throw std::runtime_error("invalid OptionStrategyType");
     }
 }
 
-ostream&
-operator<<(ostream& out, const OptionStrikes& strikes)
+
+int
+OptionRangeType_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
 {
-    out << to_string(strikes);
-    return out;
-}
-
-
-string
-to_string(const OptionStrategy& strategy)
-{
-    unsigned int i = strategy.get_spread_interval();
-    string s = to_string(strategy.get_strategy());
-    return i ? (s + "(" + to_string(i) + ")") : s;
-}
-
-ostream&
-operator<<(ostream& out, const OptionStrategy& strategy)
-{
-    out<< to_string(strategy);
-    return out;
-}
-
-
-std::string
-to_string(const MoversIndex& index)
-{
-    switch( index ){
-    case MoversIndex::compx: return "$COMPX";
-    case MoversIndex::dji: return "$DJI";
-    case MoversIndex::spx: return "$SPX.X";
-    default: throw runtime_error("invalid MoversIndex");
+    switch(static_cast<tdma::OptionRangeType>(v)){
+    case tdma::OptionRangeType::null:
+        return alloc_C_str("", buf, n, allow_exceptions);
+    case tdma::OptionRangeType::itm:
+        return alloc_C_str("ITM", buf, n, allow_exceptions);
+    case tdma::OptionRangeType::ntm:
+        return alloc_C_str("NTM", buf, n, allow_exceptions);
+    case tdma::OptionRangeType::otm:
+        return alloc_C_str("OTM", buf, n, allow_exceptions);
+    case tdma::OptionRangeType::sak:
+        return alloc_C_str("SAK", buf, n, allow_exceptions);
+    case tdma::OptionRangeType::sbk:
+        return alloc_C_str("SBK", buf, n, allow_exceptions);
+    case tdma::OptionRangeType::snk:
+        return alloc_C_str("SNK", buf, n, allow_exceptions);
+    case tdma::OptionRangeType::all:
+        return alloc_C_str("ALL", buf, n, allow_exceptions);
+    default:
+        throw std::runtime_error("invalid OptionRangeType");
     }
 }
 
-std::ostream&
-operator<<(std::ostream& out,const MoversIndex& index)
-{
-    out<< to_string(index);
-    return out;
-}
 
-
-std::string
-to_string(const MoversDirectionType& direction_type)
+int
+OptionExpMonth_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
 {
-    switch(direction_type){
-    case MoversDirectionType::up: return "up";
-    case MoversDirectionType::down: return "down";
-    case MoversDirectionType::up_and_down: return "up_and_down";
-    default: throw runtime_error("invalid MoversDirectionType");
+    switch(static_cast<tdma::OptionExpMonth>(v)){
+    case tdma::OptionExpMonth::jan:
+        return alloc_C_str("JAN", buf, n, allow_exceptions);
+    case tdma::OptionExpMonth::feb:
+        return alloc_C_str("FEB", buf, n, allow_exceptions);
+    case tdma::OptionExpMonth::mar:
+        return alloc_C_str("MAR", buf, n, allow_exceptions);
+    case tdma::OptionExpMonth::apr:
+        return alloc_C_str("APR", buf, n, allow_exceptions);
+    case tdma::OptionExpMonth::may:
+        return alloc_C_str("MAY", buf, n, allow_exceptions);
+    case tdma::OptionExpMonth::jun:
+        return alloc_C_str("JUN", buf, n, allow_exceptions);
+    case tdma::OptionExpMonth::jul:
+        return alloc_C_str("JUL", buf, n, allow_exceptions);
+    case tdma::OptionExpMonth::aug:
+        return alloc_C_str("AUG", buf, n, allow_exceptions);
+    case tdma::OptionExpMonth::sep:
+        return alloc_C_str("SEP", buf, n, allow_exceptions);
+    case tdma::OptionExpMonth::oct:
+        return alloc_C_str("OCT", buf, n, allow_exceptions);
+    case tdma::OptionExpMonth::nov:
+        return alloc_C_str("NOV", buf, n, allow_exceptions);
+    case tdma::OptionExpMonth::dec:
+        return alloc_C_str("DEC", buf, n, allow_exceptions);
+    case tdma::OptionExpMonth::all:
+        return alloc_C_str("ALL", buf, n, allow_exceptions);
+    default:
+        throw std::runtime_error("invalid OptionExpMonth");
     }
 }
 
-std::ostream&
-operator<<(std::ostream& out,const MoversDirectionType& direction_type)
-{
-    out<< to_string(direction_type);
-    return out;
-}
 
-
-std::string
-to_string(const MoversChangeType& change_type)
+int
+OptionType_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
 {
-    switch(change_type){
-    case MoversChangeType::percent: return "percent";
-    case MoversChangeType::value: return "value";
-    default: throw runtime_error("invalid MoversChangeType");
+    switch(static_cast<tdma::OptionType>(v)){
+    case tdma::OptionType::s:
+        return alloc_C_str("S", buf, n, allow_exceptions);
+    case tdma::OptionType::ns:
+        return alloc_C_str("NS", buf, n, allow_exceptions);
+    case tdma::OptionType::all:
+        return alloc_C_str("ALL", buf, n, allow_exceptions);
+    default: throw std::runtime_error("invalid OptionType");
     }
 }
 
-std::ostream&
-operator<<(std::ostream& out,const MoversChangeType& change_type)
+
+int
+TransactionType_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
 {
-    out<< to_string(change_type);
-    return out;
+    switch(static_cast<tdma::TransactionType>(v)){
+    case tdma::TransactionType::all:
+        return alloc_C_str("ALL", buf, n, allow_exceptions);
+    case tdma::TransactionType::trade:
+        return alloc_C_str("TRADE", buf, n, allow_exceptions);
+    case tdma::TransactionType::buy_only:
+        return alloc_C_str("BUY_ONLY", buf, n, allow_exceptions);
+    case tdma::TransactionType::sell_only:
+        return alloc_C_str("SELL_ONLY", buf, n, allow_exceptions);
+    case tdma::TransactionType::cash_in_or_cash_out:
+        return alloc_C_str("CASH_IN_OR_CASH_OUT", buf, n, allow_exceptions);
+    case tdma::TransactionType::checking:
+        return alloc_C_str("CHECKING", buf, n, allow_exceptions);
+    case tdma::TransactionType::dividend:
+        return alloc_C_str("DIVIDEND", buf, n, allow_exceptions);
+    case tdma::TransactionType::interest:
+        return alloc_C_str("INTEREST", buf, n, allow_exceptions);
+    case tdma::TransactionType::other:
+        return alloc_C_str("OTHER", buf, n, allow_exceptions);
+    case tdma::TransactionType::advisor_fees:
+        return alloc_C_str("ADVISOR_FEES", buf, n, allow_exceptions);
+    default:
+        throw std::runtime_error("invliad TransactionType");
+    }
 }
 
+int
+InstrumentSearchType_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
+{
+    switch(static_cast<tdma::InstrumentSearchType>(v)){
+    case tdma::InstrumentSearchType::symbol_exact:
+        return alloc_C_str("fundamental", buf, n, allow_exceptions);
+    case tdma::InstrumentSearchType::symbol_search:
+        return alloc_C_str("symbol-search", buf, n, allow_exceptions);
+    case tdma::InstrumentSearchType::symbol_regex:
+        return alloc_C_str("symbol-regex", buf, n, allow_exceptions);
+    case tdma::InstrumentSearchType::description_search:
+        return alloc_C_str("desc-search", buf, n, allow_exceptions);
+    case tdma::InstrumentSearchType::description_regex:
+        return alloc_C_str("desc-regex", buf, n, allow_exceptions);
+    case tdma::InstrumentSearchType::cusip:
+        return alloc_C_str("cusip", buf, n, allow_exceptions);
+    default:
+        throw std::runtime_error("invalid InstrumentSearchType");
+    }
+}
+
+
+int
+MarketType_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
+{
+    switch(static_cast<tdma::MarketType>(v)){
+    case tdma::MarketType::equity:
+        return alloc_C_str("EQUITY", buf, n, allow_exceptions);
+    case tdma::MarketType::option:
+        return alloc_C_str("OPTION", buf, n, allow_exceptions);
+    case tdma::MarketType::future:
+        return alloc_C_str("FUTURE", buf, n, allow_exceptions);
+    case tdma::MarketType::bond:
+        return alloc_C_str("BOND", buf, n, allow_exceptions);
+    case tdma::MarketType::forex:
+        return alloc_C_str("FOREX", buf, n, allow_exceptions);
+    default:
+        throw std::runtime_error("Invalid MarketType");
+    }
+}
+
+int
+MoversIndex_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
+{
+    switch(static_cast<tdma::MoversIndex>(v)){
+    case tdma::MoversIndex::compx:
+        return alloc_C_str("$COMPX", buf, n, allow_exceptions);
+    case tdma::MoversIndex::dji:
+        return alloc_C_str("$DJI", buf, n, allow_exceptions);
+    case tdma::MoversIndex::spx:
+        return alloc_C_str("$SPX.X", buf, n, allow_exceptions);
+    default:
+        throw std::runtime_error("invalid MoversIndex");
+    }
+}
+
+
+int
+MoversDirectionType_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
+{
+    switch(static_cast<tdma::MoversDirectionType>(v)){
+    case tdma::MoversDirectionType::up:
+        return alloc_C_str("up", buf, n, allow_exceptions);
+    case tdma::MoversDirectionType::down:
+        return alloc_C_str("down", buf, n, allow_exceptions);
+    case tdma::MoversDirectionType::up_and_down:
+        return alloc_C_str("up_and_down", buf, n, allow_exceptions);
+    default:
+        throw std::runtime_error("invalid MoversDirectionType");
+    }
+}
+
+int
+MoversChangeType_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
+{
+    switch(static_cast<tdma::MoversChangeType>(v)){
+    case tdma::MoversChangeType::percent:
+        return alloc_C_str("percent", buf, n, allow_exceptions);
+    case tdma::MoversChangeType::value:
+        return alloc_C_str("value", buf, n, allow_exceptions);
+    default:
+        throw std::runtime_error("invalid MoversChangeType");
+    }
+}
+
+int
+OptionStrikesType_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
+{
+    switch(static_cast<tdma::OptionStrikesType>(v)){
+    case tdma::OptionStrikesType::n_atm:
+        return alloc_C_str("n_atm", buf, n, allow_exceptions);
+    case tdma::OptionStrikesType::single:
+        return alloc_C_str("single", buf, n, allow_exceptions);
+    case tdma::OptionStrikesType::range:
+        return alloc_C_str("range", buf, n, allow_exceptions);
+    case tdma::OptionStrikesType::none:
+        return alloc_C_str("none", buf, n, allow_exceptions);
+    default:
+        throw std::runtime_error("invalid MoversChangeType");
+    }
+}
+
+
+namespace tdma{
 
 string
 to_string(const AdminCommandType& command)

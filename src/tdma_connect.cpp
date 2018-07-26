@@ -20,14 +20,24 @@ along with this program.  If not, see http://www.gnu.org/licenses.
 #include <regex>
 #include <cctype>
 #include <mutex>
+#include <string.h>
 
 #include "../include/_tdma_api.h"
 
+using namespace std;
+using namespace chrono;
+
+
+#ifdef USE_SIGNAL_BLOCKER_
+namespace{
+util::SignalBlocker signal_blocker({SIGPIPE});
+};
+#endif
+
+
 namespace tdma{
 
-using namespace std;
 using namespace conn;
-using namespace chrono;
 
 bool
 base_on_error_callback(long code, const string& data, bool allow_refresh)
@@ -80,8 +90,48 @@ base_on_error_callback(long code, const string& data, bool allow_refresh)
         throw ServerError("unexpected server error: " + err_msg, code);
     case 503:
         throw ServerError("server (temporarily) unavailable", code);
+    case 504:
+        throw ServerError("unknown server error: " + err_msg, code);
     };
     return false;
+}
+
+void
+data_api_on_error_callback(long code, const string& data)
+{
+    /*
+     *  codes 500, 503, 401, 403, 404 handled by base callback
+     */
+    switch(code){
+    case 400:
+        throw InvalidRequest("bad/malformed request", code);
+    case 406:
+        throw InvalidRequest("invalid regex or excessive requests", code);
+    };
+}
+
+void
+account_api_on_error_callback(long code, const string& data)
+{
+    /*
+     *  codes 500, 503, 401, 403, 404 handled by base callback
+     */
+    if( code == 400 )
+        throw InvalidRequest("validation problem", code);
+}
+
+void
+query_api_on_error_callback(long code, const string& data)
+{
+    /*
+     *  codes 500, 503, 401, 403, 404 handled by base callback
+     */
+    switch(code){
+    case 400:
+        throw InvalidRequest("validation problem", code);
+    case 406:
+        throw InvalidRequest("invalid regex or excessive requests", code);
+    };
 }
 
 bool
@@ -130,12 +180,12 @@ curl_execute(HTTPSConnection& connection)
 }
 
 
-pair<json, conn::clock_ty::time_point>
+pair<string, conn::clock_ty::time_point>
 api_execute( HTTPSConnection& connection,
               Credentials& creds,
               api_on_error_cb_ty on_error_cb )
 {
-    if( creds.access_token.empty() )
+    if( !creds.access_token || string(creds.access_token).empty() )
         throw LocalCredentialException("creds.access_token is empty");
 
     if( !connection.has_headers() ){
@@ -145,7 +195,7 @@ api_execute( HTTPSConnection& connection,
          */
         connection.ADD_headers(
             { {"Accept", "application/json"},
-              {"Authorization", "Bearer " + creds.access_token} }
+              {"Authorization", "Bearer " + string(creds.access_token)} }
             );
     }
 
@@ -164,7 +214,7 @@ api_execute( HTTPSConnection& connection,
         connection.RESET_headers();
         connection.ADD_headers(
             { {"Accept", "application/json"},
-              {"Authorization", "Bearer " + creds.access_token} }
+              {"Authorization", "Bearer " + string(creds.access_token)} }
             );
 
         /* try again */
@@ -172,7 +222,7 @@ api_execute( HTTPSConnection& connection,
         on_api_return(r_code, r_data, false, on_error_cb);
     } 
 
-    return make_pair( (r_data.empty() ? json() : json::parse(r_data)), r_tp );
+    return make_pair( r_data, r_tp );
 }
 
 
@@ -197,15 +247,15 @@ api_auth_execute(HTTPSPostConnection& connection, std::string fname)
 }
 
 
-const milliseconds APIGetter::DEF_WAIT_MSEC(500);
+const milliseconds APIGetterImpl::DEF_WAIT_MSEC(500);
 
-milliseconds APIGetter::wait_msec(APIGetter::DEF_WAIT_MSEC);
-milliseconds APIGetter::last_get_msec(util::get_msec_since_epoch<conn::clock_ty>());
+milliseconds APIGetterImpl::wait_msec(APIGetterImpl::DEF_WAIT_MSEC);
+milliseconds APIGetterImpl::last_get_msec(util::get_msec_since_epoch<conn::clock_ty>());
 
-mutex APIGetter::get_mtx;
+mutex APIGetterImpl::get_mtx;
 
 
-APIGetter::APIGetter(Credentials& creds, api_on_error_cb_ty on_error_callback)
+APIGetterImpl::APIGetterImpl(Credentials& creds, api_on_error_cb_ty on_error_callback)
     :       
         _on_error_callback(on_error_callback),
         _credentials(creds),
@@ -213,26 +263,29 @@ APIGetter::APIGetter(Credentials& creds, api_on_error_cb_ty on_error_callback)
     {}
 
 void
-APIGetter::set_url(string url)
+APIGetterImpl::set_url(string url)
 { _connection.SET_url(url); }
 
-json
-APIGetter::get()
+string
+APIGetterImpl::get()
 {
-    if( !_connection )
+    if( is_closed() )
         throw APIException("connection is closed");
 
     assert( !_connection.is_closed() );
-    return APIGetter::throttled_get(*this);
+    return APIGetterImpl::throttled_get(*this);
 }
 
 void
-APIGetter::close()
+APIGetterImpl::close()
 { _connection.close(); }
 
+bool
+APIGetterImpl::is_closed() const
+{ return !_connection; }
 
-json
-APIGetter::throttled_get(APIGetter& getter)
+string
+APIGetterImpl::throttled_get(APIGetterImpl& getter)
 {
     using namespace chrono;
 
@@ -258,25 +311,25 @@ APIGetter::throttled_get(APIGetter& getter)
         this_thread::sleep_for( remaining );
     }
 
-    json j;
+    string s;
     conn::clock_ty::time_point tp;
-    tie(j, tp) = api_execute( getter._connection, getter._credentials,
+    tie(s, tp) = api_execute( getter._connection, getter._credentials,
                               getter._on_error_callback );
 
     last_get_msec = duration_cast<milliseconds>(tp.time_since_epoch());
-    return j;
+    return s;
 }
 
 
 void
-APIGetter::set_wait_msec(milliseconds msec)
+APIGetterImpl::set_wait_msec(milliseconds msec)
 {
     lock_guard<mutex> _(get_mtx);
     wait_msec = msec;
 }
 
 milliseconds
-APIGetter::get_wait_msec()
+APIGetterImpl::get_wait_msec()
 { return wait_msec; }
 
 
@@ -307,3 +360,123 @@ unescape_returned_post_data(const string& s)
 
 
 } /* tdma */
+
+
+int
+APIGetter_Get_ABI( Getter_C *pgetter,
+                     char **buf,
+                     size_t *n,
+                     int allow_exceptions )
+{
+    if( !pgetter || !pgetter->obj || !buf || !n ){
+        if( allow_exceptions ){
+            throw tdma::ValueException("pgetter/buffer/n can not be null");
+        }
+        return TDMA_API_VALUE_ERROR;
+    }
+
+    static auto meth = +[](void* obj){
+        return reinterpret_cast<tdma::APIGetterImpl*>(obj)->get();
+    };
+
+    string r;
+    int err;
+    tie(r,err) = tdma::CallImplFromABI(allow_exceptions, meth, pgetter->obj);
+    if( err )
+        return err;
+
+    *n = r.size() + 1;
+    *buf = reinterpret_cast<char*>(malloc(*n));
+    if( !buf ){
+        if( allow_exceptions ){
+            throw tdma::MemoryError("failed to allocate buffer memory");
+        }
+        return TDMA_API_MEMORY_ERROR;
+    }
+    (*buf)[(*n)-1] = 0;
+    strncpy(*buf, r.c_str(), (*n)-1);
+    return 0;
+}
+
+int
+APIGetter_Close_ABI(Getter_C *pgetter, int allow_exceptions)
+{
+    if( !pgetter || !pgetter->obj ){
+        if( allow_exceptions ){
+            throw tdma::ValueException("pgetter can not be null");
+        }
+        return TDMA_API_VALUE_ERROR;
+    }
+
+    static auto meth = +[](void* obj){
+        reinterpret_cast<tdma::APIGetterImpl*>(obj)->close();
+    };
+
+    return tdma::CallImplFromABI(allow_exceptions, meth, pgetter->obj);
+}
+
+int
+APIGetter_IsClosed_ABI(Getter_C *pgetter, int*b, int allow_exceptions)
+{
+    if( !pgetter || !pgetter->obj || !b ){
+        if( allow_exceptions ){
+            throw tdma::ValueException("pgetter/b can not be null");
+        }
+        return TDMA_API_VALUE_ERROR;
+    }
+
+    static auto meth = +[](void* obj){
+        return reinterpret_cast<tdma::APIGetterImpl*>(obj)->is_closed();
+    };
+
+    int err;
+    tie(*b, err) = tdma::CallImplFromABI(allow_exceptions, meth, pgetter->obj);
+    return err ? err : 0;
+}
+
+int
+APIGetter_SetWaitMSec_ABI(unsigned long long msec, int allow_exceptions)
+{
+    return tdma::CallImplFromABI( allow_exceptions,
+                                  tdma::APIGetterImpl::set_wait_msec,
+                                  milliseconds(msec) );
+}
+
+int
+APIGetter_GetWaitMSec_ABI(unsigned long long *msec, int allow_exceptions)
+{
+    if( !msec){
+        if( allow_exceptions ){
+            throw tdma::ValueException("msec can not be null");
+        }
+        return TDMA_API_VALUE_ERROR;
+    }
+
+    milliseconds ms;
+    int err;
+    tie(ms, err) = tdma::CallImplFromABI( allow_exceptions,
+                                          tdma::APIGetterImpl::get_wait_msec );
+    if(err)
+        return err;
+
+    *msec = static_cast<unsigned long long>(ms.count());
+    return 0;
+}
+
+int
+APIGetter_GetDefWaitMSec_ABI(unsigned long long *msec, int allow_exceptions)
+{
+    if( !msec){
+        if( allow_exceptions ){
+            throw tdma::ValueException("msec can not be null");
+        }
+        return TDMA_API_VALUE_ERROR;
+    }
+
+    *msec = static_cast<unsigned long long>(
+        tdma::APIGetterImpl::DEF_WAIT_MSEC.count()
+        );
+    return 0;
+}
+
+

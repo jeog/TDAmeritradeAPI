@@ -195,17 +195,20 @@
     <ClInclude Include="..\..\uWebSockets\WebSocketProtocol.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\src\account.cpp" />
     <ClCompile Include="..\..\src\auth.cpp" />
     <ClCompile Include="..\..\src\curl_connect.cpp" />
-    <ClCompile Include="..\..\src\data.cpp" />
+    <ClCompile Include="..\..\src\getters\account.cpp" />
+    <ClCompile Include="..\..\src\getters\historical.cpp" />
+    <ClCompile Include="..\..\src\getters\instrument_info.cpp" />
+    <ClCompile Include="..\..\src\getters\market_hours.cpp" />
+    <ClCompile Include="..\..\src\getters\movers.cpp" />
+    <ClCompile Include="..\..\src\getters\options.cpp" />
+    <ClCompile Include="..\..\src\getters\quotes.cpp" />
     <ClCompile Include="..\..\src\params.cpp" />
-    <ClCompile Include="..\..\src\query.cpp" />
     <ClCompile Include="..\..\src\streaming\streaming_info.cpp" />
     <ClCompile Include="..\..\src\streaming\streaming_session.cpp" />
     <ClCompile Include="..\..\src\streaming\streaming_subscriptions.cpp" />
     <ClCompile Include="..\..\src\tdma_connect.cpp" />
-    <ClCompile Include="..\..\src\trade.cpp" />
     <ClCompile Include="..\..\src\util.cpp" />
     <ClCompile Include="..\..\src\websocket_connect.cpp" />
     <ClCompile Include="..\..\uWebSockets\Epoll.cpp" />

@@ -35,6 +35,8 @@ std::string certificate_bundle_path;
  * w/ SetCertificateBundlePath() ) we'll fail w/ CURLE_SSL_CACERT and throw 
  */
 
+using namespace std;
+
 namespace tdma{
 
 /* this should all be done during build */
@@ -46,7 +48,8 @@ const std::string DEF_CERTIFICATE_BUNDLE_PATH(
     + "/cacert.pem"
 );
 #else
-    #warning "'DEF_CERTIFICATE_BUNDLE_PATH' not defined!"
+const std::string DEF_CERTIFICATE_BUNDLE_PATH;
+#warning "'DEF_CERTIFICATE_BUNDLE_PATH' not defined!"
 #endif
 
 /*
@@ -71,7 +74,6 @@ const std::string DEF_CERTIFICATE_BUNDLE_PATH(
  *  IV + BODY CHECKSUM (binary, 32 bytes)
  */
 
-using namespace std;
 using namespace conn;
 
 const string URL_ACCESS_TOKEN = URL_BASE + "oauth2/token";
@@ -238,7 +240,7 @@ hash_sha256(SmartByteBuffer& in)
 }
 
 SmartByteBuffer
-hash_sha256(const std::string& in)
+hash_sha256(const string& in)
 {
     SmartByteBuffer buf(in);
     return hash_sha256(buf);
@@ -247,7 +249,7 @@ hash_sha256(const std::string& in)
 
 // <IV, ciphertext>
 pair<SmartByteBuffer, SmartByteBuffer>
-encrypt(std::string in, std::string key)
+encrypt(const string& in, const string& key)
 {
     std::default_random_engine engine( (std::random_device())() );
     /* msvc complains if we use unsigned char */
@@ -292,7 +294,7 @@ class DecryptFinalException
 };
 
 SmartByteBuffer
-decrypt(SmartByteBuffer in, SmartByteBuffer iv, string key)
+decrypt(SmartByteBuffer in, SmartByteBuffer iv, const string& key)
 {
     if( in.size() <= CREDS_IV_LENGTH )
         throw LocalCredentialException("not enough input to decrypt");
@@ -329,7 +331,9 @@ decrypt(SmartByteBuffer in, SmartByteBuffer iv, string key)
 
 
 bool
-store_credentials(string path, string password, const Credentials& creds)
+store_credentials( const string& path,
+                     const string& password,
+                     const Credentials* creds )
 {
     fstream file(path, ios_base::out | ios_base::trunc | ios_base::binary );
     if( !file.is_open() ){
@@ -338,10 +342,10 @@ store_credentials(string path, string password, const Credentials& creds)
     file.exceptions(ios_base::badbit | ios_base::failbit);
 
     stringstream input;
-    input << creds.access_token << endl
-          << creds.refresh_token << endl
-          << to_string(creds.epoch_sec_token_expiration) << endl
-          << creds.client_id << endl;
+    input << creds->access_token << endl
+          << creds->refresh_token << endl
+          << to_string(creds->epoch_sec_token_expiration) << endl
+          << creds->client_id << endl;
     string input_str = input.str();
 
     auto input_checksum = hash_sha256(input_str);   
@@ -372,7 +376,41 @@ store_credentials(string path, string password, const Credentials& creds)
 
 
 Credentials
-load_credentials(fstream& file, string path, string password)
+create_credentials_struct( const string& access_token,
+                              const string& refresh_token,
+                              long long epoch_sec_token_expiration,
+                              const string& client_id )
+{
+    Credentials creds;
+    size_t at_sz = access_token.size();
+    size_t rt_sz = refresh_token.size();
+    size_t cid_sz = client_id.size();
+
+    if( at_sz > Credentials::CRED_FIELD_MAX_STR_LEN ||
+        rt_sz > Credentials::CRED_FIELD_MAX_STR_LEN ||
+        cid_sz > Credentials::CRED_FIELD_MAX_STR_LEN ){
+        throw LocalCredentialException("invalid string length");
+    }
+
+    creds.access_token = new char[at_sz + 1];
+    creds.refresh_token = new char[rt_sz + 1];
+    creds.client_id = new char[cid_sz + 1];
+
+    strcpy(creds.access_token, access_token.c_str());
+    strcpy(creds.refresh_token, refresh_token.c_str());
+    strcpy(creds.client_id, client_id.c_str());
+
+    creds.access_token[at_sz] = 0;
+    creds.refresh_token[rt_sz] = 0;
+    creds.client_id[cid_sz] = 0;
+
+    creds.epoch_sec_token_expiration = epoch_sec_token_expiration;
+    return creds;
+}
+
+
+Credentials
+load_credentials(fstream& file, const string& path, const string& password)
 {      
     string f_str;
     try{
@@ -406,21 +444,22 @@ load_credentials(fstream& file, string path, string password)
         cerr << "failed to decrypt credential file: " << path << endl;
         throw;
     }            
-            
-    Credentials creds;
+
+    Credentials creds{};
     SmartByteBuffer derived_checksum, bchecksum;
     try{
         stringstream ss;
         ss.write(reinterpret_cast<const char*>(dbody.get()), dbody.size());
         ss.exceptions(ios_base::eofbit | ios_base::badbit | ios_base::failbit);
         
-        getline(ss, creds.access_token);
-        getline(ss, creds.refresh_token);
-        string tmp;
+        string atoken, rtoken, tmp, cli_id;
+        getline(ss, atoken);
+        getline(ss, rtoken);
         getline(ss, tmp);
-        creds.epoch_sec_token_expiration = std::stoll(tmp);
-        getline(ss, creds.client_id); 
-        
+        getline(ss, cli_id);
+
+        creds = create_credentials_struct(atoken, rtoken, std::stoll(tmp), cli_id);
+
         char bchecksum_str[CREDS_CHECKSUM_LENGTH];
         ss.read(bchecksum_str, CREDS_CHECKSUM_LENGTH);
         bchecksum = SmartByteBuffer(bchecksum_str);
@@ -453,50 +492,15 @@ load_credentials(fstream& file, string path, string password)
         throw LocalCredentialException("invalid credentials(checksum)");
     }
 
-    if( !store_credentials(path + ".backup", password, creds) )
+    if( !store_credentials(path + ".backup", password, &creds) )
         cerr << "failed to write backup credentials file" << endl;
 
     return creds;
 }
 
 
-Credentials
-LoadCredentials(string path, string password)
-{
-    fstream file(path, ios_base::in | ios_base::binary );
-    if( file.is_open() ){
-        try {
-            return load_credentials(file, path, password);
-
-        }catch (DecryptFinalException& e) {
-            /* if bad password don't try the backup */
-            throw LocalCredentialException("BAD PASSWORD");
-
-        }catch (LocalCredentialException& e) {
-            cerr << "failed to load primary credentials file: " << endl
-                 << "  LocalCredentialsException caught: " << e.what() << endl;
-        }
-    }else {
-        cerr << "no credentials file at " + path << endl;
-    }
-
-    string path2(path + ".backup");
-    cerr<< "trying backup credentials file at " + path2 << endl;
-
-    fstream file2(path2, ios_base::in | ios_base::binary);
-    if (!file2.is_open()) 
-        throw LocalCredentialException("no backup credentials file at " + path2);
-    
-    try {
-        return load_credentials(file2, path2, password);
-    }catch (DecryptFinalException&) {
-        throw LocalCredentialException("BAD PASSWORD");
-    }
-}
-
-
 bool
-copy_credentials_file(string from_path, string to_path)
+copy_credentials_file(const string& from_path, const string& to_path)
 {
     fstream fout(to_path, ios_base::out | ios_base::trunc | ios_base::binary);
     if( !fout.is_open() ) {
@@ -522,23 +526,6 @@ copy_credentials_file(string from_path, string to_path)
     }
 
     return true;
-}
-
-
-void
-StoreCredentials(string path, string password, const Credentials& creds)
-{
-    if( !store_credentials(path, password, creds) ){
-        cerr << "  " << "revert to " << path + ".backup" << endl;
-        /*
-         * If initial store attempt fails from a write error just try to 
-         * overwrite w/ backup. Allow LocalCredentialExceptions to
-         * propogate from store_credentials() or copy_credentials_file()
-         * since there's the store op is beyond saving at that point.
-         */
-        if( !copy_credentials_file(path + ".backup", path) )
-            throw LocalCredentialException("failed to store credentials");
-    }
 }
 
 
@@ -568,14 +555,74 @@ generate_token_expiration_sec(long life)
 }
 
 
-Credentials
-RequestAccessToken(string code, string client_id, string redirect_uri)
+void
+LoadCredentialsImpl( const string& path,
+                       const string& password,
+                       Credentials *pcreds )
+{
+    fstream file(path, ios_base::in | ios_base::binary );
+    if( file.is_open() ){
+        try {
+            *pcreds = load_credentials(file, path, password);
+            return;
+        }catch (DecryptFinalException& e) {
+            /* if bad password don't try the backup */
+            throw LocalCredentialException("BAD PASSWORD");
+
+        }catch (LocalCredentialException& e) {
+            cerr << "failed to load primary credentials file: " << endl
+                 << "  LocalCredentialsException caught: " << e.what() << endl;
+        }
+    }else {
+        cerr << "no credentials file at " << path << endl;
+    }
+
+    string path2(path + ".backup");
+    cerr<< "trying backup credentials file at " << path2 << endl;
+
+    fstream file2(path2, ios_base::in | ios_base::binary);
+    if (!file2.is_open())
+        throw LocalCredentialException("no backup credentials file at " + path2);
+
+    try {
+        *pcreds = load_credentials(file2, path2, password);
+        return;
+    }catch (DecryptFinalException&) {
+        throw LocalCredentialException("BAD PASSWORD");
+    }
+}
+
+
+void
+StoreCredentialsImpl( const string& path,
+                    const string& password,
+                    const Credentials* creds )
+{
+    if( !store_credentials(path, password, creds) ){
+        cerr << "  revert to " << path + ".backup" << endl;
+        /*
+         * If initial store attempt fails from a write error just try to
+         * overwrite w/ backup. Allow LocalCredentialExceptions to
+         * propogate from store_credentials() or copy_credentials_file()
+         * since there's the store op is beyond saving at that point.
+         */
+        if( !copy_credentials_file(path + ".backup", path) )
+            throw LocalCredentialException("failed to store credentials");
+    }
+}
+
+
+void
+RequestAccessTokenImpl( const string& code,
+                           const string& client_id,
+                           const string& redirect_uri,
+                           Credentials *pcreds )
 {
     if( code.empty() )
         throw LocalCredentialException("'code' is empty");
 
     if( client_id.empty() )
-        throw LocalCredentialException("'client_id' required");         
+        throw LocalCredentialException("'client_id' required");
 
     HTTPSPostConnection connection(URL_ACCESS_TOKEN);
     connection.ADD_headers(AUTH_HEADERS);
@@ -589,38 +636,36 @@ RequestAccessToken(string code, string client_id, string redirect_uri)
     };
     connection.SET_fields(fields);
 
-    auto r_json = api_auth_execute(connection, "RequestAccessToken");
+    auto r_json = api_auth_execute(connection, "RequestAccessTokenImpl");
 
-    Credentials creds;
-    creds.client_id = client_id;
-    creds.access_token = r_json["access_token"];
-    creds.refresh_token = r_json["refresh_token"];
+    *pcreds = create_credentials_struct(
+        r_json["access_token"],
+        r_json["refresh_token"],
+        generate_token_expiration_sec(r_json["refresh_token_expires_in"]),
+        client_id
+        );
 
-    creds.epoch_sec_token_expiration =
-            generate_token_expiration_sec(r_json["refresh_token_expires_in"]);
-
-    if( creds.epoch_sec_token_expiration < TOKEN_EARLIEST_EXPIRATION ||
-        creds.epoch_sec_token_expiration > TOKEN_LATEST_EXPIRATION )
+    if( pcreds->epoch_sec_token_expiration < TOKEN_EARLIEST_EXPIRATION ||
+        pcreds->epoch_sec_token_expiration > TOKEN_LATEST_EXPIRATION )
     {
         throw LocalCredentialException("creds.epoch_sec_toke_expiration "
                                        "contains invalid value.");
     };
-    return creds;
 }
 
 
 void
-RefreshAccessToken(Credentials& creds) 
+RefreshAccessTokenImpl(Credentials* creds)
 {
-    if( creds.epoch_sec_token_expiration < TOKEN_EARLIEST_EXPIRATION ||
-        creds.epoch_sec_token_expiration > TOKEN_LATEST_EXPIRATION )
+    if( creds->epoch_sec_token_expiration < TOKEN_EARLIEST_EXPIRATION ||
+        creds->epoch_sec_token_expiration > TOKEN_LATEST_EXPIRATION )
     {
-        string e( to_string(creds.epoch_sec_token_expiration) );
+        string e( to_string(creds->epoch_sec_token_expiration) );
         throw LocalCredentialException("creds.epoch_sec_toke_expiration "
                                         "contains invalid value (" + e + ")" );
     };
 
-    if( request_token_has_expired(creds.epoch_sec_token_expiration) )
+    if( request_token_has_expired(creds->epoch_sec_token_expiration) )
     {
         /*
          *  TODO implement mechanism to automatically auth new token
@@ -629,7 +674,7 @@ RefreshAccessToken(Credentials& creds)
                                        "use RequestAccessToken() for new token");
     }
 
-    if( creds.refresh_token.empty() )
+    if( string(creds->refresh_token).empty() )
         throw LocalCredentialException("creds.refresh_token is empty");
 
     HTTPSPostConnection connection(URL_ACCESS_TOKEN);
@@ -637,26 +682,31 @@ RefreshAccessToken(Credentials& creds)
 
     vector<pair<string, string>> fields = {
         {"grant_type","refresh_token"},
-        {"refresh_token", util::url_encode(creds.refresh_token)},
+        {"refresh_token", util::url_encode(creds->refresh_token)},
         {"access_type", ""},
         {"code",""},
-        {"client_id", util::url_encode(creds.client_id)},
+        {"client_id", util::url_encode(creds->client_id)},
         {"redirect_uri", ""}
     };
     connection.SET_fields(fields);
 
-    auto r_json = api_auth_execute(connection, "RefreshAccessToken");
-    creds.access_token = r_json["access_token"];
-    if( creds.access_token.empty() ){
+    auto r_json = api_auth_execute(connection, "RefreshAccessTokenImpl");
+    string r_str = r_json["access_token"];
+
+    creds->access_token = (char*)realloc(creds->access_token, r_str.size() + 1);
+    creds->access_token[r_str.size()] = 0;
+    strcpy(creds->access_token, r_str.c_str());
+
+    if( string(creds->access_token).empty() ){
         throw LocalCredentialException("creds.access_token is empty");
     }
 }
 
 
 void
-SetCertificateBundlePath(const std::string& path)
+SetCertificateBundlePathImpl(const string& path)
 {    
-    size_t sz = path.size(); 
+    size_t sz = path.size();
     // .pem suffix with at least one char before
     if (sz < 5 || path[sz - 1] != 'm' || path[sz - 2] != 'e'
                || path[sz - 3] != 'p' || path[sz - 4] != '.')
@@ -671,4 +721,270 @@ SetCertificateBundlePath(const std::string& path)
 }
 
 
+string
+GetCertificateBundlePathImpl()
+{ return certificate_bundle_path; }
+
+
+string
+GetDefaultCertificateBundlePathImpl()
+{ return DEF_CERTIFICATE_BUNDLE_PATH; }
+
+
+void
+CloseCredentialsImpl(Credentials* pcreds)
+{
+    if( pcreds->access_token ){
+        delete[] pcreds->access_token;
+        pcreds->access_token = nullptr;
+    }
+    if( pcreds->refresh_token ){
+        delete[] pcreds->refresh_token;
+        pcreds->refresh_token = nullptr;
+    }
+    if( pcreds->client_id ){
+        delete[] pcreds->client_id;
+        pcreds->client_id = nullptr;
+    }
+    pcreds->epoch_sec_token_expiration = 0;
+}
+
 } /* tdma */
+
+
+int
+LoadCredentials_ABI( const char* path,
+                       const char* password,
+                       Credentials *pcreds,
+                       int allow_exceptions )
+{
+    if( !path || !password || !pcreds){
+        if( allow_exceptions ){
+            throw tdma::ValueException("path/passwordpcreds can not be null");
+        }
+        return TDMA_API_VALUE_ERROR;
+    }
+
+    /* C client responsbile for previous dealloc */
+    memset(pcreds, 0, sizeof(Credentials));
+    int err = 0;
+    try{
+        err = tdma::CallImplFromABI( allow_exceptions, tdma::LoadCredentialsImpl,
+                                     path, password, pcreds );
+    }catch(...){
+        tdma::CloseCredentialsImpl(pcreds);
+        assert(allow_exceptions);
+        throw;
+    }
+
+    if( err )
+        tdma::CloseCredentialsImpl(pcreds);
+
+    return err;
+}
+
+
+int
+StoreCredentials_ABI( const char* path,
+                         const char* password,
+                         const Credentials* pcreds,
+                         int allow_exceptions )
+{
+    if( !path || !password || !pcreds ){
+        if( allow_exceptions ){
+            throw tdma::ValueException("path/password/pcreds can not be null");
+        }
+        return TDMA_API_VALUE_ERROR;
+    }
+
+    if( !pcreds->access_token | !pcreds->refresh_token | !pcreds->client_id ){
+        if( allow_exceptions ){
+            throw tdma::LocalCredentialException("invalid Credentials struct");
+        }
+        return TDMA_API_CRED_ERROR;
+    }
+
+    return tdma::CallImplFromABI( allow_exceptions, tdma::StoreCredentialsImpl,
+                                  path, password, pcreds );
+}
+
+
+int
+RequestAccessToken_ABI( const char* code,
+                           const char* client_id,
+                           const char* redirect_uri,
+                           Credentials *pcreds,
+                           int allow_exceptions )
+{
+    if( !code || !client_id || !redirect_uri || !pcreds ){
+        if( allow_exceptions ){
+            throw tdma::ValueException("code/client_id/redirect_uri/pcreds "
+                                       "can not be null");
+        }
+        return TDMA_API_VALUE_ERROR;
+    }
+
+    /* C client responsbile for previous dealloc */
+    memset(pcreds, 0, sizeof(Credentials));
+    int err = 0;
+    try{
+        err =tdma::CallImplFromABI( allow_exceptions,
+                                    tdma::RequestAccessTokenImpl,
+                                    code, client_id, redirect_uri, pcreds );
+    }catch(...){
+        tdma::CloseCredentialsImpl(pcreds);
+        assert(allow_exceptions);
+        throw;
+    }
+
+    if( err )
+        tdma::CloseCredentialsImpl(pcreds);
+
+    return err;
+}
+
+
+int
+RefreshAccessToken_ABI(Credentials* pcreds, int allow_exceptions)
+{
+    if( !pcreds ){
+        if( allow_exceptions ){
+            throw tdma::ValueException("credential pointer can not be null");
+        }
+        return TDMA_API_VALUE_ERROR;
+    }
+
+    return tdma::CallImplFromABI( allow_exceptions, tdma::RefreshAccessTokenImpl,
+                                  pcreds );
+}
+
+
+int
+SetCertificateBundlePath_ABI(const char *path, int allow_exceptions)
+{
+    if( !path ){
+        if( allow_exceptions ){
+            throw tdma::ValueException("path can not be null");
+        }
+        return TDMA_API_VALUE_ERROR;
+    }
+
+    return tdma::CallImplFromABI( allow_exceptions,
+                                  tdma::SetCertificateBundlePathImpl, path );
+}
+
+
+int
+GetCertificateBundlePath_ABI(char **path, size_t *n, int allow_exceptions)
+{
+    if( !path ){
+        if( allow_exceptions ){
+            throw tdma::ValueException("path/n can not be null");
+        }
+        return TDMA_API_VALUE_ERROR;
+    }
+
+    string r;
+    int err;
+    tie(r,err) = tdma::CallImplFromABI( allow_exceptions,
+                                        tdma::GetCertificateBundlePathImpl );
+    if( err )
+        return err;
+
+    *n = r.size() + 1;
+    *path = reinterpret_cast<char*>(malloc(*n));
+    if( !path ){
+        if( allow_exceptions ){
+            throw tdma::MemoryError("failed to allocate buffer memory");
+        }
+        return TDMA_API_MEMORY_ERROR;
+    }
+    strncpy(*path, r.c_str(), (*n)-1);
+    *path[(*n)-1] = 0;
+    return 0;
+}
+
+
+int
+GetDefaultCertificateBundlePath_ABI( char **path,
+                                         size_t *n,
+                                         int allow_exceptions )
+{
+    if( !path ){
+        if( allow_exceptions ){
+            throw tdma::ValueException("path/n can not be null");
+        }
+        return TDMA_API_VALUE_ERROR;
+    }
+
+    string r;
+    int err;
+    tie(r,err) = tdma::CallImplFromABI( allow_exceptions,
+                                        tdma::GetDefaultCertificateBundlePathImpl );
+    if( err )
+        return err;
+
+    *n = r.size() + 1;
+    *path = reinterpret_cast<char*>(malloc(*n));
+    if( !path ){
+        if( allow_exceptions ){
+            throw tdma::MemoryError("failed to allocate buffer memory");
+        }
+        return TDMA_API_MEMORY_ERROR;
+    }
+    strncpy(*path, r.c_str(), (*n)-1);
+    *path[(*n)-1] = 0;
+    return 0;
+}
+
+
+int
+CloseCredentials_ABI(Credentials* pcreds, int allow_exceptions)
+{
+    if( !pcreds ){
+        if( allow_exceptions ){
+            throw tdma::ValueException("credentials pointer can not be null");
+        }
+        return TDMA_API_VALUE_ERROR;
+    }
+    return tdma::CallImplFromABI( allow_exceptions,
+                                  tdma::CloseCredentialsImpl, pcreds );
+}
+
+int
+CopyCredentials_ABI( const struct Credentials* from,
+                       struct Credentials* to,
+                       int allow_exceptions )
+{
+    static const int FAIL_LEN = Credentials::CRED_FIELD_MAX_STR_LEN + 1;
+
+    if( !from || !to ){
+        if( allow_exceptions ){
+            throw tdma::ValueException("credentials pointer can not be null");
+        }
+        return TDMA_API_VALUE_ERROR;
+    }
+
+    size_t atl, rtl, cidl;
+
+    if( (atl = strnlen(from->access_token, FAIL_LEN)) == FAIL_LEN||
+        (rtl = strnlen(from->refresh_token, FAIL_LEN)) == FAIL_LEN ||
+        (cidl = strnlen(from->client_id, FAIL_LEN)) == FAIL_LEN ){
+            if( allow_exceptions ){
+                throw tdma::LocalCredentialException("invalid string length");
+            }
+            return TDMA_API_CRED_ERROR;
+        }
+
+    to->access_token = new char[atl + 1];
+    to->refresh_token = new char[rtl + 1];
+    to->client_id = new char[cidl + 1];
+
+    strcpy(to->access_token, from->access_token);
+    strcpy(to->refresh_token, from->refresh_token);
+    strcpy(to->client_id, from->client_id);
+    to->epoch_sec_token_expiration = from->epoch_sec_token_expiration;
+
+    return 0;
+}
+

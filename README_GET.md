@@ -3,9 +3,11 @@
 
 - [Overview](#overview)
     - [Certificates](#certificates)
-    - [Using Getter Objects](#using-getter-objects)
+    - [Using Getter Objects C++](#using-getter-objects-c)
+    - [Using Getter Objects C](#using-getter-objects-c-1)
 - [Throttling](#throttling)
-- [Example Usage](#example-usage)
+- [Example Usage C++](#example-usage-c)
+- [Example Usage C](#example-usage-c-1)
 - [Getter Classes](#getter-classes)
     - [QuoteGetter](#quotegetter)  
     - [QuotesGetter](#quotesgetter)  
@@ -37,23 +39,34 @@
 using namespace tdma;
 ```
 
-The Get Interface consists of 'Getter' objects that derive from ```APIGetter```, and related convenience functions. ```APIGetter``` is built on ```conn::CurlConnection```: an object-oriented wrapper to libcurl  in curl_connect.h/cpp.
+The C++ Get Interface consists of 'Getter' objects that derive from ```APIGetter```, and related convenience functions. ```APIGetter``` is built on ```conn::CurlConnection```: an object-oriented wrapper to libcurl  in curl_connect.h/cpp.
+
+The C++ 'Getter' objects are simple 'proxies', all defined inline, that call through library-exported C calls to provide a stable ABI. These calls access the actual C++ implementation objects in the library, throwing exceptions if called by C++ code or returning error codes if called by C.
+
+The C interface uses something of an object-oriented approach as well, returning a struct for each getter object that contains a generic pointer to the underlying C++ object. Pointers to these structs can then be passed to the appropriate functions to replicate the behavior of the C++ methods. (see below)
 
 ##### Certificates
 
 Certificates are required to validate the hosts. If libcurl is built against the native ssl lib(e.g openssl on linux) or you use the pre-built dependencies for Windows(we built libcurl with -ENABLE_WINSSL) the default certificate store ***should*** take care of this for you. If this doesn't happen an ```APIExecutionException```  will be thrown with code CURLE_SSL_CACERT(60) and you'll have to use your own certificates via:
 ```
+[C++]
 void
 SetCertificateBundlePath(const std::string& path)
 
     path :: the path to a certificate bundle file (.pem)
+
+[C]
+inline int
+SetCertificateBundlePath(const char* path)
+
+    returns -> 0 on success, error code on failure
 ```
 
 There is a default 'cacert.pem' file in the base directory extracted from Firefox that you can use. 
 (You can get updated versions from the [curl site](https://curl.haxx.se/docs/caextract.html).) The 
 path of this file, *hard-coded during compilation*, can be found in the DEF_CERTIFICATE_BUNDLE_PATH string.
 
-##### Using Getter Objects
+##### Using Getter Objects [C++]
 
 1. construct a Getter object passing a reference to the Credentials struct and the 
 relevant arguments.
@@ -94,6 +107,61 @@ GetQuote(Credentials& creds, string symbol)
 { return QuoteGetter(creds, symbol).get(); }
 ```
 
+##### Using Getter Objects [C]
+
+1. 'construct' a getter object using the appropriately named ```Create``` function, e.g:
+```
+inline int
+QuoteGetter_Create( struct Credentials *pcreds, 
+                    const char* symbol,
+                    QuoteGetter_C *pgetter )
+
+    pcreds  :: a pointer to your credentials struct
+    symbol  :: the symbol to get quotes for
+    pgetter :: a pointer to a QuoteGetter_C struct to be populated
+    returns -> 0 on success, error code on failure
+```
+
+2. use the ```pgetter``` from above to return (un-parsed) json data, e.g:
+```
+inline int
+QuoteGetter_Get(QuoteGetter_C *getter, char **buf, size_t *n)
+
+    getter :: pointer to the getter object created by 'Create'
+    buf    :: address of a char* that will be populated by a char buffer
+              *HEAP ALLOCATED VIA MALLOC*
+    n      :: address of a size_t to be populated with the size of the
+              char buffer (size of data + 1 for the null term)
+```
+Note that a heap allocated char buffer is returned. It's the caller's responsibility
+to free the object, e.g ```free(buf);```
+
+To change the paramaters of the getter use the accessor methods, e.g:
+```
+inline int
+QuoteGetter_GetSymbol(QuoteGetter_C *getter, char **buf, size_t *n)
+
+inline int
+QuoteGetter_SetSymbol(QuoteGetter_C *getter, const char *symbol)
+```
+
+When done you can close the object to end the connection and/or destroy it
+to release the underlying resources e.g:
+```
+inline int
+QuoteGetter_Close(QuoteGetter_C *getter)
+
+inline int
+QuoteGetter_Destroy(QuoteGetter_C *getter)
+```
+***Once ```Destroy``` is called any use of the getter is UNDEFINED BEHAVIOR.***
+
+To check the state, e.g:
+```
+inline int
+QuoteGetter_IsClosed(QuoteGetter_C *getter)
+```
+
 #### Throttling
 
 The API docs indicate a limit of two requests per second so we implement a throttling/blocking 
@@ -101,18 +169,28 @@ mechanism **across ALL Getter objects** with a default wait of 500 milliseconds.
 wait and make five ```.get()``` calls in immediate succession the group of calls will take
 ~2500 milliseconds to complete. This wait time can be accessed with:
 ```
+    [C++]
     static chrono::milliseconds
     APIGetter::get_wait_msec();
+
+    [C]
+    inline int
+    APIGetter_GetWaitMSec(unsigned long long *msec)
 ```
 ```    
+    [C++]
     static void
     APIGetter::set_wait_msec(chrono::milliseconds msec);
+
+    [C]
+    inline int
+    APIGetter_SetWaitMSec(unsigned long long msec)
 ```
 
 This interface should not be used for streaming data, i.e. repeatedly making getter calls -  
 use [StreamingSession](README_STREAMING.md) for that.
 
-#### Example Usage
+#### Example Usage [C++]
 ```
     #include <string>
     #include <chrono>
@@ -155,10 +233,75 @@ use [StreamingSession](README_STREAMING.md) for that.
     
 ```
 
+#### Example Usage [C]
+```
+    #include <stdio.h>
+    #include <stdlib.h>
+    
+    #include "tdma_api_get.h"
+  
+    ...    
+    
+         int err = 0;
+         char *buf = NULL, *symbol = NULL;
+         size_t n = 0;
+
+         QuoteGetter_C qg;
+         memset(&qg, 0, sizeof(QuoteGetter_C));
+
+        if( (err = QuoteGetter_Create(creds, "SPY", &qg)) )
+            CHECK_AND_RETURN_ON_ERROR(err, "QuoteGetter_Create");
+
+        if( (err = QuoteGetter_Get(&qg, &buf, &n)) )
+            CHECK_AND_RETURN_ON_ERROR(err, "QuoteGetter_Get");
+
+        if( (err = QuoteGetter_GetSymbol(&qg, &symbol, &n)) )
+            CHECK_AND_RETURN_ON_ERROR(err, "QuoteGetter_GetSymbol");
+
+        if( symbol && buf )
+            printf( "Get: %s - %s \n", symbol, buf);
+
+        if(buf){
+            free(buf);
+            buf = NULL;
+        }
+
+        if(symbol){
+            free(symbol);
+            symbol = NULL;
+        }
+
+        if( (err = QuoteGetter_SetSymbol(&qg, "QQQ")) )
+            CHECK_AND_RETURN_ON_ERROR(err, "QuoteGetter_SetSymbol");
+
+        if( (err = QuoteGetter_Get(&qg, &buf, &n)) )
+            CHECK_AND_RETURN_ON_ERROR(err, "QuoteGetter_Get");
+
+        if( (err = QuoteGetter_GetSymbol(&qg, &symbol, &n)) )
+            CHECK_AND_RETURN_ON_ERROR(err, "QuoteGetter_GetSymbol");
+
+        if( symbol && buf )
+            printf( "Get: %s - %s \n", symbol, buf);
+
+        if(buf){
+            free(buf);
+            buf = NULL;
+        }
+
+        if(symbol){
+            free(symbol);
+            symbol = NULL;
+        }
+
+        return 0;
+    ...
+    
+```
 
 ### Getter Classes
 - - -
 
+*Only the C++ Getters are shown. The C interface matches these methods almost exactly except for the need to explicity use the appropriately named ```Create``` functions for construction and ```Destroy``` functions for destruction.*
 
 #### QuoteGetter
 

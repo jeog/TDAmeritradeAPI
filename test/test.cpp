@@ -67,16 +67,25 @@ int main(int argc, char* argv[])
     using tsft = TimesalesSubscriptionBase::FieldType;
 
     try {
+
         CredentialsManager cmanager(creds_path, password);
-    
+
+        Credentials ccc;
+        ccc = cmanager.credentials;
+        Credentials ccc2( ccc );
+
+        ccc2 = move(ccc);
+        Credentials ccc4( move(ccc2 ));
+
         cout<< "*** SET WAIT ***" << endl;
         cout<< APIGetter::get_wait_msec().count() << " --> ";
         APIGetter::set_wait_msec( milliseconds(1500) );
         cout<< APIGetter::get_wait_msec().count() << endl;
 
         cout<< "*** QUOTE DATA ***" << endl;
-        quote_getters(cmanager.credentials);            
-        historical_getters(cmanager.credentials);    
+        quote_getters(cmanager.credentials);
+
+        historical_getters(cmanager.credentials);
         this_thread::sleep_for( seconds(3) );
 
         QuotesSubscription spy_quote_sub({"SPY"}, {ft::symbol, ft::last_price});
@@ -102,12 +111,14 @@ int main(int argc, char* argv[])
         movers_getter(cmanager.credentials);
         this_thread::sleep_for( seconds(3) );
 
+
         try{
             ss->start(spy_quote_sub);
         }catch(StreamingException& e){
             cout<< "succesffuly caught StreamingException" << endl;
         }
         ss->stop();
+
 
         cout<< "*** ACCOUNT DATA ***" << endl;
         account_info_getter(account_id, cmanager.credentials);
@@ -122,8 +133,12 @@ int main(int argc, char* argv[])
         ss->start( sp_quote_sub );
 
         cout<< "*** TRANSACTION DATA ***" << endl;
-        transaction_history_getter(account_id, cmanager.credentials);
-        individual_transaction_history_getter(account_id, cmanager.credentials);
+        try{
+            transaction_history_getter(account_id, cmanager.credentials);
+            individual_transaction_history_getter(account_id, cmanager.credentials);
+        }catch( ServerError& e){
+            cout<<"caught server error: " << e.what() << " (" << e.code << ")" << endl;
+        }
 
         string in;
         cin >> in;
@@ -304,18 +319,18 @@ void
 account_info_getter(string id, Credentials& c)
 {
     AccountInfoGetter o(c, id, false, false);
-    cout<< o.get_account_id() << ' ' << o.returns_orders() << ' '
+    cout<< o.get_account_id() << ' ' << o.returns_positions() << ' '
         << o.returns_orders() << endl;
     cout<< o.get() << endl << endl;
 
     o.return_orders(true);
     o.return_positions(true);
-    cout<< o.get_account_id() << ' ' << o.returns_orders() << ' '
+    cout<< o.get_account_id() << ' ' << o.returns_positions() << ' '
         << o.returns_orders() << endl;
     cout<< o.get() << endl << endl;
 
     o.set_account_id("BAD_ACCOUNT_ID");
-    cout<< o.get_account_id() << ' ' << o.returns_orders() << ' '
+    cout<< o.get_account_id() << ' ' << o.returns_positions() << ' '
         << o.returns_orders() << endl;
     try{
         cout<< o.get() << endl << endl;
@@ -381,11 +396,11 @@ movers_getter(Credentials& c)
 void
 market_hours_getter(Credentials& c)
 {
-    MarketHoursGetter o(c, MarketType::bond, "2018-07-04");
+    MarketHoursGetter o(c, MarketType::bond, "2019-07-04");
     cout<< o.get_date() << ' ' << o.get_market_type() << endl
         << o.get() << endl << endl;
 
-    o.set_date("2018-07-05");
+    o.set_date("2019-07-05");
     o.set_market_type(MarketType::equity);
     cout<< o.get_date() << ' ' << o.get_market_type() << endl
         << o.get() << endl << endl;
@@ -558,9 +573,7 @@ quote_getters(Credentials& c)
     QuoteGetter qg2(move(qg));
     qg2.set_symbol("QQQ");
 
-    qg = move(qg2);
-
-    cout<< qg.get_symbol() << endl << qg.get() << endl << endl;
+    cout<< qg2.get_symbol() << endl << qg2.get() << endl << endl;
 
     QuotesGetter qsg(c, {"SPY", "QQQ"});
     for( auto s: qsg.get_symbols() ){
@@ -568,11 +581,12 @@ quote_getters(Credentials& c)
     }
     cout<< endl << qsg.get() << endl << endl;
 
-    qsg.set_symbols( {"/ES","SPY_072718C276"} );
+    qsg.set_symbols( {"/ES","SPY_081718C276"} );
     for( auto s: qsg.get_symbols() ){
         cout<< s << ' ';
     }
     cout<< endl << qsg.get() << endl << endl;
+
 }
 
 long long
