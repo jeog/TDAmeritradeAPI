@@ -100,6 +100,9 @@ public:
     
     void /* INHERITED FROM APIGetter */
     close();
+
+    bool /* INHERITED FROM APIGetter */
+    is_closed();
 };
 
 inline json
@@ -301,7 +304,7 @@ use [StreamingSession](README_STREAMING.md) for that.
 ### Getter Classes
 - - -
 
-*Only the C++ Getters are shown. The C interface matches these methods almost exactly except for the need to explicity use the appropriately named ```Create``` functions for construction and ```Destroy``` functions for destruction.*
+*Only the C++ Getters are shown. The C interface matches these methods almost exactly except for the need to explicity use the appropriately named ```Create``` functions for construction and ```Destroy``` functions for destruction. See tdma_api_get.h for function prototypes.*
 
 #### QuoteGetter
 
@@ -325,6 +328,10 @@ APIGetter::get();
 ```
 void 
 APIGetter::close();
+```
+```
+bool 
+APIGetter::is_closed() const;
 ```
 ```
 string 
@@ -366,6 +373,10 @@ void
 APIGetter::close();
 ```
 ```
+bool 
+APIGetter::is_closed() const;
+```
+```
 set<string> 
 QuotesGetter::get_symbols() const;    
 ```
@@ -400,7 +411,7 @@ MarketHoursGetter::MarketHoursGetter( Credentials& creds,
 
 **types**
 ```
-enum class MarketType : unsigned int{
+enum class MarketType : int{
     equity,
     option,
     future,
@@ -417,6 +428,10 @@ APIGetter::get();
 ```
 void 
 APIGetter::close();
+```
+```
+bool 
+APIGetter::is_closed() const;
 ```
 ```
 string
@@ -465,21 +480,21 @@ MoversGetter::MoversGetter( Credentials& creds,
 
 **types**
 ```
-enum class MoversIndex : unsigned int{
+enum class MoversIndex : int{
     compx, /* $COMPX */
     dji, /* $DJI */
     spx /* SPX */
 };
 ```
 ```
-enum class MoversDirectionType : unsigned int{
+enum class MoversDirectionType : int{
     up,
     down,
     up_and_down
 };
 ```
 ```
-enum class MoversChangeType : unsigned int{
+enum class MoversChangeType : int{
     value,
     percent
 };
@@ -493,6 +508,10 @@ APIGetter::get();
 ```
 void 
 APIGetter::close();
+```
+```
+bool 
+APIGetter::is_closed() const;
 ```
 ```
 MoversIndex
@@ -560,7 +579,7 @@ HistoricalPeriodGetter::HistoricalPeriodGetter( Credentials& creds,
 
 **types**
 ```
-enum class PeriodType : unsigned int {
+enum class PeriodType : int{
     day,
     month,
     year,
@@ -568,7 +587,7 @@ enum class PeriodType : unsigned int {
 };
 ```
 ```
-enum class FrequencyType : unsigned int {
+enum class FrequencyType : int{
     minute,
     daily,
     weekly,
@@ -578,15 +597,17 @@ enum class FrequencyType : unsigned int {
 
 **utilities**
 
+*Note - The C interface exposes 2D array versions of these objects where each 'row' is terminated by at least one -1 value. See tdma_api_get.h for defintions.*
+
 ***```VALID_PERIODS_BY_PERIOD_TYPE```*** - A mapping that provides *the* set of valid # of 
 periods for a particular period type. (e.g ```PeriodType::day``` allows for 1,2,3,4,5, and 10 periods)
 ```
-const unordered_map<PeriodType, set<unsigned int>, EnumHash<PeriodType>>
+const unordered_map<PeriodType, set<int>, EnumHash<PeriodType>>
 VALID_PERIODS_BY_PERIOD_TYPE = {
-    {PeriodType::day, set<unsigned int>{1,2,3,4,5,10}},
-    {PeriodType::month, set<unsigned int>{1,2,3,6}},
-    {PeriodType::year, set<unsigned int>{1,2,3,5,10,15,20}},
-    {PeriodType::ytd, set<unsigned int>{1}},
+    {PeriodType::day, set<int>{1,2,3,4,5,10}},
+    {PeriodType::month, set<int>{1,2,3,6}},
+    {PeriodType::year, set<int>{1,2,3,5,10,15,20}},
+    {PeriodType::ytd, set<int>{1}},
 };
 ```
 
@@ -606,12 +627,12 @@ VALID_FREQUENCY_TYPES_BY_PERIOD_TYPE ={
 
 ***```VALID_FREQUENCIES_BY_FREQUENCY_TYPE```*** - A mapping that provides *the* set of valid frequency amounts for a particular frequency type. (e.g ```FrequencyType::daily``` only allows for a frequency amount of 1, in other words: you can get data over some period one day at a time, but not 2,3 etc. days at a time)
 ```
-const unordered_map<FrequencyType, set<unsigned int>, EnumHash<FrequencyType>>
+const unordered_map<FrequencyType, set<int>, EnumHash<FrequencyType>>
 VALID_FREQUENCIES_BY_FREQUENCY_TYPE = {
-    {FrequencyType::minute, set<unsigned int>{1,5,10,30}},
-    {FrequencyType::daily, set<unsigned int>{1}},
-    {FrequencyType::weekly, set<unsigned int>{1}},
-    {FrequencyType::monthly, set<unsigned int>{1}},
+    {FrequencyType::minute, set<int>{1,5,10,30}},
+    {FrequencyType::daily, set<int>{1}},
+    {FrequencyType::weekly, set<int>{1}},
+    {FrequencyType::monthly, set<int>{1}},
 };
 ```
 
@@ -623,6 +644,10 @@ APIGetter::get();
 ```
 void 
 APIGetter::close();
+```
+```
+bool 
+APIGetter::is_closed() const;
 ```
 ```
 string
@@ -712,7 +737,7 @@ HistoricalRangeGetter::HistoricalRangeGetter( Credentials& creds,
 
 **types**
 ```
-enum class FrequencyType : unsigned int {
+enum class FrequencyType : int{
     minute,
     daily,
     weekly,
@@ -722,15 +747,17 @@ enum class FrequencyType : unsigned int {
 
 **utilities**
 
+*Note - The C interface exposes a 2D array version of this object where each 'row' is terminated by at least one -1 value. See tdma_api_get.h for defintions.*
+
 ***```VALID_FREQUENCIES_BY_FREQUENCY_TYPE```*** - A mapping that provides *the* set of valid 
 frequency amounts for a particular frequency type. (e.g ```FrequencyType::daily``` only allows for a frequency amount of 1, in other words: you can get data over some period one day at a time, but not 2,3 etc. days at a time)
 ```
-const unordered_map<FrequencyType, set<unsigned int>, EnumHash<FrequencyType>>
+const unordered_map<FrequencyType, set<int>, EnumHash<FrequencyType>>
 VALID_FREQUENCIES_BY_FREQUENCY_TYPE = {
-    {FrequencyType::minute, set<unsigned int>{1,5,10,30}},
-    {FrequencyType::daily, set<unsigned int>{1}},
-    {FrequencyType::weekly, set<unsigned int>{1}},
-    {FrequencyType::monthly, set<unsigned int>{1}},
+    {FrequencyType::minute, set<int>{1,5,10,30}},
+    {FrequencyType::daily, set<int>{1}},
+    {FrequencyType::weekly, set<int>{1}},
+    {FrequencyType::monthly, set<int>{1}},
 };
 ```
 
@@ -742,6 +769,10 @@ APIGetter::get();
 ```
 void 
 APIGetter::close();
+```
+```
+bool 
+APIGetter::is_closed() const;
 ```
 ```
 string
@@ -841,14 +872,14 @@ OptionChainGetter::OptionChainGetter(
 **types**
 
 ```
-enum class OptionContractType : unsigned int {
+enum class OptionContractType : int{
     call,
     put,
     all
 };
 ```
 ```
-enum class OptionRangeType : unsigned int {
+enum class OptionRangeType : int{
     null, /* this shouldn't be used directly  */
     itm, /* in-the-money */
     ntm, /* near-the-money */
@@ -860,7 +891,7 @@ enum class OptionRangeType : unsigned int {
 };
 ```
 ```
-enum class OptionExpMonth : unsigned int {
+enum class OptionExpMonth : int{
     jan,
     feb,
     mar,
@@ -877,32 +908,34 @@ enum class OptionExpMonth : unsigned int {
 };
 ```
 ```
-enum class OptionType : unsigned int {
+enum class OptionType : int{
     s, /* standard */
     ns, /* non-standard */
     all
 };
 ```
 
-*(See 'utilities' for an explanation of ```OptionStrikes```.)*
+*The following types will be constructed/used by the OptionStrikes class. Use the static methods listed below.*
 ```
-class OptionStrikes {
-public:
-    enum class Type : unsigned int {
-        n_atm,
-        single,
-        range
-    };
-private:
-    union {
-        unsigned int _n_atm;
-        double _single;
-        OptionRangeType _range;
-    };
-    Type _type;
-    ...
+enum class OptionStrikesType : int {
+    n_atm,
+    single,
+    range,
+    none, 
 };
 
+typedef union {
+    unsigned int _n_atm;
+    double _single;
+    OptionRangeType _range;
+} OptionStrikesValue;
+
+class OptionStrikes {
+    using Type = OptionStrikesType;
+    Type _type;
+    OptionStrikesValue _value;
+    ...
+};
 ```
 
 **utilities**
@@ -929,10 +962,14 @@ types and related values. Create with its static method:
 ```
 
 The following instance methods can be used to get information about the object but the 
-user must use the correct call (first use get_type() then call the correct method).
+user must use the correct call or union field(first use get_type() then call the correct method or access the appropriate union field).
 ```
-Type
+OptionStrikesType
 OptionStrikes::get_type() const;
+```
+```
+OptionStrikesValue
+OptionStrikes::get_value() const;
 ```
 ```
 unsigned int
@@ -956,6 +993,10 @@ APIGetter::get();
 ```
 void 
 APIGetter::close();
+```
+```
+bool 
+APIGetter::is_closed() const;
 ```
 ```
 string
@@ -1074,14 +1115,14 @@ OptionChainStrategyGetter::OptionChainStrategyGetter(
 **types**
 
 ```
-enum class OptionContractType : unsigned int {
+enum class OptionContractType : int{
     call,
     put,
     all
 };
 ```
 ```
-enum class OptionStrategyType : unsigned int { 
+enum class OptionStrategyType : int{ 
     covered,
     vertical,
     calendar,
@@ -1095,7 +1136,7 @@ enum class OptionStrategyType : unsigned int {
 };
 ```
 ```
-enum class OptionRangeType : unsigned int {
+enum class OptionRangeType : int{
     null, /* this shouldn't be used directly  */
     itm, /* in-the-money */
     ntm, /* near-the-money */
@@ -1107,7 +1148,7 @@ enum class OptionRangeType : unsigned int {
 };
 ```
 ```
-enum class OptionExpMonth : unsigned int {
+enum class OptionExpMonth : int{
     jan,
     feb,
     mar,
@@ -1124,34 +1165,37 @@ enum class OptionExpMonth : unsigned int {
 };
 ```
 ```
-enum class OptionType : unsigned int {
+enum class OptionType : int{
     s, /* standard */
     ns, /* non-standard */
     all
 };
 ```
 
-*(See 'utilities' for an explanation of ```OptionStrikes```.)*
+*The following types will be constructed/used by the OptionStrikes class. Use the static methods listed below.*
 ```
+enum class OptionStrikesType : int {
+    n_atm,
+    single,
+    range,
+    none, 
+};
+
+typedef union {
+    unsigned int _n_atm;
+    double _single;
+    OptionRangeType _range;
+} OptionStrikesValue;
+
 class OptionStrikes {
-public:
-    enum class Type : unsigned int {
-        n_atm,
-        single,
-        range
-    };
-private:
-    union {
-        unsigned int _n_atm;
-        double _single;
-        OptionRangeType _range;
-    };
+    using Type = OptionStrikesType;
     Type _type;
+    OptionStrikesValue _value;
     ...
 };
 ```
 
-*(See 'utilities' for an explanation of ```OptionStrategy```)*
+*See below for an explanation of ```OptionStrategy```*
 ```
 class OptionStrategy {
     OptionStrategyType _strategy;
@@ -1184,12 +1228,15 @@ types and related values. Create with its static method:
     OptionStrikes::Range(OptionRangeType range);
 ```
 
-The following instance methods can be used to get information about the instance but 
-it's the user's responsibility to use the correct method (first use get_type() 
-then call the corresponding method).
+The following instance methods can be used to get information about the object but the 
+user must use the correct call or union field(first use get_type() then call the correct method or access the appropriate union field).
 ```
-Type
+OptionStrikesType
 OptionStrikes::get_type() const;
+```
+```
+OptionStrikesValue
+OptionStrikes::get_value() const;
 ```
 ```
 unsigned int
@@ -1269,6 +1316,10 @@ APIGetter::get();
 ```
 void 
 APIGetter::close();
+```
+```
+bool 
+APIGetter::is_closed() const;
 ```
 ```
 string
@@ -1402,14 +1453,14 @@ OptionChainAnalyticalGetter::OptionChainAnalyticalGetter(
 **types**
 
 ```
-enum class OptionContractType : unsigned int {
+enum class OptionContractType : int{
     call,
     put,
     all
 };
 ```
 ```
-enum class OptionRangeType : unsigned int {
+enum class OptionRangeType : int{
     null, /* this shouldn't be used directly  */
     itm, /* in-the-money */
     ntm, /* near-the-money */
@@ -1421,7 +1472,7 @@ enum class OptionRangeType : unsigned int {
 };
 ```
 ```
-enum class OptionExpMonth : unsigned int {
+enum class OptionExpMonth : int{
     jan,
     feb,
     mar,
@@ -1438,29 +1489,32 @@ enum class OptionExpMonth : unsigned int {
 };
 ```
 ```
-enum class OptionType : unsigned int {
+enum class OptionType : int{
     s, /* standard */
     ns, /* non-standard */
     all
 };
 ```
 
-*(See 'utilities' for an explanation of ```OptionStrikes```.)*
+*The following types will be constructed/used by the OptionStrikes class. Use the static methods listed below.*
 ```
+enum class OptionStrikesType : int {
+    n_atm,
+    single,
+    range,
+    none, 
+};
+
+typedef union {
+    unsigned int _n_atm;
+    double _single;
+    OptionRangeType _range;
+} OptionStrikesValue;
+
 class OptionStrikes {
-public:
-    enum class Type : unsigned int {
-        n_atm,
-        single,
-        range
-    };
-private:
-    union {
-        unsigned int _n_atm;
-        double _single;
-        OptionRangeType _range;
-    };
+    using Type = OptionStrikesType;
     Type _type;
+    OptionStrikesValue _value;
     ...
 };
 ```
@@ -1468,7 +1522,7 @@ private:
 **utilities**
 
 **```OptionStrikes```** - Object used to represent one of three distinct strike 
-types and related values. Create the desired type with its static method:
+types and related values. Create with its static method:
 
 ***```N_ATM```*** - return 'n' surrounding, at-the-money strikes.
 ```
@@ -1488,12 +1542,15 @@ types and related values. Create the desired type with its static method:
     OptionStrikes::Range(OptionRangeType range);
 ```
 
-The following instance methods can be used to get information about the instance but 
-it's the user's responsibility to use the correct method (first use get_type() 
-then call the corresponding method).
+The following instance methods can be used to get information about the object but the 
+user must use the correct call or union field(first use get_type() then call the correct method or access the appropriate union field).
 ```
-Type
+OptionStrikesType
 OptionStrikes::get_type() const;
+```
+```
+OptionStrikesValue
+OptionStrikes::get_value() const;
 ```
 ```
 unsigned int
@@ -1517,6 +1574,10 @@ APIGetter::get();
 ```
 void 
 APIGetter::close();
+```
+```
+bool 
+APIGetter::is_closed() const;
 ```
 ```
 string
@@ -1661,6 +1722,10 @@ void
 APIGetter::close();
 ```
 ```
+bool 
+APIGetter::is_closed() const;
+```
+```
 string
 AccountGetterBase::get_account_id() const;
 ```
@@ -1720,6 +1785,10 @@ void
 APIGetter::close();
 ```
 ```
+bool 
+APIGetter::is_closed() const;
+```
+```
 string
 AccountGetterBase::get_account_id() const;
 ```
@@ -1763,6 +1832,10 @@ APIGetter::get();
 ```
 void 
 APIGetter::close();
+```
+```
+bool 
+APIGetter::is_closed() const;
 ```
 ```
 bool
@@ -1838,6 +1911,10 @@ void
 APIGetter::close();
 ```
 ```
+bool 
+APIGetter::is_closed() const;
+```
+```
 string
 AccountGetterBase::get_account_id() const;
 ```
@@ -1880,7 +1957,7 @@ TransactionHistoryGetter::TransactionHistoryGetter(
 
 **types**
 ```
-enum class TransactionType : unsigned int {
+enum class TransactionType : int{
     all,
     trade,
     buy_only,
@@ -1902,6 +1979,10 @@ APIGetter::get();
 ```
 void 
 APIGetter::close();
+```
+```
+bool 
+APIGetter::is_closed() const;
 ```
 ```
 string
@@ -1984,6 +2065,10 @@ void
 APIGetter::close();
 ```
 ```
+bool 
+APIGetter::is_closed() const;
+```
+```
 string
 AccountGetterBase::get_account_id() const;
 ```
@@ -2027,7 +2112,7 @@ InstrumentInfoGetter::InstrumentInfoGetter( Credentials& creds,
 ```
 **types**
 ```
-enum class InstrumentSearchType : unsigned int{
+enum class InstrumentSearchType : int{
     symbol_exact,
     symbol_search,
     symbol_regex,
@@ -2045,6 +2130,10 @@ APIGetter::get();
 ```
 void 
 APIGetter::close();
+```
+```
+bool 
+APIGetter::is_closed() const;
 ```
 ```
 string
