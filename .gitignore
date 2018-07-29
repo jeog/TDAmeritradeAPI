@@ -6,6 +6,8 @@
 *.project
 *.creds
 
+*.pydevproject
+*.pyc
 *.lib
 *.dll
 *.exe

@@ -65,9 +65,9 @@ This project would not be possible without some of the great open-source project
 - - -
 ***IMPORTANT*** - There are certain binary compatibility issues when exporting C++ code accross compilations(from name mangling, differing runtimes, changes to STL implementations etc.). If, for instance, we return an std::vector in an earlier version of a library, its implementation changes, and code that imports the library is compiled against a new version of the STL, there can be an issue.
 
-***UPDATE*** - The Getter interface has been refactored to 1) add a C interface and 2) allow the C++ interface to go through a stable ABI layer that *should* allow seamless access across compilations. *(This was a major change so please report any issues.)*
+***UPDATE*** - The Getter interface has been refactored to 1) add a C interface and 2) allow the C++ interface to go through a stable ABI layer in an attempt to provide seamless access across compilations. *The C++ interface still throws exceptions accross the library boundaray which can create issues. **Until we implement a better way to deal w/ this either 1) compile client and library C++ code together to avoid ABI incompatibility or 2) use the C interface and corresponding error codes.***
 
-***To access the Streaming interface you need to be sure to use the same compiler/settings and link to the same libraries as the TDAmeritradeAPI library does.*** For this reason we don't include any pre-built binaries. You should (re)compile this library alongside your code if you change compilers, settings, runtimes etc. 
+***The Streaming interface currently has no stable ABI layer so you need to be sure to use the same compiler/settings and link to the same libraries as the TDAmeritradeAPI library does.*** For this reason we don't include any pre-built binaries. You should (re)compile this library alongside your code if you change compilers, settings, runtimes etc. 
 
 ### Language Bindings
 - - -
@@ -213,6 +213,8 @@ exceptions tend to be the result of some low(er) level failure with the connecti
 for the derived classes)
 
 - There are no guarantees of exception safety.    
+
+- **Currently C++ exceptions are passed across the library boundary and may break the ABI**
 
 - The C interface has corresponding error codes:
     ```
