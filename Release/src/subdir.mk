@@ -6,6 +6,7 @@
 CPP_SRCS += \
 ../src/auth.cpp \
 ../src/curl_connect.cpp \
+../src/error.cpp \
 ../src/params.cpp \
 ../src/tdma_connect.cpp \
 ../src/util.cpp \
@@ -14,6 +15,7 @@ CPP_SRCS += \
 OBJS += \
 ./src/auth.o \
 ./src/curl_connect.o \
+./src/error.o \
 ./src/params.o \
 ./src/tdma_connect.o \
 ./src/util.o \
@@ -22,6 +24,7 @@ OBJS += \
 CPP_DEPS += \
 ./src/auth.d \
 ./src/curl_connect.d \
+./src/error.d \
 ./src/params.d \
 ./src/tdma_connect.d \
 ./src/util.d \

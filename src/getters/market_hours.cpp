@@ -57,6 +57,9 @@ public:
             _market_type(market_type),
             _date(date)
         {
+            if( !util::is_valid_iso8601_datetime(date) ){
+                throw ValueException("invalid ISO-8601 date/time: " + date);
+            }
             _build();
         }
 
@@ -105,13 +108,18 @@ MarketHoursGetter_Create_ABI( struct Credentials *pcreds,
     if( err )
         return err;
 
+    err = check_abi_enum(MarketType_is_valid, market_type, pgetter,
+                         allow_exceptions);
+    if( err )
+        return err;
+
+
     if( !date ){
         pgetter->obj = nullptr;
         pgetter->type_id = -1;
-        if( allow_exceptions ){
-            throw ValueException("'date' can not be null");
-        }
-        return TDMA_API_VALUE_ERROR;
+        return tdma::handle_error<tdma::ValueException>(
+            "null date", allow_exceptions
+            );
     }
 
     static auto meth = +[](Credentials *c, int m, const char* d){
@@ -160,6 +168,11 @@ MarketHoursGetter_SetMarketType_ABI( MarketHoursGetter_C *pgetter,
                                          int market_type,
                                          int allow_exceptions )
 {
+    int err = check_abi_enum(MarketType_is_valid, market_type, pgetter,
+                             allow_exceptions);
+    if( err )
+        return err;
+
     return GetterImplAccessor<int>::template
         set<MarketHoursGetterImpl, MarketType>(
             pgetter, &MarketHoursGetterImpl::set_market_type, market_type,

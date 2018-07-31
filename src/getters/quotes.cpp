@@ -62,7 +62,7 @@ public:
     set_symbol(const string& symbol)
     {
         if( symbol.empty() )
-            throw ValueException("empty symbol string");
+            throw ValueException("empty symbol");
 
         _symbol = symbol;
         build();
@@ -110,7 +110,7 @@ public:
     set_symbols(const std::set<std::string>& symbols)
     {
         if( symbols.empty() )
-            throw ValueException("no symbols");
+            throw ValueException("empty symbols");
 
         _symbols = symbols;
         build();
@@ -137,10 +137,9 @@ QuoteGetter_Create_ABI( Credentials *pcreds,
     if( !symbol ){
         pgetter->obj = nullptr;
         pgetter->type_id = -1;
-        if( allow_exceptions ){
-            throw ValueException("symbol pointer can not be null");
-        }
-        return TDMA_API_VALUE_ERROR;
+        return tdma::handle_error<tdma::ValueException>(
+            "null symbol", allow_exceptions
+            );
     }
 
     static auto meth = +[](Credentials *c, const char* s){
@@ -207,10 +206,9 @@ QuotesGetter_Create_ABI( Credentials *pcreds,
     if( !symbols ){
         pgetter->obj = nullptr;
         pgetter->type_id = -1;
-        if( allow_exceptions ){
-            throw ValueException("'symbols' can not be null");
-        }
-        return TDMA_API_VALUE_ERROR;
+        return tdma::handle_error<tdma::ValueException>(
+            "null symbols", allow_exceptions
+            );
     }
 
     static auto meth = +[](Credentials *c, const char** s){

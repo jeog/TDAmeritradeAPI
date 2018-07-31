@@ -6,6 +6,7 @@
 *.project
 *.creds
 
+python/build/*
 *.pydevproject
 *.pyc
 *.lib

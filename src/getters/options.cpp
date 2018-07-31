@@ -117,6 +117,9 @@ public:
             _exp_month(exp_month),
             _option_type(option_type)
         {
+            if( symbol.empty() )
+                throw ValueException( "empty symbol" );
+
             if( !from_date.empty() && !util::is_valid_iso8601_datetime(from_date) )
                throw ValueException("invalid ISO-8601 date string: " + from_date);
 
@@ -161,6 +164,8 @@ public:
     void
     set_symbol(const std::string& symbol)
     {
+        if( symbol.empty() )
+            throw ValueException("empty symbol");
         _symbol = symbol;
         build();
     }
@@ -425,13 +430,32 @@ OptionChainGetter_Create_ABI( struct Credentials *pcreds,
     if( err )
         return err;
 
+    err = check_abi_enum(OptionStrikesType_is_valid, strikes_type,
+                         pgetter, allow_exceptions);
+    if( err )
+        return err;
+
+    err = check_abi_enum(OptionContractType_is_valid, contract_type,
+                         pgetter, allow_exceptions);
+    if( err )
+        return err;
+
+    err = check_abi_enum(OptionType_is_valid, option_type, pgetter,
+                         allow_exceptions);
+    if( err )
+        return err;
+
+    err = check_abi_enum(OptionExpMonth_is_valid, exp_month, pgetter,
+                         allow_exceptions);
+    if( err )
+        return err;
+
     if( !symbol ){
         pgetter->obj = nullptr;
         pgetter->type_id = -1;
-        if( allow_exceptions ){
-            throw ValueException("'symbol' can not be null");
-        }
-        return TDMA_API_VALUE_ERROR;
+        return tdma::handle_error<tdma::ValueException>(
+            "null symbol", allow_exceptions
+            );
     }
 
     // null from_date/to_date -> empty string
@@ -503,11 +527,16 @@ OptionChainGetter_GetStrikes_ABI( OptionChainGetter_C *pgetter,
     if( err )
         return err;
 
-    if( !strikes_type || !strikes_value ){
-        if( allow_exceptions ){
-            throw ValueException("strikes_type/strikes_value can not be null");
-        }
-        return TDMA_API_VALUE_ERROR;
+    if( !strikes_type ){
+        return tdma::handle_error<tdma::ValueException>(
+            "null strikes_type", allow_exceptions
+            );
+    }
+
+    if( !strikes_value ){
+        return tdma::handle_error<tdma::ValueException>(
+            "null strikes_value", allow_exceptions
+            );
     }
 
     static auto mwrap = +[](void* obj){
@@ -531,6 +560,11 @@ OptionChainGetter_SetStrikes_ABI( OptionChainGetter_C *pgetter,
                                           int allow_exceptions)
 {
     int err = getter_is_callable<OptionChainGetterImpl>(pgetter, allow_exceptions);
+    if( err )
+        return err;
+
+    err = check_abi_enum(OptionStrikesType_is_valid, strikes_type,
+                         pgetter, allow_exceptions);
     if( err )
         return err;
 
@@ -560,6 +594,11 @@ OptionChainGetter_SetContractType_ABI( OptionChainGetter_C *pgetter,
                                             int contract_type,
                                            int allow_exceptions)
 {
+    int err = check_abi_enum(OptionContractType_is_valid, contract_type,
+                             pgetter, allow_exceptions);
+    if( err )
+        return err;
+
     return GetterImplAccessor<int>::template
         set<OptionChainGetterImpl, OptionContractType>(
             pgetter, &OptionChainGetterImpl::set_contract_type,
@@ -659,6 +698,11 @@ OptionChainGetter_SetExpMonth_ABI( OptionChainGetter_C *pgetter,
                                            int exp_month,
                                            int allow_exceptions)
 {
+    int err = check_abi_enum(OptionExpMonth_is_valid, exp_month, pgetter,
+                             allow_exceptions);
+    if( err )
+        return err;
+
     return GetterImplAccessor<int>::template
         set<OptionChainGetterImpl, OptionExpMonth>(
             pgetter, &OptionChainGetterImpl::set_exp_month,
@@ -683,6 +727,11 @@ OptionChainGetter_SetOptionType_ABI( OptionChainGetter_C *pgetter,
                                            int option_type,
                                            int allow_exceptions)
 {
+    int err = check_abi_enum(OptionType_is_valid, option_type, pgetter,
+                             allow_exceptions);
+    if( err )
+        return err;
+
     return GetterImplAccessor<int>::template
         set<OptionChainGetterImpl, OptionType>(
             pgetter, &OptionChainGetterImpl::set_option_type,
@@ -713,13 +762,37 @@ OptionChainStrategyGetter_Create_ABI( struct Credentials *pcreds,
     if( err )
         return err;
 
+    err = check_abi_enum(OptionStrategyType_is_valid, strategy_type, pgetter,
+                         allow_exceptions);
+    if( err )
+        return err;
+
+    err = check_abi_enum(OptionStrikesType_is_valid, strikes_type, pgetter,
+                         allow_exceptions);
+    if( err )
+        return err;
+
+    err = check_abi_enum(OptionContractType_is_valid, contract_type, pgetter,
+                         allow_exceptions);
+    if( err )
+        return err;
+
+    err = check_abi_enum(OptionType_is_valid, option_type,  pgetter,
+                         allow_exceptions);
+    if( err )
+        return err;
+
+    err = check_abi_enum(OptionExpMonth_is_valid, exp_month,  pgetter,
+                         allow_exceptions);
+    if( err )
+        return err;
+
     if( !symbol ){
         pgetter->obj = nullptr;
         pgetter->type_id = -1;
-        if( allow_exceptions ){
-            throw ValueException("'symbol' can not be null");
-        }
-        return TDMA_API_VALUE_ERROR;
+        return tdma::handle_error<tdma::ValueException>(
+            "null symbol", allow_exceptions
+            );
     }
 
     static auto meth =
@@ -776,11 +849,16 @@ OptionChainStrategyGetter_GetStrategy_ABI(
     if( err )
         return err;
 
-    if( !strategy_type || !spread_interval ){
-        if( allow_exceptions ){
-            throw ValueException("strategy_type/spread_interval can not be null");
-        }
-        return TDMA_API_VALUE_ERROR;
+    if( !strategy_type ){
+        return tdma::handle_error<tdma::ValueException>(
+            "null strategy_type", allow_exceptions
+            );
+    }
+
+    if( !spread_interval ){
+        return tdma::handle_error<tdma::ValueException>(
+            "null spread_interval", allow_exceptions
+            );
     }
 
     static auto mwrap = +[](void* obj){
@@ -809,6 +887,11 @@ OptionChainStrategyGetter_SetStrategy_ABI(
     int err = getter_is_callable<OptionChainStrategyGetterImpl>(
         pgetter, allow_exceptions
         );
+    if( err )
+        return err;
+
+    err = check_abi_enum(OptionStrategyType_is_valid, strategy_type, pgetter,
+                         allow_exceptions);
     if( err )
         return err;
 
@@ -847,13 +930,32 @@ OptionChainAnalyticalGetter_Create_ABI( struct Credentials *pcreds,
     if( err )
         return err;
 
+    err = check_abi_enum(OptionStrikesType_is_valid, strikes_type, pgetter,
+                         allow_exceptions);
+    if( err )
+        return err;
+
+    err = check_abi_enum(OptionContractType_is_valid, contract_type, pgetter,
+                         allow_exceptions);
+    if( err )
+        return err;
+
+    err = check_abi_enum(OptionType_is_valid, option_type, pgetter,
+                         allow_exceptions);
+    if( err )
+        return err;
+
+    err = check_abi_enum(OptionExpMonth_is_valid, exp_month, pgetter,
+                         allow_exceptions);
+    if( err )
+        return err;
+
     if( !symbol ){
         pgetter->obj = nullptr;
         pgetter->type_id = -1;
-        if( allow_exceptions ){
-            throw ValueException("'symbol' can not be null");
-        }
-        return TDMA_API_VALUE_ERROR;
+        return tdma::handle_error<tdma::ValueException>(
+            "null symbol", allow_exceptions
+            );
     }
 
     static auto meth =

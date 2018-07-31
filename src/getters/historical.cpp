@@ -62,6 +62,8 @@ protected:
             _frequency(frequency),
             _extended_hours(extended_hours)
         {
+            if( symbol.empty() )
+                throw ValueException("empty symbol");
             _throw_if_invalid_frequency();
         }
 
@@ -106,6 +108,8 @@ public:
     void
     set_symbol(const std::string& symbol)
     {
+        if( symbol.empty() )
+            throw ValueException("empty symbol");
         _symbol = symbol;
         build();
     }
@@ -393,13 +397,22 @@ HistoricalPeriodGetter_Create_ABI( struct Credentials *pcreds,
     if( err )
         return err;
 
+    err = check_abi_enum(FrequencyType_is_valid, frequency_type, pgetter,
+                         allow_exceptions);
+    if( err )
+        return err;
+
+    err = check_abi_enum(PeriodType_is_valid, period_type,  pgetter,
+                         allow_exceptions);
+    if( err )
+        return err;
+
     if( !symbol ){
         pgetter->obj = nullptr;
         pgetter->type_id = -1;
-        if( allow_exceptions ){
-            throw ValueException("'symbol' can not be null");
-        }
-        return TDMA_API_VALUE_ERROR;
+        return tdma::handle_error<tdma::ValueException>(
+            "null symbol", allow_exceptions
+            );
     }
 
     static auto meth = +[]( Credentials *c, const char* s, int pt,
@@ -462,6 +475,11 @@ HistoricalPeriodGetter_SetPeriod_ABI( HistoricalPeriodGetter_C *pgetter,
                                            unsigned int period,
                                            int allow_exceptions )
 {
+    int err = check_abi_enum(PeriodType_is_valid, period_type, pgetter,
+                             allow_exceptions);
+    if( err )
+        return err;
+
     return GetterImplAccessor<int>::template
         set<HistoricalPeriodGetterImpl, PeriodType>(
             pgetter, &HistoricalPeriodGetterImpl::set_period, period_type,
@@ -475,6 +493,11 @@ HistoricalPeriodGetter_SetFrequency_ABI( HistoricalPeriodGetter_C *pgetter,
                                              unsigned int frequency,
                                              int allow_exceptions )
 {
+    int err = check_abi_enum(FrequencyType_is_valid, frequency_type, pgetter,
+                             allow_exceptions);
+    if( err )
+        return err;
+
     return GetterImplAccessor<int>::template
         set<HistoricalPeriodGetterImpl, FrequencyType>(
             pgetter, &HistoricalPeriodGetterImpl::set_frequency, frequency_type,
@@ -500,13 +523,17 @@ HistoricalRangeGetter_Create_ABI( struct Credentials *pcreds,
     if( err )
         return err;
 
+    err = check_abi_enum(FrequencyType_is_valid, frequency_type, pgetter,
+                         allow_exceptions);
+    if( err )
+        return err;
+
     if( !symbol ){
         pgetter->obj = nullptr;
         pgetter->type_id = -1;
-        if( allow_exceptions ){
-            throw ValueException("'symbol' can not be null");
-        }
-        return TDMA_API_VALUE_ERROR;
+        return tdma::handle_error<tdma::ValueException>(
+            "null symbol", allow_exceptions
+            );
     }
 
     static auto meth = +[]( Credentials *c, const char* s, int ft,
@@ -601,6 +628,11 @@ HistoricalRangeGetter_SetFrequency_ABI( HistoricalRangeGetter_C *pgetter,
                                              unsigned int frequency,
                                              int allow_exceptions )
 {
+    int err = check_abi_enum(FrequencyType_is_valid, frequency_type, pgetter,
+                             allow_exceptions);
+    if( err )
+        return err;
+
     return GetterImplAccessor<int>::template
         set<HistoricalRangeGetterImpl, FrequencyType>(
             pgetter, &HistoricalRangeGetterImpl::set_frequency, frequency_type,

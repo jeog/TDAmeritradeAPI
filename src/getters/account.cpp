@@ -452,11 +452,12 @@ AccountGetterBase_GetAccountId_ABI( Getter_C *pgetter,
 
 int
 AccountGetterBase_SetAccountId_ABI( Getter_C *pgetter,
-                                    const char *symbol,
+                                    const char *account_id,
                                     int allow_exceptions )
 {
     return GetterImplAccessor<char**>::template set<AccountGetterBaseImpl>(
-        pgetter, &AccountGetterBaseImpl::set_account_id, symbol, allow_exceptions
+        pgetter, &AccountGetterBaseImpl::set_account_id, account_id,
+        allow_exceptions
         );
 }
 
@@ -477,10 +478,9 @@ AccountInfoGetter_Create_ABI( struct Credentials *pcreds,
     if( !account_id ){
         pgetter->obj = nullptr;
         pgetter->type_id = -1;
-        if( allow_exceptions ){
-            throw ValueException("'account_id' can not be null");
-        }
-        return TDMA_API_VALUE_ERROR;
+        return tdma::handle_error<tdma::ValueException>(
+            "null account_id", allow_exceptions
+            );
     }
 
     static auto meth = +[]( Credentials *c, const char* s, int p, int o ){
@@ -574,10 +574,9 @@ PreferencesGetter_Create_ABI( struct Credentials *pcreds,
     if( !account_id ){
         pgetter->obj = nullptr;
         pgetter->type_id = -1;
-        if( allow_exceptions ){
-            throw ValueException("'account_id' can not be null");
-        }
-        return TDMA_API_VALUE_ERROR;
+        return tdma::handle_error<tdma::ValueException>(
+            "null account_id", allow_exceptions
+            );
     }
 
     static auto meth = +[]( Credentials *c, const char* s ){
@@ -622,10 +621,9 @@ StreamerSubscriptionKeysGetter_Create_ABI(
     if( !account_id ){
         pgetter->obj = nullptr;
         pgetter->type_id = -1;
-        if( allow_exceptions ){
-            throw ValueException("'account_id' can not be null");
-        }
-        return TDMA_API_VALUE_ERROR;
+        return tdma::handle_error<tdma::ValueException>(
+            "null account_id", allow_exceptions
+            );
     }
 
     static auto meth = +[]( Credentials *c, const char* s ){
@@ -675,13 +673,17 @@ TransactionHistoryGetter_Create_ABI( struct Credentials *pcreds,
     if( err )
         return err;
 
+    err = check_abi_enum(TransactionType_is_valid, transaction_type, pgetter,
+                         allow_exceptions);
+    if( err )
+        return err;
+
     if( !account_id ){
         pgetter->obj = nullptr;
         pgetter->type_id = -1;
-        if( allow_exceptions ){
-            throw ValueException("'account_id' can not be null");
-        }
-        return TDMA_API_VALUE_ERROR;
+        return tdma::handle_error<tdma::ValueException>(
+            "null account_id", allow_exceptions
+            );
     }
 
     static auto meth = +[]( Credentials *c, const char* s, int t,
@@ -732,6 +734,11 @@ TransactionHistoryGetter_SetTransactionType_ABI(
     int transaction_type,
     int allow_exceptions )
 {
+    int err = check_abi_enum(TransactionType_is_valid, transaction_type,
+                             pgetter, allow_exceptions);
+    if( err )
+        return err;
+
     return GetterImplAccessor<int>::template
         set<TransactionHistoryGetterImpl, TransactionType>(
             pgetter, &TransactionHistoryGetterImpl::set_transaction_type,
@@ -836,13 +843,20 @@ IndividualTransactionHistoryGetter_Create_ABI(
     if( err )
         return err;
 
-    if( !account_id || !transaction_id ){
+    if( !account_id ){
         pgetter->obj = nullptr;
         pgetter->type_id = -1;
-        if( allow_exceptions ){
-            throw ValueException("'account_id/transaction_id' can not be null");
-        }
-        return TDMA_API_VALUE_ERROR;
+        return tdma::handle_error<tdma::ValueException>(
+            "null account_id", allow_exceptions
+            );
+    }
+
+    if( !transaction_id ){
+        pgetter->obj = nullptr;
+        pgetter->type_id = -1;
+        return tdma::handle_error<tdma::ValueException>(
+            "null transaction_id", allow_exceptions
+            );
     }
 
     static auto meth = +[]( Credentials *c, const char* s, const char* t ){

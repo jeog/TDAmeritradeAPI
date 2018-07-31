@@ -43,6 +43,7 @@ using json = nlohmann::json;
  * };
  * }
  *
+ * and defines an inline [TypeName]_is_valid for checks in the ABI
  * and declares a stable-ABI to_string: 'type_to_string_ABI(type t)'
  * and declares/defines a '<<' overload
  * and declares/defines an overloaded 'to_string()'
@@ -58,9 +59,13 @@ using json = nlohmann::json;
  *
  * and declares a stable-ABI to_string: 'type_to_string_ABI(type t)'
  */
-#define DECL_C_CPP_TDMA_ENUM(type, ...) \
+#define DECL_C_CPP_TDMA_ENUM(type, l, h, ...) \
 EXTERN_C_SPEC_ DLL_SPEC_ int \
 type##_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions); \
+\
+inline bool \
+type##_is_valid(int v) \
+{ return (v >= l && v <= h); } \
 \
 namespace tdma{ \
 enum class type : int { __VA_ARGS__ }; \
@@ -84,7 +89,7 @@ operator<<(std::ostream& out, const type& v) \
 #define BUILD_C_CPP_TDMA_ENUM_NAME(type,name) name
 
 #else
-#define DECL_C_CPP_TDMA_ENUM(type, ...) \
+#define DECL_C_CPP_TDMA_ENUM(type, l, h, ...) \
 typedef enum { __VA_ARGS__ } type; \
 EXTERN_C_SPEC_ DLL_SPEC_ int \
 type##_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions);
@@ -93,27 +98,27 @@ type##_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions);
 #endif /* __cplusplus */
 
 
-DECL_C_CPP_TDMA_ENUM(PeriodType,
+DECL_C_CPP_TDMA_ENUM(PeriodType, 0, 3,
     BUILD_C_CPP_TDMA_ENUM_NAME(PeriodType, day),
     BUILD_C_CPP_TDMA_ENUM_NAME(PeriodType, month),
     BUILD_C_CPP_TDMA_ENUM_NAME(PeriodType, year),
     BUILD_C_CPP_TDMA_ENUM_NAME(PeriodType, ytd)
 );
 
-DECL_C_CPP_TDMA_ENUM(FrequencyType,
+DECL_C_CPP_TDMA_ENUM(FrequencyType, 0, 3,
     BUILD_C_CPP_TDMA_ENUM_NAME(FrequencyType, minute),
     BUILD_C_CPP_TDMA_ENUM_NAME(FrequencyType, daily),
     BUILD_C_CPP_TDMA_ENUM_NAME(FrequencyType, weekly),
     BUILD_C_CPP_TDMA_ENUM_NAME(FrequencyType, monthly)
 );
 
-DECL_C_CPP_TDMA_ENUM(OptionContractType,
+DECL_C_CPP_TDMA_ENUM(OptionContractType, 0, 2,
     BUILD_C_CPP_TDMA_ENUM_NAME(OptionContractType, call),
     BUILD_C_CPP_TDMA_ENUM_NAME(OptionContractType, put),
     BUILD_C_CPP_TDMA_ENUM_NAME(OptionContractType, all),
 );
 
-DECL_C_CPP_TDMA_ENUM(OptionStrategyType,
+DECL_C_CPP_TDMA_ENUM(OptionStrategyType, 0, 9,
     // BUILD_C_CPP_TDMA_ENUM_NAME(OptionStrategyType, single),
     // BUILD_C_CPP_TDMA_ENUM_NAME(OptionStrategyType, analytical),
     BUILD_C_CPP_TDMA_ENUM_NAME(OptionStrategyType, covered),
@@ -128,7 +133,7 @@ DECL_C_CPP_TDMA_ENUM(OptionStrategyType,
     BUILD_C_CPP_TDMA_ENUM_NAME(OptionStrategyType, roll)
 );
 
-DECL_C_CPP_TDMA_ENUM(OptionRangeType,
+DECL_C_CPP_TDMA_ENUM(OptionRangeType, 1, 7,
     BUILD_C_CPP_TDMA_ENUM_NAME(OptionRangeType, null), // DO NOT USE
     BUILD_C_CPP_TDMA_ENUM_NAME(OptionRangeType, itm),
     BUILD_C_CPP_TDMA_ENUM_NAME(OptionRangeType, ntm),
@@ -139,7 +144,7 @@ DECL_C_CPP_TDMA_ENUM(OptionRangeType,
     BUILD_C_CPP_TDMA_ENUM_NAME(OptionRangeType, all)
 );
 
-DECL_C_CPP_TDMA_ENUM(OptionExpMonth,
+DECL_C_CPP_TDMA_ENUM(OptionExpMonth, 0, 12,
     BUILD_C_CPP_TDMA_ENUM_NAME(OptionExpMonth, jan),
     BUILD_C_CPP_TDMA_ENUM_NAME(OptionExpMonth, feb),
     BUILD_C_CPP_TDMA_ENUM_NAME(OptionExpMonth, mar),
@@ -155,13 +160,13 @@ DECL_C_CPP_TDMA_ENUM(OptionExpMonth,
     BUILD_C_CPP_TDMA_ENUM_NAME(OptionExpMonth, all)
 );
 
-DECL_C_CPP_TDMA_ENUM(OptionType,
+DECL_C_CPP_TDMA_ENUM(OptionType, 0, 2,
     BUILD_C_CPP_TDMA_ENUM_NAME(OptionType, s),
     BUILD_C_CPP_TDMA_ENUM_NAME(OptionType, ns),
     BUILD_C_CPP_TDMA_ENUM_NAME(OptionType, all)
 );
 
-DECL_C_CPP_TDMA_ENUM(TransactionType,
+DECL_C_CPP_TDMA_ENUM(TransactionType, 0, 9,
     BUILD_C_CPP_TDMA_ENUM_NAME(TransactionType, all),
     BUILD_C_CPP_TDMA_ENUM_NAME(TransactionType, trade),
     BUILD_C_CPP_TDMA_ENUM_NAME(TransactionType, buy_only),
@@ -174,7 +179,7 @@ DECL_C_CPP_TDMA_ENUM(TransactionType,
     BUILD_C_CPP_TDMA_ENUM_NAME(TransactionType, advisor_fees)
 );
 
-DECL_C_CPP_TDMA_ENUM(InstrumentSearchType,
+DECL_C_CPP_TDMA_ENUM(InstrumentSearchType, 0, 5,
     BUILD_C_CPP_TDMA_ENUM_NAME(InstrumentSearchType, symbol_exact),
     BUILD_C_CPP_TDMA_ENUM_NAME(InstrumentSearchType, symbol_search),
     BUILD_C_CPP_TDMA_ENUM_NAME(InstrumentSearchType, symbol_regex),
@@ -183,7 +188,7 @@ DECL_C_CPP_TDMA_ENUM(InstrumentSearchType,
     BUILD_C_CPP_TDMA_ENUM_NAME(InstrumentSearchType, cusip)
 );
 
-DECL_C_CPP_TDMA_ENUM(MarketType,
+DECL_C_CPP_TDMA_ENUM(MarketType, 0, 4,
     BUILD_C_CPP_TDMA_ENUM_NAME(MarketType, equity),
     BUILD_C_CPP_TDMA_ENUM_NAME(MarketType, option),
     BUILD_C_CPP_TDMA_ENUM_NAME(MarketType, future),
@@ -191,28 +196,28 @@ DECL_C_CPP_TDMA_ENUM(MarketType,
     BUILD_C_CPP_TDMA_ENUM_NAME(MarketType, forex)
 );
 
-DECL_C_CPP_TDMA_ENUM(MoversIndex,
+DECL_C_CPP_TDMA_ENUM(MoversIndex, 0, 2,
     BUILD_C_CPP_TDMA_ENUM_NAME(MoversIndex, compx), /* $COMPX */
     BUILD_C_CPP_TDMA_ENUM_NAME(MoversIndex, dji), /* $DJI */
     BUILD_C_CPP_TDMA_ENUM_NAME(MoversIndex, spx) /* SPX */
 );
 
-DECL_C_CPP_TDMA_ENUM(MoversDirectionType,
+DECL_C_CPP_TDMA_ENUM(MoversDirectionType, 0, 2,
     BUILD_C_CPP_TDMA_ENUM_NAME(MoversDirectionType, up),
     BUILD_C_CPP_TDMA_ENUM_NAME(MoversDirectionType, down),
     BUILD_C_CPP_TDMA_ENUM_NAME(MoversDirectionType, up_and_down)
 );
 
-DECL_C_CPP_TDMA_ENUM(MoversChangeType,
+DECL_C_CPP_TDMA_ENUM(MoversChangeType, 0, 1,
     BUILD_C_CPP_TDMA_ENUM_NAME(MoversChangeType, value),
     BUILD_C_CPP_TDMA_ENUM_NAME(MoversChangeType, percent)
 );
 
-DECL_C_CPP_TDMA_ENUM(OptionStrikesType,
+DECL_C_CPP_TDMA_ENUM(OptionStrikesType, 0, 2,
     BUILD_C_CPP_TDMA_ENUM_NAME(OptionStrikesType, n_atm),
     BUILD_C_CPP_TDMA_ENUM_NAME(OptionStrikesType, single),
     BUILD_C_CPP_TDMA_ENUM_NAME(OptionStrikesType, range),
-    BUILD_C_CPP_TDMA_ENUM_NAME(OptionStrikesType, none)
+    BUILD_C_CPP_TDMA_ENUM_NAME(OptionStrikesType, none) // dont use
 );
 
 #undef BUILD_C_CPP_TDMA_ENUM_NAME
@@ -844,7 +849,7 @@ AccountGetterBase_GetAccountId_ABI( Getter_C *pgetter,
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 AccountGetterBase_SetAccountId_ABI( Getter_C *pgetter,
-                                    const char *symbol,
+                                    const char *account_id,
                                     int allow_exceptions );
 
 /* AccountInfoGetter */

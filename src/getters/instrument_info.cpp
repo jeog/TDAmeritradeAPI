@@ -62,6 +62,8 @@ public:
             _query_string(query_string),
             _search_type(search_type)
         {
+            if( query_string.empty() )
+                throw ValueException("empty query_string");
             _build();
         }
 
@@ -76,6 +78,8 @@ public:
     void
     set_query(InstrumentSearchType search_type, const std::string& query_string)
     {
+        if( query_string.empty() )
+            throw ValueException("empty query_string");
         _search_type = search_type;
         _query_string = query_string;
         build();
@@ -99,13 +103,18 @@ InstrumentInfoGetter_Create_ABI( struct Credentials *pcreds,
     if( err )
         return err;
 
+    err = check_abi_enum(InstrumentSearchType_is_valid, search_type,  pgetter,
+                         allow_exceptions);
+    if( err )
+        return err;
+
+
     if( !query_string ){
         pgetter->obj = nullptr;
         pgetter->type_id = -1;
-        if( allow_exceptions ){
-            throw ValueException("'query_string' can not be null");
-        }
-        return TDMA_API_VALUE_ERROR;
+        return tdma::handle_error<tdma::ValueException>(
+            "null query string", allow_exceptions
+            );
     }
 
     static auto meth = +[]( Credentials *c, int s, const char* q ){
@@ -166,6 +175,11 @@ InstrumentInfoGetter_SetQuery_ABI( InstrumentInfoGetter_C *pgetter,
                                        const char* query_string,
                                        int allow_exceptions )
 {
+    int err = check_abi_enum(InstrumentSearchType_is_valid, search_type,
+                             pgetter, allow_exceptions);
+    if( err )
+        return err;
+
     return GetterImplAccessor<int>::template
         set<InstrumentInfoGetterImpl, InstrumentSearchType>(
             pgetter, &InstrumentInfoGetterImpl::set_query, search_type,

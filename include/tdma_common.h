@@ -84,6 +84,19 @@ CopyCredentials_ABI( const struct Credentials* from,
                        struct Credentials *to,
                        int allow_exceptions );
 
+EXTERN_C_SPEC_ DLL_SPEC_ int
+FreeBuffer_ABI( char* buf, int allow_exceptions );
+
+EXTERN_C_SPEC_ DLL_SPEC_ int
+FreeBuffers_ABI( char** bufs, size_t n, int allow_exceptions);
+
+EXTERN_C_SPEC_ DLL_SPEC_ int
+LastErrorCode_ABI( int *code, int allow_exceptions );
+
+EXTERN_C_SPEC_ DLL_SPEC_ int
+LastErrorMsg_ABI( char** buf, size_t *n, int allow_exceptions );
+
+
 
 /* C interface */
 
@@ -91,44 +104,52 @@ inline int
 LoadCredentials( const char* path,
                    const char* password,
                    struct Credentials* pcreds )
-{ return LoadCredentials_ABI(path, password, pcreds,false); }
+{ return LoadCredentials_ABI(path, password, pcreds,0); }
 
 inline int
 StoreCredentials( const char* path,
                     const char* password,
                     const struct Credentials* pcreds )
-{ return StoreCredentials_ABI(path, password, pcreds, false); }
+{ return StoreCredentials_ABI(path, password, pcreds, 0); }
 
 inline int
 RequestAccessToken( const char* code,
                       const char* client_id,
                       const char* redirect_uri,
                       struct Credentials* pcreds )
-{ return RequestAccessToken_ABI(code, client_id, redirect_uri, pcreds, false); }
+{ return RequestAccessToken_ABI(code, client_id, redirect_uri, pcreds, 0); }
 
 inline int
 RefreshAccessToken(struct Credentials* creds )
-{ return RefreshAccessToken_ABI(creds, false); }
+{ return RefreshAccessToken_ABI(creds, 0); }
 
 inline int
 SetCertificateBundlePath(const char* path)
-{ return SetCertificateBundlePath_ABI(path, false); }
+{ return SetCertificateBundlePath_ABI(path, 0); }
 
 inline int
 GetCertificateBundlePath(char **path, size_t *n)
-{ return GetCertificateBundlePath_ABI(path, n, false); }
+{ return GetCertificateBundlePath_ABI(path, n, 0); }
 
 inline int
 GetDefaultCertificateBundlePath(char **path, size_t *n )
-{ return GetDefaultCertificateBundlePath_ABI(path, n, false); }
+{ return GetDefaultCertificateBundlePath_ABI(path, n, 0); }
 
 inline int
 CloseCredentials(struct Credentials* pcreds )
-{ return CloseCredentials_ABI(pcreds, false); }
+{ return CloseCredentials_ABI(pcreds, 0); }
 
 inline int
 CopyCredentials(const struct Credentials* from, struct Credentials *to)
-{ return CopyCredentials_ABI(from, to, false); }
+{ return CopyCredentials_ABI(from, to, 0); }
+
+inline int
+FreeBuffer( char* buf )
+{ return FreeBuffer_ABI(buf, 0); }
+
+inline int
+FreeBuffers( char** bufs, size_t n)
+{ return FreeBuffers_ABI(bufs, n, 0); }
 
 
 #define TDMA_API_ERROR 1
@@ -143,6 +164,14 @@ CopyCredentials(const struct Credentials* from, struct Credentials *to)
 #define TDMA_API_SERVER_ERROR 104
 
 #define TDMA_API_STREAM_ERROR 201
+
+inline int
+LastErrorCode( int *code )
+{ return LastErrorCode_ABI(code, 0); }
+
+inline int
+LastErrorMsg( char** buf, size_t *n)
+{ return LastErrorMsg_ABI(buf, n, 0); }
 
 
 /*
@@ -304,14 +333,26 @@ class APIException
         : public std::exception{
     std::string _what;
 public:
+    static const int ERROR_CODE = TDMA_API_ERROR;
+
     APIException()
     {}
+
     APIException(std::string what)
         : _what(what)
     {}
-    const char*
+
+    virtual const char*
     what() const noexcept
     { return _what.c_str(); }
+
+    virtual const char*
+    name() const noexcept
+    { return "APIException"; }
+
+    virtual int
+    error_code() const noexcept
+    { return ERROR_CODE; }
 };
 
 
@@ -320,85 +361,179 @@ class LocalCredentialException
 protected:
     LocalCredentialException() = default;
 public:
+    static const int ERROR_CODE = TDMA_API_CRED_ERROR;
+
     LocalCredentialException(std::string what)
         : APIException(what)
     {}
+
+    const char*
+    name() const noexcept
+    { return "LocalCredentialException"; }
+
+    int
+    error_code() const noexcept
+    { return ERROR_CODE; }
 };
 
 
 class ValueException
         : public APIException{
 public:
+    static const int ERROR_CODE = TDMA_API_VALUE_ERROR;
+
     ValueException(std::string what)
         : APIException(what)
     {}
+
+    const char*
+    name() const noexcept
+    { return "ValueException"; }
+
+    int
+    error_code() const noexcept
+    { return ERROR_CODE; }
 };
 
 
 class TypeException
         : public APIException{
 public:
+    static const int ERROR_CODE = TDMA_API_TYPE_ERROR;
+
     TypeException(std::string what)
         : APIException(what)
     {}
+
+    const char*
+    name()
+    { return "TypeException"; }
+
+    int
+    error_code() const noexcept
+    { return ERROR_CODE; }
 };
 
 
 class MemoryError
         : public APIException{
 public:
+    static const int ERROR_CODE = TDMA_API_MEMORY_ERROR;
+
     MemoryError(std::string what)
         : APIException(what)
     {}
+
+    virtual const char*
+    name() const noexcept
+    { return "MemoryError"; }
+
+    virtual int
+    error_code() const noexcept
+    { return ERROR_CODE; }
 };
 
 
 class APIExecutionException
         : public APIException{
+    int _status_code;
 public:
-    const long code;
-    APIExecutionException(std::string what, long code)
+    static const int ERROR_CODE = TDMA_API_EXEC_ERROR;
+
+    APIExecutionException(std::string what, int status_code)
         : APIException(what),
-          code(code)
+          _status_code(status_code)
     {}
+
+    virtual const char*
+    name() const noexcept
+    { return "APIExecutionException"; }
+
+    virtual int
+    error_code() const noexcept
+    { return ERROR_CODE; }
+
+    int
+    status_code() const noexcept
+    { return _status_code; }
 };
 
 
 class AuthenticationException
         : public APIExecutionException{
 public:
-    AuthenticationException(std::string what, long code)
-        : APIExecutionException(what,code)
+    static const int ERROR_CODE = TDMA_API_AUTH_ERROR;
+
+    AuthenticationException(std::string what, int status_code)
+        : APIExecutionException(what, status_code)
     {}
+
+    virtual const char*
+    name() const noexcept
+    { return "AuthenticationException"; }
+
+    virtual int
+    error_code() const noexcept
+    { return ERROR_CODE; }
 };
 
 
 class InvalidRequest
         : public APIExecutionException{
 public:
-    InvalidRequest(std::string what, long code)
-        : APIExecutionException(what,code)
+    static const int ERROR_CODE = TDMA_API_REQUEST_ERROR;
+
+    InvalidRequest(std::string what, int status_code)
+        : APIExecutionException(what, status_code)
     {}
+
+    virtual const char*
+    name() const noexcept
+    { return "InvalidRequest"; }
+
+    virtual int
+    error_code() const noexcept
+    { return ERROR_CODE; }
 };
 
 
 class ServerError
         : public APIExecutionException{
 public:
-    ServerError(std::string what, long code)
-        : APIExecutionException(what,code)
+    static const int ERROR_CODE = TDMA_API_SERVER_ERROR;
+    ServerError(std::string what, int status_code)
+        : APIExecutionException(what, status_code)
     {}
+
+    virtual const char*
+    name() const noexcept
+    { return "ServerError"; }
+
+    virtual int
+    error_code() const noexcept
+    { return ERROR_CODE; }
 };
 
 
 class StreamingException
         : public APIException {
 public:
+    static const int ERROR_CODE = TDMA_API_STREAM_ERROR;
+
     StreamingException()
     {}
+
     StreamingException(std::string what)
         : APIException(what)
     {}
+
+    virtual const char*
+    name() const noexcept
+    { return "StreamingException"; }
+
+    virtual int
+    error_code() const noexcept
+    { return ERROR_CODE; }
 };
 
 

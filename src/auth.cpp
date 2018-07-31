@@ -758,12 +758,20 @@ LoadCredentials_ABI( const char* path,
                        Credentials *pcreds,
                        int allow_exceptions )
 {
-    if( !path || !password || !pcreds){
-        if( allow_exceptions ){
-            throw tdma::ValueException("path/passwordpcreds can not be null");
-        }
-        return TDMA_API_VALUE_ERROR;
-    }
+    if( !path )
+        return tdma::handle_error<tdma::ValueException>(
+            "null path pointer", allow_exceptions
+            );
+
+    if( !password )
+        return tdma::handle_error<tdma::ValueException>(
+            "null password pointer", allow_exceptions
+            );
+
+    if( !pcreds )
+        return tdma::handle_error<tdma::ValueException>(
+            "null credentials pointer", allow_exceptions
+            );
 
     /* C client responsbile for previous dealloc */
     memset(pcreds, 0, sizeof(Credentials));
@@ -790,18 +798,25 @@ StoreCredentials_ABI( const char* path,
                          const Credentials* pcreds,
                          int allow_exceptions )
 {
-    if( !path || !password || !pcreds ){
-        if( allow_exceptions ){
-            throw tdma::ValueException("path/password/pcreds can not be null");
-        }
-        return TDMA_API_VALUE_ERROR;
-    }
+    if( !path )
+        return tdma::handle_error<tdma::ValueException>(
+            "null path pointer", allow_exceptions
+            );
+
+    if( !password )
+        return tdma::handle_error<tdma::ValueException>(
+            "null password pointer", allow_exceptions
+            );
+
+    if( !pcreds )
+        return tdma::handle_error<tdma::ValueException>(
+            "null credentials pointer", allow_exceptions
+            );
 
     if( !pcreds->access_token | !pcreds->refresh_token | !pcreds->client_id ){
-        if( allow_exceptions ){
-            throw tdma::LocalCredentialException("invalid Credentials struct");
-        }
-        return TDMA_API_CRED_ERROR;
+        return tdma::handle_error<tdma::LocalCredentialException>(
+            "invalid Credentials struct", allow_exceptions
+            );
     }
 
     return tdma::CallImplFromABI( allow_exceptions, tdma::StoreCredentialsImpl,
@@ -816,13 +831,25 @@ RequestAccessToken_ABI( const char* code,
                            Credentials *pcreds,
                            int allow_exceptions )
 {
-    if( !code || !client_id || !redirect_uri || !pcreds ){
-        if( allow_exceptions ){
-            throw tdma::ValueException("code/client_id/redirect_uri/pcreds "
-                                       "can not be null");
-        }
-        return TDMA_API_VALUE_ERROR;
-    }
+    if( !code )
+        return tdma::handle_error<tdma::ValueException>(
+            "null code pointer", allow_exceptions
+            );
+
+    if( !client_id )
+        return tdma::handle_error<tdma::ValueException>(
+            "null client_id pointer", allow_exceptions
+            );
+
+    if( !redirect_uri )
+        return tdma::handle_error<tdma::ValueException>(
+            "null redirect_uri pointer", allow_exceptions
+            );
+
+    if( !pcreds )
+        return tdma::handle_error<tdma::ValueException>(
+            "null credentials pointer", allow_exceptions
+            );
 
     /* C client responsbile for previous dealloc */
     memset(pcreds, 0, sizeof(Credentials));
@@ -847,12 +874,10 @@ RequestAccessToken_ABI( const char* code,
 int
 RefreshAccessToken_ABI(Credentials* pcreds, int allow_exceptions)
 {
-    if( !pcreds ){
-        if( allow_exceptions ){
-            throw tdma::ValueException("credential pointer can not be null");
-        }
-        return TDMA_API_VALUE_ERROR;
-    }
+    if( !pcreds )
+        return tdma::handle_error<tdma::ValueException>(
+            "null credentials pointer", allow_exceptions
+            );
 
     return tdma::CallImplFromABI( allow_exceptions, tdma::RefreshAccessTokenImpl,
                                   pcreds );
@@ -862,12 +887,10 @@ RefreshAccessToken_ABI(Credentials* pcreds, int allow_exceptions)
 int
 SetCertificateBundlePath_ABI(const char *path, int allow_exceptions)
 {
-    if( !path ){
-        if( allow_exceptions ){
-            throw tdma::ValueException("path can not be null");
-        }
-        return TDMA_API_VALUE_ERROR;
-    }
+    if( !path )
+        return tdma::handle_error<tdma::ValueException>(
+            "null path pointer", allow_exceptions
+            );
 
     return tdma::CallImplFromABI( allow_exceptions,
                                   tdma::SetCertificateBundlePathImpl, path );
@@ -877,12 +900,10 @@ SetCertificateBundlePath_ABI(const char *path, int allow_exceptions)
 int
 GetCertificateBundlePath_ABI(char **path, size_t *n, int allow_exceptions)
 {
-    if( !path ){
-        if( allow_exceptions ){
-            throw tdma::ValueException("path/n can not be null");
-        }
-        return TDMA_API_VALUE_ERROR;
-    }
+    if( !path )
+        return tdma::handle_error<tdma::ValueException>(
+            "null path pointer", allow_exceptions
+            );
 
     string r;
     int err;
@@ -894,10 +915,9 @@ GetCertificateBundlePath_ABI(char **path, size_t *n, int allow_exceptions)
     *n = r.size() + 1;
     *path = reinterpret_cast<char*>(malloc(*n));
     if( !path ){
-        if( allow_exceptions ){
-            throw tdma::MemoryError("failed to allocate buffer memory");
-        }
-        return TDMA_API_MEMORY_ERROR;
+        return tdma::handle_error<tdma::MemoryError>(
+            "failed to allocate buffer memory", allow_exceptions
+            );
     }
     strncpy(*path, r.c_str(), (*n)-1);
     *path[(*n)-1] = 0;
@@ -910,12 +930,10 @@ GetDefaultCertificateBundlePath_ABI( char **path,
                                          size_t *n,
                                          int allow_exceptions )
 {
-    if( !path ){
-        if( allow_exceptions ){
-            throw tdma::ValueException("path/n can not be null");
-        }
-        return TDMA_API_VALUE_ERROR;
-    }
+    if( !path )
+        return tdma::handle_error<tdma::ValueException>(
+            "null path pointer", allow_exceptions
+            );
 
     string r;
     int err;
@@ -927,10 +945,9 @@ GetDefaultCertificateBundlePath_ABI( char **path,
     *n = r.size() + 1;
     *path = reinterpret_cast<char*>(malloc(*n));
     if( !path ){
-        if( allow_exceptions ){
-            throw tdma::MemoryError("failed to allocate buffer memory");
-        }
-        return TDMA_API_MEMORY_ERROR;
+        return tdma::handle_error<tdma::MemoryError>(
+            "failed to allocate buffer memory", allow_exceptions
+            );
     }
     strncpy(*path, r.c_str(), (*n)-1);
     *path[(*n)-1] = 0;
@@ -941,12 +958,11 @@ GetDefaultCertificateBundlePath_ABI( char **path,
 int
 CloseCredentials_ABI(Credentials* pcreds, int allow_exceptions)
 {
-    if( !pcreds ){
-        if( allow_exceptions ){
-            throw tdma::ValueException("credentials pointer can not be null");
-        }
-        return TDMA_API_VALUE_ERROR;
-    }
+    if( !pcreds )
+        return tdma::handle_error<tdma::ValueException>(
+            "null credentials pointer", allow_exceptions
+            );
+
     return tdma::CallImplFromABI( allow_exceptions,
                                   tdma::CloseCredentialsImpl, pcreds );
 }
@@ -959,10 +975,9 @@ CopyCredentials_ABI( const struct Credentials* from,
     static const int FAIL_LEN = Credentials::CRED_FIELD_MAX_STR_LEN + 1;
 
     if( !from || !to ){
-        if( allow_exceptions ){
-            throw tdma::ValueException("credentials pointer can not be null");
-        }
-        return TDMA_API_VALUE_ERROR;
+        return tdma::handle_error<tdma::ValueException>(
+            "null credentials pointer", allow_exceptions
+            );
     }
 
     size_t atl, rtl, cidl;
@@ -970,10 +985,9 @@ CopyCredentials_ABI( const struct Credentials* from,
     if( (atl = strnlen(from->access_token, FAIL_LEN)) == FAIL_LEN||
         (rtl = strnlen(from->refresh_token, FAIL_LEN)) == FAIL_LEN ||
         (cidl = strnlen(from->client_id, FAIL_LEN)) == FAIL_LEN ){
-            if( allow_exceptions ){
-                throw tdma::LocalCredentialException("invalid string length");
-            }
-            return TDMA_API_CRED_ERROR;
+        return tdma::handle_error<tdma::LocalCredentialException>(
+            "invalid string length", allow_exceptions
+            );
         }
 
     to->access_token = new char[atl + 1];

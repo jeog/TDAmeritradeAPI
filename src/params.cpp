@@ -64,6 +64,28 @@ VALID_FREQUENCIES_BY_FREQUENCY_TYPE = {
 
 
 int
+FreeBuffer_ABI( char* buf, int allow_exceptions )
+{
+    if( buf )
+        free( (void*)buf );
+    return 0;
+}
+
+int
+FreeBuffers_ABI( char** bufs, size_t n, int allow_exceptions )
+{
+    if( bufs ){
+        while(--n){ // n includes null term, skip it
+          char *c = bufs[n-1];
+          assert(c);
+          free(c);
+        }
+        free(bufs);
+    }
+    return 0;
+}
+
+int
 alloc_C_str(const std::string& s, char** buf, size_t* n, bool raise_exception)
 {
     assert(buf);

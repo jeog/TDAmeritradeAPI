@@ -137,7 +137,8 @@ int main(int argc, char* argv[])
             transaction_history_getter(account_id, cmanager.credentials);
             individual_transaction_history_getter(account_id, cmanager.credentials);
         }catch( ServerError& e){
-            cout<<"caught server error: " << e.what() << " (" << e.code << ")" << endl;
+            cout<<"caught server error: " << e.what() << " ("
+                << e.status_code() << ")" << endl;
         }
 
         string in;

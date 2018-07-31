@@ -121,6 +121,20 @@ MoversGetter_Create_ABI( struct Credentials *pcreds,
     if( err )
         return err;
 
+    err = check_abi_enum(MoversIndex_is_valid, index, pgetter, allow_exceptions);
+    if( err )
+        return err;
+
+    err = check_abi_enum(MoversDirectionType_is_valid, direction_type,
+                         pgetter, allow_exceptions);
+    if( err )
+        return err;
+
+    err = check_abi_enum(MoversChangeType_is_valid, change_type, pgetter,
+                         allow_exceptions);
+    if( err )
+        return err;
+
     static auto meth = +[](Credentials *c, int m, int d, int ct){
         return new MoversGetterImpl(*c, static_cast<MoversIndex>(m),
                                     static_cast<MoversDirectionType>(d),
@@ -163,6 +177,11 @@ MoversGetter_SetIndex_ABI( MoversGetter_C *pgetter,
                               int index,
                               int allow_exceptions )
 {
+    int err = check_abi_enum(MoversIndex_is_valid, index, pgetter,
+                             allow_exceptions);
+    if( err )
+        return err;
+
     return GetterImplAccessor<int>::template set<MoversGetterImpl, MoversIndex>(
         pgetter, &MoversGetterImpl::set_index, index, allow_exceptions
         );
@@ -185,6 +204,11 @@ MoversGetter_SetDirectionType_ABI( MoversGetter_C *pgetter,
                                        int direction_type,
                                        int allow_exceptions )
 {
+    int err = check_abi_enum(MoversDirectionType_is_valid, direction_type,
+                             pgetter, allow_exceptions);
+    if( err )
+        return err;
+
     return GetterImplAccessor<int>::template
         set<MoversGetterImpl, MoversDirectionType>(
             pgetter, &MoversGetterImpl::set_direction_type, direction_type,
@@ -209,6 +233,11 @@ MoversGetter_SetChangeType_ABI( MoversGetter_C *pgetter,
                                    int change_type,
                                    int allow_exceptions )
 {
+    int err = check_abi_enum(MoversChangeType_is_valid, change_type, pgetter,
+                             allow_exceptions);
+    if( err )
+        return err;
+
     return GetterImplAccessor<int>::template
         set<MoversGetterImpl, MoversChangeType>(
             pgetter, &MoversGetterImpl::set_change_type, change_type,

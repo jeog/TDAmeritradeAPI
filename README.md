@@ -2,8 +2,7 @@
 ### TDAmeritradeAPI
 - - -
 
-C and C++ front-end for the recently expanded TDAmeritrade API that will eventually include Python, and potentially other, bindings. It provides object-oriented access to the simple HTTPS/JSON interface using 
-*[libcurl](https://curl.haxx.se/libcurl)* and to the Streaming interface using *[uWebSockets](https://github.com/uNetworking/uWebSockets)*.
+C++ front-end library, with C and Python bindings, for the recently expanded TDAmeritrade API. It provides object-oriented access to the simple HTTPS/JSON interface using *[libcurl](https://curl.haxx.se/libcurl)* and to the Streaming interface using *[uWebSockets](https://github.com/uNetworking/uWebSockets)*.
 
 If you have an Ameritrade account you *should* be able to gain access to the API by following the instructions in the Authentication section below. 
 
@@ -15,7 +14,7 @@ access, data handling, and order execution.
 customize for their particular needs. The user retrieves an access code(see below), 
 and then uses the library to request an access token, which is refreshed automatically.
 
-- It does not parse returned data, returning [json](https://github.com/nlohmann/json) objects (C++) for the user to handle as they see fit. (Un-parsed json strings for the C interface.)
+- It does not parse returned data, returning [json](https://github.com/nlohmann/json) objects (C++) for the user to handle as they see fit. It returns nn-parsed json strings for the C interface and python builtin objects via json.loads().
 
 - This is a new library, built by a single developer, for an API that is still in flux. As such you should expect plenty of bumps along the way, with changes to both the interface and the implementation.       
 
@@ -60,21 +59,18 @@ This project would not be possible without some of the great open-source project
 - [uWebSockets](https://github.com/uNetworking/uWebSockets) - A simple and efficient C++ WebSocket library. The source is included, compiled and archived with our library to limit dependency issues.
 - [nlohmann::json](https://github.com/nlohmann/json) : - An extensive C++ json library that only requires adding a single header file. ***You'll need to review their documentation for handling returned data from the C++ version of this library.***
 
-
-### Binary Compatibility
+### Status
 - - -
-***IMPORTANT*** - There are certain binary compatibility issues when exporting C++ code accross compilations(from name mangling, differing runtimes, changes to STL implementations etc.). If, for instance, we return an std::vector in an earlier version of a library, its implementation changes, and code that imports the library is compiled against a new version of the STL, there can be an issue.
+| | Get Interface  |  Streaming Interface  |  Execute Interface 
+---------------------|---------------|---------------------|--------------------
+**C**                    | Working       | Coming Soon         | Coming Soon
+**C++**                | Working (incomplete ABI) | Working (no ABI) | Coming Soon
+**Python**               | Working       | Coming Soon | Coming Soon
 
-***UPDATE*** - The Getter interface has been refactored to 1) add a C interface and 2) allow the C++ interface to go through a stable ABI layer in an attempt to provide seamless access across compilations. *The C++ interface still throws exceptions accross the library boundaray which can create issues. **Until we implement a better way to deal w/ this either 1) compile client and library C++ code together to avoid ABI incompatibility or 2) use the C interface and corresponding error codes.***
 
-***The Streaming interface currently has no stable ABI layer so you need to be sure to use the same compiler/settings and link to the same libraries as the TDAmeritradeAPI library does.*** For this reason we don't include any pre-built binaries. You should (re)compile this library alongside your code if you change compilers, settings, runtimes etc. 
-
-### Language Bindings
+### Structure
 - - -
-Look for Python, and potentially other, bindings in the near future. 
 
-These will be implemented through a binary-compatible C interface model that looks something like :
-     
     |--------------------------------------|-----------------|------------|
     |      client python, java etc.        |   client C++    |  client C  |
     |--------------------------------------|                 |            | 
@@ -86,6 +82,18 @@ These will be implemented through a binary-compatible C interface model that loo
     |---------------------------------------------------------------------|
     |       (non binary compatible) C++ interface to TDAmeritradeAPI      |
     |---------------------------------------------------------------------|
+
+
+
+### Binary Compatibility
+- - -
+***IMPORTANT*** - There are certain binary compatibility issues when exporting C++ code accross compilations(from name mangling, differing runtimes, changes to STL implementations etc.). If, for instance, we return an std::vector in an earlier version of a library, its implementation changes, and code that imports the library is compiled against a new version of the STL, there can be an issue.
+
+***UPDATE*** - The 'Get' interface has been refactored to 1) add a C interface and 2) allow the C++ interface to go through a stable ABI layer in an attempt to provide seamless access across compilations. ***The C++ interface still throws exceptions across the library boundary which can create issues.***
+
+The C++ Streaming interface currently has no stable ABI layer.
+
+***Until we implement a better way to deal w/ this either 1) compile your code and the library using the same compiler/settings and link to the same libraries to avoid ABI incompatibility or 2) use the C interface and corresponding error codes.***
 
 
 ### Getting Started
@@ -194,13 +202,14 @@ All front-end C++ library code is in namespace ```tdma```. We mostly exclude it 
 ### Errors & Exceptions
 - - -
 Before discussing authentication and access it's important to understand how the library 
-handles errors and exceptional states. Almost all exceptional/error states will cause exceptions
-to be thrown:
+handles errors and exceptional states. All exceptional/error states from the C++ interface will cause exceptions to be thrown:
 
 - Library Exceptions:
     - ```APIExcetion``` : base class and generic exceptions
         - ```LocalCredentialException``` : an issue creating/loading/storing/using credentials
         - ```ValueException``` : bad/invalid argument to a function or constructor (checked locally)
+        - ```TypeException``` : type inconsistency of a proxy object
+        - ```MemoryError``` : error allocating memory within the ABI layer
         - ```APIExecutionException``` : a general error connecting/communicating with the server, these
 exceptions tend to be the result of some low(er) level failure with the connection        
             - ```AuthenticationException``` : an error authenticating with the server

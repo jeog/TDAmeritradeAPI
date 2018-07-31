@@ -512,8 +512,8 @@ CurlException::what() const noexcept
 
 CurlOptionException::CurlOptionException(CURLoption opt, string val)
     :
-        CurlException( "error setting easy curl option (" + to_string(opt)
-                       + ") with value (" + val + ")"),
+        CurlException( "error setting easy curl option(" + to_string(opt)
+                       + ") with value(" + val + ")"),
         option(opt),
         value(val)
     {}
@@ -529,7 +529,7 @@ CurlOptionException::CurlOptionException(string what, CURLoption opt, string val
 
 CurlConnectionError::CurlConnectionError(CURLcode code)
     :
-        CurlException("connection error (" + to_string(code) + ")"),
+        CurlException("connection error"),
         code(code)
     {}
 

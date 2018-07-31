@@ -38,7 +38,6 @@ const std::string URL_MARKETDATA = URL_BASE + "marketdata/";
 const std::string URL_ACCOUNT_INFO = URL_BASE + "accounts/";
 const std::string URL_INSTRUMENTS = URL_BASE + "instruments";
 
-
 inline json
 get_user_principals_for_streaming(Credentials& creds)
 { return UserPrincipalsGetter(creds,true,true,false,false).get(); }
@@ -173,54 +172,42 @@ CallImplFromABI(bool allow_throw, RetTy(*func)(Args...), Args2... args)
         return ImplReturnHelper<RetTy>::from_call(func, args...);
 
     int err = 0;
-    string s;
+    string msg;
     try{
         return ImplReturnHelper<RetTy>::from_call(func, args...);
-    }catch(StreamingException& e){
-        err = TDMA_API_STREAM_ERROR;
-        s = "StreamingException: " + string(e.what());
-    }catch(ServerError& e){
-        err = TDMA_API_SERVER_ERROR;
-        s = "ServerError: " + string(e.what());
-    }catch(InvalidRequest& e){
-        err = TDMA_API_REQUEST_ERROR;
-        s = "InvalidRequest: " + string(e.what());
-    }catch(AuthenticationException& e){
-        err = TDMA_API_AUTH_ERROR;
-        s = "AuthenticationException: " + string(e.what());
     }catch(APIExecutionException& e){
-        err = TDMA_API_EXEC_ERROR;
-        s = "APIExecutionException: " + string(e.what());
-    }catch(MemoryError& e){
-        err = TDMA_API_MEMORY_ERROR;
-        s = "MemoryError: " + string(e.what());
-    }catch(TypeException& e) {
-        err = TDMA_API_TYPE_ERROR;
-        s = "TypeException: " + string(e.what());
-    }catch(ValueException& e){
-        err = TDMA_API_VALUE_ERROR;
-        s = "ValueException: " + string(e.what());
-    }catch(LocalCredentialException& e){
-        err = TDMA_API_CRED_ERROR;
-        s = "LocalCredentialException: " + string(e.what());
+        err = e.error_code();
+        msg = e.what() + string("(") + to_string(e.status_code()) + ")";
+        cerr<< "ABI :: " << e.name() << " --> error code " << err << endl;
     }catch(APIException& e){
-        err = TDMA_API_ERROR;
-        s = "APIException: " + string(e.what());
+        err = e.error_code();
+        msg = e.what();
+        cerr<< "ABI :: " << e.name() << " --> error code " << err << endl;
     }catch(std::exception& e){
-        cerr<< "C call through ABI caught exception: " << e.what() << "..."
-            << endl << "... rethrowing" << endl;
+        cerr<< "ABI :: caught " << e.what() << "... rethrowing" << endl;
+        set_error_state(-1, e.what());
         throw;
     }catch(...){
-        cerr<< "C call through ABI caught unknown object..."
-            << endl << "... rethrowing" << endl;
+        cerr<< "ABI :: caught unknown object... rethrowing" << endl;
+        set_error_state(-1, "unknown error");
         throw;
     }
-    cerr<< "C call through ABI caught " << s << "..." << endl
-        << "...converted to error code (" << err << ")" << endl;
 
+    set_error_state(err, msg);
     return ImplReturnHelper<RetTy>::from_error(err);
 }
 
+template<typename ExcTy>
+int
+handle_error(std::string msg, bool exc)
+{
+    int code = ExcTy::ERROR_CODE;
+    set_error_state(code, msg);
+    if( exc ){
+        throw ExcTy(msg);
+    }
+    return code;
+}
 
 template<typename ImplTy>
 int
@@ -231,29 +218,26 @@ getter_is_creatable( Credentials *pcreds,
     static_assert( ImplTy::ProxyType::TYPE_ID_LOW > 0 &&
                    ImplTy::ProxyType::TYPE_ID_HIGH > 0,
                    "invalid getter type" );
-    if( !pgetter ){
-        if( allow_exceptions ){
-            throw tdma::ValueException("getter pointer can not be null");
-        }
-        return TDMA_API_VALUE_ERROR;
-    }
+    if( !pgetter )
+        return handle_error<tdma::ValueException>(
+            "null getter pointer", allow_exceptions
+            );
+
 
     if( !pcreds ){
         pgetter->obj = nullptr;
         pgetter->type_id = -1;
-        if( allow_exceptions ){
-            throw tdma::ValueException("credentials pointer can not be null");
-        }
-        return TDMA_API_VALUE_ERROR;
+        return handle_error<tdma::ValueException>(
+            "null credentials pointer", allow_exceptions
+            );
     }
 
     if( !pcreds->access_token | !pcreds->refresh_token | !pcreds->client_id ){
         pgetter->obj = nullptr;
         pgetter->type_id = -1;
-        if( allow_exceptions ){
-            throw tdma::LocalCredentialException("invalid Credentials struct");
-        }
-        return TDMA_API_CRED_ERROR;
+        return handle_error<tdma::LocalCredentialException>(
+            "invalid credentials struct", allow_exceptions
+            );
     }
 
     return 0;
@@ -264,20 +248,22 @@ int
 getter_is_callable( typename ImplTy::ProxyType::CType *pgetter,
                       int allow_exceptions )
 {
-    if( !pgetter || !pgetter->obj ){
-        if( allow_exceptions ){
-            throw tdma::ValueException("getter pointer can not be null");
-        }
-        return TDMA_API_VALUE_ERROR;
-    }
+    if( !pgetter )
+        return handle_error<tdma::ValueException>(
+            "null getter pointer", allow_exceptions
+            );
+
+    if( !pgetter->obj )
+        return handle_error<tdma::ValueException>(
+            "null getter pointer->obj", allow_exceptions
+            );
 
     if( pgetter->type_id < ImplTy::ProxyType::TYPE_ID_LOW ||
         pgetter->type_id > ImplTy::ProxyType::TYPE_ID_HIGH )
     {
-        if( allow_exceptions ){
-            throw tdma::TypeException("getter pointer has invalid type id");
-        }
-        return TDMA_API_TYPE_ERROR;
+        return handle_error<tdma::TypeException>(
+            "getter has invalid type id", allow_exceptions
+            );
     }
     return 0;
 }
@@ -298,6 +284,19 @@ destroy_getter(typename ImplTy::ProxyType::CType *pgetter, int allow_exceptions)
     return CallImplFromABI(allow_exceptions, meth, pgetter->obj);
 }
 
+template<typename CTy>
+int
+check_abi_enum( bool(*func)(int), int val, CTy* pgetter, int allow_exceptions)
+{
+    if( !func(val) ){
+        pgetter->obj = nullptr;
+        pgetter->type_id = -1;
+        return handle_error<tdma::ValueException>(
+            "invalid enum value", allow_exceptions
+            );
+    }
+    return 0;
+}
 
 template<typename T> /* FOR BASIC TYPES i.e. enum <--> int */
 struct GetterImplAccessor{
@@ -362,10 +361,9 @@ struct GetterImplAccessor{
             return err;
 
         if( !pval){
-            if( allow_exceptions ){
-                throw ValueException(val_name + " can not be null");
-            }
-            return TDMA_API_VALUE_ERROR;
+            return handle_error<tdma::ValueException>(
+                "null " + val_name + " pointer", allow_exceptions
+                );
         }
 
         static auto mwrap =
@@ -420,19 +418,15 @@ struct GetterImplAccessor<char**>{
         if( err )
             return err;
 
-        if( !pval ){
-            if( allow_exceptions ){
-                throw ValueException("'buf' can not be null");
-            }
-            return TDMA_API_VALUE_ERROR;
-        }
+        if( !pval )
+            return handle_error<tdma::ValueException>(
+                "null 'buf' pointer", allow_exceptions
+                );
 
-        if( !n ){
-            if( allow_exceptions ){
-                throw ValueException("'n' can not be null");
-            }
-            return TDMA_API_VALUE_ERROR;
-        }
+        if( !n )
+            return handle_error<tdma::ValueException>(
+                "null 'n' pointer", allow_exceptions
+                );
 
         static auto mwrap =
             +[](void* obj, std::string(ImplTy::*meth)(void) const){
@@ -447,10 +441,9 @@ struct GetterImplAccessor<char**>{
         *n = r.size() + 1;
         *pval = reinterpret_cast<char*>(malloc(*n));
         if( !*pval ){
-            if( allow_exceptions ){
-                throw MemoryError("failed to allocate buffer memory");
-            }
-            return TDMA_API_MEMORY_ERROR;
+            return handle_error<tdma::MemoryError>(
+                "failed to allocate buffer memory", allow_exceptions
+                );
         }
         (*pval)[(*n)-1] = 0;
         strncpy(*pval, r.c_str(), (*n)-1);
@@ -498,19 +491,15 @@ struct GetterImplAccessor<char***>{
         if( err )
             return err;
 
-        if( !pval ){
-            if( allow_exceptions ){
-                throw ValueException("'buf' can not be null");
-            }
-            return TDMA_API_VALUE_ERROR;
-        }
+        if( !pval )
+            return handle_error<tdma::ValueException>(
+                "null 'buf' pointer", allow_exceptions
+                );
 
-        if( !n ){
-            if( allow_exceptions ){
-                throw ValueException("'n' can not be null");
-            }
-            return TDMA_API_VALUE_ERROR;
-        }
+        if( !n )
+            return handle_error<tdma::ValueException>(
+                "null 'n' pointer", allow_exceptions
+                );
 
         static auto mwrap =
             +[](void* obj, std::set<std::string>(ImplTy::*meth)(void) const){
@@ -526,10 +515,9 @@ struct GetterImplAccessor<char***>{
         *n = strs.size() + 1; // NOTE include null term in returned size
         *pval = reinterpret_cast<char**>(malloc((*n) * sizeof(char*)));
         if( !*pval ){
-            if( allow_exceptions ){
-                throw MemoryError("failed to allocate array buffer memory");
-            }
-            return TDMA_API_MEMORY_ERROR;
+            return handle_error<tdma::MemoryError>(
+                "failed to allocate buffer memory", allow_exceptions
+                );
         }
         (*pval)[(*n)-1] = 0;
 
@@ -538,9 +526,9 @@ struct GetterImplAccessor<char***>{
             size_t s_sz = s.size();
             (*pval)[cnt] = reinterpret_cast<char*>(malloc(s_sz+1));
             if( !(*pval)[cnt] ){
-                if( allow_exceptions ){
-                    throw MemoryError("failed to allocate str buffer memory");
-                }
+                return handle_error<tdma::MemoryError>(
+                    "failed to allocate buffer memory", allow_exceptions
+                    );
             }
             (*pval)[cnt][s_sz] = 0;
             strncpy((*pval)[cnt], s.c_str(), s_sz);

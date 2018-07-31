@@ -91,7 +91,7 @@ base_on_error_callback(long code, const string& data, bool allow_refresh)
     case 503:
         throw ServerError("server (temporarily) unavailable", code);
     case 504:
-        throw ServerError("unknown server error: " + err_msg, code);
+        throw ServerError("unknown server error: " + data, code);
     };
     return false;
 }
@@ -368,12 +368,25 @@ APIGetter_Get_ABI( Getter_C *pgetter,
                      size_t *n,
                      int allow_exceptions )
 {
-    if( !pgetter || !pgetter->obj || !buf || !n ){
-        if( allow_exceptions ){
-            throw tdma::ValueException("pgetter/buffer/n can not be null");
-        }
-        return TDMA_API_VALUE_ERROR;
-    }
+    if( !pgetter )
+        return tdma::handle_error<tdma::ValueException>(
+            "null getter pointer", allow_exceptions
+            );
+
+    if( !pgetter->obj )
+        return tdma::handle_error<tdma::ValueException>(
+            "null getter->obj pointer", allow_exceptions
+            );
+
+    if( !buf )
+        return tdma::handle_error<tdma::ValueException>(
+            "null 'buf' pointer", allow_exceptions
+            );
+
+    if( !n )
+        return tdma::handle_error<tdma::ValueException>(
+            "null 'n' pointer", allow_exceptions
+            );
 
     static auto meth = +[](void* obj){
         return reinterpret_cast<tdma::APIGetterImpl*>(obj)->get();
@@ -388,10 +401,9 @@ APIGetter_Get_ABI( Getter_C *pgetter,
     *n = r.size() + 1;
     *buf = reinterpret_cast<char*>(malloc(*n));
     if( !buf ){
-        if( allow_exceptions ){
-            throw tdma::MemoryError("failed to allocate buffer memory");
-        }
-        return TDMA_API_MEMORY_ERROR;
+        return tdma::handle_error<tdma::MemoryError>(
+            "failed to allocate buffer memory", allow_exceptions
+            );
     }
     (*buf)[(*n)-1] = 0;
     strncpy(*buf, r.c_str(), (*n)-1);
@@ -401,12 +413,15 @@ APIGetter_Get_ABI( Getter_C *pgetter,
 int
 APIGetter_Close_ABI(Getter_C *pgetter, int allow_exceptions)
 {
-    if( !pgetter || !pgetter->obj ){
-        if( allow_exceptions ){
-            throw tdma::ValueException("pgetter can not be null");
-        }
-        return TDMA_API_VALUE_ERROR;
-    }
+    if( !pgetter )
+        return tdma::handle_error<tdma::ValueException>(
+            "null getter pointer", allow_exceptions
+            );
+
+    if( !pgetter->obj )
+        return tdma::handle_error<tdma::ValueException>(
+            "null getter->obj pointer", allow_exceptions
+            );
 
     static auto meth = +[](void* obj){
         reinterpret_cast<tdma::APIGetterImpl*>(obj)->close();
@@ -418,12 +433,20 @@ APIGetter_Close_ABI(Getter_C *pgetter, int allow_exceptions)
 int
 APIGetter_IsClosed_ABI(Getter_C *pgetter, int*b, int allow_exceptions)
 {
-    if( !pgetter || !pgetter->obj || !b ){
-        if( allow_exceptions ){
-            throw tdma::ValueException("pgetter/b can not be null");
-        }
-        return TDMA_API_VALUE_ERROR;
-    }
+    if( !pgetter )
+        return tdma::handle_error<tdma::ValueException>(
+            "null getter pointer", allow_exceptions
+            );
+
+    if( !pgetter->obj )
+        return tdma::handle_error<tdma::ValueException>(
+            "null getter->obj pointer", allow_exceptions
+            );
+
+    if( !b )
+        return tdma::handle_error<tdma::ValueException>(
+            "null 'b' pointer", allow_exceptions
+            );
 
     static auto meth = +[](void* obj){
         return reinterpret_cast<tdma::APIGetterImpl*>(obj)->is_closed();
@@ -445,12 +468,10 @@ APIGetter_SetWaitMSec_ABI(unsigned long long msec, int allow_exceptions)
 int
 APIGetter_GetWaitMSec_ABI(unsigned long long *msec, int allow_exceptions)
 {
-    if( !msec){
-        if( allow_exceptions ){
-            throw tdma::ValueException("msec can not be null");
-        }
-        return TDMA_API_VALUE_ERROR;
-    }
+    if( !msec)
+        return tdma::handle_error<tdma::ValueException>(
+            "null 'msec' pointer", allow_exceptions
+            );
 
     milliseconds ms;
     int err;
@@ -466,12 +487,10 @@ APIGetter_GetWaitMSec_ABI(unsigned long long *msec, int allow_exceptions)
 int
 APIGetter_GetDefWaitMSec_ABI(unsigned long long *msec, int allow_exceptions)
 {
-    if( !msec){
-        if( allow_exceptions ){
-            throw tdma::ValueException("msec can not be null");
-        }
-        return TDMA_API_VALUE_ERROR;
-    }
+    if( !msec )
+        return tdma::handle_error<tdma::ValueException>(
+            "null 'msec' pointer", allow_exceptions
+            );
 
     *msec = static_cast<unsigned long long>(
         tdma::APIGetterImpl::DEF_WAIT_MSEC.count()

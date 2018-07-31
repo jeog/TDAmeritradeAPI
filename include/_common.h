@@ -35,6 +35,13 @@ along with this program.  If not, see http://www.gnu.org/licenses.
 #ifdef __cplusplus
 #include <string>
 extern std::string certificate_bundle_path;
+
+void
+set_error_state(int code, const std::string&  msg);
+
+std::pair<int, std::string>
+get_error_state();
+
 #define EXTERN_C_SPEC_ extern "C"
 #else
 #include <stddef.h>

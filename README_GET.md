@@ -137,7 +137,17 @@ QuoteGetter_Get(QuoteGetter_C *getter, char **buf, size_t *n)
               char buffer (size of data + 1 for the null term)
 ```
 Note that a heap allocated char buffer is returned. It's the caller's responsibility
-to free the object, e.g ```free(buf);```
+to free the object. For a single buffer(char*) use:
+
+```
+inline int
+FreeBuffer( char* buf )
+```
+For an 'array' of buffers(char**) use:
+```
+inline int
+FreeBuffers( char** bufs, size_t n)
+```
 
 To change the paramaters of the getter use the accessor methods, e.g:
 ```
@@ -159,7 +169,7 @@ QuoteGetter_Destroy(QuoteGetter_C *getter)
 ```
 ***Once ```Destroy``` is called any use of the getter is UNDEFINED BEHAVIOR.***
 
-To check the state, e.g:
+To check the state(before ```Destroy``` is called), e.g:
 ```
 inline int
 QuoteGetter_IsClosed(QuoteGetter_C *getter)
@@ -296,7 +306,12 @@ use [StreamingSession](README_STREAMING.md) for that.
             symbol = NULL;
         }
 
-        return 0;
+        if( (err = QuoteGetter_Destroy(&qg)) ){
+            memset(&qg, 0, sizeof(QuoteGetter_C));
+            CHECK_AND_RETURN_ON_ERROR(err, "QuoteGetter_Destroy");
+        }
+
+        memset(&qg, 0, sizeof(QuoteGetter_C));
     ...
     
 ```
