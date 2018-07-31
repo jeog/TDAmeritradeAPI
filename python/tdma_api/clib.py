@@ -50,10 +50,10 @@ def PCHAR_BUFFER(strs):
 
 PCHAR = lambda s: c_char_p(s.encode())
 
-def init(lib):
+def init(lib, reload=False):
     global _lib
-    if _lib is None:
-        _lib = CDLL(lib)
+    if _lib is None or reload:
+        _lib = CDLL(lib)           
     return bool(_lib)
 
 def call(name, *args):

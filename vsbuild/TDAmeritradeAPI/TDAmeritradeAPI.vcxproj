@@ -197,6 +197,7 @@
   <ItemGroup>
     <ClCompile Include="..\..\src\auth.cpp" />
     <ClCompile Include="..\..\src\curl_connect.cpp" />
+    <ClCompile Include="..\..\src\error.cpp" />
     <ClCompile Include="..\..\src\getters\account.cpp" />
     <ClCompile Include="..\..\src\getters\historical.cpp" />
     <ClCompile Include="..\..\src\getters\instrument_info.cpp" />

@@ -17,15 +17,18 @@
 
 from platform import system, architecture
 from traceback import print_exc
+from time import strftime
 import argparse
 
 from tdma_api import get, auth, clib
 
-LIBRARY_PATH = "../Debug/libTDAmeritradeAPI.so"
-if system() == 'Windows':
-    if '64' in architecture()[0]:
-        LIBRARY_PATH = "../vsbuild/x64/Debug/TDAmeritradeAPI.dll"
-    else: # no 32 bit debug build (dependency issue)
+SYSTEM = system()
+ARCH = architecture()[0]
+LIBRARY_PATH = "../Release/libTDAmeritradeAPI.so"
+if SYSTEM == 'Windows':
+    if '64' in ARCH:
+        LIBRARY_PATH = "../vsbuild/x64/Release/TDAmeritradeAPI.dll"
+    else: 
         LIBRARY_PATH = "../vsbuild/Win32/Release/TDAmeritradeAPI.dll"
         
 parser = argparse.ArgumentParser("test tdma_api")
@@ -57,8 +60,9 @@ def test(func, *args):
                  
                                
 def init():
-    if not clib.init(LIBRARY_PATH):        
-        raise clib.LibraryNotLoaded()   
+    if not clib._lib:
+        if not clib.init(LIBRARY_PATH):        
+            raise clib.LibraryNotLoaded()   
       
       
 def test_throttling(): 
@@ -456,27 +460,31 @@ def test_instrument_info_getters(creds):
     print(str(j))    
       
         
-if __name__ == '__main__':         
+if __name__ == '__main__':
+    print("\n*** TDAmeritradeAPI test.py ***")
+    print("+", strftime("%m/%d/%Y %H:%M:%S"))
+    print("+", SYSTEM)
+    print("+", ARCH)
     test(init)
     test(test_throttling)
-    print_title("load credentials")
+    print_title("load credentials") 
     with auth.CredentialsManager(args.credentials_path, \
                                   args.credentials_password, True) as cm:    
-#         test(test_quote_getters, cm.credentials)
-#         test(test_quotes_getters, cm.credentials) 
-#         test(test_market_hours_getters, cm.credentials)
-#         test(test_movers_getters, cm.credentials)
-#         test(test_historical_period_getters, cm.credentials)
-#         test(test_historical_range_getters, cm.credentials)
+        test(test_quote_getters, cm.credentials)
+        test(test_quotes_getters, cm.credentials) 
+        test(test_market_hours_getters, cm.credentials)
+        test(test_movers_getters, cm.credentials)
+        test(test_historical_period_getters, cm.credentials)
+        test(test_historical_range_getters, cm.credentials)
         test(test_option_chain_getters, cm.credentials)
         test(test_option_chain_strategy_getters, cm.credentials)
         test(test_option_chain_analytical_getters, cm.credentials)
-#         test(test_account_info_getters, cm.credentials, args.account_id)
-#         test(test_preferences_getter, cm.credentials, args.account_id)
-#         test(test_subscription_keys_getter, cm.credentials, args.account_id)                         
-#         test(test_transaction_history_getters, cm.credentials, args.account_id)
-#         test(test_individual_transaction_history_getters, cm.credentials, 
-#              args.account_id)
-#         test(test_user_principals_getters, cm.credentials)
-#         test(test_instrument_info_getters, cm.credentials)
+        test(test_account_info_getters, cm.credentials, args.account_id)
+        test(test_preferences_getter, cm.credentials, args.account_id)
+        test(test_subscription_keys_getter, cm.credentials, args.account_id)                         
+        test(test_transaction_history_getters, cm.credentials, args.account_id)
+        test(test_individual_transaction_history_getters, cm.credentials, 
+             args.account_id)
+        test(test_user_principals_getters, cm.credentials)
+        test(test_instrument_info_getters, cm.credentials)
         
