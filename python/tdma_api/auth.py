@@ -49,7 +49,7 @@ def request_access_token(code, client_id, redirect_uri="https://127.0.0.1"):
     return creds
 
 
-def refresh_access_toke(creds):
+def refresh_access_token(creds):
     clib.call('RefreshAccessToken_ABI', _REF(creds))
 
 
