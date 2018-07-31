@@ -14,7 +14,10 @@ access, data handling, and order execution.
 customize for their particular needs. The user retrieves an access code(see below), 
 and then uses the library to request an access token, which is refreshed automatically.
 
-- It does not parse returned data, returning [json](https://github.com/nlohmann/json) objects (C++) for the user to handle as they see fit. It returns nn-parsed json strings for the C interface and python builtin objects via json.loads().
+- It does not completely parse returned data, allowing users to handle it as they see fit. 
+    - C++ interface returns [json](https://github.com/nlohmann/json) objects
+    - C interface populates char buffers w/ un-parsed json strings
+    - Python interface returns builtin objects(list, dict etc.) via json.loads().
 
 - This is a new library, built by a single developer, for an API that is still in flux. As such you should expect plenty of bumps along the way, with changes to both the interface and the implementation.       
 
@@ -28,13 +31,14 @@ and then uses the library to request an access token, which is refreshed automat
 ### Index
 - - -
 - [Dependencies](#dependencies)
-- [Binary Compatibility](#binary-compatibility)
-- [Language Bindings](#language-bindings)
+- [Status](#status)
+- [Structure](#structure)
 - [Getting Started](#getting-started)
     - [Unix-Like Systems](#unix-like)
     - [Windows](#windows)
     - [Managing the Libraries](#managing-the-libraries)
     - [Using the TDAmeritradeAPI Library ](#using-the-tdameritradeapi-library)
+    - [Python3](#python3)
 - [Namespaces](#namespaces)
 - [Errors & Exceptions](#errors--exceptions)
 - [Authentication](#authentication)
@@ -62,10 +66,10 @@ This project would not be possible without some of the great open-source project
 ### Status
 - - -
 | | Get Interface  |  Streaming Interface  |  Execute Interface 
----------------------|---------------|---------------------|--------------------
-**C**                    | Working       | Coming Soon         | Coming Soon
-**C++**                | Working (incomplete ABI) | Working (no ABI) | Coming Soon
-**Python**               | Working       | Coming Soon | Coming Soon
+-------------------|---------------|---------------------|--------------------
+**C**              | *Working*     | *Coming Soon*       | *Coming Soon*
+**C++**            | *Working (incomplete ABI)* | *Working (no ABI)* | *Coming Soon*
+**Python**         | *Working*     | *Coming Soon*       | *Coming Soon*
 
 
 ### Structure
@@ -83,28 +87,46 @@ This project would not be possible without some of the great open-source project
     |       (non binary compatible) C++ interface to TDAmeritradeAPI      |
     |---------------------------------------------------------------------|
 
+**IMPORTANT** - *There are certain binary compatibility issues when exporting C++ code accross compilations(from name mangling, differing runtimes, changes to STL implementations etc.). If, for instance, we return an std::vector in an earlier version of a library, its implementation changes, and code that imports the library is compiled against a new version of the STL, there can be an issue.*
 
+*The C++ Get interface still throws exceptions across the library boundary which can create issues.*
 
-### Binary Compatibility
-- - -
-***IMPORTANT*** - There are certain binary compatibility issues when exporting C++ code accross compilations(from name mangling, differing runtimes, changes to STL implementations etc.). If, for instance, we return an std::vector in an earlier version of a library, its implementation changes, and code that imports the library is compiled against a new version of the STL, there can be an issue.
+*The C++ Streaming interface currently has no stable ABI layer.*
 
-***UPDATE*** - The 'Get' interface has been refactored to 1) add a C interface and 2) allow the C++ interface to go through a stable ABI layer in an attempt to provide seamless access across compilations. ***The C++ interface still throws exceptions across the library boundary which can create issues.***
-
-The C++ Streaming interface currently has no stable ABI layer.
-
-***Until we implement a better way to deal w/ this either 1) compile your code and the library using the same compiler/settings and link to the same libraries to avoid ABI incompatibility or 2) use the C interface and corresponding error codes.***
+***Until we implement a better way to deal w/ this either 1) compile your code and the library using the same compiler/settings and link to the same libraries to avoid ABI incompatibility or 2) use the C or Python bindings and corresponding error codes.***
 
 
 ### Getting Started
 - - -
-***The Getter interface has been expanded to export C calls and the Streaming interface should follow shortly. The current instructions are for C++ but should only require minor changes for C.***
 
 The current build setup is a bit messy. Hopefully things will get a little simpler in the future.
 You can currently build on Unix-like systems and Windows. For Mac OS/X you'll have to download/install the necessary libraries and adjust the makefiles. (If you build sucessfully on Mac feel free to share and we can 
 include it in the docs.)
 
+- The library is implemented in C++ and needs to be built accordingly. It exports a C/ABI layer which is wrapped by header defined C calls, allowing for access from pure C and Python via ctypes.py.
+```
+            FunctionImpl(string)        [C++ implementation code defined in lib]
+      |===> Funtion_ABI(const char*)    [C ABI code defined in lib and exported]
+------|-----------------------------------------------------------------------
+------|-------------------------[lib boundary]--------------------------------
+------|-----------------------------------------------------------------------
+      |     ----------------------[headers]-----------------------------------
+      |     #ifdef __cplusplus
+      |     Function(string)                 [C++ wrapper defined in header]
+      |     #else
+      |     Function(const char *)           [C wrapper defined in header]
+      |     #endif
+      |     ----------------------[headers]-----------------------------------
+      |     Function("foo")                  [Client C/C++]
+      |     ------------------------------------------------------------------
+      |   
+      |<===  ctypes.CDLL.Function_ABI("foo")  [ctypes.py access to library] 
+           
+```
+
 - Compilers need to support C++11.
+
+- As mentioned above the C++ interfaces still have binary compatibility issues so you'll need to compile/link your C++ code the same way you compile/link this library.
 
 - If you have a build issue file an issue or send an email.
 
@@ -193,6 +215,20 @@ else except deal with TDAmeritradeAPI. If not you'll to have deal with ALL the l
 4. link your code with libTDAmeritradeAPI *(be sure the linker can find it)*
 5. run 
 
+#### Python3
+
+1. Be sure to have built/installed the shared library(above)
+2. Be sure the library build(32 vs 64 bit) matches the python build
+3. ```user@host:~/dev/TDAmeritradeAPI/python$ python setup.py install```
+4. ```>>> import tdma_api```
+    - the python package will try to load the library automatically
+    - if it can't it will output an error message on package import 
+        - the most common issue is the library not being installed in the default library search path
+        - to load it manually: ```>>> tdma_api.clib.init("path/to/lib")```
+    - if you get an error message concerning the dependencies you'll need to
+      move them to a location the dynamic linker can find.
+5. Currently only the 'Get' interface is implemented; it matches the C++ interface almost exactly so use [those docs](README_GET.md) for now. 
+6. The authorization methods/objects are in ```tdma_api.auth``` and the getter objects are in ```tdma_api.get```.
 
 ### Namespaces
 - - -
@@ -223,7 +259,7 @@ for the derived classes)
 
 - There are no guarantees of exception safety.    
 
-- **Currently C++ exceptions are passed across the library boundary and may break the ABI**
+- ***Currently C++ exceptions are passed across the library boundary and may break the ABI***
 
 - The C interface has corresponding error codes:
     ```
@@ -240,7 +276,7 @@ for the derived classes)
 
     #define TDMA_API_STREAM_ERROR 201
     ```
-         
+- The Python interface throws ```tdma_api.clib.LibraryNotLoaded``` and ```tdma_api.clib.CLibException``` w/ the error code, name, and message returned from the library.         
 
 ### Authentication
 - - -
@@ -283,7 +319,22 @@ to setup a developer account.
         char *client_id;
     };
 
+    [Python]
+    <tdma_api.auth>
+    def request_access_token(code, client, redirect_uri="https://127.0.0.1"):
+        ...
+        returns -> Credentials class
+        throws CLibException on error
 
+    [Python]
+    <tdma_api.auth>
+    class Credentials(_Structure):
+        _fields = [
+            ("access_token", c_char_p),
+            ("refresh_token", c_char_p),
+            ("epoch_sec_token_expiration", c_longlong),
+            ("client_id", c_char_p)
+        ]
 
 ```
 
@@ -308,6 +359,13 @@ securely store your credentials:
         ...
         pcreds :: a pointer to the Credentials struct to store
         returns -> 0 on success, error code on failure
+
+    [Python]
+    <tdma_api.auth>
+    def store_credentials(path, password, creds):
+        ...
+        creds :: the Credentials class return from 'request_access_token'
+        throws CLibException on error
 ```        
     
 In the future construct a new Credentials struct from the saved credentials file:
@@ -328,6 +386,13 @@ In the future construct a new Credentials struct from the saved credentials file
         ...
         pcreds :: a pointer to the Credentials struct to load into
         returns -> 0 on success, error code on failure
+
+    [Python]
+    <tdma_api.auth>
+    def load_credentials(path, password):
+        ...
+        returns -> Credentials class
+        throws CLibException on error
 ```        
     
 ***The format of the encrypted credentials file was changed in commit e529c2***
@@ -348,6 +413,18 @@ to automatically load and store on construction and destruction.
         virtual ~CredentialsManager()
         { StoreCredentials(path, password, credentials);}
     };
+
+
+    [Python]
+    <tdma_api.auth>
+    #Context Manager
+    class CredentialsManager:
+        def __init__(self, path, password, verbose=False):
+            ...
+        def __enter__(self):
+            ...
+        def __exit__(self, _1, _2, _3);
+            ...
 ```   
   
 You can, for instance, create a static or global ```CredentialsManager``` instance that will exist over the 

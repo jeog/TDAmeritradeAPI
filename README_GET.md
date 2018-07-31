@@ -5,9 +5,11 @@
     - [Certificates](#certificates)
     - [Using Getter Objects C++](#using-getter-objects-c)
     - [Using Getter Objects C](#using-getter-objects-c-1)
+    - [Using Getter Objects Python](#using-getter-objects-python)
 - [Throttling](#throttling)
 - [Example Usage C++](#example-usage-c)
 - [Example Usage C](#example-usage-c-1)
+- [Example Usage Python](#example-usage-python)
 - [Getter Classes](#getter-classes)
     - [QuoteGetter](#quotegetter)  
     - [QuotesGetter](#quotesgetter)  
@@ -45,6 +47,8 @@ The C++ 'Getter' objects are simple 'proxies', all defined inline, that call thr
 
 The C interface uses something of an object-oriented approach as well, returning a struct for each getter object that contains a generic pointer to the underlying C++ object. Pointers to these structs can then be passed to the appropriate functions to replicate the behavior of the C++ methods. (see below)
 
+The Python interface mirrors C++ almost exactly. (see below)
+
 ##### Certificates
 
 Certificates are required to validate the hosts. If libcurl is built against the native ssl lib(e.g openssl on linux) or you use the pre-built dependencies for Windows(we built libcurl with -ENABLE_WINSSL) the default certificate store ***should*** take care of this for you. If this doesn't happen an ```APIExecutionException```  will be thrown with code CURLE_SSL_CACERT(60) and you'll have to use your own certificates via:
@@ -60,6 +64,11 @@ inline int
 SetCertificateBundlePath(const char* path)
 
     returns -> 0 on success, error code on failure
+
+[Python]
+<tdma_api.auth>
+def set_certificate_bundle_path(path):
+    ...
 ```
 
 There is a default 'cacert.pem' file in the base directory extracted from Firefox that you can use. 
@@ -175,6 +184,34 @@ inline int
 QuoteGetter_IsClosed(QuoteGetter_C *getter)
 ```
 
+#### Using Getter Objects [Python]
+
+1. construct a Getter object passing a reference to the Credentials class and the 
+relevant arguments.
+2. use the ```.get()``` method which returns a parsed json object (via json.loads) from the server OR throws LibraryNotLoaded or CLibException.
+
+```.get()``` can be called more than once for new data until its ```.close()``` method or destructor is called.
+
+Each object has accessor methods for querying the fields passed to the constructor and updating 
+those to be used in subsequent ```.get()``` call. 
+
+To make this more concrete here is the Getter interface for individual price quotes:
+
+```
+class QuoteGetter(_APIGetter):        
+    def __init__(self, creds, symbol)    
+    
+    def get_symbol(self)
+        
+    def set_symbol(self, symbol)
+
+    def get(self) /* INHERITED */
+    
+    def close(self) /* INHERITED */
+
+    def is_closed(self) /* INHERITED */
+```
+
 #### Throttling
 
 The API docs indicate a limit of two requests per second so we implement a throttling/blocking 
@@ -189,6 +226,10 @@ wait and make five ```.get()``` calls in immediate succession the group of calls
     [C]
     inline int
     APIGetter_GetWaitMSec(unsigned long long *msec)
+
+    [Python]
+    <tdma_api.get>
+    def get_wait_msec()
 ```
 ```    
     [C++]
@@ -198,6 +239,10 @@ wait and make five ```.get()``` calls in immediate succession the group of calls
     [C]
     inline int
     APIGetter_SetWaitMSec(unsigned long long msec)
+
+    [Python] 
+    <tdma_api.get>
+    def set_wait_msec(msec)    
 ```
 
 This interface should not be used for streaming data, i.e. repeatedly making getter calls -  
@@ -316,10 +361,41 @@ use [StreamingSession](README_STREAMING.md) for that.
     
 ```
 
+#### Example Usage [Python]
+```
+    from tdma_api import get, clib, auth
+    
+    ...    
+
+    if not clib._lib:
+        clib.init("path/to/lib/libTDAmeritrade.so")
+
+    with auth.CredentialManager("path/to/creds/file", "password") as cm:
+        try:
+            g = get.QuoteGetter(cm.credentials, "SPY")
+            assert q.credentials
+
+            j = g.get()
+            s = g.get_symbol()
+            assert s == "SPY"
+            print(s, j[s])
+
+            g.set_symbol("QQQ")
+            s = g.get_symbol()
+            assert s == "QQQ"
+            print(s, j[s])
+        except clib.CLibException as e:
+            print( str(e) )
+            raise
+    
+    ...
+    
+```
+
 ### Getter Classes
 - - -
 
-*Only the C++ Getters are shown. The C interface matches these methods almost exactly except for the need to explicity use the appropriately named ```Create``` functions for construction and ```Destroy``` functions for destruction. See tdma_api_get.h for function prototypes.*
+*Only the C++ Getters are shown. The Python and C interfaces match these closely.  The C interface uses appropriately named functions to mimic the methods of the C++ classes and requires explicit use of the ```Create``` functions for construction and ```Destroy``` functions for destruction. See tdma_api_get.h for function prototypes.*
 
 #### QuoteGetter
 
