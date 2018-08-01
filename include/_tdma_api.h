@@ -223,7 +223,6 @@ getter_is_creatable( Credentials *pcreds,
             "null getter pointer", allow_exceptions
             );
 
-
     if( !pcreds ){
         pgetter->obj = nullptr;
         pgetter->type_id = -1;

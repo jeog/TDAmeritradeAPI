@@ -604,7 +604,7 @@ StoreCredentialsImpl( const string& path,
          * If initial store attempt fails from a write error just try to
          * overwrite w/ backup. Allow LocalCredentialExceptions to
          * propogate from store_credentials() or copy_credentials_file()
-         * since there's the store op is beyond saving at that point.
+         * since the store op is beyond saving at that point.
          */
         if( !copy_credentials_file(path + ".backup", path) )
             throw LocalCredentialException("failed to store credentials");

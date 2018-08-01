@@ -17,7 +17,7 @@
 
 from platform import system, architecture
 from traceback import print_exc
-from time import strftime
+from time import strftime, perf_counter
 import argparse
 
 from tdma_api import get, auth, clib
@@ -65,13 +65,27 @@ def init():
             raise clib.LibraryNotLoaded()   
       
       
-def test_throttling(): 
+def test_throttling(creds): 
     dw = get.get_def_wait_msec()  
     ww = get.get_wait_msec()
     assert dw == ww
-    get.set_wait_msec(2000)
-    assert get.get_wait_msec() == 2000
+    W = 2000
+    get.set_wait_msec(W)
+    assert get.get_wait_msec() == W
     print('+', get.get_def_wait_msec(), '->', get.get_wait_msec())
+    
+    print("+ throttling test - BEGIN")
+    g = get.QuoteGetter(creds, "SPY")
+    ntests = 3
+    start = perf_counter()
+    for _ in range(ntests):
+        g.get()  
+        print(" ...") 
+    end = perf_counter()
+    t = end - start
+    tmsec = int(t*1000)
+    print("+ throttling test - END - %i calls, %i msec" % (ntests,tmsec))
+    assert tmsec >= (W*ntests)
                     
             
 def test_quote_getters(creds):
@@ -466,12 +480,12 @@ if __name__ == '__main__':
     print("+", SYSTEM)
     print("+", ARCH)
     test(init)
-    test(test_throttling)
     print_title("load credentials") 
     with auth.CredentialsManager(args.credentials_path, \
                                   args.credentials_password, True) as cm:    
         test(test_quote_getters, cm.credentials)
-        test(test_quotes_getters, cm.credentials) 
+        test(test_throttling, cm.credentials)
+        test(test_quotes_getters, cm.credentials)
         test(test_market_hours_getters, cm.credentials)
         test(test_movers_getters, cm.credentials)
         test(test_historical_period_getters, cm.credentials)
@@ -481,7 +495,7 @@ if __name__ == '__main__':
         test(test_option_chain_analytical_getters, cm.credentials)
         test(test_account_info_getters, cm.credentials, args.account_id)
         test(test_preferences_getter, cm.credentials, args.account_id)
-        test(test_subscription_keys_getter, cm.credentials, args.account_id)                         
+        test(test_subscription_keys_getter, cm.credentials, args.account_id)                       
         test(test_transaction_history_getters, cm.credentials, args.account_id)
         test(test_individual_transaction_history_getters, cm.credentials, 
              args.account_id)

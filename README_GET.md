@@ -381,6 +381,7 @@ use [StreamingSession](README_STREAMING.md) for that.
             print(s, j[s])
 
             g.set_symbol("QQQ")
+            j = g.get()
             s = g.get_symbol()
             assert s == "QQQ"
             print(s, j[s])
