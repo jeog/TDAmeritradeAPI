@@ -96,6 +96,9 @@
     <ClInclude Include="..\..\include\_common.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\include\_streaming.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\src\streaming\streaming_info.cpp">

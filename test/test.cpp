@@ -270,7 +270,7 @@ streaming(string id, Credentials& c)
     using namespace chrono;
     json j;
 
-    auto callback = [&]( int cb_type, int ss_type,
+    auto callback = []( int cb_type, int ss_type,
                          unsigned long long timestamp, const char* msg )
         {
             cout<< to_string(static_cast<StreamingCallbackType>(cb_type)) << endl
@@ -401,7 +401,9 @@ streaming(string id, Credentials& c)
     {
         auto ss = StreamingSession::Create(c, id, callback,
                                            milliseconds(3000),
-                                           milliseconds(15000));
+                                           milliseconds(15000),
+                                           StreamingSession::DEF_SUBSCRIBE_TIMEOUT,
+                                           true );
         bool res;
         deque<bool> results;
 

@@ -260,7 +260,7 @@ class QuotesGetter(_APIGetter):
          ALL METHODS THROW -> LibraryNotLoaded, CLibException
     """
     def __init__(self, creds, *symbols): 
-        super().__init__(creds, clib.PCHAR_BUFFER(symbols))
+        super().__init__(creds, clib.PCHAR_BUFFER(symbols), len(symbols))
  
     def get_symbols(self):   
         """Returns list of symbols being used."""   

@@ -177,6 +177,7 @@
     <ClInclude Include="..\..\include\util.h" />
     <ClInclude Include="..\..\include\websocket_connect.h" />
     <ClInclude Include="..\..\include\_common.h" />
+    <ClInclude Include="..\..\include\_streaming.h" />
     <ClInclude Include="..\..\include\_tdma_api.h" />
     <ClInclude Include="..\..\uWebSockets\Asio.h" />
     <ClInclude Include="..\..\uWebSockets\Backend.h" />

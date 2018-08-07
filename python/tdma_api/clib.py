@@ -44,9 +44,8 @@ class LibraryNotLoaded(Exception):
     pass
 
 def PCHAR_BUFFER(strs):
-    s = [c_char_p(s.encode()) for s in strs]
-    s.append( c_char_p() )
-    return (c_char_p * (len(s)+1))(*s) 
+    s = [c_char_p(s.encode()) for s in strs]   
+    return (c_char_p * len(s))(*s) 
 
 PCHAR = lambda s: c_char_p(s.encode())
 
@@ -106,16 +105,16 @@ def get_strs(fname, obj=None):
         call(fname, REF(obj), REF(p), REF(n))
     else:
         call(fname, REF(p), REF(n))
-    symbols = [p[i].decode() for i in range(n.value-1)]  
+    symbols = [p[i].decode() for i in range(n.value)]  
     free_buffers(p, n)   
     return symbols 
 
 
 def set_strs(fname, strs, obj=None):
     if obj:
-        call(fname, REF(obj), PCHAR_BUFFER(strs))
+        call(fname, REF(obj), PCHAR_BUFFER(strs), len(strs))
     else:
-        call(fname, PCHAR_BUFFER(strs))
+        call(fname, PCHAR_BUFFER(strs), len(strs))
     
     
 def get_val(fname, ty, obj=None):

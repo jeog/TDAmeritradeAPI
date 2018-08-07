@@ -1634,7 +1634,7 @@ StreamingSession_GetQOS( StreamingSession_C *psession, QOSType *qos)
 
 namespace tdma{
 
-class StreamingSession{
+class DLL_SPEC_ StreamingSession{
 public:
     static const std::string VERSION; // = "1.0"
     static const std::chrono::milliseconds MIN_TIMEOUT; // 1000;
@@ -1694,7 +1694,7 @@ public:
              std::chrono::milliseconds connect_timeout=DEF_CONNECT_TIMEOUT,
              std::chrono::milliseconds listening_timeout=DEF_LISTENING_TIMEOUT,
              std::chrono::milliseconds subscribe_timeout=DEF_SUBSCRIBE_TIMEOUT,
-             bool request_response_to_cout = true )
+             bool request_response_to_cout = false )
     {
         auto ss = new StreamingSession;
         try{
