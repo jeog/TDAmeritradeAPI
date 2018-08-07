@@ -22,7 +22,6 @@ along with this program.  If not, see http://www.gnu.org/licenses.
 #include "tdma_common.h"
 
 #ifdef __cplusplus
-
 #include <set>
 #include <unordered_map>
 #include <iostream>
@@ -30,73 +29,7 @@ along with this program.  If not, see http://www.gnu.org/licenses.
 #include "json.hpp"
 
 using json = nlohmann::json;
-
-/*
- * if C++ DECL_C_CPP_TDMA_ENUM expands to:
- *
- * namespace tdma{
- * enum class type: int {
- *    name,
- *    name,
- *    ...
- *    name
- * };
- * }
- *
- * and defines an inline [TypeName]_is_valid for checks in the ABI
- * and declares a stable-ABI to_string: 'type_to_string_ABI(type t)'
- * and declares/defines a '<<' overload
- * and declares/defines an overloaded 'to_string()'
- *
- * if C it expands to:
- *
- *   enum type {
- *      type_name,
- *      type_name,
- *      ...
- *      type_name
- *   }
- *
- * and declares a stable-ABI to_string: 'type_to_string_ABI(type t)'
- */
-#define DECL_C_CPP_TDMA_ENUM(type, l, h, ...) \
-EXTERN_C_SPEC_ DLL_SPEC_ int \
-type##_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions); \
-\
-inline bool \
-type##_is_valid(int v) \
-{ return (v >= l && v <= h); } \
-\
-namespace tdma{ \
-enum class type : int { __VA_ARGS__ }; \
-\
-inline std::string \
-to_string(const type& v) \
-{ \
-    char* buf; \
-    size_t n; \
-    type##_##to_string_ABI(static_cast<int>(v), &buf, &n, 1); \
-    std::string s(buf); \
-    if( buf ) free(buf); \
-    return s; \
-} \
-\
-inline std::ostream& \
-operator<<(std::ostream& out, const type& v) \
-{ out << to_string(v); return out; } \
-} /* tdma */
-
-#define BUILD_C_CPP_TDMA_ENUM_NAME(type,name) name
-
-#else
-#define DECL_C_CPP_TDMA_ENUM(type, l, h, ...) \
-typedef enum { __VA_ARGS__ } type; \
-EXTERN_C_SPEC_ DLL_SPEC_ int \
-type##_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions);
-
-#define BUILD_C_CPP_TDMA_ENUM_NAME(type,name) type##_##name
 #endif /* __cplusplus */
-
 
 DECL_C_CPP_TDMA_ENUM(PeriodType, 0, 3,
     BUILD_C_CPP_TDMA_ENUM_NAME(PeriodType, day),
@@ -219,9 +152,6 @@ DECL_C_CPP_TDMA_ENUM(OptionStrikesType, 0, 2,
     BUILD_C_CPP_TDMA_ENUM_NAME(OptionStrikesType, range),
     BUILD_C_CPP_TDMA_ENUM_NAME(OptionStrikesType, none) // dont use
 );
-
-#undef BUILD_C_CPP_TDMA_ENUM_NAME
-#undef DECL_C_CPP_TDMA_ENUM
 
 typedef union {
     unsigned int n_atm;
@@ -408,6 +338,7 @@ QuoteGetter_SetSymbol_ABI( QuoteGetter_C *pgetter,
 EXTERN_C_SPEC_ DLL_SPEC_ int
 QuotesGetter_Create_ABI( struct Credentials *pcreds,
                             const char** symbols,
+                            size_t nsymbols,
                             QuotesGetter_C *pgetter,
                             int allow_exceptions );
 
@@ -422,8 +353,9 @@ QuotesGetter_GetSymbols_ABI( QuotesGetter_C *pgetter,
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 QuotesGetter_SetSymbols_ABI( QuotesGetter_C *pgetter,
-                               const char** symbols,
-                               int allow_exceptions );
+                                 const char** symbols,
+                                 size_t nymbols,
+                                 int allow_exceptions );
 
 
 /* MarketHoursGetter */
@@ -1193,8 +1125,9 @@ QuoteGetter_SetSymbol(QuoteGetter_C *getter, const char *symbol)
 inline int
 QuotesGetter_Create( struct Credentials *pcreds,
                       const char** symbols,
+                      size_t nsymbols,
                       QuotesGetter_C *pgetter )
-{ return QuotesGetter_Create_ABI(pcreds, symbols, pgetter, 0); }
+{ return QuotesGetter_Create_ABI(pcreds, symbols, nsymbols, pgetter, 0); }
 
 inline int
 QuotesGetter_Destroy(QuotesGetter_C *getter)
@@ -1207,8 +1140,9 @@ QuotesGetter_GetSymbols(QuotesGetter_C *getter, char ***buf, size_t *n)
 { return QuotesGetter_GetSymbols_ABI(getter, buf, n, 0); }
 
 inline int
-QuotesGetter_SetSymbols(QuotesGetter_C *getter, const char **symbols)
-{ return QuotesGetter_SetSymbols_ABI(getter, symbols, 0); }
+QuotesGetter_SetSymbols(QuotesGetter_C *getter, const char **symbols,
+                        size_t nsymbols)
+{ return QuotesGetter_SetSymbols_ABI(getter, symbols, nsymbols, 0); }
 
 
 /* MarketHoursGetter */
@@ -2065,15 +1999,6 @@ InstrumentInfoGetter_SetQuery( InstrumentInfoGetter_C *pgetter,
 
 namespace tdma{
 
-// TODO move to utils
-inline const char*
-CPP_to_C(const std::string& in)
-{ return in.c_str(); }
-
-inline Credentials*
-CPP_to_C(Credentials& in)
-{ return &in; }
-
 /*
 template<typename T>
 struct func_traits;
@@ -2088,13 +2013,20 @@ struct func_traits<std::function<R(Args...)>>{
 */
 
 class APIGetter{
-    std::unique_ptr<Getter_C> _cgetter;
+public:
+    typedef Getter_C CType;
+
+    static const int TYPE_ID_LOW = 1;
+    static const int TYPE_ID_HIGH = 16;
+
+private:
+    std::unique_ptr<CType> _cgetter;
 
 protected:
-    template<typename CTy=Getter_C>
+    template<typename CTy=CType>
     CTy*
     cgetter() const
-    { return reinterpret_cast<CTy*>( const_cast<Getter_C*>(_cgetter.get()) ); }
+    { return reinterpret_cast<CTy*>( const_cast<CType*>(_cgetter.get()) ); }
 
     template<typename CTy>
     void
@@ -2121,15 +2053,28 @@ protected:
 
     // TODO deduce CTy from F
     template<typename CTy, typename F, typename... Args>
-    APIGetter(CTy _, F func, Args... args)
+    APIGetter(
+            CTy _,
+            F create_func,
+            typename std::enable_if<IsValidCProxy<CTy, CType>::value>::type *v,
+            Args... args
+            )
         :
-            _cgetter(new Getter_C)
+            _cgetter(new CType{0,0})
         {
-            static_assert( std::is_class<CTy>::value, "not class/struct" );
-            static_assert( std::is_trivial<CTy>::value, "not trivial" );
-            static_assert( std::is_standard_layout<CTy>::value, "invalid layout");
-            static_assert( sizeof(CTy) == sizeof(Getter_C), "invalid size" );
-            func(args..., cgetter<CTy>(), 1);
+            /* IF WE THROW BEFORE HERE WE MAY LEAK IN DERIVED */
+            if( create_func )
+                create_func(args..., cgetter<CTy>(), 1);
+        }
+
+    template<typename CTy>
+    APIGetter(
+            CTy _,
+            typename std::enable_if<IsValidCProxy<CTy, CType>::value>::type *v
+                 = nullptr )
+        :
+            _cgetter(new CType{0,0})
+        {
         }
 
     APIGetter( APIGetter&& getter ) = default;
@@ -2137,6 +2082,7 @@ protected:
     APIGetter&
     operator=( APIGetter&& getter ) = default;
 
+    // NEED TO BE SURE destroy is called in derived so _cgetter still exists
     virtual
     ~APIGetter(){}
 
@@ -2203,6 +2149,7 @@ public:
         :
             APIGetter( QuoteGetter_C{},
                        QuoteGetter_Create_ABI,
+                       nullptr,
                        CPP_to_C(creds),
                        CPP_to_C(symbol) )
         {
@@ -2234,19 +2181,17 @@ GetQuote(Credentials& creds, const std::string& symbol)
 
 class QuotesGetter
         : public APIGetter {
-    const char **_tmp;
 
-    const char**
-    _construct_cstr_array(const std::set<std::string>& symbols )
+    static const char**
+    set_to_cstrs(const std::set<std::string>& symbols )
     {
         if( symbols.empty() )
             throw ValueException("empty symbols set");
-        _tmp = new const char*[symbols.size()+1];
+        const char **tmp = new const char*[symbols.size()];
         int cnt = 0;
         for(auto& s: symbols)
-            _tmp[cnt++] = s.c_str();
-        _tmp[cnt] = 0;
-        return _tmp;
+            tmp[cnt++] = s.c_str();
+        return tmp;
     }
 public:
     typedef QuotesGetter_C CType;
@@ -2256,13 +2201,18 @@ public:
 
     QuotesGetter(Credentials& creds, const std::set<std::string>& symbols)
         :
-            APIGetter( QuotesGetter_C{},
-                       QuotesGetter_Create_ABI,
-                       CPP_to_C(creds),
-                       _construct_cstr_array(symbols) )
+            APIGetter( QuotesGetter_C{} )
         {
-            if( _tmp )
-                delete[] _tmp;
+            const char** s = nullptr;
+            try{
+                s = set_to_cstrs(symbols);
+                QuotesGetter_Create_ABI(CPP_to_C(creds), s, symbols.size(),
+                                        cgetter<QuotesGetter_C>(), 1);
+            }catch(...){
+                if( s ) delete[] s;
+                throw;
+            }
+            if( s ) delete[] s;
         }
 
     ~QuotesGetter()
@@ -2283,8 +2233,8 @@ public:
         std::set<std::string> strs;
         QuotesGetter_GetSymbols_ABI(cgetter<QuotesGetter_C>(), &buf, &n, 1);
         if( buf ){
-            while(--n){ // n includes null term
-                char *c = buf[n-1];
+            while(n--){
+                char *c = buf[n];
                 assert(c);
                 strs.insert(c);
                 free(c);
@@ -2297,9 +2247,15 @@ public:
     void
     set_symbols(const std::set<std::string>& symbols)
     {
-        const char** tmp = _construct_cstr_array(symbols);
-        QuotesGetter_SetSymbols_ABI(cgetter<QuotesGetter_C>(), tmp, 1);
-        delete[] tmp;
+        const char** tmp = set_to_cstrs(symbols);
+        try{
+            QuotesGetter_SetSymbols_ABI(cgetter<QuotesGetter_C>(), tmp,
+                                        symbols.size(), 1);
+        }catch(...){
+            if( tmp ) delete[] tmp;
+            throw;
+        }
+        if( tmp ) delete[] tmp;
     }
 };
 
@@ -2323,6 +2279,7 @@ public:
         :
             APIGetter( MarketHoursGetter_C{},
                        MarketHoursGetter_Create_ABI,
+                       nullptr,
                        CPP_to_C(creds),
                        static_cast<int>(market_type),
                        CPP_to_C(date) )
@@ -2393,6 +2350,7 @@ public:
         :
             APIGetter( MoversGetter_C{},
                        MoversGetter_Create_ABI,
+                       nullptr,
                        CPP_to_C(creds),
                        static_cast<int>(index),
                        static_cast<int>(direction_type),
@@ -2477,7 +2435,7 @@ protected:
                              const std::string& symbol,
                              Args... args )
         :
-            APIGetter( _, func, CPP_to_C(creds), CPP_to_C(symbol), args... )
+            APIGetter( _, func, nullptr, CPP_to_C(creds), CPP_to_C(symbol), args... )
         {
         }
 
@@ -2937,7 +2895,7 @@ protected:
                          const std::string& symbol,
                          Args... args )
         :
-            APIGetter(_, func, CPP_to_C(creds), CPP_to_C(symbol), args...)
+            APIGetter( _, func, nullptr, CPP_to_C(creds), CPP_to_C(symbol), args... )
         {
         }
 
@@ -3366,7 +3324,7 @@ protected:
                          const std::string& account_id,
                          Args... args )
         :
-            APIGetter(_, func, CPP_to_C(creds), CPP_to_C(account_id), args...)
+            APIGetter( _, func, nullptr, CPP_to_C(creds), CPP_to_C(account_id), args... )
         {
         }
 
@@ -3732,6 +3690,7 @@ public:
         :
             APIGetter( UserPrincipalsGetter_C{},
                        UserPrincipalsGetter_Create_ABI,
+                       nullptr,
                        CPP_to_C(creds),
                        static_cast<int>(streamer_subscription_keys),
                        static_cast<int>(streamer_connection_info),
@@ -3852,6 +3811,7 @@ public:
                             const std::string& query_string )
         : APIGetter( InstrumentInfoGetter_C{},
                      InstrumentInfoGetter_Create_ABI,
+                     nullptr,
                      CPP_to_C(creds),
                      static_cast<int>(search_type),
                      CPP_to_C(query_string) )

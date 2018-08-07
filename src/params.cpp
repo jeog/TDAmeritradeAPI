@@ -75,13 +75,21 @@ int
 FreeBuffers_ABI( char** bufs, size_t n, int allow_exceptions )
 {
     if( bufs ){
-        while(--n){ // n includes null term, skip it
-          char *c = bufs[n-1];
+        while(n--){
+          char *c = bufs[n];
           assert(c);
           free(c);
         }
         free(bufs);
     }
+    return 0;
+}
+
+int
+FreeFieldsBuffer_ABI( int* fields, int allow_exceptions )
+{
+    if( fields )
+        free( (void*)fields );
     return 0;
 }
 
@@ -392,153 +400,184 @@ OptionStrikesType_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptio
     }
 }
 
-
-namespace tdma{
-
-string
-to_string(const AdminCommandType& command)
+int
+AdminCommandType_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
 {
-    switch(command){
-    case AdminCommandType::LOGIN: return "LOGIN";
-    case AdminCommandType::LOGOUT: return "LOGOUT";
-    case AdminCommandType::QOS: return "QOS";
-    default: throw runtime_error("Invalid AdminCommandType");
+    switch(static_cast<tdma::AdminCommandType>(v)){
+    case tdma::AdminCommandType::LOGIN:
+        return alloc_C_str("LOGIN", buf, n, allow_exceptions);
+    case tdma::AdminCommandType::LOGOUT:
+        return alloc_C_str("LOGOUT", buf, n, allow_exceptions);
+    case tdma::AdminCommandType::QOS:
+        return alloc_C_str("QOS", buf, n, allow_exceptions);
+    default:
+        throw std::runtime_error("Invalid AdminCommandType");
     }
 }
 
-std::ostream&
-operator<<(std::ostream& out, const AdminCommandType& command)
+int
+QOSType_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
 {
-    out << to_string(command);
-    return out;
-}
-
-std::string
-to_string(const QOSType& qos)
-{
-    switch(qos){
-    case QOSType::delayed: return "delayed";
-    case QOSType::express: return "express";
-    case QOSType::fast: return "fast";
-    case QOSType::moderate: return "moderate";
-    case QOSType::real_time: return "real-time";
-    case QOSType::slow: return "slow";
-    default: throw runtime_error("Invalid QOSType");
-    }
-}
-
-std::ostream&
-operator<<(std::ostream& out, const QOSType& qos)
-{
-    out << to_string(qos);
-    return out;
-}
-
-std::string
-to_string(const ActivesSubscriptionBase::DurationType& duration)
-{
-    switch(duration){
-    case ActivesSubscriptionBase::DurationType::all_day: return "ALL";
-    case ActivesSubscriptionBase::DurationType::min_60: return "3600";
-    case ActivesSubscriptionBase::DurationType::min_30: return "1800";
-    case ActivesSubscriptionBase::DurationType::min_10: return "600";
-    case ActivesSubscriptionBase::DurationType::min_5: return "300";
-    case ActivesSubscriptionBase::DurationType::min_1: return "60";
-    default: throw runtime_error("Invalid ActivesSubscriptionBase::DurationType");
-    }
-}
-
-std::ostream&
-operator<<( std::ostream& out,
-            const ActivesSubscriptionBase::DurationType& duration )
-{
-    out << to_string(duration);
-    return out;
-}
-
-
-std::string
-to_string(const OptionActivesSubscription::VenueType& venue)
-{
-    switch(venue){
-    case OptionActivesSubscription::VenueType::opts: return "OPTS";
-    case OptionActivesSubscription::VenueType::calls: return "CALLS";
-    case OptionActivesSubscription::VenueType::puts: return "PUTS";
-    case OptionActivesSubscription::VenueType::opts_desc: return "OPTS-DESC";
-    case OptionActivesSubscription::VenueType::calls_desc: return "CALLS-DESC";
-    case OptionActivesSubscription::VenueType::puts_desc: return "PUTS-DESC";
-    default: throw runtime_error("Invalid OptionActivesSubscription:VenueType");
-    }
-}
-
-std::ostream&
-operator<<(std::ostream& out, const OptionActivesSubscription::VenueType& venue)
-{
-    out<< to_string(venue);
-    return out;
-}
-
-
-
-string
-to_string(const StreamerService& service)
-{
-    switch( static_cast<StreamerService::type>(service) ){
-    case StreamerService::type::NONE: return "NONE";
-    case StreamerService::type::ADMIN: return "ADMIN";
-    case StreamerService::type::ACTIVES_NASDAQ: return "ACTIVES_NASDAQ";
-    case StreamerService::type::ACTIVES_NYSE: return "ACTIVES_NYSE";
-    case StreamerService::type::ACTIVES_OTCBB: return "ACTIVES_OTCBB";
-    case StreamerService::type::ACTIVES_OPTIONS: return "ACTIVES_OPTIONS";
-    case StreamerService::type::CHART_EQUITY: return "CHART_EQUITY";
-    //case StreamerService::type::CHART_FOREX: return "CHART_FOREX";
-    case StreamerService::type::CHART_FUTURES: return "CHART_FUTURES";
-    case StreamerService::type::CHART_OPTIONS: return "CHART_OPTIONS";
-    case StreamerService::type::QUOTE: return "QUOTE";
-    case StreamerService::type::LEVELONE_FUTURES: return "LEVELONE_FUTURES";
-    case StreamerService::type::LEVELONE_FOREX: return "LEVELONE_FOREX";
-    case StreamerService::type::LEVELONE_FUTURES_OPTIONS:
-        return "LEVELONE_FUTURES_OPTIONS";
-    case StreamerService::type::OPTION: return "OPTION";
-    case StreamerService::type::NEWS_HEADLINE: return "NEWS_HEADLINE";
-    case StreamerService::type::TIMESALE_EQUITY: return "TIMESALE_EQUITY";
-    case StreamerService::type::TIMESALE_FUTURES: return "TIMESALE_FUTURES";
-    //case StreamerService::type::TIMESALE_FOREX: return "TIMESALE_FOREX";
-    case StreamerService::type::TIMESALE_OPTIONS: return "TIMESALE_OPTIONS";
-    default: throw runtime_error("Invalid StreamerService::type");
-    }
-}
-
-std::ostream&
-operator<<(std::ostream& out, const StreamerService& service)
-{
-    out << to_string(service);
-    return out;
-}
-
-
-string
-to_string(const StreamingCallbackType& callback_type)
-{
-    switch(callback_type){
-    case StreamingCallbackType::listening_start: return "listening_start";
-    case StreamingCallbackType::listening_stop: return "listening_stop";
-    case StreamingCallbackType::data: return "data";
-    case StreamingCallbackType::notify: return "notify";
-    case StreamingCallbackType::timeout: return "timeout";
-    case StreamingCallbackType::error: return "error";
-    default: throw runtime_error("Invalid StreamingCallbackType");
+    switch(static_cast<tdma::QOSType>(v)){
+    case tdma::QOSType::delayed:
+        return alloc_C_str("delayed", buf, n, allow_exceptions);
+    case tdma::QOSType::express:
+        return alloc_C_str("express", buf, n, allow_exceptions);
+    case tdma::QOSType::fast:
+        return alloc_C_str("fast", buf, n, allow_exceptions);
+    case tdma::QOSType::moderate:
+        return alloc_C_str("moderate", buf, n, allow_exceptions);
+    case tdma::QOSType::real_time:
+        return alloc_C_str("real-time", buf, n, allow_exceptions);
+    case tdma::QOSType::slow:
+        return alloc_C_str("slow", buf, n, allow_exceptions);
+    default:
+        throw std::runtime_error("Invalid QOSType");
     }
 }
 
 
-ostream&
-operator<<(std::ostream& out, const StreamingCallbackType& callback_type)
+
+int
+DurationType_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
 {
-    out << to_string(callback_type);
-    return out;
+    switch(static_cast<tdma::DurationType>(v)){
+    case tdma::DurationType::all_day:
+        return alloc_C_str("ALL", buf, n, allow_exceptions);
+    case tdma::DurationType::min_60:
+        return alloc_C_str("3600", buf, n, allow_exceptions);
+    case tdma::DurationType::min_30:
+        return alloc_C_str("1800", buf, n, allow_exceptions);
+    case tdma::DurationType::min_10:
+        return alloc_C_str("600", buf, n, allow_exceptions);
+    case tdma::DurationType::min_5:
+        return alloc_C_str("300", buf, n, allow_exceptions);
+    case tdma::DurationType::min_1:
+        return alloc_C_str("60", buf, n, allow_exceptions);
+    default:
+        throw std::runtime_error("Invalid DurationType");
+    }
 }
 
 
+int
+VenueType_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
+{
+    switch(static_cast<tdma::VenueType>(v)){
+    case tdma::VenueType::opts:
+        return alloc_C_str("OPTS", buf, n, allow_exceptions);
+    case tdma::VenueType::calls:
+        return alloc_C_str("CALLS", buf, n, allow_exceptions);
+    case tdma::VenueType::puts:
+        return alloc_C_str("PUTS", buf, n, allow_exceptions);
+    case tdma::VenueType::opts_desc:
+        return alloc_C_str("OPTS-DESC", buf, n, allow_exceptions);
+    case tdma::VenueType::calls_desc:
+        return alloc_C_str("CALLS-DESC", buf, n, allow_exceptions);
+    case tdma::VenueType::puts_desc:
+        return alloc_C_str("PUTS-DESC", buf, n, allow_exceptions);
+    default: throw std::runtime_error("Invalid VenueType");
+    }
+}
 
-} /* tdma */
+
+int
+StreamingCallbackType_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
+{
+    switch(static_cast<tdma::StreamingCallbackType>(v)){
+    case tdma::StreamingCallbackType::listening_start:
+        return alloc_C_str("listening_start", buf, n, allow_exceptions);
+    case tdma::StreamingCallbackType::listening_stop:
+        return alloc_C_str("listening_stop", buf, n, allow_exceptions);
+    case tdma::StreamingCallbackType::data:
+        return alloc_C_str("data", buf, n, allow_exceptions);
+    case tdma::StreamingCallbackType::notify:
+        return alloc_C_str("notify", buf, n, allow_exceptions);
+    case tdma::StreamingCallbackType::timeout:
+        return alloc_C_str("timeout", buf, n, allow_exceptions);
+    case tdma::StreamingCallbackType::error:
+        return alloc_C_str("error", buf, n, allow_exceptions);
+    default:
+        throw std::runtime_error("Invalid StreamingCallbackType");
+    }
+}
+
+int
+StreamerServiceType_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
+{
+    switch( static_cast<tdma::StreamerServiceType>(v) ){
+    case tdma::StreamerServiceType::NONE:
+        return alloc_C_str("NONE", buf, n, allow_exceptions);
+    case tdma::StreamerServiceType::ADMIN:
+        return alloc_C_str("ADMIN", buf, n, allow_exceptions);
+    case tdma::StreamerServiceType::ACTIVES_NASDAQ:
+        return alloc_C_str("ACTIVES_NASDAQ", buf, n, allow_exceptions);
+    case tdma::StreamerServiceType::ACTIVES_NYSE:
+        return alloc_C_str("ACTIVES_NYSE", buf, n, allow_exceptions);
+    case tdma::StreamerServiceType::ACTIVES_OTCBB:
+        return alloc_C_str("ACTIVES_OTCBB", buf, n, allow_exceptions);
+    case tdma::StreamerServiceType::ACTIVES_OPTIONS:
+        return alloc_C_str("ACTIVES_OPTIONS", buf, n, allow_exceptions);
+    case tdma::StreamerServiceType::CHART_EQUITY:
+        return alloc_C_str("CHART_EQUITY", buf, n, allow_exceptions);
+    //case tdma::StreamerServiceType::CHART_FOREX:
+    //    return alloc_C_str("CHART_FOREX", buf, n, allow_exceptions);
+    case tdma::StreamerServiceType::CHART_FUTURES:
+        return alloc_C_str("CHART_FUTURES", buf, n, allow_exceptions);
+    case tdma::StreamerServiceType::CHART_OPTIONS:
+        return alloc_C_str("CHART_OPTIONS", buf, n, allow_exceptions);
+    case tdma::StreamerServiceType::QUOTE:
+        return alloc_C_str("QUOTE", buf, n, allow_exceptions);
+    case tdma::StreamerServiceType::LEVELONE_FUTURES:
+        return alloc_C_str("LEVELONE_FUTURES", buf, n, allow_exceptions);
+    case tdma::StreamerServiceType::LEVELONE_FOREX:
+        return alloc_C_str("LEVELONE_FOREX", buf, n, allow_exceptions);
+    case tdma::StreamerServiceType::LEVELONE_FUTURES_OPTIONS:
+        return alloc_C_str("LEVELONE_FUTURES_OPTIONS", buf, n, allow_exceptions);
+    case tdma::StreamerServiceType::OPTION:
+        return alloc_C_str("OPTION", buf, n, allow_exceptions);
+    case tdma::StreamerServiceType::NEWS_HEADLINE:
+        return alloc_C_str("NEWS_HEADLINE", buf, n, allow_exceptions);
+    case tdma::StreamerServiceType::TIMESALE_EQUITY:
+        return alloc_C_str("TIMESALE_EQUITY", buf, n, allow_exceptions);
+    case tdma::StreamerServiceType::TIMESALE_FUTURES:
+        return alloc_C_str("TIMESALE_FUTURES", buf, n, allow_exceptions);
+    //case tdma::StreamerServiceType::TIMESALE_FOREX:
+    //    return alloc_C_str("TIMESALE_FOREX", buf, n, allow_exceptions);
+    case tdma::StreamerServiceType::TIMESALE_OPTIONS:
+        return alloc_C_str("TIMESALE_OPTIONS", buf, n, allow_exceptions);
+    default:
+        throw std::runtime_error("Invalid StreamerServiceType");
+    }
+}
+
+
+/* TODO return actual strings for fields */
+#define DEF_TEMP_FIELD_TO_STRING(name) \
+int \
+name##_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions) \
+{ return alloc_C_str(#name"-" + std::to_string(v), buf, n, \
+                       allow_exceptions); }
+
+DEF_TEMP_FIELD_TO_STRING(QuotesSubscriptionField)
+DEF_TEMP_FIELD_TO_STRING(OptionsSubscriptionField)
+DEF_TEMP_FIELD_TO_STRING(LevelOneFuturesSubscriptionField)
+DEF_TEMP_FIELD_TO_STRING(LevelOneForexSubscriptionField)
+DEF_TEMP_FIELD_TO_STRING(LevelOneFuturesOptionsSubscriptionField)
+DEF_TEMP_FIELD_TO_STRING(NewsHeadlineSubscriptionField)
+DEF_TEMP_FIELD_TO_STRING(ChartEquitySubscriptionField)
+DEF_TEMP_FIELD_TO_STRING(ChartSubscriptionField)
+DEF_TEMP_FIELD_TO_STRING(TimesaleSubscriptionField)
+
+#undef DEF_TEMP_FIELD_TO_STRING
+
+
+/*
+ * NOTE FieldType enums are not defined!
+ */
+
+
+
+
+
+

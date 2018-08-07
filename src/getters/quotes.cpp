@@ -194,6 +194,7 @@ QuoteGetter_SetSymbol_ABI( QuoteGetter_C *pgetter,
 int
 QuotesGetter_Create_ABI( Credentials *pcreds,
                             const char** symbols,
+                            size_t nsymbols,
                             QuotesGetter_C *pgetter,
                             int allow_exceptions )
 {
@@ -211,16 +212,16 @@ QuotesGetter_Create_ABI( Credentials *pcreds,
             );
     }
 
-    static auto meth = +[](Credentials *c, const char** s){
-        int i = 0;
+    static auto meth = +[](Credentials *c, const char** s, size_t n){
         std::set<std::string> strs;
-        while( s[i] ) // TODO make safe
-            strs.insert(s[i++]);
+        while( n-- )
+            strs.insert(s[n]);
         return new QuotesGetterImpl(*c, strs);
     };
 
     QuotesGetterImpl *obj;
-    tie(obj, err) = CallImplFromABI(allow_exceptions, meth, pcreds, symbols);
+    tie(obj, err) = CallImplFromABI(allow_exceptions, meth, pcreds, symbols,
+                                    nsymbols);
     if( err ){
         pgetter->obj = nullptr;
         pgetter->type_id = -1;
@@ -256,10 +257,12 @@ QuotesGetter_GetSymbols_ABI( QuotesGetter_C *pgetter,
 int
 QuotesGetter_SetSymbols_ABI( QuotesGetter_C *pgetter,
                                 const char **symbols,
+                                size_t nsymbols,
                                 int allow_exceptions )
 {
     return GetterImplAccessor<char***>::template set<QuotesGetterImpl>(
-        pgetter, &QuotesGetterImpl::set_symbols, symbols, allow_exceptions
+        pgetter, &QuotesGetterImpl::set_symbols, symbols, nsymbols,
+        allow_exceptions
         );
 }
 

@@ -21,6 +21,73 @@ along with this program.  If not, see http://www.gnu.org/licenses.
 #include "_common.h"
 #include <string.h>
 
+#ifdef __cplusplus
+/*
+ * if C++ DECL_C_CPP_TDMA_ENUM expands to:
+ *
+ * namespace tdma{
+ * enum class type: int {
+ *    name,
+ *    name,
+ *    ...
+ *    name
+ * };
+ * }
+ *
+ * and defines an inline [TypeName]_is_valid for checks in the ABI
+ * and declares a stable-ABI to_string: 'type_to_string_ABI(type t)'
+ * and declares/defines a '<<' overload
+ * and declares/defines an overloaded 'to_string()'
+ *
+ * if C it expands to:
+ *
+ *   enum type {
+ *      type_name,
+ *      type_name,
+ *      ...
+ *      type_name
+ *   }
+ *
+ * and declares a stable-ABI to_string: 'type_to_string_ABI(type t)'
+ */
+#define DECL_C_CPP_TDMA_ENUM(type, l, h, ...) \
+EXTERN_C_SPEC_ DLL_SPEC_ int \
+type##_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions); \
+\
+inline bool \
+type##_is_valid(int v) \
+{ return (v >= l && v <= h); } \
+\
+namespace tdma{ \
+enum class type : int { __VA_ARGS__ }; \
+\
+inline std::string \
+to_string(const type& v) \
+{ \
+    char* buf; \
+    size_t n; \
+    type##_##to_string_ABI(static_cast<int>(v), &buf, &n, 1); \
+    std::string s(buf); \
+    if( buf ) free(buf); \
+    return s; \
+} \
+\
+inline std::ostream& \
+operator<<(std::ostream& out, const type& v) \
+{ out << to_string(v); return out; } \
+} /* tdma */
+
+#define BUILD_C_CPP_TDMA_ENUM_NAME(type,name) name
+
+#else
+#define DECL_C_CPP_TDMA_ENUM(type, l, h, ...) \
+typedef enum { __VA_ARGS__ } type; \
+EXTERN_C_SPEC_ DLL_SPEC_ int \
+type##_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions);
+
+#define BUILD_C_CPP_TDMA_ENUM_NAME(type,name) type##_##name
+#endif /* __cplusplus */
+
 struct Credentials;
 
 /*
@@ -91,6 +158,9 @@ EXTERN_C_SPEC_ DLL_SPEC_ int
 FreeBuffers_ABI( char** bufs, size_t n, int allow_exceptions);
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
+FreeFieldsBuffer_ABI( int* fields, int allow_exceptions );
+
+EXTERN_C_SPEC_ DLL_SPEC_ int
 LastErrorCode_ABI( int *code, int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
@@ -150,6 +220,10 @@ FreeBuffer( char* buf )
 inline int
 FreeBuffers( char** bufs, size_t n)
 { return FreeBuffers_ABI(bufs, n, 0); }
+
+inline int
+FreeFieldsBuffer( int* fields )
+{ return FreeFieldsBuffer_ABI(fields, 0); }
 
 
 #define TDMA_API_ERROR 1
@@ -254,8 +328,42 @@ public:
 
 #include <string>
 #include "util.h"
+#include <functional>
 
 namespace tdma{
+
+template<typename CTy, typename CBaseTy>
+struct IsValidCProxy{
+    static constexpr bool value = std::is_class<CTy>::value
+        && std::is_trivial<CTy>::value
+        && std::is_standard_layout<CTy>::value
+        && sizeof(CTy) == sizeof(CBaseTy);
+};
+
+template<typename T>
+class CProxyDestroyer{
+    std::function<int(T*, int)> _abicall;
+public:
+    CProxyDestroyer( std::function<int(T*, int)> abicall)
+        : _abicall(abicall) {}
+
+    void operator()(T* ss){
+        if( !ss )
+            return;
+        if( ss->obj ){
+            int err = _abicall(ss, 0);
+            if( err ){
+                char *buf;
+                size_t n;
+                LastErrorMsg_ABI(&buf, &n, 0);
+                std::cerr<< "Error destroying C proxy(" << err <<"): "
+                         << buf << std::endl;
+                FreeBuffer_ABI(buf, 0);
+            }
+        }
+        delete ss;
+    }
+};
 
 inline Credentials
 LoadCredentials(std::string path, std::string password)
@@ -535,6 +643,16 @@ public:
     error_code() const noexcept
     { return ERROR_CODE; }
 };
+
+// TODO move to utils
+inline const char*
+CPP_to_C(const std::string& in)
+{ return in.c_str(); }
+
+inline Credentials*
+CPP_to_C(Credentials& in)
+{ return &in; }
+
 
 
 } /* tdma */

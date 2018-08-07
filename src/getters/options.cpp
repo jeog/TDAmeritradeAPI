@@ -564,7 +564,7 @@ OptionChainGetter_SetStrikes_ABI( OptionChainGetter_C *pgetter,
         return err;
 
     err = check_abi_enum(OptionStrikesType_is_valid, strikes_type,
-                         pgetter, allow_exceptions);
+                         allow_exceptions);
     if( err )
         return err;
 
@@ -595,7 +595,7 @@ OptionChainGetter_SetContractType_ABI( OptionChainGetter_C *pgetter,
                                            int allow_exceptions)
 {
     int err = check_abi_enum(OptionContractType_is_valid, contract_type,
-                             pgetter, allow_exceptions);
+                             allow_exceptions);
     if( err )
         return err;
 
@@ -698,7 +698,7 @@ OptionChainGetter_SetExpMonth_ABI( OptionChainGetter_C *pgetter,
                                            int exp_month,
                                            int allow_exceptions)
 {
-    int err = check_abi_enum(OptionExpMonth_is_valid, exp_month, pgetter,
+    int err = check_abi_enum(OptionExpMonth_is_valid, exp_month,
                              allow_exceptions);
     if( err )
         return err;
@@ -727,7 +727,7 @@ OptionChainGetter_SetOptionType_ABI( OptionChainGetter_C *pgetter,
                                            int option_type,
                                            int allow_exceptions)
 {
-    int err = check_abi_enum(OptionType_is_valid, option_type, pgetter,
+    int err = check_abi_enum(OptionType_is_valid, option_type,
                              allow_exceptions);
     if( err )
         return err;
@@ -890,7 +890,7 @@ OptionChainStrategyGetter_SetStrategy_ABI(
     if( err )
         return err;
 
-    err = check_abi_enum(OptionStrategyType_is_valid, strategy_type, pgetter,
+    err = check_abi_enum(OptionStrategyType_is_valid, strategy_type,
                          allow_exceptions);
     if( err )
         return err;

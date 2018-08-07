@@ -18,119 +18,775 @@ along with this program.  If not, see http://www.gnu.org/licenses.
 #ifndef TDMA_API_STREAMING_H
 #define TDMA_API_STREAMING_H
 
+#include "_common.h"
+#include "tdma_common.h"
+
+#ifdef __cplusplus
 #include <map>
 #include <set>
 #include <memory>
 #include <thread>
 #include <string>
 
-#include "_common.h"
 #include "json.hpp"
 #include "websocket_connect.h"
 #include "threadsafe_hashmap.h"
-#include "tdma_common.h"
 
 using json = nlohmann::json;
+#endif /* __cplusplus */
+
+
+
+/* TODO
+ *   6) make SharedSession work w/ StreamingService interface
+ *   11) C Wrappers for ABI layer
+ *   13) ABI exceptionns? other threads?
+*/
+
+#define BUILD_ENUM_NAME(n) \
+    BUILD_C_CPP_TDMA_ENUM_NAME(StreamerServiceType, n)
+DECL_C_CPP_TDMA_ENUM(StreamerServiceType, 1, 17,
+    BUILD_ENUM_NAME( NONE),
+    BUILD_ENUM_NAME( ADMIN),
+    BUILD_ENUM_NAME( ACTIVES_NASDAQ),
+    BUILD_ENUM_NAME( ACTIVES_NYSE),
+    BUILD_ENUM_NAME( ACTIVES_OTCBB),
+    BUILD_ENUM_NAME( ACTIVES_OPTIONS),
+    BUILD_ENUM_NAME( CHART_EQUITY),
+    BUILD_ENUM_NAME( CHART_FUTURES),
+    BUILD_ENUM_NAME( CHART_OPTIONS),
+    BUILD_ENUM_NAME( QUOTE),
+    BUILD_ENUM_NAME( LEVELONE_FUTURES),
+    BUILD_ENUM_NAME( LEVELONE_FOREX),
+    BUILD_ENUM_NAME( LEVELONE_FUTURES_OPTIONS),
+    BUILD_ENUM_NAME( OPTION),
+    BUILD_ENUM_NAME( NEWS_HEADLINE),
+    BUILD_ENUM_NAME( TIMESALE_EQUITY),
+    BUILD_ENUM_NAME( TIMESALE_FUTURES),
+    BUILD_ENUM_NAME( TIMESALE_OPTIONS)
+    /* NOT WORKING */
+    //BUILD_ENUM_NAME( CHART_FOREX),
+    //BUILD_ENUM_NAME( TIMESALE_FOREX),
+    /* NOT IMPLEMENTED YET */
+    //BUILD_ENUM_NAME( CHART_HISTORY_FUTURES),
+    //BUILD_ENUM_NAME( ACCT_ACTIVITY),
+    /* NOT DOCUMENTED */
+    //BUILD_ENUM_NAME( FOREX_BOOK,
+    //BUILD_ENUM_NAME( FUTURES_BOOK),
+    //BUILD_ENUM_NAME( LISTED_BOOK),
+    //BUILD_ENUM_NAME( NASDAQ_BOOK),
+    //BUILD_ENUM_NAME( OPTIONS_BOOK),
+    //BUILD_ENUM_NAME( FUTURES_OPTION_BOOK),
+    //BUILD_ENUM_NAME( NEWS_STORY),
+    //BUILD_ENUM_NAME( NEWS_HEADLINE_LIST),
+    /* OLD API ? */
+    //BUILD_ENUM_NAME( STREAMER_SERVER)
+    );
+#undef BUILD_ENUM_NAME
+
+DECL_C_CPP_TDMA_ENUM(AdminCommandType, 0, 2,
+    BUILD_C_CPP_TDMA_ENUM_NAME(AdminCommandType, LOGIN),
+    BUILD_C_CPP_TDMA_ENUM_NAME(AdminCommandType, LOGOUT),
+    BUILD_C_CPP_TDMA_ENUM_NAME(AdminCommandType, QOS)
+    );
+
+DECL_C_CPP_TDMA_ENUM(QOSType, 0, 5,
+    BUILD_C_CPP_TDMA_ENUM_NAME(QOSType, express),   /* 500 ms */
+    BUILD_C_CPP_TDMA_ENUM_NAME(QOSType, real_time), /* 750 ms */
+    BUILD_C_CPP_TDMA_ENUM_NAME(QOSType, fast),      /* 1000 ms DEFAULT */
+    BUILD_C_CPP_TDMA_ENUM_NAME(QOSType, moderate),  /* 1500 ms */
+    BUILD_C_CPP_TDMA_ENUM_NAME(QOSType, slow),      /* 3000 ms */
+    BUILD_C_CPP_TDMA_ENUM_NAME(QOSType, delayed)    /* 5000 ms */
+    );
+
+#define BUILD_ENUM_NAME(n) \
+    BUILD_C_CPP_TDMA_ENUM_NAME(QuotesSubscriptionField, n)
+DECL_C_CPP_TDMA_ENUM(QuotesSubscriptionField, 0, 100,
+    BUILD_ENUM_NAME(symbol),
+    BUILD_ENUM_NAME(bid_price),
+    BUILD_ENUM_NAME(ask_price),
+    BUILD_ENUM_NAME(last_price),
+    BUILD_ENUM_NAME(bid_size),
+    BUILD_ENUM_NAME(ask_size),
+    BUILD_ENUM_NAME(ask_id),
+    BUILD_ENUM_NAME(bid_id),
+    BUILD_ENUM_NAME(total_volume),
+    BUILD_ENUM_NAME(last_size),
+    BUILD_ENUM_NAME(trade_time),
+    BUILD_ENUM_NAME(quote_time),
+    BUILD_ENUM_NAME(high_price),
+    BUILD_ENUM_NAME(low_price),
+    BUILD_ENUM_NAME(bid_tick),
+    BUILD_ENUM_NAME(close_price),
+    BUILD_ENUM_NAME(exchange_id),
+    BUILD_ENUM_NAME(marginable),
+    BUILD_ENUM_NAME(shortable),
+    BUILD_ENUM_NAME(island_bid),
+    BUILD_ENUM_NAME(island_ask),
+    BUILD_ENUM_NAME(island_volume),
+    BUILD_ENUM_NAME(quote_day),
+    BUILD_ENUM_NAME(trade_day),
+    BUILD_ENUM_NAME(volatility),
+    BUILD_ENUM_NAME(description),
+    BUILD_ENUM_NAME(last_id),
+    BUILD_ENUM_NAME(digits),
+    BUILD_ENUM_NAME(open_price),
+    BUILD_ENUM_NAME(net_change),
+    BUILD_ENUM_NAME(high_52_week),
+    BUILD_ENUM_NAME(low_52_week),
+    BUILD_ENUM_NAME(pe_ratio),
+    BUILD_ENUM_NAME(dividend_amount),
+    BUILD_ENUM_NAME(dividend_yeild),
+    BUILD_ENUM_NAME(island_bid_size),
+    BUILD_ENUM_NAME(island_ask_size),
+    BUILD_ENUM_NAME(nav),
+    BUILD_ENUM_NAME(fund_price),
+    BUILD_ENUM_NAME(exchanged_name),
+    BUILD_ENUM_NAME(dividend_date),
+    BUILD_ENUM_NAME(regular_market_quote),
+    BUILD_ENUM_NAME(regular_market_trade),
+    BUILD_ENUM_NAME(regular_market_last_price),
+    BUILD_ENUM_NAME(regular_market_last_size),
+    BUILD_ENUM_NAME(regular_market_trade_time),
+    BUILD_ENUM_NAME(regular_market_trade_day),
+    BUILD_ENUM_NAME(regular_market_net_change),
+    BUILD_ENUM_NAME(security_status),
+    BUILD_ENUM_NAME(mark),
+    BUILD_ENUM_NAME(quote_time_as_long),
+    BUILD_ENUM_NAME(trade_time_as_long),
+    BUILD_ENUM_NAME(regular_market_trade_time_as_long)
+    );
+#undef BUILD_ENUM_NAME
+
+DECL_C_CPP_TDMA_ENUM(DurationType, 0, 5,
+    BUILD_C_CPP_TDMA_ENUM_NAME(DurationType, all_day),
+    BUILD_C_CPP_TDMA_ENUM_NAME(DurationType, min_60),
+    BUILD_C_CPP_TDMA_ENUM_NAME(DurationType, min_30),
+    BUILD_C_CPP_TDMA_ENUM_NAME(DurationType, min_10),
+    BUILD_C_CPP_TDMA_ENUM_NAME(DurationType, min_5),
+    BUILD_C_CPP_TDMA_ENUM_NAME(DurationType, min_1)
+    );
+
+DECL_C_CPP_TDMA_ENUM(VenueType, 0, 5,
+    BUILD_C_CPP_TDMA_ENUM_NAME(VenueType, opts),
+    BUILD_C_CPP_TDMA_ENUM_NAME(VenueType, calls),
+    BUILD_C_CPP_TDMA_ENUM_NAME(VenueType, puts),
+    BUILD_C_CPP_TDMA_ENUM_NAME(VenueType, opts_desc),
+    BUILD_C_CPP_TDMA_ENUM_NAME(VenueType, calls_desc),
+    BUILD_C_CPP_TDMA_ENUM_NAME(VenueType, puts_desc)
+    );
+
+#define BUILD_ENUM_NAME(n) \
+    BUILD_C_CPP_TDMA_ENUM_NAME(OptionsSubscriptionField, n)
+DECL_C_CPP_TDMA_ENUM(OptionsSubscriptionField, 0, 41,
+    BUILD_ENUM_NAME(symbol),
+    BUILD_ENUM_NAME(description),
+    BUILD_ENUM_NAME(bid_price),
+    BUILD_ENUM_NAME(ask_price),
+    BUILD_ENUM_NAME(last_price),
+    BUILD_ENUM_NAME(high_price),
+    BUILD_ENUM_NAME(low_price),
+    BUILD_ENUM_NAME(close_price),
+    BUILD_ENUM_NAME(total_volume),
+    BUILD_ENUM_NAME(open_interest),
+    BUILD_ENUM_NAME(volatility),
+    BUILD_ENUM_NAME(quote_time),
+    BUILD_ENUM_NAME(trade_time),
+    BUILD_ENUM_NAME(money_intrinsic_value),
+    BUILD_ENUM_NAME(quote_day),
+    BUILD_ENUM_NAME(trade_day),
+    BUILD_ENUM_NAME(expiration_year),
+    BUILD_ENUM_NAME(multiplier),
+    BUILD_ENUM_NAME(digits),
+    BUILD_ENUM_NAME(open_price),
+    BUILD_ENUM_NAME(bid_size),
+    BUILD_ENUM_NAME(ask_size),
+    BUILD_ENUM_NAME(last_size),
+    BUILD_ENUM_NAME(net_change),
+    BUILD_ENUM_NAME(strike_price),
+    BUILD_ENUM_NAME(contract_type),
+    BUILD_ENUM_NAME(underlying),
+    BUILD_ENUM_NAME(expiration_month),
+    BUILD_ENUM_NAME(deliverables),
+    BUILD_ENUM_NAME(time_value),
+    BUILD_ENUM_NAME(expiration_day),
+    BUILD_ENUM_NAME(days_to_expiration),
+    BUILD_ENUM_NAME(delta),
+    BUILD_ENUM_NAME(gamma),
+    BUILD_ENUM_NAME(theta),
+    BUILD_ENUM_NAME(vega),
+    BUILD_ENUM_NAME(rho),
+    BUILD_ENUM_NAME(security_status),
+    BUILD_ENUM_NAME(theoretical_option_value),
+    BUILD_ENUM_NAME(underlying_price),
+    BUILD_ENUM_NAME(uv_expiration_type),
+    BUILD_ENUM_NAME(mark)
+    );
+#undef BUILD_ENUM_NAME
+
+#define BUILD_ENUM_NAME(n) \
+    BUILD_C_CPP_TDMA_ENUM_NAME(LevelOneFuturesSubscriptionField, n)
+DECL_C_CPP_TDMA_ENUM(LevelOneFuturesSubscriptionField, 0, 35,
+    BUILD_ENUM_NAME(symbol),
+    BUILD_ENUM_NAME(bid_price),
+    BUILD_ENUM_NAME(ask_price),
+    BUILD_ENUM_NAME(last_price),
+    BUILD_ENUM_NAME(bid_size),
+    BUILD_ENUM_NAME(ask_size),
+    BUILD_ENUM_NAME(ask_id),
+    BUILD_ENUM_NAME(bid_id),
+    BUILD_ENUM_NAME(total_volume),
+    BUILD_ENUM_NAME(last_size),
+    BUILD_ENUM_NAME(quote_time),
+    BUILD_ENUM_NAME(trade_time),
+    BUILD_ENUM_NAME(high_price),
+    BUILD_ENUM_NAME(low_price),
+    BUILD_ENUM_NAME(close_price),
+    BUILD_ENUM_NAME(exchange_id),
+    BUILD_ENUM_NAME(description),
+    BUILD_ENUM_NAME(last_id),
+    BUILD_ENUM_NAME(open_price),
+    BUILD_ENUM_NAME(net_change),
+    BUILD_ENUM_NAME(future_percent_change),
+    BUILD_ENUM_NAME(exchange_name),
+    BUILD_ENUM_NAME(security_status),
+    BUILD_ENUM_NAME(open_interest),
+    BUILD_ENUM_NAME(mark),
+    BUILD_ENUM_NAME(tick),
+    BUILD_ENUM_NAME(tick_amount),
+    BUILD_ENUM_NAME(product),
+    BUILD_ENUM_NAME(future_price_format),
+    BUILD_ENUM_NAME(future_trading_hours),
+    BUILD_ENUM_NAME(future_is_tradable),
+    BUILD_ENUM_NAME(future_multiplier),
+    BUILD_ENUM_NAME(future_is_active),
+    BUILD_ENUM_NAME(future_settlement_price),
+    BUILD_ENUM_NAME(future_active_symbol),
+    BUILD_ENUM_NAME(future_expiration_date)
+    );
+#undef BUILD_ENUM_NAME
+
+#define BUILD_ENUM_NAME(n) \
+    BUILD_C_CPP_TDMA_ENUM_NAME(LevelOneForexSubscriptionField, n)
+DECL_C_CPP_TDMA_ENUM(LevelOneForexSubscriptionField, 0, 29,
+    BUILD_ENUM_NAME(symbol),
+    BUILD_ENUM_NAME(bid_price),
+    BUILD_ENUM_NAME(ask_price),
+    BUILD_ENUM_NAME(last_price),
+    BUILD_ENUM_NAME(bid_size),
+    BUILD_ENUM_NAME(ask_size),
+    BUILD_ENUM_NAME(total_volume),
+    BUILD_ENUM_NAME(last_size),
+    BUILD_ENUM_NAME(quote_time),
+    BUILD_ENUM_NAME(trade_time),
+    BUILD_ENUM_NAME(high_price),
+    BUILD_ENUM_NAME(low_price),
+    BUILD_ENUM_NAME(close_price),
+    BUILD_ENUM_NAME(exchange_id),
+    BUILD_ENUM_NAME(description),
+    BUILD_ENUM_NAME(open_price),
+    BUILD_ENUM_NAME(net_change),
+    BUILD_ENUM_NAME(percent_change),
+    BUILD_ENUM_NAME(exchange_name),
+    BUILD_ENUM_NAME(digits),
+    BUILD_ENUM_NAME(security_status),
+    BUILD_ENUM_NAME(tick),
+    BUILD_ENUM_NAME(tick_amount),
+    BUILD_ENUM_NAME(product),
+    BUILD_ENUM_NAME(trading_hours),
+    BUILD_ENUM_NAME(is_tradable),
+    BUILD_ENUM_NAME(market_maker),
+    BUILD_ENUM_NAME(high_52_week),
+    BUILD_ENUM_NAME(low_52_week),
+    BUILD_ENUM_NAME(mark)
+    );
+#undef BUILD_ENUM_NAME
+
+
+
+#define BUILD_ENUM_NAME(n) \
+    BUILD_C_CPP_TDMA_ENUM_NAME(LevelOneFuturesOptionsSubscriptionField, n)
+DECL_C_CPP_TDMA_ENUM(LevelOneFuturesOptionsSubscriptionField, 0, 35,
+    BUILD_ENUM_NAME(symbol),
+    BUILD_ENUM_NAME(bid_price),
+    BUILD_ENUM_NAME(ask_price),
+    BUILD_ENUM_NAME(last_price),
+    BUILD_ENUM_NAME(bid_size),
+    BUILD_ENUM_NAME(ask_size),
+    BUILD_ENUM_NAME(ask_id),
+    BUILD_ENUM_NAME(bid_id),
+    BUILD_ENUM_NAME(total_volume),
+    BUILD_ENUM_NAME(last_size),
+    BUILD_ENUM_NAME(quote_time),
+    BUILD_ENUM_NAME(trade_time),
+    BUILD_ENUM_NAME(high_price),
+    BUILD_ENUM_NAME(low_price),
+    BUILD_ENUM_NAME(close_price),
+    BUILD_ENUM_NAME(exchange_id),
+    BUILD_ENUM_NAME(description),
+    BUILD_ENUM_NAME(last_id),
+    BUILD_ENUM_NAME(open_price),
+    BUILD_ENUM_NAME(net_change),
+    BUILD_ENUM_NAME(future_percent_change),
+    BUILD_ENUM_NAME(exchange_name),
+    BUILD_ENUM_NAME(security_status),
+    BUILD_ENUM_NAME(open_interest),
+    BUILD_ENUM_NAME(mark),
+    BUILD_ENUM_NAME(tick),
+    BUILD_ENUM_NAME(tick_amount),
+    BUILD_ENUM_NAME(product),
+    BUILD_ENUM_NAME(future_price_format),
+    BUILD_ENUM_NAME(future_trading_hours),
+    BUILD_ENUM_NAME(future_is_tradable),
+    BUILD_ENUM_NAME(future_multiplier),
+    BUILD_ENUM_NAME(future_is_active),
+    BUILD_ENUM_NAME(future_settlement_price),
+    BUILD_ENUM_NAME(future_active_symbol),
+    BUILD_ENUM_NAME(future_expiration_date)
+    );
+#undef BUILD_ENUM_NAME
+
+
+#define BUILD_ENUM_NAME(n) \
+    BUILD_C_CPP_TDMA_ENUM_NAME(NewsHeadlineSubscriptionField, n)
+DECL_C_CPP_TDMA_ENUM(NewsHeadlineSubscriptionField, 0, 10,
+    BUILD_ENUM_NAME(symbol),
+    BUILD_ENUM_NAME(error_code),
+    BUILD_ENUM_NAME(story_datetime),
+    BUILD_ENUM_NAME(headline_id),
+    BUILD_ENUM_NAME(status),
+    BUILD_ENUM_NAME(headline),
+    BUILD_ENUM_NAME(story_id),
+    BUILD_ENUM_NAME(count_for_keyword),
+    BUILD_ENUM_NAME(keyword_array),
+    BUILD_ENUM_NAME(is_host),
+    BUILD_ENUM_NAME(story_source)
+    );
+#undef BUILD_ENUM_NAME
+
+
+#define BUILD_ENUM_NAME(n) \
+    BUILD_C_CPP_TDMA_ENUM_NAME(ChartEquitySubscriptionField, n)
+DECL_C_CPP_TDMA_ENUM(ChartEquitySubscriptionField, 0, 8,
+    BUILD_ENUM_NAME(symbol),
+    BUILD_ENUM_NAME(open_price),
+    BUILD_ENUM_NAME(high_price),
+    BUILD_ENUM_NAME(low_price),
+    BUILD_ENUM_NAME(close_price),
+    BUILD_ENUM_NAME(volume),
+    BUILD_ENUM_NAME(sequence),
+    BUILD_ENUM_NAME(chart_time),
+    BUILD_ENUM_NAME(chart_day)
+    );
+#undef BUILD_ENUM_NAME
+
+#define BUILD_ENUM_NAME(n) \
+    BUILD_C_CPP_TDMA_ENUM_NAME(ChartSubscriptionField, n)
+DECL_C_CPP_TDMA_ENUM(ChartSubscriptionField, 0, 6,
+    BUILD_ENUM_NAME(symbol),
+    BUILD_ENUM_NAME(chart_time),
+    BUILD_ENUM_NAME(open_price),
+    BUILD_ENUM_NAME(high_price),
+    BUILD_ENUM_NAME(low_price),
+    BUILD_ENUM_NAME(close_price),
+    BUILD_ENUM_NAME(volume)
+    );
+#undef BUILD_ENUM_NAME
+
+DECL_C_CPP_TDMA_ENUM(TimesaleSubscriptionField, 0, 5,
+    BUILD_C_CPP_TDMA_ENUM_NAME(TimesaleSubscriptionField, symbol),
+    BUILD_C_CPP_TDMA_ENUM_NAME(TimesaleSubscriptionField, trade_time),
+    BUILD_C_CPP_TDMA_ENUM_NAME(TimesaleSubscriptionField, last_price),
+    BUILD_C_CPP_TDMA_ENUM_NAME(TimesaleSubscriptionField, last_size),
+    BUILD_C_CPP_TDMA_ENUM_NAME(TimesaleSubscriptionField, last_sequence)
+    );
+
+DECL_C_CPP_TDMA_ENUM(StreamingCallbackType, 0, 5,
+    BUILD_C_CPP_TDMA_ENUM_NAME(StreamingCallbackType, listening_start),
+    BUILD_C_CPP_TDMA_ENUM_NAME(StreamingCallbackType, listening_stop),
+    BUILD_C_CPP_TDMA_ENUM_NAME(StreamingCallbackType, data),
+    BUILD_C_CPP_TDMA_ENUM_NAME(StreamingCallbackType, notify),
+    BUILD_C_CPP_TDMA_ENUM_NAME(StreamingCallbackType, timeout),
+    BUILD_C_CPP_TDMA_ENUM_NAME(StreamingCallbackType, error)
+    );
+
+
+#define SUBSCRIPTION_MAX_FIELDS 100
+#define SUBSCRIPTION_MAX_SYMBOLS 5000
+
+#define DECL_CSUB_STRUCT(name) typedef struct{ void *obj; int type_id; } name
+
+DECL_CSUB_STRUCT(StreamingSubscription_C);
+DECL_CSUB_STRUCT(QuotesSubscription_C);
+DECL_CSUB_STRUCT(NasdaqActivesSubscription_C);
+DECL_CSUB_STRUCT(NYSEActivesSubscription_C);
+DECL_CSUB_STRUCT(OTCBBActivesSubscription_C);
+DECL_CSUB_STRUCT(OptionActivesSubscription_C);
+DECL_CSUB_STRUCT(OptionsSubscription_C);
+DECL_CSUB_STRUCT(LevelOneFuturesSubscription_C);
+DECL_CSUB_STRUCT(LevelOneForexSubscription_C);
+DECL_CSUB_STRUCT(LevelOneFuturesOptionsSubscription_C);
+DECL_CSUB_STRUCT(NewsHeadlineSubscription_C);
+DECL_CSUB_STRUCT(ChartEquitySubscription_C);
+//DECL_CSUB_STRUCT(ChartForexSubscription_C);
+DECL_CSUB_STRUCT(ChartFuturesSubscription_C);
+DECL_CSUB_STRUCT(ChartOptionsSubscription_C);
+DECL_CSUB_STRUCT(TimesaleEquitySubscription_C);
+//DECL_CSUB_STRUCT(TimesalesForexSubscription_C);
+DECL_CSUB_STRUCT(TimesaleFuturesSubscription_C);
+DECL_CSUB_STRUCT(TimesaleOptionsSubscription_C);
+#undef DECL_CSUB_STRUCT
+
+/* SUBSCRIPTION CREATE METHODS */
+
+#define DECL_CSUB_FIELD_SYM_CREATE_FUNC(name) \
+EXTERN_C_SPEC_ DLL_SPEC_ int \
+name##_Create_ABI( const char **symbols, size_t nsymbols, int *fields, \
+                   size_t nfields, name##_C *psub, int allow_exceptions )
+
+#define DECL_CSUB_DURATION_CREATE_FUNC(name) \
+EXTERN_C_SPEC_ DLL_SPEC_ int \
+name##_Create_ABI( int duration_type, name##_C *psub, int allow_exceptions )
+
+/* Create methods for subs that takes symbols and fields */
+DECL_CSUB_FIELD_SYM_CREATE_FUNC(QuotesSubscription);
+DECL_CSUB_FIELD_SYM_CREATE_FUNC(OptionsSubscription);
+DECL_CSUB_FIELD_SYM_CREATE_FUNC(LevelOneFuturesSubscription);
+DECL_CSUB_FIELD_SYM_CREATE_FUNC(LevelOneForexSubscription);
+DECL_CSUB_FIELD_SYM_CREATE_FUNC(LevelOneFuturesOptionsSubscription);
+DECL_CSUB_FIELD_SYM_CREATE_FUNC(NewsHeadlineSubscription);
+DECL_CSUB_FIELD_SYM_CREATE_FUNC(ChartEquitySubscription);
+DECL_CSUB_FIELD_SYM_CREATE_FUNC(ChartFuturesSubscription);
+DECL_CSUB_FIELD_SYM_CREATE_FUNC(ChartOptionsSubscription);
+DECL_CSUB_FIELD_SYM_CREATE_FUNC(TimesaleEquitySubscription);
+DECL_CSUB_FIELD_SYM_CREATE_FUNC(TimesaleFuturesSubscription);
+DECL_CSUB_FIELD_SYM_CREATE_FUNC(TimesaleOptionsSubscription);
+#undef DECL_CSUB_FIELD_SYM_CREATE_FUNC
+
+/* Create methods for subs that take duration */
+DECL_CSUB_DURATION_CREATE_FUNC(NasdaqActivesSubscription);
+DECL_CSUB_DURATION_CREATE_FUNC(NYSEActivesSubscription);
+DECL_CSUB_DURATION_CREATE_FUNC(OTCBBActivesSubscription);
+#undef DECL_CSUB_DURATION_CREATE_FUNC
+
+EXTERN_C_SPEC_ DLL_SPEC_ int
+OptionActivesSubscription_Create_ABI( int venue,
+                                           int duration_type,
+                                           OptionActivesSubscription_C *psub,
+                                           int allow_exceptions );
+
+
+/* SUBSCRIPTION DESTROY METHODS */
+
+#define DECL_CSUB_DESTROY_FUNC(name) \
+EXTERN_C_SPEC_ DLL_SPEC_ int \
+name##_Destroy_ABI(name##_C *psub, int allow_exceptions)
+
+/* Destroy for each subscription type */
+DECL_CSUB_DESTROY_FUNC(QuotesSubscription);
+DECL_CSUB_DESTROY_FUNC(OptionsSubscription);
+DECL_CSUB_DESTROY_FUNC(LevelOneFuturesSubscription);
+DECL_CSUB_DESTROY_FUNC(LevelOneForexSubscription);
+DECL_CSUB_DESTROY_FUNC(LevelOneFuturesOptionsSubscription);
+DECL_CSUB_DESTROY_FUNC(NewsHeadlineSubscription);
+DECL_CSUB_DESTROY_FUNC(ChartEquitySubscription);
+DECL_CSUB_DESTROY_FUNC(ChartFuturesSubscription);
+DECL_CSUB_DESTROY_FUNC(ChartOptionsSubscription);
+DECL_CSUB_DESTROY_FUNC(TimesaleFuturesSubscription);
+DECL_CSUB_DESTROY_FUNC(TimesaleEquitySubscription);
+DECL_CSUB_DESTROY_FUNC(TimesaleOptionsSubscription);
+DECL_CSUB_DESTROY_FUNC(NasdaqActivesSubscription);
+DECL_CSUB_DESTROY_FUNC(NYSEActivesSubscription);
+DECL_CSUB_DESTROY_FUNC(OTCBBActivesSubscription);
+DECL_CSUB_DESTROY_FUNC(OptionActivesSubscription);
+#undef DECL_CSUB_DESTROY_FUNC
+
+/* Generic destroy (cast to StreamingSubscription_C*) */
+EXTERN_C_SPEC_ DLL_SPEC_ int
+StreamingSubscription_Destroy_ABI(StreamingSubscription_C* psub,
+                                      int allow_exceptions);
+
+
+/* SUBSCRIPTION GET METHODS */
+
+/* StreamingSubscription Base Methods */
+EXTERN_C_SPEC_ DLL_SPEC_ int
+StreamingSubscription_GetService_ABI( StreamingSubscription_C *psub,
+                                          int *service,
+                                          int allow_exceptions );
+
+EXTERN_C_SPEC_ DLL_SPEC_ int
+StreamingSubscription_GetCommand_ABI( StreamingSubscription_C *psub,
+                                          char **buf,
+                                          size_t *n,
+                                          int allow_exceptions );
+
+/* SubscriptionBySymbolBase Base Methods */
+EXTERN_C_SPEC_ DLL_SPEC_ int
+SubscriptionBySymbolBase_GetSymbols_ABI( StreamingSubscription_C *psub,
+                                              char ***buffers,
+                                              size_t *n,
+                                              int allow_exceptions );
+
+#define DECL_CSUB_GET_FIELDS_FUNC(name) \
+EXTERN_C_SPEC_ DLL_SPEC_ int \
+name##_GetFields_ABI(name##_C *psub, int **fields, size_t *n, int allow_exceptions);
+
+#define DECL_CSUB_GET_FIELDS_BASE_FUNC(name) \
+EXTERN_C_SPEC_ DLL_SPEC_ int \
+name##_GetFields_ABI(StreamingSubscription_C *psub, int **fields, size_t *n, \
+                     int allow_exceptions);
+
+/* Get fields methods in derived */
+DECL_CSUB_GET_FIELDS_FUNC(QuotesSubscription);
+DECL_CSUB_GET_FIELDS_FUNC(OptionsSubscription);
+DECL_CSUB_GET_FIELDS_FUNC(LevelOneFuturesSubscription);
+DECL_CSUB_GET_FIELDS_FUNC(LevelOneForexSubscription);
+DECL_CSUB_GET_FIELDS_FUNC(LevelOneFuturesOptionsSubscription);
+DECL_CSUB_GET_FIELDS_FUNC(NewsHeadlineSubscription);
+DECL_CSUB_GET_FIELDS_FUNC(ChartEquitySubscription);
+#undef DECL_CSUB_GET_FIELDS_FUNC
+
+/* Get fields methods in base */
+DECL_CSUB_GET_FIELDS_BASE_FUNC(ChartSubscriptionBase);
+DECL_CSUB_GET_FIELDS_BASE_FUNC(TimesaleSubscriptionBase);
+#undef DECL_CSUB_GET_FIELDS_BASE_FUNC
+
+/* Get duration in base */
+EXTERN_C_SPEC_ DLL_SPEC_ int
+ActivesSubscriptionBase_GetDuration_ABI(StreamingSubscription_C *psub,
+                                             int *duration,
+                                             int allow_exceptions);
+
+EXTERN_C_SPEC_ DLL_SPEC_ int
+OptionActivesSubscription_GetVenue_ABI(OptionActivesSubscription_C *psub,
+                                            int *venue,
+                                            int allow_exceptions);
+
+#ifndef __cplusplus
+
+/* C Interface */
+
+/* SUBSCRIPTION CREATE METHODS */
+
+#define DECL_CSUB_FIELD_SYM_CREATE_FUNC(name, fname) \
+inline int \
+name##_Create( const char **symbols, size_t nsymbols, fname *fields, \
+               size_t nfields, name##_C *psub ) \
+{ return name##_Create_ABI(symbols, nsymbols, (int*)fields, nfields, psub, 0); }
+
+#define DECL_CSUB_DURATION_CREATE_FUNC(name) \
+inline int \
+name##_Create( DurationType duration_type, name##_C *psub) \
+{ return name##_Create_ABI((int)duration_type, psub, 0); }
+
+/* Create methods for subs that takes symbols and fields */
+DECL_CSUB_FIELD_SYM_CREATE_FUNC(QuotesSubscription,
+    QuotesSubscriptionField);
+DECL_CSUB_FIELD_SYM_CREATE_FUNC(OptionsSubscription,
+    OptionsSubscriptionField);
+DECL_CSUB_FIELD_SYM_CREATE_FUNC(LevelOneFuturesSubscription,
+    LevelOneFuturesSubscriptionField);
+DECL_CSUB_FIELD_SYM_CREATE_FUNC(LevelOneForexSubscription,
+    LevelOneForexSubscriptionField);
+DECL_CSUB_FIELD_SYM_CREATE_FUNC(LevelOneFuturesOptionsSubscription,
+    LevelOneFuturesOptionsSubscriptionField);
+DECL_CSUB_FIELD_SYM_CREATE_FUNC(NewsHeadlineSubscription,
+    NewsHeadlineSubscriptionField);
+DECL_CSUB_FIELD_SYM_CREATE_FUNC(ChartEquitySubscription,
+    ChartEquitySubscriptionField);
+DECL_CSUB_FIELD_SYM_CREATE_FUNC(ChartFuturesSubscription,
+    ChartSubscriptionField);
+DECL_CSUB_FIELD_SYM_CREATE_FUNC(ChartOptionsSubscription,
+    ChartSubscriptionField);
+DECL_CSUB_FIELD_SYM_CREATE_FUNC(TimesaleEquitySubscription,
+    TimesaleSubscriptionField);
+DECL_CSUB_FIELD_SYM_CREATE_FUNC(TimesaleFuturesSubscription,
+    TimesaleSubscriptionField);
+DECL_CSUB_FIELD_SYM_CREATE_FUNC(TimesaleOptionsSubscription,
+    TimesaleSubscriptionField);
+#undef DECL_CSUB_FIELD_SYM_CREATE_FUNC
+
+/* Create methods for subs that take duration */
+DECL_CSUB_DURATION_CREATE_FUNC(NasdaqActivesSubscription);
+DECL_CSUB_DURATION_CREATE_FUNC(NYSEActivesSubscription);
+DECL_CSUB_DURATION_CREATE_FUNC(OTCBBActivesSubscription);
+#undef DECL_CSUB_DURATION_CREATE_FUNC
+
+inline int
+OptionActivesSubscription_Create( VenueType venue,
+                                  DurationType duration_type,
+                                  OptionActivesSubscription_C *psub)
+{ return OptionActivesSubscription_Create_ABI((int)venue, (int)duration_type,
+                                               psub, 0); }
+
+
+/* SUBSCRIPTION DESTROY METHODS */
+
+#define DECL_CSUB_DESTROY_FUNC(name) \
+inline int \
+name##_Destroy(name##_C *psub) \
+{ return name##_Destroy_ABI(psub, 0); }
+
+/* Destroy for each subscription type */
+DECL_CSUB_DESTROY_FUNC(QuotesSubscription);
+DECL_CSUB_DESTROY_FUNC(OptionsSubscription);
+DECL_CSUB_DESTROY_FUNC(LevelOneFuturesSubscription);
+DECL_CSUB_DESTROY_FUNC(LevelOneForexSubscription);
+DECL_CSUB_DESTROY_FUNC(LevelOneFuturesOptionsSubscription);
+DECL_CSUB_DESTROY_FUNC(NewsHeadlineSubscription);
+DECL_CSUB_DESTROY_FUNC(ChartEquitySubscription);
+DECL_CSUB_DESTROY_FUNC(ChartFuturesSubscription);
+DECL_CSUB_DESTROY_FUNC(ChartOptionsSubscription);
+DECL_CSUB_DESTROY_FUNC(TimesaleFuturesSubscription);
+DECL_CSUB_DESTROY_FUNC(TimesaleEquitySubscription);
+DECL_CSUB_DESTROY_FUNC(TimesaleOptionsSubscription);
+DECL_CSUB_DESTROY_FUNC(NasdaqActivesSubscription);
+DECL_CSUB_DESTROY_FUNC(NYSEActivesSubscription);
+DECL_CSUB_DESTROY_FUNC(OTCBBActivesSubscription);
+DECL_CSUB_DESTROY_FUNC(OptionActivesSubscription);
+#undef DECL_CSUB_DESTROY_FUNC
+
+/* Generic destroy (cast to StreamingSubscription_C*) */
+inline int
+StreamingSubscription_Destroy(StreamingSubscription_C* psub)
+{ return StreamingSubscription_Destroy_ABI(psub, 0); }
+
+
+/* SUBSCRIPTION GET METHODS */
+
+#define DECL_CSUB_GET_SERVICE_FUNC(name) \
+inline int \
+name##_GetService( name##_C *psub, StreamerServiceType *service ) \
+{ return StreamingSubscription_GetService_ABI( (StreamingSubscription_C*)psub, \
+                                               (int*)service, 0); }
+
+/* GetService methods for each sub type */
+DECL_CSUB_GET_SERVICE_FUNC(QuotesSubscription);
+DECL_CSUB_GET_SERVICE_FUNC(OptionsSubscription);
+DECL_CSUB_GET_SERVICE_FUNC(LevelOneFuturesSubscription);
+DECL_CSUB_GET_SERVICE_FUNC(LevelOneForexSubscription);
+DECL_CSUB_GET_SERVICE_FUNC(LevelOneFuturesOptionsSubscription);
+DECL_CSUB_GET_SERVICE_FUNC(NewsHeadlineSubscription);
+DECL_CSUB_GET_SERVICE_FUNC(ChartEquitySubscription);
+DECL_CSUB_GET_SERVICE_FUNC(ChartFuturesSubscription);
+DECL_CSUB_GET_SERVICE_FUNC(ChartOptionsSubscription);
+DECL_CSUB_GET_SERVICE_FUNC(TimesaleFuturesSubscription);
+DECL_CSUB_GET_SERVICE_FUNC(TimesaleEquitySubscription);
+DECL_CSUB_GET_SERVICE_FUNC(TimesaleOptionsSubscription);
+DECL_CSUB_GET_SERVICE_FUNC(NasdaqActivesSubscription);
+DECL_CSUB_GET_SERVICE_FUNC(NYSEActivesSubscription);
+DECL_CSUB_GET_SERVICE_FUNC(OTCBBActivesSubscription);
+DECL_CSUB_GET_SERVICE_FUNC(OptionActivesSubscription);
+/* GetService generic method (cast to StreamerSubscription_C*) */
+DECL_CSUB_GET_SERVICE_FUNC(StreamingSubscription);
+#undef DECL_CSUB_GET_SERVICE_FUNC
+
+
+#define DECL_CSUB_GET_COMMAND_FUNC(name) \
+inline int \
+name##_GetCommand( name##_C *psub, char **buf, size_t *n ) \
+{ return StreamingSubscription_GetCommand_ABI( (StreamingSubscription_C*)psub, \
+                                               buf, n, 0); }
+
+/* GetCommand methods for each sub type */
+DECL_CSUB_GET_COMMAND_FUNC(QuotesSubscription);
+DECL_CSUB_GET_COMMAND_FUNC(OptionsSubscription);
+DECL_CSUB_GET_COMMAND_FUNC(LevelOneFuturesSubscription);
+DECL_CSUB_GET_COMMAND_FUNC(LevelOneForexSubscription);
+DECL_CSUB_GET_COMMAND_FUNC(LevelOneFuturesOptionsSubscription);
+DECL_CSUB_GET_COMMAND_FUNC(NewsHeadlineSubscription);
+DECL_CSUB_GET_COMMAND_FUNC(ChartEquitySubscription);
+DECL_CSUB_GET_COMMAND_FUNC(ChartFuturesSubscription);
+DECL_CSUB_GET_COMMAND_FUNC(ChartOptionsSubscription);
+DECL_CSUB_GET_COMMAND_FUNC(TimesaleFuturesSubscription);
+DECL_CSUB_GET_COMMAND_FUNC(TimesaleEquitySubscription);
+DECL_CSUB_GET_COMMAND_FUNC(TimesaleOptionsSubscription);
+DECL_CSUB_GET_COMMAND_FUNC(NasdaqActivesSubscription);
+DECL_CSUB_GET_COMMAND_FUNC(NYSEActivesSubscription);
+DECL_CSUB_GET_COMMAND_FUNC(OTCBBActivesSubscription);
+DECL_CSUB_GET_COMMAND_FUNC(OptionActivesSubscription);
+/* GetCommand generic method (cast to StreamerSubscription_C*) */
+DECL_CSUB_GET_COMMAND_FUNC(StreamingSubscription);
+#undef DECL_CSUB_GET_COMMAND_FUNC
+
+
+#define DECL_CSUB_GET_SYMBOLS_FUNC(name) \
+inline int \
+name##_GetSymbols( name##_C *psub, char***buffers, size_t *n) \
+{ return SubscriptionBySymbolBase_GetSymbols_ABI( \
+    (StreamingSubscription_C*)psub, buffers, n, 0 ); }
+
+/* GetSymbols methods for each SubscriptionBySymbolBase descendant*/
+/* GetCommand methods for each sub type */
+DECL_CSUB_GET_SYMBOLS_FUNC(QuotesSubscription);
+DECL_CSUB_GET_SYMBOLS_FUNC(OptionsSubscription);
+DECL_CSUB_GET_SYMBOLS_FUNC(LevelOneFuturesSubscription);
+DECL_CSUB_GET_SYMBOLS_FUNC(LevelOneForexSubscription);
+DECL_CSUB_GET_SYMBOLS_FUNC(LevelOneFuturesOptionsSubscription);
+DECL_CSUB_GET_SYMBOLS_FUNC(NewsHeadlineSubscription);
+DECL_CSUB_GET_SYMBOLS_FUNC(ChartEquitySubscription);
+DECL_CSUB_GET_SYMBOLS_FUNC(ChartFuturesSubscription);
+DECL_CSUB_GET_SYMBOLS_FUNC(ChartOptionsSubscription);
+DECL_CSUB_GET_SYMBOLS_FUNC(TimesaleFuturesSubscription);
+DECL_CSUB_GET_SYMBOLS_FUNC(TimesaleEquitySubscription);
+DECL_CSUB_GET_SYMBOLS_FUNC(TimesaleOptionsSubscription);
+
+
+#define DECL_CSUB_GET_FIELDS_FUNC(name) \
+inline int \
+name##_GetFields(name##_C *psub, name##Field **fields, size_t *n) \
+{ return name##_GetFields_ABI(psub, (int**)fields, n, 0); }
+
+#define DECL_CSUB_GET_FIELDS_BASE_FUNC(name, base) \
+inline int \
+name##_GetFields(name##_C *psub, base##Field **fields, size_t *n) \
+{ return base##Base_GetFields_ABI((StreamingSubscription_C*)psub, \
+                                   (int**)fields, n, 0); }
+
+/* GetFields methods in derived */
+DECL_CSUB_GET_FIELDS_FUNC(QuotesSubscription);
+DECL_CSUB_GET_FIELDS_FUNC(OptionsSubscription);
+DECL_CSUB_GET_FIELDS_FUNC(LevelOneFuturesSubscription);
+DECL_CSUB_GET_FIELDS_FUNC(LevelOneForexSubscription);
+DECL_CSUB_GET_FIELDS_FUNC(LevelOneFuturesOptionsSubscription);
+DECL_CSUB_GET_FIELDS_FUNC(NewsHeadlineSubscription);
+DECL_CSUB_GET_FIELDS_FUNC(ChartEquitySubscription);
+#undef DECL_CSUB_GET_FIELDS_FUNC
+
+/* GeFields methods in base */
+DECL_CSUB_GET_FIELDS_BASE_FUNC(ChartFuturesSubscription, ChartSubscription);
+DECL_CSUB_GET_FIELDS_BASE_FUNC(ChartOptionsSubscription, ChartSubscription);
+DECL_CSUB_GET_FIELDS_BASE_FUNC(TimesaleFuturesSubscription, TimesaleSubscription);
+DECL_CSUB_GET_FIELDS_BASE_FUNC(TimesaleEquitySubscription, TimesaleSubscription);
+DECL_CSUB_GET_FIELDS_BASE_FUNC(TimesaleOptionsSubscription, TimesaleSubscription);
+#undef DECL_CSUB_GET_FIELDS_BASE_FUNC
+
+#define DECL_CSUB_GET_DURATION(name, base) \
+inline int \
+name##_GetDuration(name##_C *psub, DurationType *duration) \
+{ return base##Base_GetDuration_ABI( \
+    (StreamingSubscription_C*)psub, (int*)duration, 0); }
+
+/* GetDuration in base */
+DECL_CSUB_GET_DURATION(NasdaqActivesSubscription, ActivesSubscription)
+DECL_CSUB_GET_DURATION(NYSEActivesSubscription, ActivesSubscription)
+DECL_CSUB_GET_DURATION(OTCBBActivesSubscription, ActivesSubscription)
+DECL_CSUB_GET_DURATION(OptionActivesSubscription, ActivesSubscription)
+#undef DECL_CSUB_GET_DURATION
+
+/* GetVenue */
+inline int
+OptionActivesSubscription_GetVenue(OptionActivesSubscription_C *psub,
+                                   VenueType *venue)
+{ return OptionActivesSubscription_GetVenue_ABI(psub, (int*)venue, 0); }
+
+
+#else
+/* C++ Interface */
 
 namespace tdma{
 
-class DLL_SPEC_ StreamerService{    
-public:
-    /* NOTE as we add these need to update the constructor in streaming.cpp
-            and the to_string overload in params.cpp */
-    enum class type : unsigned int{
-        NONE,                       /* NULL FOR INTERNAL/CALLBACK USE */
-        //ACCT_ACTIVITY,            /* NOT IMPLEMENTED YET */
-        ADMIN,
-        ACTIVES_NASDAQ,
-        ACTIVES_NYSE,
-        ACTIVES_OTCBB,
-        ACTIVES_OPTIONS,
-        //FOREX_BOOK,               /* NOT DOCUMENTED */
-        //FUTURES_BOOK,             /* NOT DOCUMENTED */
-        //LISTED_BOOK,              /* NOT DOCUMENTED */
-        //NASDAQ_BOOK,              /* NOT DOCUMENTED */
-        //OPTIONS_BOOK,             /* NOT DOCUMENTED */
-        //FUTURES_OPTION_BOOK,      /* NOT DOCUMENTED */
-        CHART_EQUITY,
-        //CHART_FOREX,              /* NOT WORKING */
-        CHART_FUTURES,
-        CHART_OPTIONS,
-        //CHART_HISTORY_FUTURES,    /* NOT IMPLEMENTED YET */
-        QUOTE,
-        LEVELONE_FUTURES,
-        LEVELONE_FOREX,
-        LEVELONE_FUTURES_OPTIONS,
-        OPTION,
-        //LEVELTWO_FUTURES,         /* NOT DOCUMENTED */
-        NEWS_HEADLINE,
-        //NEWS_STORY,               /* NOT DOCUMENTED */
-        //NEWS_HEADLINE_LIST,       /* NOT DOCUMENTED */
-        //STREAMER_SERVER,          /* NOT DOCUMENTED - OLD HTTP VERSION ?*/
-        TIMESALE_EQUITY,
-        TIMESALE_FUTURES,
-        //TIMESALE_FOREX,           /* NOT WORKING */
-        TIMESALE_OPTIONS
-    };
-
-    explicit StreamerService(std::string service_name);
-
-    explicit StreamerService(unsigned int i)
-        : _service( static_cast<type>(i) ) {}
-    
-    StreamerService(type service_type)
-        : _service(service_type) {}
-
-    StreamerService(nullptr_t)
-        : _service(type::NONE) {}
-
-    operator type () const { return _service; }  
-
-private:
-    type _service;
-};
-
-
-enum class AdminCommandType : unsigned int{
-    LOGIN,
-    LOGOUT,
-    QOS
-};
-
-enum class QOSType : unsigned int {
-    express,   /* 500 ms */
-    real_time, /* 750 ms */
-    fast,      /* 1000 ms DEFAULT */
-    moderate,  /* 1500 ms */
-    slow,      /* 3000 ms */
-    delayed    /* 5000 ms */
-};
-
-//DLL_SPEC_ std::string
-//to_string(const StreamerService::type& service);
-
-DLL_SPEC_ std::string
-to_string(const StreamerService& service);
-
-DLL_SPEC_ std::string
-to_string(const AdminCommandType& command);
-
-DLL_SPEC_ std::string
-to_string(const QOSType& qos);
-
-using std::to_string;
-
-//DLL_SPEC_ std::ostream&
-//operator<<(std::ostream& out, const StreamerService::type& service);
-
-DLL_SPEC_ std::ostream&
-operator<<(std::ostream& out, const StreamerService& service);
-
-DLL_SPEC_ std::ostream&
-operator<<(std::ostream& out, const AdminCommandType& command);
-
-DLL_SPEC_ std::ostream&
-operator<<(std::ostream& out, const QOSType& qos);
 
 struct StreamerCredentials{
     std::string user_id;
@@ -157,654 +813,660 @@ struct StreamerInfo{
 };
 
 
-class DLL_SPEC_ StreamingSubscription{
-    StreamerService::type _service;
-    std::string _command;
-    std::map<std::string, std::string> _parameters;
+class StreamingSubscription{
+public:
+    typedef StreamingSubscription_C CType;
+
+    static const int TYPE_ID_LOW = 1;
+    static const int TYPE_ID_HIGH = 18;
+
+private:
+    std::shared_ptr<CType> _csub;
+    friend class StreamingSession;
+
 protected:
-    StreamingSubscription( StreamerService::type service,
-                           const std::string& command,
-                           const std::map<std::string, std::string>& paramaters );
+    template<typename CTy=CType>
+    CTy*
+    csub() const
+    { return reinterpret_cast<CTy*>( const_cast<CType*>(_csub.get()) ); }
+
+    // TODO deduce CTy from F
+    template<typename CTy, typename F, typename... Args>
+    StreamingSubscription(
+            CTy _,
+            F create_func,
+            typename std::enable_if<IsValidCProxy<CTy, CType>::value>::type *v,
+            Args... args )
+        :
+            _csub( new StreamingSubscription_C{0,0},
+                   CProxyDestroyer<CType>(StreamingSubscription_Destroy_ABI) )
+        {
+            /* IF WE THROW BEFORE HERE WE MAY LEAK IN DERIVED */
+            if( create_func )
+                create_func(args..., csub<CTy>(), 1);
+        }
+
+
+    template<typename CTy >
+    StreamingSubscription(
+            CTy _,
+            typename std::enable_if<IsValidCProxy<CTy, CType>::value>::type*v
+                = nullptr )
+        :
+            _csub( new StreamingSubscription_C{0,0},
+                   CProxyDestroyer<CType>(StreamingSubscription_Destroy_ABI) )
+        {
+        }
+
 
 public:
-    static
-    std::string
-    encode_symbol(std::string symbol);
-
-    StreamerService::type
+    StreamerServiceType
     get_service() const
-    { return _service; }
+    {
+        int ss;
+        StreamingSubscription_GetService_ABI(_csub.get(), &ss, 1);
+        return static_cast<StreamerServiceType>(ss);
+    }
 
     std::string
     get_command() const
-    { return _command; }
-
-    std::map<std::string, std::string>
-    get_parameters() const
-    { return _parameters; }
+    {
+        char *buf;
+        size_t n;
+        StreamingSubscription_GetCommand_ABI(_csub.get(), &buf, &n, 1);
+        std::string s(buf, n-1);
+        if(buf)
+            free(buf);
+        return s;
+    }
 };
 
 
-class DLL_SPEC_ SubscriptionBySymbolBase
+// TODO fix how we allocate the tmp buffers in the constructor
+class SubscriptionBySymbolBase
         : public StreamingSubscription {
-    std::set<std::string> _symbols;
 
-    template<typename F>
-    static std::map<std::string, std::string>
-    build_paramaters( const std::set<std::string>& symbols,
-                      const std::set<F>& fields );
+    static const char**
+    set_to_cstrs(const std::set<std::string>& symbols )
+    {
+        if( symbols.empty() )
+            throw ValueException("empty symbols set");
+        const char **tmp = new const char*[symbols.size()];
+        int cnt = 0;
+        for(auto& s: symbols)
+            tmp[cnt++] = s.c_str();
+        return tmp;
+    }
+
+    template<typename FTy>
+    static int*
+    set_to_int_array(const std::set<FTy>& fields)
+    {
+        if( fields.empty() )
+            throw ValueException("empty fields set");
+        int *tmp = new int[fields.size()];
+        int cnt = 0;
+        for(auto& f: fields)
+            tmp[cnt++] = static_cast<int>(f);
+        return tmp;
+    }
+
+protected:
+    template<typename FieldTy, typename SubTy>
+    std::set<FieldTy>
+    fields_from_abi( int(*abicall)(SubTy*, int**, size_t*,int) ) const
+    {
+        int *f;
+        size_t n;
+        abicall(csub<SubTy>(), &f, &n, 1);
+        std::set<FieldTy> ret;
+        for(size_t i = 0; i < n; ++i){
+            ret.insert( static_cast<FieldTy>(f[i]) );
+        }
+        FreeFieldsBuffer_ABI(f, 1);
+        return ret;
+    }
+
+    template<typename CTy, typename F, typename FTy>
+    SubscriptionBySymbolBase( CTy _,
+                              F create_func,
+                              const std::set<std::string>& symbols,
+                              const std::set<FTy>& fields )
+        :
+            StreamingSubscription(_)
+        {
+            const char** s = nullptr;
+            int *i = nullptr;
+            try{
+                s = set_to_cstrs(symbols);
+                i = set_to_int_array(fields);
+                create_func(s, symbols.size(), i, fields.size(), csub<CTy>(), 1);
+            }catch(...){
+                if( s ) delete[] s;
+                if( i ) delete[] i;
+                throw;
+            }
+            if( s ) delete[] s;
+            if( i ) delete[] i;
+        }
+
 
 public:
+    static const int TYPE_ID_LOW = 1;
+    static const int TYPE_ID_HIGH = 14;
+
     std::set<std::string>
     get_symbols() const
-    { return _symbols; }
+    {
+        char **buf;
+        size_t n;
+        std::set<std::string> strs;
+        SubscriptionBySymbolBase_GetSymbols_ABI(csub(), &buf, &n, 1);
+        if( buf ){
+            while(n--){
+                char *c = buf[n];
+                assert(c);
+                strs.insert(c);
+                free(c);
+            }
+            free(buf);
+        }
+        return strs;
+    }
 
-protected:
-    template<typename F>
-    SubscriptionBySymbolBase( StreamerService::type service,
-                              std::string command,
-                              const std::set<std::string>& symbols,
-                              const std::set<F>& fields )
+};
+
+
+class QuotesSubscription
+        : public SubscriptionBySymbolBase {
+public:
+    using FieldType = QuotesSubscriptionField;
+
+    typedef QuotesSubscription_C CType;
+
+    static const int TYPE_ID_LOW = 1;
+    static const int TYPE_ID_HIGH = 1;
+
+    QuotesSubscription( const std::set<std::string>& symbols,
+                          const std::set<FieldType>& fields )
         :
-            StreamingSubscription(service, command,
-                                  build_paramaters(symbols, fields)),
-            _symbols(symbols)
+            SubscriptionBySymbolBase( QuotesSubscription_C{},
+                                      QuotesSubscription_Create_ABI,
+                                      symbols,
+                                      fields )
         {
         }
-};
-
-
-class DLL_SPEC_ QuotesSubscription
-        : public SubscriptionBySymbolBase {
-public:
-    enum class FieldType : unsigned int {
-        symbol,
-        bid_price,
-        ask_price,
-        last_price,
-        bid_size,
-        ask_size,
-        ask_id,
-        bid_id,
-        total_volume,
-        last_size,
-        trade_time,
-        quote_time,
-        high_price,
-        low_price,
-        bid_tick,
-        close_price,
-        exchange_id,
-        marginable,
-        shortable,
-        island_bid,
-        island_ask,
-        island_volume,
-        quote_day,
-        trade_day,
-        volatility,
-        description,
-        last_id,
-        digits,
-        open_price,
-        net_change,
-        high_52_week,
-        low_52_week,
-        pe_ratio,
-        dividend_amount,
-        dividend_yeild,
-        island_bid_size,
-        island_ask_size,
-        nav,
-        fund_price,
-        exchanged_name,
-        dividend_date,
-        regular_market_quote,
-        regular_market_trade,
-        regular_market_last_price,
-        regular_market_last_size,
-        regular_market_trade_time,
-        regular_market_trade_day,
-        regular_market_net_change,
-        security_status,
-        mark,
-        quote_time_as_long,
-        trade_time_as_long,
-        regular_market_trade_time_as_long
-    };
-
-private:
-    std::set<FieldType> _fields;
-
-public:
-    QuotesSubscription( const std::set<std::string>& symbols,
-                        const std::set<FieldType>& fields );
 
     std::set<FieldType>
     get_fields() const
-    { return _fields; }
+    { return fields_from_abi<FieldType>(QuotesSubscription_GetFields_ABI); }
+
 };
 
 
-class DLL_SPEC_ ActivesSubscriptionBase
-        : public StreamingSubscription {
-public:
-    enum class DurationType : unsigned int {
-        all_day,
-        min_60,
-        min_30,
-        min_10,
-        min_5,
-        min_1
-    };
-
-private:
-    std::string _venue;
-    DurationType _duration;
-
-protected:
-    ActivesSubscriptionBase(StreamerService::type service,
-                            std::string venue,
-                            DurationType duration);
-public:
-    DurationType
-    get_duration() const
-    { return _duration; }
-};
-
-std::string
-to_string(const ActivesSubscriptionBase::DurationType& duration);
-
-std::ostream&
-operator<<( std::ostream& out,
-            const ActivesSubscriptionBase::DurationType& duration );
-
-
-class DLL_SPEC_ NasdaqActivesSubscription
-        : public ActivesSubscriptionBase {
-public:
-    NasdaqActivesSubscription(DurationType duration)
-        : ActivesSubscriptionBase(StreamerService::type::ACTIVES_NASDAQ,
-                                  "NASDAQ", duration)
-    {}
-};
-
-class DLL_SPEC_ NYSEActivesSubscription
-        : public ActivesSubscriptionBase {
-public:
-    NYSEActivesSubscription(DurationType duration)
-        : ActivesSubscriptionBase(StreamerService::type::ACTIVES_NYSE,
-                                  "NYSE", duration)
-    {}
-};
-
-class DLL_SPEC_ OTCBBActivesSubscription
-        : public ActivesSubscriptionBase {
-public:
-    OTCBBActivesSubscription(DurationType duration)
-        : ActivesSubscriptionBase(StreamerService::type::ACTIVES_OTCBB,
-                                  "OTCBB", duration)
-    {}
-};
-
-class DLL_SPEC_ OptionActivesSubscription
-        : public ActivesSubscriptionBase {
-public:
-    enum class VenueType : unsigned int {
-        opts,
-        calls,
-        puts,
-        opts_desc,
-        calls_desc,
-        puts_desc
-    };
-
-private:
-    VenueType _venue;
-
-public:
-    OptionActivesSubscription(VenueType venue, DurationType duration);
-
-    VenueType
-    get_venue() const
-    { return _venue; }
-};
-
-std::string
-to_string(const OptionActivesSubscription::VenueType& venue);
-
-std::ostream&
-operator<<(std::ostream& out, const OptionActivesSubscription::VenueType& venue);
-
-
-class DLL_SPEC_ OptionsSubscription
+class OptionsSubscription
         : public SubscriptionBySymbolBase {
 public:
-    enum class FieldType : unsigned int {
-        symbol,
-        description,
-        bid_price,
-        ask_price,
-        last_price,
-        high_price,
-        low_price,
-        close_price,
-        total_volume,
-        open_interest,
-        volatility,
-        quote_time,
-        trade_time,
-        money_intrinsic_value,
-        quote_day,
-        trade_day,
-        expiration_year,
-        multiplier,
-        digits,
-        open_price,
-        bid_size,
-        ask_size,
-        last_size,
-        net_change,
-        strike_price,
-        contract_type,
-        underlying,
-        expiration_month,
-        deliverables,
-        time_value,
-        expiration_day,
-        days_to_expiration,
-        delta,
-        gamma,
-        theta,
-        vega,
-        rho,
-        security_status,
-        theoretical_option_value,
-        underlying_price,
-        uv_expiration_type,
-        mark,
-    };
+    using FieldType = OptionsSubscriptionField;
 
-private:
-    std::set<FieldType> _fields;
+    typedef OptionsSubscription_C CType;
 
-public:
+    static const int TYPE_ID_LOW = 2;
+    static const int TYPE_ID_HIGH = 2;
+
     OptionsSubscription( const std::set<std::string>& symbols,
-                         const std::set<FieldType>& fields );
+                         const std::set<FieldType>& fields )
+        :
+            SubscriptionBySymbolBase( OptionsSubscription_C{},
+                                      OptionsSubscription_Create_ABI,
+                                      symbols,
+                                      fields )
+        {
+        }
 
     std::set<FieldType>
     get_fields() const
-    { return _fields; }
+    { return fields_from_abi<FieldType>(OptionsSubscription_GetFields_ABI); }
 };
 
 
-class DLL_SPEC_ LevelOneFuturesSubscription
+class LevelOneFuturesSubscription
         : public SubscriptionBySymbolBase {
 public:
-    enum class FieldType : unsigned int {
-        symbol,
-        bid_price,
-        ask_price,
-        last_price,
-        bid_size,
-        ask_size,
-        ask_id,
-        bid_id,
-        total_volume,
-        last_size,
-        quote_time,
-        trade_time,
-        high_price,
-        low_price,
-        close_price,
-        exchange_id,
-        description,
-        last_id,
-        open_price,
-        net_change,
-        future_percent_change,
-        exchange_name,
-        security_status,
-        open_interest,
-        mark,
-        tick,
-        tick_amount,
-        product,
-        future_price_format,
-        future_trading_hours,
-        future_is_tradable,
-        future_multiplier,
-        future_is_active,
-        future_settlement_price,
-        future_active_symbol,
-        future_expiration_date
-    };
+    using FieldType = LevelOneFuturesSubscriptionField;
 
-private:
-    std::set<FieldType> _fields;
+    typedef LevelOneFuturesSubscription_C CType;
 
-public:
+    static const int TYPE_ID_LOW = 3;
+    static const int TYPE_ID_HIGH = 3;
+
     LevelOneFuturesSubscription( const std::set<std::string>& symbols,
-                                 const std::set<FieldType>& fields );
+                                    const std::set<FieldType>& fields )
+        :
+            SubscriptionBySymbolBase( LevelOneFuturesSubscription_C{},
+                                      LevelOneFuturesSubscription_Create_ABI,
+                                      symbols,
+                                      fields )
+        {
+        }
 
     std::set<FieldType>
     get_fields() const
-    { return _fields; }
+    {
+        return fields_from_abi<FieldType>(
+            LevelOneFuturesSubscription_GetFields_ABI
+            );
+    }
 };
 
 
-class DLL_SPEC_ LevelOneForexSubscription
+class LevelOneForexSubscription
         : public SubscriptionBySymbolBase {
 public:
-    enum class FieldType : unsigned int {
-        symbol,
-        bid_price,
-        ask_price,
-        last_price,
-        bid_size,
-        ask_size,
-        total_volume,
-        last_size,
-        quote_time,
-        trade_time,
-        high_price,
-        low_price,
-        close_price,
-        exchange_id,
-        description,
-        open_price,
-        net_change,
-        percent_change,
-        exchange_name,
-        digits,
-        security_status,
-        tick,
-        tick_amount,
-        product,
-        trading_hours,
-        is_tradable,
-        market_maker,
-        high_52_week,
-        low_52_week,
-        mark
-    };
+    using FieldType = LevelOneForexSubscriptionField;
 
-private:
-    std::set<FieldType> _fields;
+    typedef LevelOneForexSubscription_C CType;
 
-public:
+    static const int TYPE_ID_LOW = 4;
+    static const int TYPE_ID_HIGH = 4;
+
     LevelOneForexSubscription( const std::set<std::string>& symbols,
-                               const std::set<FieldType>& fields );
+                                  const std::set<FieldType>& fields )
+        :
+            SubscriptionBySymbolBase( LevelOneForexSubscription_C{},
+                                      LevelOneForexSubscription_Create_ABI,
+                                      symbols,
+                                      fields )
+        {
+        }
 
     std::set<FieldType>
     get_fields() const
-    { return _fields; }
+    {
+        return fields_from_abi<FieldType>(
+            LevelOneForexSubscription_GetFields_ABI
+            );
+    }
 };
 
 
-class DLL_SPEC_ LevelOneFuturesOptionsSubscription
+class LevelOneFuturesOptionsSubscription
         : public SubscriptionBySymbolBase {
 public:
-    enum class FieldType : unsigned int {
-        symbol,
-        bid_price,
-        ask_price,
-        last_price,
-        bid_size,
-        ask_size,
-        ask_id,
-        bid_id,
-        total_volume,
-        last_size,
-        quote_time,
-        trade_time,
-        high_price,
-        low_price,
-        close_price,
-        exchange_id,
-        description,
-        last_id,
-        open_price,
-        net_change,
-        future_percent_change,
-        exchange_name,
-        security_status,
-        open_interest,
-        mark,
-        tick,
-        tick_amount,
-        product,
-        future_price_format,
-        future_trading_hours,
-        future_is_tradable,
-        future_multiplier,
-        future_is_active,
-        future_settlement_price,
-        future_active_symbol,
-        future_expiration_date
-    };
+    using FieldType = LevelOneFuturesOptionsSubscriptionField;
 
-private:
-    std::set<FieldType> _fields;
+    typedef LevelOneFuturesOptionsSubscription_C CType;
 
-public:
+    static const int TYPE_ID_LOW = 5;
+    static const int TYPE_ID_HIGH = 5;
+
     LevelOneFuturesOptionsSubscription( const std::set<std::string>& symbols,
-                                        const std::set<FieldType>& fields );
+                                            const std::set<FieldType>& fields )
+        :
+            SubscriptionBySymbolBase( LevelOneFuturesOptionsSubscription_C{},
+                                      LevelOneFuturesOptionsSubscription_Create_ABI,
+                                      symbols,
+                                      fields )
+        {
+        }
 
     std::set<FieldType>
     get_fields() const
-    { return _fields; }
+    {
+        return fields_from_abi<FieldType>(
+            LevelOneFuturesOptionsSubscription_GetFields_ABI
+            );
+    }
 };
 
-
-class DLL_SPEC_ NewsHeadlineSubscription
+class NewsHeadlineSubscription
         : public SubscriptionBySymbolBase {
 public:
-    enum class FieldType : unsigned int {
-        symbol,
-        error_code,
-        story_datetime,
-        headline_id,
-        status,
-        headline,
-        story_id,
-        count_for_keyword,
-        keyword_array,
-        is_host,
-        story_source
-    };
+    using FieldType = NewsHeadlineSubscriptionField;
 
-private:
-    std::set<FieldType> _fields;
+    typedef NewsHeadlineSubscription_C CType;
 
-public:
+    static const int TYPE_ID_LOW = 6;
+    static const int TYPE_ID_HIGH = 6;
+
     NewsHeadlineSubscription( const std::set<std::string>& symbols,
-                              const std::set<FieldType>& fields );
+                                 const std::set<FieldType>& fields )
+        :
+            SubscriptionBySymbolBase( NewsHeadlineSubscription_C{},
+                                      NewsHeadlineSubscription_Create_ABI,
+                                      symbols,
+                                      fields )
+        {
+        }
 
     std::set<FieldType>
     get_fields() const
-    { return _fields; }
+    { return fields_from_abi<FieldType>(NewsHeadlineSubscription_GetFields_ABI); }
 };
 
 
 // TODO implement ADD command
-class DLL_SPEC_ ChartEquitySubscription
+class ChartEquitySubscription
         : public SubscriptionBySymbolBase {
 public:
-    enum class FieldType : unsigned int {
-        symbol,
-        open_price,
-        high_price,
-        low_price,
-        close_price,
-        volume,
-        sequence,
-        chart_time,
-        chart_day
-    };
+    using FieldType = ChartEquitySubscriptionField;
 
-private:
-    std::set<FieldType> _fields;
+    typedef ChartEquitySubscription_C CType;
 
-public:
+    static const int TYPE_ID_LOW = 7;
+    static const int TYPE_ID_HIGH = 7;
+
     ChartEquitySubscription( const std::set<std::string>& symbols,
-                             const std::set<FieldType>& fields );
+                             const std::set<FieldType>& fields )
+        :
+            SubscriptionBySymbolBase( ChartEquitySubscription_C{},
+                                      ChartEquitySubscription_Create_ABI,
+                                      symbols,
+                                      fields )
+        {
+
+        }
 
     std::set<FieldType>
     get_fields() const
-    { return _fields; }
+    { return fields_from_abi<FieldType>(ChartEquitySubscription_GetFields_ABI); }
 };
 
 
-class DLL_SPEC_ ChartSubscriptionBase
+class ChartSubscriptionBase
         : public SubscriptionBySymbolBase {
 public:
-    enum class FieldType : unsigned int {
-        symbol,
-        chart_time,
-        open_price,
-        high_price,
-        low_price,
-        close_price,
-        volume
-    };
+    using FieldType = ChartSubscriptionField;
 
-private:
-    std::set<FieldType> _fields;
+    static const int TYPE_ID_LOW = 8;
+    static const int TYPE_ID_HIGH = 10;
 
 protected:
-    ChartSubscriptionBase( StreamerService::type service,
-                           const std::set<std::string>& symbols,
-                           const std::set<FieldType>& fields );
+    template<typename CTy, typename F>
+    ChartSubscriptionBase( CTy _,
+                              F func,
+                              const std::set<std::string>& symbols,
+                              const std::set<FieldType>& fields )
+        :
+            SubscriptionBySymbolBase( _, func, symbols, fields )
+        {
+        }
 
+public:
     std::set<FieldType>
     get_fields() const
-    { return _fields; }
+    { return fields_from_abi<FieldType>(ChartSubscriptionBase_GetFields_ABI); }
 };
 
 
 /*
  * NOT WORKING - EUR/USD repsonse: error 22, msg 'Bad command formatting'
  *
-class DLL_SPEC_ ChartForexSubscription
+class ChartForexSubscription
         : public ChartSubscriptionBase {   
 public:
+    typedef ChartFuturesSubscription_C CType;
+
+    static const int TYPE_ID_LOW = 8;
+    static const int TYPE_ID_HIGH = 8;
+
     ChartForexSubscription( const std::set<std::string>& symbols,
                                const std::set<FieldType>& fields )
-        : ChartSubscriptionBase( StreamerService::type::CHART_FOREX,
+        : ChartSubscriptionBase( StreamerServiceType::CHART_FOREX,
                                  symbols, fields )
     {}
 };
 */
 
-class DLL_SPEC_ ChartFuturesSubscription
+class ChartFuturesSubscription
         : public ChartSubscriptionBase {
 public:
+    typedef ChartFuturesSubscription_C CType;
+
+    static const int TYPE_ID_LOW = 9;
+    static const int TYPE_ID_HIGH = 9;
+
     ChartFuturesSubscription( const std::set<std::string>& symbols,
-                              const std::set<FieldType>& fields )
-        : ChartSubscriptionBase( StreamerService::type::CHART_FUTURES,
-                                 symbols, fields )
-    {}
+                                 const std::set<FieldType>& fields )
+        :
+            ChartSubscriptionBase( ChartFuturesSubscription_C{},
+                                   ChartFuturesSubscription_Create_ABI,
+                                   symbols, fields )
+        {
+        }
 };
 
 
-class DLL_SPEC_ ChartOptionsSubscription
+class ChartOptionsSubscription
         : public ChartSubscriptionBase {
 public:
+    typedef ChartOptionsSubscription_C CType;
+
+    static const int TYPE_ID_LOW = 10;
+    static const int TYPE_ID_HIGH = 10;
+
     ChartOptionsSubscription( const std::set<std::string>& symbols,
-                              const std::set<FieldType>& fields )
-        : ChartSubscriptionBase( StreamerService::type::CHART_OPTIONS,
-                                 symbols, fields )
-    {}
+                                 const std::set<FieldType>& fields )
+        :
+            ChartSubscriptionBase( ChartOptionsSubscription_C{},
+                                   ChartOptionsSubscription_Create_ABI,
+                                   symbols, fields )
+        {
+        }
 };
 
 
-class DLL_SPEC_ TimesalesSubscriptionBase
+class TimesaleSubscriptionBase
         : public SubscriptionBySymbolBase {
 public:
-    enum FieldType : unsigned int{
-        symbol,
-        trade_time,
-        last_price,
-        last_size,
-        last_sequence
-    };
+    using FieldType = TimesaleSubscriptionField;
 
-private:
-    std::set<FieldType> _fields;
+    static const int TYPE_ID_LOW = 11;
+    static const int TYPE_ID_HIGH = 14;
+
+protected:
+    template<typename CTy, typename F>
+    TimesaleSubscriptionBase( CTy _,
+                                 F func,
+                                 const std::set<std::string>& symbols,
+                                 const std::set<FieldType>& fields )
+        :
+            SubscriptionBySymbolBase( _, func, symbols, fields )
+        {
+        }
 
 public:
     std::set<FieldType>
     get_fields() const
-    { return _fields; }
-
-protected:
-    TimesalesSubscriptionBase( StreamerService::type service,
-                               const std::set<std::string>& symbols,
-                               const std::set<FieldType>& fields );
+    {
+        return fields_from_abi<FieldType>(
+            TimesaleSubscriptionBase_GetFields_ABI
+            );
+    }
 };
 
 
-class DLL_SPEC_ TimesaleEquitySubscription
-        : public TimesalesSubscriptionBase {
+class TimesaleEquitySubscription
+        : public TimesaleSubscriptionBase {
 public:
+    typedef TimesaleEquitySubscription_C CType;
+
+    static const int TYPE_ID_LOW = 11;
+    static const int TYPE_ID_HIGH = 11;
+
     TimesaleEquitySubscription( const std::set<std::string>& symbols,
-                                const std::set<FieldType>& fields )
-        : TimesalesSubscriptionBase( StreamerService::type::TIMESALE_EQUITY,
-                                    symbols, fields)
-    {}
+                                   const std::set<FieldType>& fields )
+        :
+            TimesaleSubscriptionBase( TimesaleEquitySubscription_C{},
+                                      TimesaleEquitySubscription_Create_ABI,
+                                     symbols, fields)
+        {
+        }
 };
 
 /*
  *  * NOT WORKING - EUR/USD repsonse: error 22, msg 'Bad command formatting'
-class DLL_SPEC_ TimesaleForexSubscription
-        : public TimesalesSubscriptionBase {
+class TimesaleForexSubscription
+        : public TimesaleSubscriptionBase {
 public:
+    typedef TimesaleForexSubscription_C CType;
+
+    static const int TYPE_ID_LOW = 12;
+    static const int TYPE_ID_HIGH = 12;
+
     TimesaleForexSubscription( const std::set<std::string>& symbols,
                                const std::set<FieldType>& fields )
-        : TimesalesSubscriptionBase( StreamerService::type::TIMESALE_FOREX,
+        : TimesaleSubscriptionBase( StreamerServiceType::TIMESALE_FOREX,
                                     symbols, fields)
     {}
 };
 */
 
-class DLL_SPEC_ TimesaleFuturesSubscription
-        : public TimesalesSubscriptionBase {
+class TimesaleFuturesSubscription
+        : public TimesaleSubscriptionBase {
 public:
+    typedef TimesaleFuturesSubscription_C CType;
+
+    static const int TYPE_ID_LOW = 13;
+    static const int TYPE_ID_HIGH = 13;
+
     TimesaleFuturesSubscription( const std::set<std::string>& symbols,
-                                 const std::set<FieldType>& fields )
-        : TimesalesSubscriptionBase( StreamerService::type::TIMESALE_FUTURES,
-                                    symbols, fields)
-    {}
+                                   const std::set<FieldType>& fields )
+        :
+            TimesaleSubscriptionBase( TimesaleFuturesSubscription_C{},
+                                      TimesaleFuturesSubscription_Create_ABI,
+                                      symbols, fields)
+        {
+        }
 };
 
-class DLL_SPEC_ TimesaleOptionsSubscription
-        : public TimesalesSubscriptionBase {
+class TimesaleOptionsSubscription
+        : public TimesaleSubscriptionBase {
 public:
+    typedef TimesaleOptionsSubscription_C CType;
+
+    static const int TYPE_ID_LOW = 14;
+    static const int TYPE_ID_HIGH = 14;
+
     TimesaleOptionsSubscription( const std::set<std::string>& symbols,
-                                 const std::set<FieldType>& fields )
-        : TimesalesSubscriptionBase( StreamerService::type::TIMESALE_OPTIONS,
-                                    symbols, fields)
-    {}
+                                    const std::set<FieldType>& fields )
+        :
+            TimesaleSubscriptionBase( TimesaleOptionsSubscription_C{},
+                                      TimesaleOptionsSubscription_Create_ABI,
+                                      symbols, fields)
+        {
+        }
 };
 
 
-enum class StreamingCallbackType : unsigned int {
-    listening_start,
-    listening_stop,
-    data,
-    notify,
-    timeout,
-    error
+class ActivesSubscriptionBase
+        : public StreamingSubscription {
+protected:
+    template<typename CTy, typename F, typename... Args>
+    ActivesSubscriptionBase( CTy _, F func, Args... args)
+        :
+            StreamingSubscription(_, func, nullptr, args...)
+        {
+        }
+
+public:
+    static const int TYPE_ID_LOW = 15;
+    static const int TYPE_ID_HIGH = 18;
+
+    DurationType
+    get_duration() const
+    {
+        int d;
+        ActivesSubscriptionBase_GetDuration_ABI(csub(), &d, 1);
+        return static_cast<DurationType>(d);
+    }
+
 };
 
-DLL_SPEC_ std::string
-to_string(const StreamingCallbackType& callback_type);
 
-using std::to_string;
 
-DLL_SPEC_ std::ostream&
-operator<<(std::ostream& out, const StreamingCallbackType& callback_type);
+class NasdaqActivesSubscription
+        : public ActivesSubscriptionBase {
+public:
+    typedef NasdaqActivesSubscription_C CType;
+
+    static const int TYPE_ID_LOW = 15;
+    static const int TYPE_ID_HIGH = 15;
+
+    NasdaqActivesSubscription(DurationType duration)
+        :
+            ActivesSubscriptionBase( NasdaqActivesSubscription_C{},
+                                     NasdaqActivesSubscription_Create_ABI,
+                                     static_cast<int>(duration) )
+        {
+        }
+};
+
+class NYSEActivesSubscription
+        : public ActivesSubscriptionBase {
+public:
+    typedef NYSEActivesSubscription_C CType;
+
+    static const int TYPE_ID_LOW = 16;
+    static const int TYPE_ID_HIGH = 16;
+
+    NYSEActivesSubscription(DurationType duration)
+        :
+            ActivesSubscriptionBase( NYSEActivesSubscription_C{},
+                                     NYSEActivesSubscription_Create_ABI,
+                                     static_cast<int>(duration) )
+        {
+        }
+};
+
+class OTCBBActivesSubscription
+        : public ActivesSubscriptionBase {
+public:
+    typedef OTCBBActivesSubscription_C CType;
+
+    static const int TYPE_ID_LOW = 17;
+    static const int TYPE_ID_HIGH = 17;
+
+    OTCBBActivesSubscription(DurationType duration)
+        :
+            ActivesSubscriptionBase( OTCBBActivesSubscription_C{},
+                                     OTCBBActivesSubscription_Create_ABI,
+                                     static_cast<int>(duration) )
+        {
+        }
+};
+
+class OptionActivesSubscription
+        : public ActivesSubscriptionBase {
+public:
+    typedef OptionActivesSubscription_C CType;
+
+    static const int TYPE_ID_LOW = 18;
+    static const int TYPE_ID_HIGH = 18;
+
+    OptionActivesSubscription(VenueType venue, DurationType duration)
+        :
+            ActivesSubscriptionBase( OptionActivesSubscription_C{},
+                                     OptionActivesSubscription_Create_ABI,
+                                     static_cast<int>(venue),
+                                     static_cast<int>(duration) )
+        {
+        }
+
+
+    VenueType
+    get_venue() const
+    {
+        int v;
+        OptionActivesSubscription_GetVenue_ABI(csub<CType>(), &v, 1);
+        return static_cast<VenueType>(v);
+    }
+
+};
+
+} /* tdma */
+
+#endif /* __cplusplus */
 
 /* 
  * CALLBACK passed to StreamingSession:
@@ -815,7 +1477,7 @@ operator<<(std::ostream& out, const StreamingCallbackType& callback_type);
  *
  *   listening_stop - listening thread has stopped (w/o error), other args empty
  *
- *   data - json data of StreamerService::type type returned from server
+ *   data - json data of StreamerServiceType::type type returned from server
  *          with timestamp
  *
  *   notify - notify response indicating some 'urgent' message from server
@@ -833,11 +1495,146 @@ operator<<(std::ostream& out, const StreamingCallbackType& callback_type);
  * DO NOT BLOCK THE THREAD from inside the callback.
  *
  */
-typedef std::function<void(StreamingCallbackType cb_type, StreamerService,
-                           unsigned long long, json)> streaming_cb_ty;
+
+//typedef std::function<void(StreamingCallbackType cb_type, StreamerServiceType,
+//                           unsigned long long, json)> streaming_cb_ty;
+
+#define STREAMING_VERSION "1.0"
+#define STREAMING_MIN_TIMEOUT 1000
+#define STREAMING_MIN_LISTENING_TIMEOUT 10000
+#define STREAMING_LOGOUT_TIMEOUT 1000
+#define STREAMING_DEF_CONNECT_TIMEOUT 3000
+#define STREAMING_DEF_LISTENING_TIMEOUT 30000
+#define STREAMING_DEF_SUBSCRIBE_TIMEOUT 1500
+#define STREAMING_MAX_SUBSCRIPTIONS 50
+
+typedef struct{
+    void *obj;
+    int type_id;
+    void *ctx; // reserved
+} StreamingSession_C;
+
+typedef void(*streaming_cb_ty)(int, int, unsigned long long, const char*);
+
+EXTERN_C_SPEC_ DLL_SPEC_ int
+StreamingSession_Create_ABI( struct Credentials *pcreds,
+                                const char *account_id,
+                                streaming_cb_ty callback,
+                                unsigned long connect_timeout,
+                                unsigned long listening_timeout,
+                                unsigned long subscribe_timeout,
+                                int request_response_to_cout,
+                                StreamingSession_C *psession,
+                                int allow_exceptions );
+
+EXTERN_C_SPEC_ DLL_SPEC_ int
+StreamingSession_Destroy_ABI( StreamingSession_C *psession,
+                                 int allow_exceptions );
 
 
-class DLL_SPEC_ StreamingSession{
+
+EXTERN_C_SPEC_ DLL_SPEC_ int
+StreamingSession_Start_ABI( StreamingSession_C *psession,
+                               StreamingSubscription_C **subs,
+                               size_t nsubs,
+                               int *results_buffer,
+                               int allow_exceptions );
+
+EXTERN_C_SPEC_ DLL_SPEC_ int
+StreamingSession_AddSubscriptions_ABI( StreamingSession_C *psession,
+                                           StreamingSubscription_C **subs,
+                                           size_t nsubs,
+                                           int *results_buffer,
+                                           int allow_exceptions );
+
+EXTERN_C_SPEC_ DLL_SPEC_ int
+StreamingSession_Stop_ABI( StreamingSession_C *psession,
+                               int allow_exceptions );
+
+EXTERN_C_SPEC_ DLL_SPEC_ int
+StreamingSession_SetQOS_ABI( StreamingSession_C *psession,
+                                int qos,
+                                int *result,
+                                int allow_exceptions );
+
+EXTERN_C_SPEC_ DLL_SPEC_ int
+StreamingSession_GetQOS_ABI( StreamingSession_C *psession,
+                                int *qos,
+                                int allow_exceptions );
+
+#ifndef __cplusplus
+
+/* C Interface */
+
+inline int
+StreamingSession_Create( struct Credentials *pcreds,
+                        const char *account_id,
+                        streaming_cb_ty callback,
+                        StreamingSession_C *psession )
+{
+    return StreamingSession_Create_ABI(pcreds, account_id, callback,
+                                       STREAMING_DEF_CONNECT_TIMEOUT,
+                                       STREAMING_DEF_LISTENING_TIMEOUT,
+                                       STREAMING_DEF_SUBSCRIBE_TIMEOUT,
+                                       0, psession, 0);
+}
+
+inline int
+StreamingSession_CreateEx( struct Credentials *pcreds,
+                            const char *account_id,
+                            streaming_cb_ty callback,
+                            unsigned long connect_timeout,
+                            unsigned long listening_timeout,
+                            unsigned long subscribe_timeout,
+                            int request_response_to_cout,
+                            StreamingSession_C *psession )
+{
+    return StreamingSession_Create_ABI(pcreds, account_id, callback,
+                                       connect_timeout, listening_timeout,
+                                       subscribe_timeout,
+                                       request_response_to_cout, psession, 0);
+}
+
+inline int
+StreamingSession_Destroy( StreamingSession_C *psession )
+{ return StreamingSession_Destroy_ABI(psession, 0); }
+
+
+inline int
+StreamingSession_Start( StreamingSession_C *psession,
+                        StreamingSubscription_C **subs,
+                        size_t nsubs,
+                        int *results_buffer)
+{ return StreamingSession_Start_ABI(psession, subs, nsubs, results_buffer, 0); }
+
+
+inline int
+StreamingSession_AddSubscriptions( StreamingSession_C *psession,
+                                   StreamingSubscription_C **subs,
+                                   size_t nsubs,
+                                   int *results_buffer )
+{ return StreamingSession_AddSubscriptions_ABI(psession, subs, nsubs,
+                                               results_buffer, 0); }
+
+inline int
+StreamingSession_Stop( StreamingSession_C *psession )
+{ return StreamingSession_Stop_ABI(psession, 0); }
+
+inline int
+StreamingSession_SetQOS(StreamingSession_C *psession, QOSType qos, int *result)
+{ return StreamingSession_SetQOS_ABI(psession, (int)qos, result, 0); }
+
+inline int
+StreamingSession_GetQOS( StreamingSession_C *psession, QOSType *qos)
+{ return StreamingSession_GetQOS_ABI(psession, (int*)qos, 0); }
+
+#else
+
+/* C++ Interface */
+
+namespace tdma{
+
+class StreamingSession{
 public:
     static const std::string VERSION; // = "1.0"
     static const std::chrono::milliseconds MIN_TIMEOUT; // 1000;
@@ -846,184 +1643,75 @@ public:
     static const std::chrono::milliseconds DEF_CONNECT_TIMEOUT; // 3000
     static const std::chrono::milliseconds DEF_LISTENING_TIMEOUT; // 30000
     static const std::chrono::milliseconds DEF_SUBSCRIBE_TIMEOUT; // 1500
+    static const int MAX_SUBSCRIPTIONS = STREAMING_MAX_SUBSCRIPTIONS; // 50
+
+    typedef StreamingSession_C CType;
 
 private:
-    class AdminSubscription
-            : public StreamingSubscription {
-    public:
-        AdminSubscription( AdminCommandType command,
-                           const std::map<std::string, std::string>& params = {})
-            :
-                StreamingSubscription( StreamerService::type::ADMIN,
-                                       to_string(command), params )
-        {}
-    };
+    std::unique_ptr<CType, CProxyDestroyer<CType>> _obj;
 
-    struct PendingResponse{
-        typedef std::function<void(int, std::string, std::string,
-                                   unsigned long long, int, std::string)>
-        response_cb_ty;
-
-        static const response_cb_ty CALLBACK_TO_COUT;
-
-        int request_id;
-        std::string service;
-        std::string command;
-        response_cb_ty callback;        
-
-        PendingResponse( int request_id,
-                         const std::string& service,
-                         const std::string& command,
-                         response_cb_ty callback = nullptr );
-
-        PendingResponse();
-
-    };
-
-
-    class StreamingRequest{
-        StreamerService::type _service;
-        std::string _command;
-        std::string _account_id;
-        std::string _source_id;
-        int _request_id;
-        std::map<std::string, std::string> _parameters;
-
-    public:
-        StreamingRequest( StreamerService::type service,
-                          const std::string& command,
-                          const std::string& account_id,
-                          const std::string& source_id,
-                          int request_id,
-                          const std::map<std::string, std::string>& paramaters );
-
-        StreamingRequest( const StreamingSubscription& subscription,
-                          const std::string& account_id,
-                          const std::string& source_id,
-                          int request_id );
-
-        json
-        to_json() const;
-    };
-
-
-    class StreamingRequests{
-        std::vector<StreamingRequest> _requests;
-
-    public:
-        StreamingRequests( std::initializer_list<StreamingRequest> requests )
-            : _requests( requests )
+    StreamingSession()
+        :
+            _obj( new CType{0,0,0},
+                  CProxyDestroyer<CType>(StreamingSession_Destroy_ABI) )
         {}
 
-        StreamingRequests( const std::vector<StreamingSubscription>& subscriptions,
-                           const std::string& account_id,
-                           const std::string& source_id,
-                           const std::vector<int>& request_ids );
-
-        json
-        to_json() const;
-
-    };
-
-    static std::set<std::string> active_primary_accounts;
-    static std::set<std::string> active_accounts;
-
-    StreamerInfo _streamer_info;
-    std::string _account_id;
-    std::unique_ptr<conn::WebSocketClient> _client;
-    streaming_cb_ty _callback;
-    std::chrono::milliseconds _connect_timeout;
-    std::chrono::milliseconds _listening_timeout;
-    std::chrono::milliseconds _subscribe_timeout;
-    std::thread _listener_thread;
-    std::string _server_id;
-    int _next_request_id;
-    bool _logged_in;
-    bool _listening;
-    QOSType _qos;
-    unsigned long long _last_heartbeat;
-    ThreadSafeHashMap<int, PendingResponse> _responses_pending;
-    bool _request_response_to_cout;
-
-    class ListenerThreadTarget{
-        static const std::string RESPONSE_TO_REQUEST;
-        static const std::string RESPONSE_NOTIFY;
-        static const std::string RESPONSE_SNAPSHOT;
-        static const std::string RESPONSE_DATA;
-
-        StreamingSession *_ss;
-
-        class Timeout : public StreamingException {};
-
-        void
-        exec();
-
-        void
-        parse(const std::string& responses);
-
-        void
-        parse_response_to_request(const json& response);
-
-        void
-        parse_response_notify(const json& responses);
-
-        void
-        parse_response_snapshot(const json& response);
-
-        void
-        parse_response_data(const json& response);
-
-    public:
-        ListenerThreadTarget( StreamingSession *ss )
-            : _ss(ss) {}
-
-        void
-        operator()();
-    };
-
-    bool
-    _login();
-
-    bool
-    _logout();
-
-    void
-    _start_listener_thread();
-
-    void
-    _stop_listener_thread();
-
-    void
-    _reset();
-
-    void
-    _subscribe( const std::vector<StreamingSubscription>& subscriptions,
-                 PendingResponse::response_cb_ty callback = nullptr );
-
-    StreamingSession( const StreamerInfo& streamer_info,
-                        const std::string& account_id,
-                        streaming_cb_ty callback,
-                        std::chrono::milliseconds connect_timeout,
-                        std::chrono::milliseconds listening_timeout,
-                        std::chrono::milliseconds subscribe_timeout,
-                        bool request_response_to_cout );
-
-    virtual
-    ~StreamingSession();
+    std::deque<bool>
+    _call_abi_with_subs(
+        std::function<int(CType*, StreamingSubscription_C**,
+                          size_t, int*, int)> abicall,
+        const std::vector<StreamingSubscription>& subscriptions
+        )
+    {
+        size_t sz = subscriptions.size();
+        StreamingSubscription_C **buffer = new StreamingSubscription_C*[sz];
+        int *results = new int[sz];
+        std::deque<bool> cpp_results;
+        try{
+            int i = 0;
+            for(auto& s : subscriptions){
+                buffer[i++] = s.csub();
+            }
+            abicall(_obj.get(), buffer, sz, results, 1);
+            while( sz-- ){
+                cpp_results.push_front(static_cast<bool>(results[sz]));
+            }
+        }catch(...){
+            delete[] buffer;
+            delete[] results;
+            throw;
+        }
+        delete[] buffer;
+        delete[] results;
+        return cpp_results;
+    }
 
 public:
-
-    static StreamingSession*
+    static std::shared_ptr<StreamingSession>
     Create( Credentials& creds,
              const std::string& account_id,
              streaming_cb_ty callback,
              std::chrono::milliseconds connect_timeout=DEF_CONNECT_TIMEOUT,
              std::chrono::milliseconds listening_timeout=DEF_LISTENING_TIMEOUT,
              std::chrono::milliseconds subscribe_timeout=DEF_SUBSCRIBE_TIMEOUT,
-             bool request_response_to_cout = true );
-
-    static void
-    Destroy( StreamingSession* session );
+             bool request_response_to_cout = true )
+    {
+        auto ss = new StreamingSession;
+        try{
+            StreamingSession_Create_ABI(&creds, CPP_to_C(account_id), callback,
+                                        connect_timeout.count(),
+                                        listening_timeout.count(),
+                                        subscribe_timeout.count(),
+                                        static_cast<int>(
+                                            request_response_to_cout),
+                                        ss->_obj.get(),
+                                        1);
+        }catch(...){
+            delete ss;
+            throw;
+        }
+        return std::shared_ptr<StreamingSession>(ss);
+    }
 
     StreamingSession( const StreamingSession& ) = delete;
 
@@ -1031,80 +1719,47 @@ public:
     operator=( const StreamingSession& ) = delete;
 
     std::deque<bool> // success/fails in the order passed
-    start(const std::vector<StreamingSubscription>& subscriptions);
+    start(const std::vector<StreamingSubscription>& subscriptions)
+    { return _call_abi_with_subs(StreamingSession_Start_ABI,subscriptions); }
 
     bool 
     start(const StreamingSubscription& subscription)
-    { return start( std::vector<StreamingSubscription>{subscription} )[0]; }
+    { return start(std::vector<StreamingSubscription>{subscription})[0]; }
 
     void
-    stop();
+    stop()
+    { StreamingSession_Stop_ABI(_obj.get(), 1); }
 
     std::deque<bool> // success/fails in the order passed
-    add_subscriptions(const std::vector<StreamingSubscription>& subscriptions);
+    add_subscriptions(const std::vector<StreamingSubscription>& subscriptions)
+    { return _call_abi_with_subs(StreamingSession_AddSubscriptions_ABI,
+                                 subscriptions); }
 
     bool 
     add_subscription(const StreamingSubscription& subscription)
     { return add_subscriptions(std::vector<StreamingSubscription>{subscription})[0]; }
 
+
     QOSType
     get_qos() const
-    { return _qos; }
-
-    bool
-    set_qos(const QOSType& qos);
-};
-
-
-class DLL_SPEC_ SharedSession{
-    struct Deleter{
-        void
-        operator()(StreamingSession *s)
-        { StreamingSession::Destroy(s); }
-    };
-
-    std::shared_ptr<StreamingSession> _s;
-
-public:
-    SharedSession( Credentials& creds,
-                     const std::string& account_id,
-                     streaming_cb_ty callback,
-                     std::chrono::milliseconds connect_timeout
-                         = StreamingSession::DEF_CONNECT_TIMEOUT,
-                     std::chrono::milliseconds listening_timeout
-                         = StreamingSession::DEF_LISTENING_TIMEOUT,
-                     std::chrono::milliseconds subscribe_timeout
-                         = StreamingSession::DEF_SUBSCRIBE_TIMEOUT,
-                     bool request_response_to_cout = true );
-
-    StreamingSession*
-    operator->();
-};
-
-
-template<typename F>
-std::map<std::string, std::string>
-SubscriptionBySymbolBase::build_paramaters(
-        const std::set<std::string>& symbols,
-        const std::set<F>& fields
-        )
-{
-    std::vector<std::string> symbols_enc;
-    for(auto& s : symbols){
-        symbols_enc.emplace_back( StreamingSubscription::encode_symbol(s) );
+    {
+        int q;
+        StreamingSession_GetQOS_ABI(_obj.get(), &q, 1);
+        return static_cast<QOSType>(q);
     }
 
-    std::vector<std::string> fields_str(fields.size());
-    std::transform( fields.begin(), fields.end(), fields_str.begin(),
-               [](F f){
-                   return to_string(static_cast<unsigned int>(f));
-               } );
-
-    return { {"fields", util::join(fields_str, ',')},
-             {"keys", util::join(symbols_enc, ',')} };
-}
+    bool
+    set_qos(const QOSType& qos)
+    {
+        int result;
+        StreamingSession_SetQOS_ABI(_obj.get(), static_cast<int>(qos), &result, 1);
+        return static_cast<bool>(result);
+    }
+};
 
 
 } /* amtd */
+
+#endif /* __cplusplus */
 
 #endif // TDMA_API_STREAMING_H

@@ -434,6 +434,13 @@ public:
     }
 };
 
+json
+get_user_principals_for_streaming(Credentials& creds)
+{
+    string s = UserPrincipalsGetterImpl(creds,true,true,false,false).get();
+    return s.empty() ? json() : json::parse(s);
+}
+
 
 } /* tdma */
 
@@ -735,7 +742,7 @@ TransactionHistoryGetter_SetTransactionType_ABI(
     int allow_exceptions )
 {
     int err = check_abi_enum(TransactionType_is_valid, transaction_type,
-                             pgetter, allow_exceptions);
+                             allow_exceptions);
     if( err )
         return err;
 

@@ -176,7 +176,7 @@ InstrumentInfoGetter_SetQuery_ABI( InstrumentInfoGetter_C *pgetter,
                                        int allow_exceptions )
 {
     int err = check_abi_enum(InstrumentSearchType_is_valid, search_type,
-                             pgetter, allow_exceptions);
+                             allow_exceptions);
     if( err )
         return err;
 

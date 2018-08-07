@@ -475,8 +475,7 @@ HistoricalPeriodGetter_SetPeriod_ABI( HistoricalPeriodGetter_C *pgetter,
                                            unsigned int period,
                                            int allow_exceptions )
 {
-    int err = check_abi_enum(PeriodType_is_valid, period_type, pgetter,
-                             allow_exceptions);
+    int err = check_abi_enum(PeriodType_is_valid, period_type, allow_exceptions);
     if( err )
         return err;
 
@@ -493,7 +492,7 @@ HistoricalPeriodGetter_SetFrequency_ABI( HistoricalPeriodGetter_C *pgetter,
                                              unsigned int frequency,
                                              int allow_exceptions )
 {
-    int err = check_abi_enum(FrequencyType_is_valid, frequency_type, pgetter,
+    int err = check_abi_enum(FrequencyType_is_valid, frequency_type,
                              allow_exceptions);
     if( err )
         return err;
@@ -628,7 +627,7 @@ HistoricalRangeGetter_SetFrequency_ABI( HistoricalRangeGetter_C *pgetter,
                                              unsigned int frequency,
                                              int allow_exceptions )
 {
-    int err = check_abi_enum(FrequencyType_is_valid, frequency_type, pgetter,
+    int err = check_abi_enum(FrequencyType_is_valid, frequency_type,
                              allow_exceptions);
     if( err )
         return err;

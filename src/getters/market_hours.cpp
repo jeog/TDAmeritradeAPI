@@ -168,8 +168,7 @@ MarketHoursGetter_SetMarketType_ABI( MarketHoursGetter_C *pgetter,
                                          int market_type,
                                          int allow_exceptions )
 {
-    int err = check_abi_enum(MarketType_is_valid, market_type, pgetter,
-                             allow_exceptions);
+    int err = check_abi_enum(MarketType_is_valid, market_type, allow_exceptions);
     if( err )
         return err;
 

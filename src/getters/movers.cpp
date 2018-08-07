@@ -177,8 +177,7 @@ MoversGetter_SetIndex_ABI( MoversGetter_C *pgetter,
                               int index,
                               int allow_exceptions )
 {
-    int err = check_abi_enum(MoversIndex_is_valid, index, pgetter,
-                             allow_exceptions);
+    int err = check_abi_enum(MoversIndex_is_valid, index, allow_exceptions);
     if( err )
         return err;
 
@@ -205,7 +204,7 @@ MoversGetter_SetDirectionType_ABI( MoversGetter_C *pgetter,
                                        int allow_exceptions )
 {
     int err = check_abi_enum(MoversDirectionType_is_valid, direction_type,
-                             pgetter, allow_exceptions);
+                             allow_exceptions);
     if( err )
         return err;
 
@@ -233,7 +232,7 @@ MoversGetter_SetChangeType_ABI( MoversGetter_C *pgetter,
                                    int change_type,
                                    int allow_exceptions )
 {
-    int err = check_abi_enum(MoversChangeType_is_valid, change_type, pgetter,
+    int err = check_abi_enum(MoversChangeType_is_valid, change_type,
                              allow_exceptions);
     if( err )
         return err;

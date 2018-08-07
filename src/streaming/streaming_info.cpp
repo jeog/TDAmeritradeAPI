@@ -116,49 +116,49 @@ StreamerInfo::encode_credentials()
     credentials_encoded = util::url_encode(ss.str());
 }
 
-
-StreamerService::StreamerService(string service_name)
+StreamerServiceType
+streamer_service_from_str(string service_name)
 {
     if( service_name == "NONE" )
-        _service = type::NONE;
+        return StreamerServiceType::NONE;
     else if( service_name == "ADMIN" )
-        _service = type::ADMIN;
+        return StreamerServiceType::ADMIN;
     else if( service_name == "ACTIVES_NASDAQ" )
-        _service = type::ACTIVES_NASDAQ;
+        return StreamerServiceType::ACTIVES_NASDAQ;
     else if( service_name == "ACTIVES_NYSE" )
-        _service = type::ACTIVES_NYSE;
+        return StreamerServiceType::ACTIVES_NYSE;
     else if( service_name == "ACTIVES_OTCBB" )
-        _service = type::ACTIVES_OTCBB;
+        return StreamerServiceType::ACTIVES_OTCBB;
     else if( service_name == "ACTIVES_OPTIONS" )
-        _service = type::ACTIVES_OPTIONS;
+        return StreamerServiceType::ACTIVES_OPTIONS;
     else if( service_name == "CHART_EQUITY" )
-        _service = type::CHART_EQUITY;
+        return StreamerServiceType::CHART_EQUITY;
     //else if( service_name == "CHART_FOREX" )
-    //    _service = type::CHART_FOREX;
+    //    return StreamerServiceType::CHART_FOREX;
     else if( service_name == "CHART_FUTURES" )
-        _service = type::CHART_FUTURES;
+        return StreamerServiceType::CHART_FUTURES;
     else if( service_name == "CHART_OPTIONS" )
-        _service = type::CHART_OPTIONS;
+        return StreamerServiceType::CHART_OPTIONS;
     else if( service_name == "QUOTE" )
-        _service = type::QUOTE;
+        return StreamerServiceType::QUOTE;
     else if( service_name == "LEVELONE_FUTURES" )
-        _service = type::LEVELONE_FUTURES;
+        return StreamerServiceType::LEVELONE_FUTURES;
     else if( service_name == "LEVELONE_FOREX" )
-        _service = type::LEVELONE_FOREX;
+        return StreamerServiceType::LEVELONE_FOREX;
     else if( service_name == "LEVELONE_FUTURES_OPTIONS" )
-        _service = type::LEVELONE_FUTURES_OPTIONS;
+        return StreamerServiceType::LEVELONE_FUTURES_OPTIONS;
     else if( service_name == "OPTION" )
-        _service = type::OPTION;
+        return StreamerServiceType::OPTION;
     else if( service_name == "NEWS_HEADLINE" )
-        _service = type::NEWS_HEADLINE;
+        return StreamerServiceType::NEWS_HEADLINE;
     else if( service_name == "TIMESALE_EQUITY" )
-        _service = type::TIMESALE_EQUITY;
+        return StreamerServiceType::TIMESALE_EQUITY;
     else if( service_name == "TIMESALE_FUTURES" )
-        _service = type::TIMESALE_FUTURES;
+        return StreamerServiceType::TIMESALE_FUTURES;
     //else if( service_name == "TIMESALE_FOREX" )
-    //    _service = type::TIMESALE_FOREX;
+    //    return StreamerServiceType::TIMESALE_FOREX;
     else if( service_name == "TIMESALE_OPTIONS" )
-        _service = type::TIMESALE_OPTIONS;
+        return StreamerServiceType::TIMESALE_OPTIONS;
     else
         throw ValueException("invalid service name: " + service_name);
 }

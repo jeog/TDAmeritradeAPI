@@ -38,9 +38,8 @@ const std::string URL_MARKETDATA = URL_BASE + "marketdata/";
 const std::string URL_ACCOUNT_INFO = URL_BASE + "accounts/";
 const std::string URL_INSTRUMENTS = URL_BASE + "instruments";
 
-inline json
-get_user_principals_for_streaming(Credentials& creds)
-{ return UserPrincipalsGetter(creds,true,true,false,false).get(); }
+json
+get_user_principals_for_streaming(Credentials& creds);
 
 StreamerInfo
 get_streamer_info(Credentials& creds);
@@ -108,6 +107,8 @@ protected:
     set_url(std::string url);
 
 public:
+    typedef APIGetter ProxyType;
+
     static const std::chrono::milliseconds DEF_WAIT_MSEC;
 
     static std::chrono::milliseconds
@@ -242,10 +243,8 @@ getter_is_creatable( Credentials *pcreds,
     return 0;
 }
 
-template<typename ImplTy>
-int
-getter_is_callable( typename ImplTy::ProxyType::CType *pgetter,
-                      int allow_exceptions )
+inline int // TODOD
+base_getter_is_callable( Getter_C *pgetter, int allow_exceptions )
 {
     if( !pgetter )
         return handle_error<tdma::ValueException>(
@@ -256,6 +255,20 @@ getter_is_callable( typename ImplTy::ProxyType::CType *pgetter,
         return handle_error<tdma::ValueException>(
             "null getter pointer->obj", allow_exceptions
             );
+
+    return 0;
+}
+
+template<typename ImplTy>
+int
+getter_is_callable( typename ImplTy::ProxyType::CType *pgetter,
+                      int allow_exceptions )
+{
+    int err = base_getter_is_callable(
+        reinterpret_cast<Getter_C*>(pgetter), allow_exceptions
+        );
+    if( err )
+        return err;
 
     if( pgetter->type_id < ImplTy::ProxyType::TYPE_ID_LOW ||
         pgetter->type_id > ImplTy::ProxyType::TYPE_ID_HIGH )
@@ -285,17 +298,29 @@ destroy_getter(typename ImplTy::ProxyType::CType *pgetter, int allow_exceptions)
 
 template<typename CTy>
 int
-check_abi_enum( bool(*func)(int), int val, CTy* pgetter, int allow_exceptions)
+check_abi_enum(std::function<bool(int)> func , int val, CTy* p, int allow_exceptions)
 {
     if( !func(val) ){
-        pgetter->obj = nullptr;
-        pgetter->type_id = -1;
+        p->obj = nullptr;
+        p->type_id = -1;
         return handle_error<tdma::ValueException>(
             "invalid enum value", allow_exceptions
             );
     }
     return 0;
 }
+
+inline int
+check_abi_enum(std::function<bool(int)> func , int val, int allow_exceptions)
+{
+    if( !func(val) ){
+        return handle_error<tdma::ValueException>(
+            "invalid enum value", allow_exceptions
+            );
+    }
+    return 0;
+}
+
 
 template<typename T> /* FOR BASIC TYPES i.e. enum <--> int */
 struct GetterImplAccessor{
@@ -437,7 +462,7 @@ struct GetterImplAccessor<char**>{
         if( err )
             return err;
 
-        *n = r.size() + 1;
+        *n = r.size() + 1; // NULL TERM
         *pval = reinterpret_cast<char*>(malloc(*n));
         if( !*pval ){
             return handle_error<tdma::MemoryError>(
@@ -448,6 +473,17 @@ struct GetterImplAccessor<char**>{
         strncpy(*pval, r.c_str(), (*n)-1);
         return 0;
     }
+
+    template<typename ImplTy>
+    static int
+    get( typename ImplTy::ProxyType::CType* pgetter,
+         std::string(ImplTy::*method)(void),
+         char **pval,
+         size_t *n,
+         int allow_exceptions )
+    { return get<ImplTy>(pgetter,
+        reinterpret_cast<std::string(ImplTy::*)(void) const>(method),
+        pval, n, allow_exceptions); }
 };
 
 
@@ -459,6 +495,7 @@ struct GetterImplAccessor<char***>{
     set( typename ImplTy::ProxyType::CType* pgetter,
          void(ImplTy::*method)(const std::set<std::string>&),
          const char** val,
+         size_t n,
          int allow_exceptions)
     {
         int err = getter_is_callable<ImplTy>(pgetter, allow_exceptions);
@@ -467,15 +504,15 @@ struct GetterImplAccessor<char***>{
 
         static auto mwrap =
             +[]( void* obj, void(ImplTy::*meth)(const std::set<std::string>&),
-                 const char** s ){
-                    int i = 0;
+                 const char** s, size_t n ){
                     std::set<std::string> strs;
-                    while( s[i] ) // TODO make safe
-                        strs.insert(s[i++]);
+                    while( n-- )
+                        strs.insert(s[n]);
                     return (reinterpret_cast<ImplTy*>(obj)->*meth)(strs);
                 };
 
-        return CallImplFromABI(allow_exceptions, mwrap, pgetter->obj, method, val);
+        return CallImplFromABI(allow_exceptions, mwrap, pgetter->obj, method,
+                               val, n);
     }
 
     template<typename ImplTy>
@@ -511,14 +548,13 @@ struct GetterImplAccessor<char***>{
         if( err )
             return err;
 
-        *n = strs.size() + 1; // NOTE include null term in returned size
+        *n = strs.size();
         *pval = reinterpret_cast<char**>(malloc((*n) * sizeof(char*)));
         if( !*pval ){
             return handle_error<tdma::MemoryError>(
                 "failed to allocate buffer memory", allow_exceptions
                 );
         }
-        (*pval)[(*n)-1] = 0;
 
         int cnt = 0;
         for(auto& s : strs){
@@ -537,8 +573,6 @@ struct GetterImplAccessor<char***>{
         return 0;
     }
 };
-
-
 
 } /* tdma */
 

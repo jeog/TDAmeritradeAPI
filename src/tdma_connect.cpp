@@ -361,6 +361,7 @@ unescape_returned_post_data(const string& s)
 
 } /* tdma */
 
+using namespace tdma;
 
 int
 APIGetter_Get_ABI( Getter_C *pgetter,
@@ -368,60 +369,18 @@ APIGetter_Get_ABI( Getter_C *pgetter,
                      size_t *n,
                      int allow_exceptions )
 {
-    if( !pgetter )
-        return tdma::handle_error<tdma::ValueException>(
-            "null getter pointer", allow_exceptions
-            );
-
-    if( !pgetter->obj )
-        return tdma::handle_error<tdma::ValueException>(
-            "null getter->obj pointer", allow_exceptions
-            );
-
-    if( !buf )
-        return tdma::handle_error<tdma::ValueException>(
-            "null 'buf' pointer", allow_exceptions
-            );
-
-    if( !n )
-        return tdma::handle_error<tdma::ValueException>(
-            "null 'n' pointer", allow_exceptions
-            );
-
-    static auto meth = +[](void* obj){
-        return reinterpret_cast<tdma::APIGetterImpl*>(obj)->get();
-    };
-
-    string r;
-    int err;
-    tie(r,err) = tdma::CallImplFromABI(allow_exceptions, meth, pgetter->obj);
-    if( err )
-        return err;
-
-    *n = r.size() + 1;
-    *buf = reinterpret_cast<char*>(malloc(*n));
-    if( !buf ){
-        return tdma::handle_error<tdma::MemoryError>(
-            "failed to allocate buffer memory", allow_exceptions
-            );
-    }
-    (*buf)[(*n)-1] = 0;
-    strncpy(*buf, r.c_str(), (*n)-1);
-    return 0;
+    return tdma::GetterImplAccessor<char**>::template
+        get<APIGetterImpl>(
+            pgetter, &APIGetterImpl::get, buf, n, allow_exceptions
+        );
 }
 
 int
 APIGetter_Close_ABI(Getter_C *pgetter, int allow_exceptions)
 {
-    if( !pgetter )
-        return tdma::handle_error<tdma::ValueException>(
-            "null getter pointer", allow_exceptions
-            );
-
-    if( !pgetter->obj )
-        return tdma::handle_error<tdma::ValueException>(
-            "null getter->obj pointer", allow_exceptions
-            );
+    int err = getter_is_callable<APIGetterImpl>(pgetter, allow_exceptions);
+    if( err )
+        return err;
 
     static auto meth = +[](void* obj){
         reinterpret_cast<tdma::APIGetterImpl*>(obj)->close();
@@ -433,15 +392,9 @@ APIGetter_Close_ABI(Getter_C *pgetter, int allow_exceptions)
 int
 APIGetter_IsClosed_ABI(Getter_C *pgetter, int*b, int allow_exceptions)
 {
-    if( !pgetter )
-        return tdma::handle_error<tdma::ValueException>(
-            "null getter pointer", allow_exceptions
-            );
-
-    if( !pgetter->obj )
-        return tdma::handle_error<tdma::ValueException>(
-            "null getter->obj pointer", allow_exceptions
-            );
+    int err = getter_is_callable<APIGetterImpl>(pgetter, allow_exceptions);
+    if( err )
+        return err;
 
     if( !b )
         return tdma::handle_error<tdma::ValueException>(
@@ -452,7 +405,6 @@ APIGetter_IsClosed_ABI(Getter_C *pgetter, int*b, int allow_exceptions)
         return reinterpret_cast<tdma::APIGetterImpl*>(obj)->is_closed();
     };
 
-    int err;
     tie(*b, err) = tdma::CallImplFromABI(allow_exceptions, meth, pgetter->obj);
     return err ? err : 0;
 }
