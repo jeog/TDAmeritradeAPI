@@ -5,13 +5,14 @@
     - [Callback](#callback)
         - [Args](#callback-args)
         - [Summary Table](#summary)
-    - [Start / Stop](#start--stop)
-    - [Add Subscriptions](#add-subscriptions)
-    - [Quality-Of-Service](#quality-of-service)
+    - [Start](#start)
+    - [Stop](#stop)
+    - [Add](#add)
+    - [QOS](#qos)
     - [Destroy](#destroy)
 - [Subscriptions](#subscriptions)
-    - [Symbol / Field ](#symbolfield--subscriptions)
-    - [Duration / Venue ](#symbolfield--subscriptions)
+    - [Symbol / Field ](#symbol--field)
+    - [Duration / Venue ](#symbol--field)
     - [Destroy](#destroy-1)
 - [Example Usage C++](#example-usage-c)
 - [Example Usage C](#example-usage-c-1)
@@ -21,6 +22,7 @@
     - [LevelOneFuturesSubscription](#levelonefuturessubscription)  
     - [LevelOneForexSubscription](#leveloneforexsubscription)  
     - [LevelOneFuturesOptionsSubscription](#levelonefuturesoptionssubscription)  
+    - [NewsHeadlineSubscription](#newsheadlinesubscription)  
     - [ChartEquitySubscription](#chartequitysubscription)  
     - [ChartFuturesSubscription](#chartfuturessubscription)  
     - [ChartOptionsSubscription](#chartoptionssubscription)  
@@ -31,7 +33,6 @@
     - [NYSEActivesSubscription](#nyseactivessubscription)  
     - [OTCBBActivesSubscription](#otcbbactivessubscription)  
     - [OptionActivesSubscription](#optionactivessubscription)  
-    - [NewsHeadlineSubscription](#newsheadlinesubscription)  
 - - -
 
 ### Overview
@@ -43,12 +44,12 @@
 using namespace tdma;
 ```
 
-Streaming functionality in C++ is accessed via ```StreamingSession``` which acts
-as a proxy object on the client side of the ABI. The implementation object is built on top of ```WebSocketClient``` using the uWebSocket *(src/uWebSocket/)* library. 
+Streaming functionality in C++ is provided via ```StreamingSession``` which acts
+as a proxy object on the client side of the ABI. This proxy calls through the ABI to the implementation object ```StreamingSessionImpl```, which is built on top of ```WebSocketClient``` using the uWebSocket *(src/uWebSocket/)* library. 
 
-C uses a similar object-oriented approach where methods are passed a pointer to C proxy objects.
+Once created, streaming objects are passed subscription objects for the particular streaming services desired.
 
-Once created, streaming objects are passed Subscription objects for the particular streaming services desired.
+C uses a similar object-oriented approach where methods are passed a pointer to C proxy objects that are manually created and destroyed by the client.
 
 
 ### StreamingSession
@@ -81,7 +82,7 @@ StreamingSession::Create( Credentials& creds,
 
 The C interface expects a pointer to a StreamingSession_C struct to be 
 populated with a generic pointer to the underlying C++ object. Once this object
-is initialized you will use it in all subsequent (C) calls.
+is initialized you will use it in all subsequent (C) calls, until it is destroyed.
 
 
 ```
@@ -97,7 +98,7 @@ inline int
 StreamingSession_Create( struct Credentials *pcreds,
                          const char* account_id,
                          streaming_cb_ty callback,
-                         StreamingSession_C *psession );
+                         StreamingSession_C *psession ); // <-populated on success
     ...
     returns -> 0 on success, error code on failure
 
@@ -110,16 +111,14 @@ StreamingSession_CreateEx( struct Credentials *pcreds,
                            unsigned long listening_timeout,
                            unsigned long subscribe_timeout,
                            int request_response_to_cout,
-                           StreamingSession_C *psession );
+                           StreamingSession_C *psession ); // <-populated on success
     ...
     returns -> 0 on success, error code on failure
 ```
 
 #### Callback 
 
-The primary means of signaling changes in session state (start-->stop, errors, 
-timeouts etc.) AND returning data to the user is via the callback function. 
-As you'll see, the current design is a bit confusing and error prone so expect changes. 
+The primary means of signaling changes in session state AND returning data to the user is via the callback function. As you'll see, the current design is a bit confusing and error prone so expect changes. 
 
 ```
 typedef void(*streaming_cb_ty)(int, int, unsigned long long, const char*);
@@ -134,7 +133,7 @@ typedef void(*streaming_cb_ty)(int, int, unsigned long long, const char*);
 In order for the callback to work across the ABI for C and C++ code it casts
 certain values to native types.
 
-1. The first argument to the callback will be the callback type enum as an int:
+1. The first argument to the callback will be ```StreamingCallbackType``` as an int:
     ```
     [C++]
     enum class StreamingCallbackType : int {
@@ -145,6 +144,7 @@ certain values to native types.
         timeout,         /* 4 */
         error            /* 5 */
     }
+
     [C]
     enum StreamingCallbackType {
         StreamingCallbackType_listening_start,
@@ -156,25 +156,25 @@ certain values to native types.
     }
     ```
 
-    - ***```::listening_start``` ```::listening_stop```*** - are simple signals about the 
+    - ***```listening_start``` ```listening_stop```*** - are simple signals about the 
     listening state of the session and *should* occur after you call ```start```
     and ```stop```, respectively
 
-    - ***```::error```*** - indicates some type of error/exception state that has propagated
+    - ***```error```*** - indicates some type of error/exception state that has propagated
     up from the listening thread and caused it to close. The 4th arg will be a json string
     of the form ```{{"error": <error message>}}```
 
-    - ***```::timeout```*** - indicates the listening thread hasn't received a message in 
+    - ***```timeout```*** - indicates the listening thread hasn't received a message in 
     *listening_timeout* milliseconds (defaults to 30000) and has shutdown. You'll need 
     to restart the session ***from the original thread*** or destroy it.
 
-    - ***```::notify```*** - indicates some type of 'urgent' message from the server. The 
+    - ***```notify```*** - indicates some type of 'urgent' message from the server. The 
     actual message will be in json form and passed to the 4th arg.
 
-    - ***```::data```*** - will be the bulk of the callbacks and contain the subscribed-to data (see below).
+    - ***```data```*** - will be the bulk of the callbacks and contain the subscribed-to data (see below).
 
 
-2. The second argument will contain the service type enum of the data as an int (for ```::data``` callback type only):
+2. The second argument will contain the service type enum of the data as an int (for ```data``` callback type only):
 
     ```
     DECL_C_CPP_TDMA_ENUM(StreamerServiceType, 1, 17,
@@ -196,23 +196,19 @@ certain values to native types.
         BUILD_ENUM_NAME( TIMESALE_EQUITY),         /* 15 */
         BUILD_ENUM_NAME( TIMESALE_FUTURES),        /* 16 */
         BUILD_ENUM_NAME( TIMESALE_OPTIONS)         /* 17 */
-        /* NOT WORKING */
-        //BUILD_ENUM_NAME( CHART_FOREX),
-        //BUILD_ENUM_NAME( TIMESALE_FOREX),
-        /* NOT IMPLEMENTED YET */
-        //BUILD_ENUM_NAME( CHART_HISTORY_FUTURES),
-        //BUILD_ENUM_NAME( ACCT_ACTIVITY),
-        /* NOT DOCUMENTED */
-        //BUILD_ENUM_NAME( FOREX_BOOK,
-        //BUILD_ENUM_NAME( FUTURES_BOOK),
-        //BUILD_ENUM_NAME( LISTED_BOOK),
-        //BUILD_ENUM_NAME( NASDAQ_BOOK),
-        //BUILD_ENUM_NAME( OPTIONS_BOOK),
-        //BUILD_ENUM_NAME( FUTURES_OPTION_BOOK),
-        //BUILD_ENUM_NAME( NEWS_STORY),
-        //BUILD_ENUM_NAME( NEWS_HEADLINE_LIST),
-        /* OLD API ? */
-        //BUILD_ENUM_NAME( STREAMER_SERVER)
+        //BUILD_ENUM_NAME( CHART_FOREX),           /* NOT WORKING */
+        //BUILD_ENUM_NAME( TIMESALE_FOREX),        /* NOT WORKING */
+        //BUILD_ENUM_NAME( CHART_HISTORY_FUTURES), /* NOT IMPLEMENTED YET */
+        //BUILD_ENUM_NAME( ACCT_ACTIVITY),         /* NOT IMPLEMENTED YET */
+        //BUILD_ENUM_NAME( FOREX_BOOK,             /* NOT DOCUMENTED */
+        //BUILD_ENUM_NAME( FUTURES_BOOK),          /* NOT DOCUMENTED */
+        //BUILD_ENUM_NAME( LISTED_BOOK),           /* NOT DOCUMENTED */
+        //BUILD_ENUM_NAME( NASDAQ_BOOK),           /* NOT DOCUMENTED */
+        //BUILD_ENUM_NAME( OPTIONS_BOOK),          /* NOT DOCUMENTED */
+        //BUILD_ENUM_NAME( FUTURES_OPTION_BOOK),   /* NOT DOCUMENTED */
+        //BUILD_ENUM_NAME( NEWS_STORY),            /* NOT DOCUMENTED */
+        //BUILD_ENUM_NAME( NEWS_HEADLINE_LIST),    /* NOT DOCUMENTED */
+        //BUILD_ENUM_NAME( STREAMER_SERVER)        /* OLD API ? */
         );
     ```
 
@@ -234,32 +230,32 @@ certain values to native types.
     ```
 
 3. The third argument is a timestamp from the server in milliseconds since the epoch that
-is (currently) only relevant for ```::data``` callbacks. 
+is (currently) only relevant for ```data``` callbacks. 
 
-4. The fourth argument is a json string containing the actual data. C++ users can use ```json::parse(string(data))``` on it. Its json structure will be dependent on the service type. In order to understand how to parse the object you'll need to refer to the relevant section in [Ameritrade's Streaming documentation](https://developer.tdameritrade.com/content/streaming-data) and the [json library documentation](https://github.com/nlohmann/json).
+4. The fourth argument is a json string containing the actual raw data returned from the server. C++ users can use ```json::parse(string(data))``` on it. Its json structure will be dependent on the service type. In order to understand how to parse the object you'll need to refer to the relevant section in [Ameritrade's Streaming documentation](https://developer.tdameritrade.com/content/streaming-data) and the [json library documentation](https://github.com/nlohmann/json).
 
 ##### Summary
 StreamingCallbackType   | StreamingService  | timestamp   | json 
 ------------------------|-------------------|-------------|-----
-```::listening_start``` | ```::NONE```      | 0           | {}
-```::listening_stop```  | ```::NONE```      | 0           | {}
-```::data```            | *YES*             | *YES*       | *StreamingService dependent*
-```::notify```          | ```::NONE```      | 0           | *Message Type dependent*
-```::timeout```         | ```::NONE```      | 0           | {}
-```::error```           | ```::NONE```      | 0           | {{"error", "error message"}}
+```listening_start``` | ```NONE```      | 0           | {}
+```listening_stop```  | ```NONE```      | 0           | {}
+```data```            | *YES*             | *YES*       | *StreamingService dependent*
+```notify```          | ```NONE```      | 0           | *Message Type dependent*
+```timeout```         | ```NONE```      | 0           | {}
+```error```           | ```NONE```      | 0           | {{"error", "error message"}}
 
-#### Start / Stop
+#### Start
 
-Once a Session is instantiated it needs to be started and 
-different services need to be subscribed to.  In order to start two conditions
-must be met:
-1. No other Sessions with same Primary Account ID can be active. An active session is one that's been started and not stopped. If so the start call will throw ```StreamingException``` (C++) or return TDMA_API_STREAM_ERROR (C).
+Once a Session is created it needs to be started and different services need to be subscribed to.  Starting a session will automatically try to log the user in using the credentials and account_id information passed.
+
+In order to start two conditions must be met (If not the start call will throw ```StreamingException``` (C++) or return ```TDMA_API_STREAM_ERROR``` (C) ):
+1. No other Sessions with the same Primary Account ID can be active. An active session is one that's been started and not stopped. 
 2. It must have at least one subscription. (Subscription objects are explained in the [Subscriptions Section](#subscriptions).)
 
 ```
 [C++]
 bool
-StreamingSession::start(const StreamingSubscription& subscriptions);
+StreamingSession::start(const StreamingSubscription& subscription);
 
 [C++]
 deque<bool> 
@@ -274,12 +270,14 @@ StreamingSession_Start( StreamingSession_C *psession,
 ```
 
 
-The C++ methods take a single subscription object or a vector of different ones and return the success/failure state of each subscription in the order they were passed. Other errors result in a ```StreamingException```.
+The C++ methods take a single subscription object or a vector of different ones and returns the success/failure state of each subscription in the order they were passed. Other errors result in a ```StreamingException```.
 
 The C method takes an array of subscription proxy objects (cast to their generic 'base' type pointer) and returns the success/failure state of each subscription in a 'results_buffer'
-array. It should be allocated by the caller to the same size as the 'subs' array or the arg should be set to NULL to ignore results.
+array. This int array must be allocated by the caller to at least the size of the 'subs' array, or the arg can be set to NULL to ignore results.
 
-To stop a session (and remove all subscriptions):
+#### Stop
+
+Stopping a session will log the user out and remove all subscriptions.
 
 ```
 [C++]
@@ -292,9 +290,9 @@ StreamingSession_Stop( StreamingSession_C *psession );
 
 ```
 
-#### Add Subscriptions
+#### Add 
 
-Subscriptions can only be added **to a started session**:
+Subscriptions can only be added **to a started session**. If you try to add a subscription to a stopped session it will throw ```StreamingException``` (C++) or return ```TDMA_API_STREAM_ERROR``` (C).
 
 ```
 [C++]
@@ -313,8 +311,6 @@ StreamingSession_AddSubscriptions( StreamingSession_C *psession,
                                    int *results_buffer ); 
 ```
 
-If you try to add a subscription to a stopped session it will throw ```StreamingException``` (C++) or return TDMA_API_STREAM_ERROR (C).
-
 You can add multiple subscription instances but instances of the same type ***usually***
 override older/preceding ones.
 
@@ -326,20 +322,21 @@ with new subscriptions.
 It's best to avoid doing this frequently because the session object will go through 
 a somewhat costly life-cycle:
 ```
-    .stop() 
+    .stop() / StreamingSession_Stop()
         ._stop_listener_thread()
         ._logout() 
         ._client->close() 
-    .start() 
+    .start() / StreamingSession_Start()
         ._client->connect() 
         ._login() 
         ._start_listener_thread()
         ._subscribe()
 ```
+It should also be considered poor practice to continually create and tear-down connections with the server.
 
-#### Quality-Of-Service
+#### QOS
 
-To get/set the update latency(qos) of the connection use:
+To get or set the update latency(quality-of-service) of the connection use:
 
 ```
 [C++]
@@ -383,8 +380,7 @@ enum QOSType {
 
 #### Destroy
 
-When completely done, the session should be destroyed to log the user out.
-The C++ shared_ptr will do this for you(assuming all references are gone). 
+When completely done, the session should be destroyed. The C++ shared_ptr will do this for you(assuming all references are gone). 
 
 In C you'll need to use:
 ```
@@ -392,6 +388,8 @@ In C you'll need to use:
 inline int
 StreamingSession_Destroy( StreamingSession_C *psession);
 ```
+
+Destruction will stop the session first, logging the user out. Using the proxy object after this point results in ***UNDEFINED BEHAVIOR***.
 
 ### Subscriptions
 
@@ -402,37 +400,37 @@ Subscriptions in C are managed using proxies(simple C structs) that contain a ge
 
 Currently there are two basic types of subscription objects:
 
-#### Symbol/Field Subscriptions
+#### Symbol / Field 
 
-- QuotesSubscription
-- OptionsSubscription
-- LevelOneFuturesSubscription
-- LevelOneForexSubscription
-- LevelOneFuturesOptionsSubscription
-- NewsHeadlineSubscription
-- ChartEquitySubscription
-- ChartFuturesSubscription
-- ChartOptionsSubscription
-- TimesaleFuturesSubscription
-- TimesaleEquitySubscription
-- TimesaleOptionsSubscription
+- ```QuotesSubscription```
+- ```OptionsSubscription```
+- ```LevelOneFuturesSubscription```
+- ```LevelOneForexSubscription```
+- ```LevelOneFuturesOptionsSubscription```
+- ```NewsHeadlineSubscription```
+- ```ChartEquitySubscription```
+- ```ChartFuturesSubscription```
+- ```ChartOptionsSubscription```
+- ```TimesaleFuturesSubscription```
+- ```TimesaleEquitySubscription```
+- ```TimesaleOptionsSubscription```
 
 These use a combination of security symbols/strings and field numbers representing what type of data to return. These field numbers are found in the 'Field' suffixed enums:
 
-- QuotesSubscriptionField
-- OptionsSubscriptionField
-- LevelOneFuturesSubscriptionField
-- LevelOneForexSubscriptionField
-- LevelOneFuturesOptionsSubscriptionField
-- NewsHeadlineSubscriptionField
-- ChartEquitySubscriptionField
-- ChartSubscriptionField    
-- TimesaleSubscriptionField
+- ```QuotesSubscriptionField```
+- ```OptionsSubscriptionField```
+- ```LevelOneFuturesSubscriptionField```
+- ```LevelOneForexSubscriptionField```
+- ```LevelOneFuturesOptionsSubscriptionField```
+- ```NewsHeadlineSubscriptionField```
+- ```ChartEquitySubscriptionField```
+- ```ChartSubscriptionField```
+- ```TimesaleSubscriptionField```
 
-See the [Subscription Classes Section](#subscription-classes) for the definitions.
+See the [Subscription Classes Section](#subscription-classes) for the subscription interfaces and enum definitions.
 
 Some objects share a Field enum. For instance, ```TimesaleEquitySubscription``` and
-```TimesaleOptionsSubscription``` use ```enum TimesaleSubscriptionField```. 
+```TimesaleOptionsSubscription``` use fields from ```enum TimesaleSubscriptionField```. 
 
 To create a subscription you'll pass symbol strings AND values from the appropriate
 enum, e.g:
@@ -467,19 +465,31 @@ In C you'll use the appropraitely named call, e.g:
 ```
 [C]
 int
-QuotesSubscription_GetSymbols( QuotesSubscription_C *psub, char ***bufers, size_t *n);
+QuotesSubscription_GetSymbols( QuotesSubscription_C *psub, 
+                               char ***bufers, 
+                               size_t *n );
 
 int
-OptionsSubscription_GetSymbols( OptionsSubscription_C *psub, char ***buffers, size_t *n);
+OptionsSubscription_GetSymbols( OptionsSubscription_C *psub, 
+                                char ***buffers, 
+                                size_t *n );
 
 ...
 ```
+Remember, its the clients repsonsibility to free these buffers:
+```
+[C]
+inline int
+FreeBuffers( char** buffers, size_t n);
+```
 
-To access the fields:
+To access the fields, e.g:
 ```
 [C++]
-std::set<FieldType> // <- 'FieldType' depends on the type of subscription
-get_fields() const
+// 'FieldType' depends on the type of subscription 
+// (QuoteSubscriptionField in this case)
+std::set<FieldType> 
+QuotesSubscription::get_fields() const
 
 ```
 
@@ -500,8 +510,14 @@ TimesaleEquitySubscription_GetFields( TimesaleEquitySubscription_C *psub,
 
 ...
 ```
+Remember, its the clients repsonsibility to free these buffers (cast field* to int*):
+```
+[C]
+inline int
+FreeFieldsBuffer( int* buffer );
+```
 
-#### Duration/Venue Subscriptions
+#### Duration / Venue 
 
 - NasdaqActivesSubscription
 - NYSEActivesSubscription
@@ -520,9 +536,8 @@ class OptionActivesSubscription
 [C]
 int
 OptionActivesSubscription_Create( VenueType venue,
-                                  DurationType duration_type,                                
-                                  OptionActivesSubscription_C *psub); 
-
+                                  DurationType duration_type,                     
+                                  OptionActivesSubscription_C *psub);
 ```
 
 See the [Subscription Classes Section](#subscription-classes) for more details.
@@ -530,7 +545,7 @@ See the [Subscription Classes Section](#subscription-classes) for more details.
 #### Destroy
 
 When done with a subscription it should be destroyed. This is done automatically
-in C++ by the objects destructor.
+in C++ by the object's destructor.
 
 In C either cast the proxy object to StreamingSubscription_C*  and use the generic 'Destroy' call:
 ```
@@ -543,6 +558,7 @@ StreamingSubscription_Destroy( StreamingSubscription_C *sub );
 inline int
 TimesaleEquitySubscription_Destroy( TimesaleEquitySubscription_C *sub ):
 ```
+Using the proxy object after this point results in ***UNDEFINED BEHAVIOR***.
 
 ### Example Usage [C++]
 ```
@@ -575,10 +591,10 @@ TimesaleEquitySubscription_Destroy( TimesaleEquitySubscription_C *sub ):
         
         auto sub2 = NasdaqActivesSubscription( DurationType::min_60 );
 
-        auto cb = [](int cb, int ss, unsigned long long ts, const char* s)
+        auto cb = [](int cbt, int sst, unsigned long long ts, const char* s)
         {
-            auto cb_type = static_cast<StreamingCallbackType>(cb);
-            auto ss_type = static_cast<StreamerServiceType(ss);
+            auto cb_type = static_cast<StreamingCallbackType>(cbt);
+            auto ss_type = static_cast<StreamerServiceType(sst);
             cout<< "CALLBACK: " << to_string(cb_type) << endl
                 << "\t service: " << to_string(ss_type) << endl
                 << "\t timestamp: " << ts << endl
@@ -672,7 +688,7 @@ TimesaleEquitySubscription_Destroy( TimesaleEquitySubscription_C *sub ):
         }
 
         // get symbols from the first (notice the name is of the actual type)
-        err = TimesaleEquitySubscription_GetSymbols( &sub2, &sub1_symbols, &n) )  
+        err = TimesaleEquitySubscription_GetSymbols( &sub1, &sub1_symbols, &n) )  
         if ( err ){
           //
         }
@@ -696,8 +712,8 @@ TimesaleEquitySubscription_Destroy( TimesaleEquitySubscription_C *sub ):
 
         // combine subscriptions, casting each sub to its 'base' pointer
         StreamingSubscription_C* subs[] = {
-            (StreamingSubscription_C*)sub1, 
-            (StreamingSubscription_C*)sub2, 
+            (StreamingSubscription_C*)&sub1, 
+            (StreamingSubscription_C*)&sub2, 
         };
 
         // results buffer
@@ -772,7 +788,7 @@ QuotesSubscription( const set<string>& symbols, const set<FieldType>& fields );
 ```
 **types**
 ```
-enum class QuotesSubscriptionFieldType : int {
+enum class QuotesSubscriptionField : int {
         symbol,
         bid_price,
         ask_price,
@@ -1548,8 +1564,7 @@ enum class DurationType : int {
         min_10,
         min_5,
         min_1
-    };
-```
+};
 ```
 
 **methods**

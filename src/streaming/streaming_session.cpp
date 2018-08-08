@@ -891,7 +891,10 @@ StreamingSessionImpl::add_subscriptions(
     if( _client ){
         assert( _client->is_connected() );
     }else
-        throw StreamingException("can not add subscription to a stopped session");
+        throw StreamingException("can not add subscriptions to a stopped session");
+
+    if( subscriptions.empty() )
+        return {};
 
     condition_variable c;
     mutex m;
@@ -932,9 +935,11 @@ StreamingSessionImpl::start(const vector<StreamingSubscriptionImpl>& subscriptio
 {
     D("start");
 
-    if( _client ){
+    if( _client )
         throw StreamingException("session has already started");
-    }
+
+    if( subscriptions.empty() )
+        throw StreamingException("subscriptions is empty");
 
     D("check unique session");
     string acct = get_primary_account_id();

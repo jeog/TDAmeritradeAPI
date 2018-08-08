@@ -91,9 +91,7 @@ This project would not be possible without some of the great open-source project
 
 **IMPORTANT** - *There are certain binary compatibility issues when exporting C++ code accross compilations(from name mangling, differing runtimes, changes to STL implementations etc.). If, for instance, we return an std::vector in an earlier version of a library, its implementation changes, and code that imports the library is compiled against a new version of the STL, there can be an issue.*
 
-*The C++ Get interface still throws exceptions across the library boundary which can create issues.*
-
-*The C++ Streaming interface currently has no stable ABI layer.*
+*The C++ interfaces still throw exceptions across the library boundary which can create issues.*
 
 ***Until we implement a better way to deal w/ this either 1) compile your code and the library using the same compiler/settings and link to the same libraries to avoid ABI incompatibility or 2) use the C or Python bindings and corresponding error codes.***
 
@@ -107,22 +105,22 @@ include it in the docs.)
 
 - The library is implemented in C++ and needs to be built accordingly. It exports a C/ABI layer which is wrapped by header defined C calls, allowing for access from pure C and Python via ctypes.py.
 ```
-     FunctionImpl(string)             [C++ implementation code defined in lib]
-     Funtion_ABI(const char*)         [C ABI code defined in lib and exported]
-------|-----|---|-------------------------------------------------------------
-------|-----|---|---------------[lib boundary]--------------------------------
-------|-----|---|-------------------------------------------------------------
-      |     |   |   ----------------[headers]---------------------------------
-      |     |   |    #ifdef __cplusplus
-      |     |   |<== Function(string)           [C++ wrapper defined in header]
-      |     |        #else
-      |     |<====== Function(const char *)     [C wrapper defined in header]
-      |              #endif
-      |             -----------------[headers]--------------------------------
-      |              Function("foo")            [Client C/C++]
-      |             ----------------------------------------------------------
-      |   
-      |<===  ctypes.CDLL.Function_ABI("foo")  [ctypes.py access to library] 
+  FunctionImpl(string)                [C++ implementation code defined in lib]
+  Funtion_ABI(const char*)            [C ABI code defined in lib and exported]
+----/\----/\---/\-------------------------------------------------------------
+----||----||---||---------------------[lib boundary]--------------------------
+----||----||---||-------------------------------------------------------------
+    ||    ||   ||   ---------------------[headers]----------------------------
+    ||    ||   ||      #ifdef __cplusplus
+    ||    ||   ||<===  Function(string)        [C++ wrapper defined in header]
+    ||    ||           #else
+    ||    ||<=======   Function(const char *)  [C wrapper defined in header]
+    ||                 #endif
+    ||              ---------------------[headers]----------------------------
+    ||                 Function("foo")         [Client C/C++]
+    ||              ----------------------------------------------------------
+    ||   
+    ||<===  ctypes.CDll.Function_ABI("foo")  [ctypes.py access to library] 
            
 ```
 
@@ -248,7 +246,7 @@ All front-end C++ library code is in namespace ```tdma```. We mostly exclude it 
         BUILD_C_CPP_TDMA_ENUM_NAME(AdminCommandType, QOS)
         );
     ```
-    ... expands to:
+    ... indicates values in index 0 to 2(inclusive) are valid to pass to theAPI. The macros expand to:
     ```
     [C++]
     enum class AdminCommandType : int {
@@ -265,18 +263,20 @@ All front-end C++ library code is in namespace ```tdma```. We mostly exclude it 
     };
     ```
 
-- C++ methods return results/values and throw exceptions
+- C++ methods return values/objects and throw exceptions
 - C functions populate pointers/buffers and return error codes
-    - Most buffers require the client to Free the underlying memory using the appropriately named Free[] library calls
-    - All buffers are accompanied w/ a size_t* indicating exact size of populated buffer EXCEPT char*'s which return the size of the string + 1 for the null term
-    - Arrays passed by caller generally have to also pass a size_t of the exact size
+    - Most buffers require the client to Free the underlying memory using the appropriate library calls:
+        - ```FreeBuffer(char *buf)```
+        - ```FreeBuffers(char **bufers, size_t n)```
+        - ```FreeFieldsBuffer(int* fields)```
+    - All buffers are accompanied w/ a size_t* arg to be filled w/ the size of the populated buffer EXCEPT char buffers (char*) which return the size of the string + 1 for the null term
+    - Arrays passed by caller generally have to also pass a size_t value of the number of elements
 
-- Only ABI functions (ending in '_ABI') are directly exported from the library. The C/C++ interface calls generally wrap these as header-defined inlines.
+- Only ABI functions (ending in '_ABI') are directly exported from the library. The C interface calls and C++ classes wrap these as header-defined inlines.
 
 ### Errors & Exceptions
 - - -
-Before discussing authentication and access it's important to understand how the library 
-handles errors and exceptional states. All exceptional/error states from the C++ interface will cause exceptions to be thrown:
+All exceptional/error states from the C++ interface will cause exceptions to be thrown.  ***Currently C++ exceptions are passed across the library boundary and may break the ABI***
 
 - Library Exceptions:
     - ```APIExcetion``` : base class and generic exceptions
@@ -295,10 +295,6 @@ exceptions tend to be the result of some low(er) level failure with the connecti
     - ```json::exception``` : base class for exceptions from the json library (review the documentation
 for the derived classes)
 
-- There are no guarantees of exception safety.    
-
-- ***Currently C++ exceptions are passed across the library boundary and may break the ABI***
-
 - The C interface has corresponding error codes:
     ```
     #define TDMA_API_ERROR 1
@@ -316,6 +312,7 @@ for the derived classes)
     ```
 - The Python interface throws ```tdma_api.clib.LibraryNotLoaded``` and ```tdma_api.clib.CLibException``` w/ the error code, name, and message returned from the library.         
 
+- ```LastErrorMsg``` and ```LastErrorCode``` can be used to get the last error message and code, respectively.
 ### Authentication
 - - -
 Authentication is done through OAuth2 using your account login information. 
@@ -327,7 +324,7 @@ to setup a developer account.
     - [use your browser and a localhost redirect uri](https://developer.tdameritrade.com/content/simple-auth-local-apps) -or-
     - [use your own server](https://developer.tdameritrade.com/content/web-server-authentication-python-3) -or-
     - use a 3rd party solution e.g [auth0](https://auth0.com)
-    - **we'll try to include an automated tool at some point in the future**
+    - *we'll try to include an automated tool at some point in the future*
 
 3. use ```RequestAccessToken``` to get an access token stored in a ```Credentials``` struct (**only has to be done once, until the refresh token expires in 3 months**)
 ```

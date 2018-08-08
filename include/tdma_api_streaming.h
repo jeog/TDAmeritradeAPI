@@ -35,14 +35,6 @@ along with this program.  If not, see http://www.gnu.org/licenses.
 using json = nlohmann::json;
 #endif /* __cplusplus */
 
-
-
-/* TODO
- *   6) make SharedSession work w/ StreamingService interface
- *   11) C Wrappers for ABI layer
- *   13) ABI exceptionns? other threads?
-*/
-
 #define BUILD_ENUM_NAME(n) \
     BUILD_C_CPP_TDMA_ENUM_NAME(StreamerServiceType, n)
 DECL_C_CPP_TDMA_ENUM(StreamerServiceType, 1, 17,
