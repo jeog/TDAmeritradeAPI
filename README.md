@@ -40,6 +40,7 @@ and then uses the library to request an access token, which is refreshed automat
     - [Using the TDAmeritradeAPI Library ](#using-the-tdameritradeapi-library)
     - [Python3](#python3)
 - [Namespaces](#namespaces)
+- [Conventions](#conventions)
 - [Errors & Exceptions](#errors--exceptions)
 - [Authentication](#authentication)
 - [Access](#access)
@@ -67,10 +68,11 @@ This project would not be possible without some of the great open-source project
 - - -
 | | Get Interface  |  Streaming Interface  |  Execute Interface 
 -------------------|---------------|---------------------|--------------------
-**C**              | *Working*     | *Coming Soon*       | *Coming Soon*
-**C++**            | *Working (incomplete ABI)* | *Working (no ABI)* | *Coming Soon*
+**C**              | *Working*     | *Working*       | *Coming Soon*
+**C++**            | *Working (incomplete ABI)* | *Working (incomplete ABI)* | *Coming Soon*
 **Python**         | *Working*     | *Coming Soon*       | *Coming Soon*
 
+*Note: 'Working' does not necessarily mean 'Stable'*
 
 ### Structure
 - - -
@@ -105,20 +107,20 @@ include it in the docs.)
 
 - The library is implemented in C++ and needs to be built accordingly. It exports a C/ABI layer which is wrapped by header defined C calls, allowing for access from pure C and Python via ctypes.py.
 ```
-            FunctionImpl(string)        [C++ implementation code defined in lib]
-      |===> Funtion_ABI(const char*)    [C ABI code defined in lib and exported]
-------|-----------------------------------------------------------------------
-------|-------------------------[lib boundary]--------------------------------
-------|-----------------------------------------------------------------------
-      |     ----------------------[headers]-----------------------------------
-      |     #ifdef __cplusplus
-      |     Function(string)                 [C++ wrapper defined in header]
-      |     #else
-      |     Function(const char *)           [C wrapper defined in header]
-      |     #endif
-      |     ----------------------[headers]-----------------------------------
-      |     Function("foo")                  [Client C/C++]
-      |     ------------------------------------------------------------------
+     FunctionImpl(string)             [C++ implementation code defined in lib]
+     Funtion_ABI(const char*)         [C ABI code defined in lib and exported]
+------|-----|---|-------------------------------------------------------------
+------|-----|---|---------------[lib boundary]--------------------------------
+------|-----|---|-------------------------------------------------------------
+      |     |   |   ----------------[headers]---------------------------------
+      |     |   |    #ifdef __cplusplus
+      |     |   |<== Function(string)           [C++ wrapper defined in header]
+      |     |        #else
+      |     |<====== Function(const char *)     [C wrapper defined in header]
+      |              #endif
+      |             -----------------[headers]--------------------------------
+      |              Function("foo")            [Client C/C++]
+      |             ----------------------------------------------------------
       |   
       |<===  ctypes.CDLL.Function_ABI("foo")  [ctypes.py access to library] 
            
@@ -235,6 +237,42 @@ else except deal with TDAmeritradeAPI. If not you'll to have deal with ALL the l
 
 All front-end C++ library code is in namespace ```tdma```. We mostly exclude it in the docs.
 
+### Conventions
+- - -
+
+- Enums are defined for both C and C++ code using MACROS. For example:
+    ```
+    DECL_C_CPP_TDMA_ENUM(AdminCommandType, 0, 2,
+        BUILD_C_CPP_TDMA_ENUM_NAME(AdminCommandType, LOGIN),
+        BUILD_C_CPP_TDMA_ENUM_NAME(AdminCommandType, LOGOUT),
+        BUILD_C_CPP_TDMA_ENUM_NAME(AdminCommandType, QOS)
+        );
+    ```
+    ... expands to:
+    ```
+    [C++]
+    enum class AdminCommandType : int {
+        LOGIN,
+        LOGOUT,
+        QOS
+    };
+
+    [C]
+    enum AdminCommandType {
+        AdminCommandType_LOGIN,
+        AdminCommandType_LOGOUT,
+        AdminCommandType_QOS
+    };
+    ```
+
+- C++ methods return results/values and throw exceptions
+- C functions populate pointers/buffers and return error codes
+    - Most buffers require the client to Free the underlying memory using the appropriately named Free[] library calls
+    - All buffers are accompanied w/ a size_t* indicating exact size of populated buffer EXCEPT char*'s which return the size of the string + 1 for the null term
+    - Arrays passed by caller generally have to also pass a size_t of the exact size
+
+- Only ABI functions (ending in '_ABI') are directly exported from the library. The C/C++ interface calls generally wrap these as header-defined inlines.
+
 ### Errors & Exceptions
 - - -
 Before discussing authentication and access it's important to understand how the library 
@@ -289,6 +327,7 @@ to setup a developer account.
     - [use your browser and a localhost redirect uri](https://developer.tdameritrade.com/content/simple-auth-local-apps) -or-
     - [use your own server](https://developer.tdameritrade.com/content/web-server-authentication-python-3) -or-
     - use a 3rd party solution e.g [auth0](https://auth0.com)
+    - **we'll try to include an automated tool at some point in the future**
 
 3. use ```RequestAccessToken``` to get an access token stored in a ```Credentials``` struct (**only has to be done once, until the refresh token expires in 3 months**)
 ```
@@ -319,16 +358,14 @@ to setup a developer account.
         char *client_id;
     };
 
-    [Python]
-    <tdma_api.auth>
-    def request_access_token(code, client, redirect_uri="https://127.0.0.1"):
+    [Python]    
+    def auth.request_access_token(code, client, redirect_uri="https://127.0.0.1"):
         ...
         returns -> Credentials class
         throws CLibException on error
 
     [Python]
-    <tdma_api.auth>
-    class Credentials(_Structure):
+    class auth.Credentials(_Structure):
         _fields = [
             ("access_token", c_char_p),
             ("refresh_token", c_char_p),
@@ -361,8 +398,7 @@ securely store your credentials:
         returns -> 0 on success, error code on failure
 
     [Python]
-    <tdma_api.auth>
-    def store_credentials(path, password, creds):
+    def auth.store_credentials(path, password, creds):
         ...
         creds :: the Credentials class return from 'request_access_token'
         throws CLibException on error
@@ -388,8 +424,7 @@ In the future construct a new Credentials struct from the saved credentials file
         returns -> 0 on success, error code on failure
 
     [Python]
-    <tdma_api.auth>
-    def load_credentials(path, password):
+    def auth.load_credentials(path, password):
         ...
         returns -> Credentials class
         throws CLibException on error
@@ -416,9 +451,8 @@ to automatically load and store on construction and destruction.
 
 
     [Python]
-    <tdma_api.auth>
     #Context Manager
-    class CredentialsManager:
+    class auth.CredentialsManager:
         def __init__(self, path, password, verbose=False):
             ...
         def __enter__(self):
@@ -427,8 +461,7 @@ to automatically load and store on construction and destruction.
             ...
 ```   
   
-You can, for instance, create a static or global ```CredentialsManager``` instance that will exist over the 
-lifetime of the program, storing the credentials on exit. Just use the 
+You can, for instance, create a static or global ```CredentialsManager``` instance that will exist over the lifetime of the program, storing the credentials on exit. Just use the 
 ```.credentials``` member as an argument for the following API calls, where required. Keep in mind, with this approach the password will be stored in memory, in plain-text, for 
 the life of the ```CredentialsManager``` object.
     

@@ -38,6 +38,7 @@
 ```
 #include "tdma_api_get.h"
 
+[C++]
 using namespace tdma;
 ```
 
@@ -186,7 +187,7 @@ QuoteGetter_IsClosed(QuoteGetter_C *getter)
 
 #### Using Getter Objects [Python]
 
-1. construct a Getter object passing a reference to the Credentials class and the 
+1. construct a Getter object(tdma_api/get.py) passing a reference to the Credentials class and the 
 relevant arguments.
 2. use the ```.get()``` method which returns a parsed json object (via json.loads) from the server OR throws LibraryNotLoaded or CLibException.
 
@@ -228,8 +229,7 @@ wait and make five ```.get()``` calls in immediate succession the group of calls
     APIGetter_GetWaitMSec(unsigned long long *msec)
 
     [Python]
-    <tdma_api.get>
-    def get_wait_msec()
+    def get.get_wait_msec()
 ```
 ```    
     [C++]
@@ -241,8 +241,7 @@ wait and make five ```.get()``` calls in immediate succession the group of calls
     APIGetter_SetWaitMSec(unsigned long long msec)
 
     [Python] 
-    <tdma_api.get>
-    def set_wait_msec(msec)    
+    def get.set_wait_msec(msec)    
 ```
 
 This interface should not be used for streaming data, i.e. repeatedly making getter calls -  
