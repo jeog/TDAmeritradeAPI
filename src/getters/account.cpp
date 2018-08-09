@@ -43,6 +43,8 @@ protected:
 
 public:
     typedef AccountGetterBase ProxyType;
+    static const int TYPE_ID_LOW = TYPE_ID_GETTER_ACCOUNT_INFO;
+    static const int TYPE_ID_HIGH = TYPE_ID_GETTER_IND_TRANSACTION_HISTORY;
 
     std::string
     get_account_id() const
@@ -86,6 +88,8 @@ class AccountInfoGetterImpl
 
 public:
     typedef AccountInfoGetter ProxyType;
+    static const int TYPE_ID_LOW = TYPE_ID_GETTER_ACCOUNT_INFO;
+    static const int TYPE_ID_HIGH = TYPE_ID_GETTER_ACCOUNT_INFO;
 
     AccountInfoGetterImpl( Credentials& creds,
                        const std::string& account_id,
@@ -138,6 +142,8 @@ class PreferencesGetterImpl
 
 public:
     typedef PreferencesGetter ProxyType;
+    static const int TYPE_ID_LOW = TYPE_ID_GETTER_PREFERENCES;
+    static const int TYPE_ID_HIGH = TYPE_ID_GETTER_PREFERENCES;
 
     PreferencesGetterImpl( Credentials& creds, const std::string& account_id )
         :
@@ -167,6 +173,8 @@ class StreamerSubscriptionKeysGetterImpl
 
 public:
     typedef StreamerSubscriptionKeysGetter ProxyType;
+    static const int TYPE_ID_LOW = TYPE_ID_GETTER_SUBSCRIPTION_KEYS;
+    static const int TYPE_ID_HIGH = TYPE_ID_GETTER_SUBSCRIPTION_KEYS;
 
     StreamerSubscriptionKeysGetterImpl( Credentials& creds,
                                     const std::string& account_id )
@@ -210,6 +218,8 @@ class TransactionHistoryGetterImpl
 
 public:
     typedef TransactionHistoryGetter ProxyType;
+    static const int TYPE_ID_LOW = TYPE_ID_GETTER_TRANSACTION_HISTORY;
+    static const int TYPE_ID_HIGH = TYPE_ID_GETTER_TRANSACTION_HISTORY;
 
     TransactionHistoryGetterImpl(
             Credentials& creds,
@@ -306,6 +316,8 @@ class IndividualTransactionHistoryGetterImpl
 
 public:
     typedef IndividualTransactionHistoryGetter ProxyType;
+    static const int TYPE_ID_LOW = TYPE_ID_GETTER_IND_TRANSACTION_HISTORY;
+    static const int TYPE_ID_HIGH = TYPE_ID_GETTER_IND_TRANSACTION_HISTORY;
 
     IndividualTransactionHistoryGetterImpl(
         Credentials& creds,
@@ -373,6 +385,8 @@ class UserPrincipalsGetterImpl
 
 public:
     typedef UserPrincipalsGetter ProxyType;
+    static const int TYPE_ID_LOW = TYPE_ID_GETTER_USER_PRINCIPALS;
+    static const int TYPE_ID_HIGH = TYPE_ID_GETTER_USER_PRINCIPALS;
 
     UserPrincipalsGetterImpl( Credentials& creds,
                           bool streamer_subscription_keys,
@@ -476,9 +490,9 @@ AccountInfoGetter_Create_ABI( struct Credentials *pcreds,
                                  AccountInfoGetter_C *pgetter,
                                  int allow_exceptions)
 {
-    int err = getter_is_creatable<AccountInfoGetterImpl>(
-        pcreds, pgetter, allow_exceptions
-        );
+    using ImplTy = AccountInfoGetterImpl;
+
+    int err = getter_is_creatable<ImplTy>(pcreds, pgetter, allow_exceptions);
     if( err )
         return err;
 
@@ -491,11 +505,10 @@ AccountInfoGetter_Create_ABI( struct Credentials *pcreds,
     }
 
     static auto meth = +[]( Credentials *c, const char* s, int p, int o ){
-        return new AccountInfoGetterImpl( *c, s, static_cast<bool>(p),
-                                          static_cast<bool>(o) );
+        return new ImplTy(*c, s, static_cast<bool>(p), static_cast<bool>(o) );
     };
 
-    AccountInfoGetterImpl *obj;
+    ImplTy *obj;
     tie(obj, err) = CallImplFromABI( allow_exceptions, meth, pcreds, account_id,
                                      positions, orders);
     if( err ){
@@ -505,9 +518,8 @@ AccountInfoGetter_Create_ABI( struct Credentials *pcreds,
     }
 
     pgetter->obj = reinterpret_cast<void*>(obj);
-    assert( AccountInfoGetterImpl::ProxyType::TYPE_ID_LOW ==
-            AccountInfoGetterImpl::ProxyType::TYPE_ID_HIGH );
-    pgetter->type_id = AccountInfoGetterImpl::ProxyType::TYPE_ID_LOW;
+    assert( ImplTy::TYPE_ID_LOW == ImplTy::TYPE_ID_HIGH );
+    pgetter->type_id = ImplTy::TYPE_ID_LOW;
     return 0;
 }
 
@@ -572,9 +584,9 @@ PreferencesGetter_Create_ABI( struct Credentials *pcreds,
                                  PreferencesGetter_C *pgetter,
                                  int allow_exceptions )
 {
-    int err = getter_is_creatable<PreferencesGetterImpl>(
-        pcreds, pgetter, allow_exceptions
-        );
+    using ImplTy = PreferencesGetterImpl;
+
+    int err = getter_is_creatable<ImplTy>(pcreds, pgetter, allow_exceptions);
     if( err )
         return err;
 
@@ -587,10 +599,10 @@ PreferencesGetter_Create_ABI( struct Credentials *pcreds,
     }
 
     static auto meth = +[]( Credentials *c, const char* s ){
-        return new PreferencesGetterImpl( *c, s );
+        return new ImplTy( *c, s );
     };
 
-    PreferencesGetterImpl *obj;
+    ImplTy *obj;
     tie(obj, err) = CallImplFromABI(allow_exceptions, meth, pcreds, account_id);
     if( err ){
         pgetter->obj = nullptr;
@@ -599,9 +611,8 @@ PreferencesGetter_Create_ABI( struct Credentials *pcreds,
     }
 
     pgetter->obj = reinterpret_cast<void*>(obj);
-    assert( PreferencesGetterImpl::ProxyType::TYPE_ID_LOW ==
-            PreferencesGetterImpl::ProxyType::TYPE_ID_HIGH );
-    pgetter->type_id = PreferencesGetterImpl::ProxyType::TYPE_ID_LOW;
+    assert( ImplTy::TYPE_ID_LOW == ImplTy::TYPE_ID_HIGH );
+    pgetter->type_id = ImplTy::TYPE_ID_LOW;
     return 0;
 }
 
@@ -613,15 +624,15 @@ PreferencesGetter_Destroy_ABI( PreferencesGetter_C *pgetter,
 
 int
 StreamerSubscriptionKeysGetter_Create_ABI(
-    struct Credentials *pcreds,
+     struct Credentials *pcreds,
      const char* account_id,
      StreamerSubscriptionKeysGetter_C *pgetter,
      int allow_exceptions
      )
 {
-    int err = getter_is_creatable<StreamerSubscriptionKeysGetterImpl>(
-        pcreds, pgetter, allow_exceptions
-        );
+    using ImplTy = StreamerSubscriptionKeysGetterImpl;
+
+    int err = getter_is_creatable<ImplTy>(pcreds, pgetter, allow_exceptions);
     if( err )
         return err;
 
@@ -634,10 +645,10 @@ StreamerSubscriptionKeysGetter_Create_ABI(
     }
 
     static auto meth = +[]( Credentials *c, const char* s ){
-        return new StreamerSubscriptionKeysGetterImpl( *c, s );
+        return new ImplTy( *c, s );
     };
 
-    StreamerSubscriptionKeysGetterImpl *obj;
+    ImplTy *obj;
     tie(obj, err) = CallImplFromABI(allow_exceptions, meth, pcreds, account_id);
     if( err ){
         pgetter->obj = nullptr;
@@ -646,9 +657,8 @@ StreamerSubscriptionKeysGetter_Create_ABI(
     }
 
     pgetter->obj = reinterpret_cast<void*>(obj);
-    assert( StreamerSubscriptionKeysGetterImpl::ProxyType::TYPE_ID_LOW ==
-            StreamerSubscriptionKeysGetterImpl::ProxyType::TYPE_ID_HIGH );
-    pgetter->type_id = StreamerSubscriptionKeysGetterImpl::ProxyType::TYPE_ID_LOW;
+    assert( ImplTy::TYPE_ID_LOW == ImplTy::TYPE_ID_HIGH );
+    pgetter->type_id = ImplTy::TYPE_ID_LOW;
     return 0;
 }
 
@@ -674,9 +684,9 @@ TransactionHistoryGetter_Create_ABI( struct Credentials *pcreds,
                                          TransactionHistoryGetter_C *pgetter,
                                          int allow_exceptions)
 {
-    int err = getter_is_creatable<TransactionHistoryGetterImpl>(
-        pcreds, pgetter, allow_exceptions
-        );
+    using ImplTy = TransactionHistoryGetterImpl;
+
+    int err = getter_is_creatable<ImplTy>(pcreds, pgetter, allow_exceptions);
     if( err )
         return err;
 
@@ -695,12 +705,12 @@ TransactionHistoryGetter_Create_ABI( struct Credentials *pcreds,
 
     static auto meth = +[]( Credentials *c, const char* s, int t,
                             const char* sym, const char* sd, const char* ed ){
-        return new TransactionHistoryGetterImpl( *c, s,
+        return new ImplTy( *c, s,
                                                  static_cast<TransactionType>(t),
                                                  sym, sd, ed );
     };
 
-    TransactionHistoryGetterImpl *obj;
+    ImplTy *obj;
     tie(obj, err) = CallImplFromABI( allow_exceptions, meth, pcreds, account_id,
                                      transaction_type, symbol, start_date,
                                      end_date);
@@ -711,9 +721,8 @@ TransactionHistoryGetter_Create_ABI( struct Credentials *pcreds,
     }
 
     pgetter->obj = reinterpret_cast<void*>(obj);
-    assert( TransactionHistoryGetterImpl::ProxyType::TYPE_ID_LOW ==
-            TransactionHistoryGetterImpl::ProxyType::TYPE_ID_HIGH );
-    pgetter->type_id = TransactionHistoryGetterImpl::ProxyType::TYPE_ID_LOW;
+    assert( ImplTy::TYPE_ID_LOW == ImplTy::TYPE_ID_HIGH );
+    pgetter->type_id = ImplTy::TYPE_ID_LOW;
     return 0;
 }
 
@@ -844,9 +853,9 @@ IndividualTransactionHistoryGetter_Create_ABI(
     IndividualTransactionHistoryGetter_C *pgetter,
     int allow_exceptions )
 {
-    int err = getter_is_creatable<IndividualTransactionHistoryGetterImpl>(
-        pcreds, pgetter, allow_exceptions
-        );
+    using ImplTy = IndividualTransactionHistoryGetterImpl;
+
+    int err = getter_is_creatable<ImplTy>(pcreds, pgetter, allow_exceptions);
     if( err )
         return err;
 
@@ -867,10 +876,10 @@ IndividualTransactionHistoryGetter_Create_ABI(
     }
 
     static auto meth = +[]( Credentials *c, const char* s, const char* t ){
-        return new IndividualTransactionHistoryGetterImpl( *c, s, t );
+        return new ImplTy( *c, s, t );
     };
 
-    IndividualTransactionHistoryGetterImpl *obj;
+    ImplTy *obj;
     tie(obj, err) = CallImplFromABI( allow_exceptions, meth, pcreds, account_id,
                                      transaction_id );
     if( err ){
@@ -880,9 +889,8 @@ IndividualTransactionHistoryGetter_Create_ABI(
     }
 
     pgetter->obj = reinterpret_cast<void*>(obj);
-    assert( IndividualTransactionHistoryGetterImpl::ProxyType::TYPE_ID_LOW ==
-            IndividualTransactionHistoryGetterImpl::ProxyType::TYPE_ID_HIGH );
-    pgetter->type_id = IndividualTransactionHistoryGetterImpl::ProxyType::TYPE_ID_LOW;
+    assert( ImplTy::TYPE_ID_LOW == ImplTy::TYPE_ID_HIGH );
+    pgetter->type_id = ImplTy::TYPE_ID_LOW;
     return 0;
 }
 
@@ -935,17 +943,17 @@ UserPrincipalsGetter_Create_ABI( struct Credentials *pcreds,
                                      UserPrincipalsGetter_C *pgetter,
                                      int allow_exceptions )
 {
-    int err = getter_is_creatable<UserPrincipalsGetterImpl>(
-        pcreds, pgetter, allow_exceptions
-        );
+    using ImplTy = UserPrincipalsGetterImpl;
+
+    int err = getter_is_creatable<ImplTy>(pcreds, pgetter, allow_exceptions);
     if( err )
         return err;
 
     static auto meth = +[]( Credentials *c, int k, int i, int p, int si ){
-        return new UserPrincipalsGetterImpl( *c, k, i, p, si );
+        return new ImplTy( *c, k, i, p, si );
     };
 
-    UserPrincipalsGetterImpl *obj;
+    ImplTy *obj;
     tie(obj, err) = CallImplFromABI( allow_exceptions, meth, pcreds,
                                      streamer_subscription_keys,
                                      streamer_connection_info, preferences,
@@ -957,9 +965,8 @@ UserPrincipalsGetter_Create_ABI( struct Credentials *pcreds,
     }
 
     pgetter->obj = reinterpret_cast<void*>(obj);
-    assert( UserPrincipalsGetterImpl::ProxyType::TYPE_ID_LOW ==
-            UserPrincipalsGetterImpl::ProxyType::TYPE_ID_HIGH );
-    pgetter->type_id = UserPrincipalsGetterImpl::ProxyType::TYPE_ID_LOW;
+    assert( ImplTy::TYPE_ID_LOW == ImplTy::TYPE_ID_HIGH );
+    pgetter->type_id = ImplTy::TYPE_ID_LOW;
     return 0;
 }
 

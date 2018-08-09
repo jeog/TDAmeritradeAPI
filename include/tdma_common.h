@@ -83,7 +83,11 @@ operator<<(std::ostream& out, const type& v) \
 #define DECL_C_CPP_TDMA_ENUM(type, l, h, ...) \
 typedef enum { __VA_ARGS__ } type; \
 EXTERN_C_SPEC_ DLL_SPEC_ int \
-type##_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions);
+type##_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions); \
+\
+inline int \
+type##_to_string(int v, char** buf, size_t* n) \
+{ return type##_to_string_ABI(v, buf, n, 0); }
 
 #define BUILD_C_CPP_TDMA_ENUM_NAME(type,name) type##_##name
 #endif /* __cplusplus */

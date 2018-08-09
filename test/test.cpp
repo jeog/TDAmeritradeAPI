@@ -63,8 +63,8 @@ int main(int argc, char* argv[])
         };
 
 
-    using ft = QuotesSubscription::FieldType;
-    using tsft = TimesaleSubscriptionBase::FieldType;
+    //using ft = QuotesSubscription::FieldType;
+    //using tsft = TimesaleSubscriptionBase::FieldType;
 
     try {
 
@@ -190,7 +190,6 @@ template<typename S>
 void display_sub(S& sub,
     typename enable_if<is_base_of<SubscriptionBySymbolBase, S>::value, S>::type* _ = nullptr)
 {
-    cout<< S::TYPE_ID_LOW << " " << S::TYPE_ID_HIGH << endl;
     cout<< "COMMAND: " << sub.get_command() << endl;
     cout<< "SERVICE: " << to_string(sub.get_service()) << endl;
     cout<< "SYMBOLS: ";
@@ -210,7 +209,6 @@ void display_sub(S& sub,
     typename enable_if<is_base_of<ActivesSubscriptionBase, S>::value &&
     !is_same<S,OptionActivesSubscription>::value>::type* _ = nullptr)
 {
-    cout<< S::TYPE_ID_LOW << " " << S::TYPE_ID_HIGH << endl;
     cout<< "COMMAND: " << sub.get_command() << endl;
     cout<< "SERVICE: " << to_string(sub.get_service()) << endl;
     cout<< "DURATION: " << to_string(sub.get_duration()) << endl;
@@ -277,7 +275,7 @@ streaming(string id, Credentials& c)
                 << "\t service: "
                 << to_string(static_cast<StreamerServiceType>(ss_type)) << endl
                 << "\t timestamp: " << timestamp << endl
-                << "\t content: " << json::parse(msg) << endl << endl;
+                << "\t content: " << json::parse(string(msg)) << endl << endl;
         };
 
 

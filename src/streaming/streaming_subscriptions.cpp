@@ -100,8 +100,7 @@ int
 subscription_is_creatable( typename ImplTy::ProxyType::CType *sub,
                               int allow_exceptions )
 {
-    static_assert( ImplTy::ProxyType::TYPE_ID_LOW > 0 &&
-                   ImplTy::ProxyType::TYPE_ID_HIGH > 0,
+    static_assert( ImplTy::TYPE_ID_LOW > 0 && ImplTy::TYPE_ID_HIGH > 0,
                    "invalid subscription type" );
     if( !sub )
         return handle_error<tdma::ValueException>(
@@ -174,8 +173,8 @@ subscription_is_callable( typename ImplTy::ProxyType::CType *sub,
     if( err )
         return err;
 
-    if( sub->type_id < ImplTy::ProxyType::TYPE_ID_LOW ||
-        sub->type_id > ImplTy::ProxyType::TYPE_ID_HIGH )
+    if( sub->type_id < ImplTy::TYPE_ID_LOW ||
+        sub->type_id > ImplTy::TYPE_ID_HIGH )
     {
         return handle_error<tdma::TypeException>(
             "getter has invalid type id", allow_exceptions
@@ -190,39 +189,39 @@ C_sub_ptr_to_impl_ptr(StreamingSubscription_C *psub)
 {
     base_subscription_is_callable(psub, 1);
     switch( psub->type_id ){
-    case 1:
+    case TYPE_ID_SUB_QUOTES:
         return reinterpret_cast<QuotesSubscriptionImpl*>(psub->obj);
-    case 2:
+    case TYPE_ID_SUB_OPTIONS:
         return reinterpret_cast<OptionsSubscriptionImpl*>(psub->obj);
-    case 3:
+    case TYPE_ID_SUB_LEVEL_ONE_FUTURES:
         return reinterpret_cast<LevelOneFuturesSubscriptionImpl*>(psub->obj);
-    case 4:
+    case TYPE_ID_SUB_LEVEL_ONE_FOREX:
         return reinterpret_cast<LevelOneForexSubscriptionImpl*>(psub->obj);
-    case 5:
+    case TYPE_ID_SUB_LEVEL_ONE_FUTURES_OPTIONS:
         return reinterpret_cast<LevelOneFuturesOptionsSubscriptionImpl*>(psub->obj);
-    case 6:
+    case TYPE_ID_SUB_NEWS_HEADLINE:
         return reinterpret_cast<NewsHeadlineSubscriptionImpl*>(psub->obj);
-    case 7:
+    case TYPE_ID_SUB_CHART_EQUITY:
         return reinterpret_cast<ChartEquitySubscriptionImpl*>(psub->obj);
-    //case 10: NOT WORKING
-    case 9:
+    //case TYPE_ID_SUB_CHART_FOREX: NOT WORKING
+    case TYPE_ID_SUB_CHART_FUTURES:
         return reinterpret_cast<ChartFuturesSubscriptionImpl*>(psub->obj);
-    case 10:
+    case TYPE_ID_SUB_CHART_OPTIONS:
         return reinterpret_cast<ChartOptionsSubscriptionImpl*>(psub->obj);
-    case 11:
+    case TYPE_ID_SUB_TIMESALE_EQUITY:
         return reinterpret_cast<TimesaleEquitySubscriptionImpl*>(psub->obj);
-    //case 12: NOT WORKING
-    case 13:
+    //case TYPE_ID_SUB_TIMESALE_FOREX: NOT WORKING
+    case TYPE_ID_SUB_TIMESALE_FUTURES:
         return reinterpret_cast<TimesaleFuturesSubscriptionImpl*>(psub->obj);
-    case 14:
+    case TYPE_ID_SUB_TIMESALE_OPTIONS:
         return reinterpret_cast<TimesaleOptionsSubscriptionImpl*>(psub->obj);
-    case 15:
+    case TYPE_ID_SUB_ACTIVES_NASDAQ:
         return reinterpret_cast<NasdaqActivesSubscriptionImpl*>(psub->obj);
-    case 16:
+    case TYPE_ID_SUB_ACTIVES_NYSE:
         return reinterpret_cast<NYSEActivesSubscriptionImpl*>(psub->obj);
-    case 17:
+    case TYPE_ID_SUB_ACTIVES_OTCBB:
         return reinterpret_cast<OTCBBActivesSubscriptionImpl*>(psub->obj);
-    case 18:
+    case TYPE_ID_SUB_ACTIVES_OPTION:
         return reinterpret_cast<OptionActivesSubscriptionImpl*>(psub->obj);
     default:
         throw TypeException("invalid C subscription type_id");
@@ -275,8 +274,8 @@ create_symbol_field_subscription( const char **symbols,
     }
 
     psub->obj = reinterpret_cast<void*>(obj);
-    assert(ImplTy::ProxyType::TYPE_ID_LOW == ImplTy::ProxyType::TYPE_ID_HIGH);
-    psub->type_id = ImplTy::ProxyType::TYPE_ID_LOW;
+    assert(ImplTy::TYPE_ID_LOW == ImplTy::TYPE_ID_HIGH);
+    psub->type_id = ImplTy::TYPE_ID_LOW;
     return 0;
 }
 
@@ -308,8 +307,8 @@ create_duration_subscription( int duration,
     }
 
     psub->obj = reinterpret_cast<void*>(obj);
-    assert(ImplTy::ProxyType::TYPE_ID_LOW == ImplTy::ProxyType::TYPE_ID_HIGH);
-    psub->type_id = ImplTy::ProxyType::TYPE_ID_LOW;
+    assert(ImplTy::TYPE_ID_LOW == ImplTy::TYPE_ID_HIGH);
+    psub->type_id = ImplTy::TYPE_ID_LOW;
     return 0;
 }
 
@@ -500,8 +499,8 @@ SubscriptionBySymbolBase_GetSymbols_ABI( StreamingSubscription_C *psub,
             "null 'n' pointer", allow_exceptions
             );
 
-    if( psub->type_id < SubscriptionBySymbolBaseImpl::ProxyType::TYPE_ID_LOW ||
-        psub->type_id > SubscriptionBySymbolBaseImpl::ProxyType::TYPE_ID_HIGH )
+    if( psub->type_id < SubscriptionBySymbolBaseImpl::TYPE_ID_LOW ||
+        psub->type_id > SubscriptionBySymbolBaseImpl::TYPE_ID_HIGH )
     {
         return handle_error<tdma::TypeException>(
             "invalid type id", allow_exceptions
@@ -858,9 +857,9 @@ OptionActivesSubscription_Create_ABI( int venue,
     }
 
     psub->obj = reinterpret_cast<void*>(obj);
-    assert(OptionActivesSubscriptionImpl::ProxyType::TYPE_ID_LOW
-        == OptionActivesSubscriptionImpl::ProxyType::TYPE_ID_HIGH);
-    psub->type_id = OptionActivesSubscriptionImpl::ProxyType::TYPE_ID_LOW;
+    assert(OptionActivesSubscriptionImpl::TYPE_ID_LOW
+        == OptionActivesSubscriptionImpl::TYPE_ID_HIGH);
+    psub->type_id = OptionActivesSubscriptionImpl::TYPE_ID_LOW;
     return 0;
 }
 

@@ -48,6 +48,8 @@ class MarketHoursGetterImpl
 
 public:
     typedef MarketHoursGetter ProxyType;
+    static const int TYPE_ID_LOW = TYPE_ID_GETTER_MARKET_HOURS;
+    static const int TYPE_ID_HIGH = TYPE_ID_GETTER_MARKET_HOURS;
 
     MarketHoursGetterImpl( Credentials& creds,
                               MarketType market_type,
@@ -102,9 +104,9 @@ MarketHoursGetter_Create_ABI( struct Credentials *pcreds,
                                  MarketHoursGetter_C *pgetter,
                                  int allow_exceptions )
 {
-    int err = getter_is_creatable<MarketHoursGetterImpl>(
-        pcreds, pgetter, allow_exceptions
-        );
+    using ImplTy = MarketHoursGetterImpl;
+
+    int err = getter_is_creatable<ImplTy>(pcreds, pgetter, allow_exceptions);
     if( err )
         return err;
 
@@ -123,10 +125,10 @@ MarketHoursGetter_Create_ABI( struct Credentials *pcreds,
     }
 
     static auto meth = +[](Credentials *c, int m, const char* d){
-        return new MarketHoursGetterImpl(*c, static_cast<MarketType>(m), d);
+        return new ImplTy(*c, static_cast<MarketType>(m), d);
     };
 
-    MarketHoursGetterImpl *obj;
+    ImplTy *obj;
     tie(obj, err) = CallImplFromABI( allow_exceptions, meth, pcreds,
                                            market_type, date );
     if( err ){
@@ -136,8 +138,8 @@ MarketHoursGetter_Create_ABI( struct Credentials *pcreds,
     }
 
     pgetter->obj = reinterpret_cast<void*>(obj);
-    assert(MarketHoursGetter::TYPE_ID_LOW == MarketHoursGetter::TYPE_ID_HIGH);
-    pgetter->type_id = MarketHoursGetter::TYPE_ID_LOW;
+    assert(ImplTy::TYPE_ID_LOW == ImplTy::TYPE_ID_HIGH);
+    pgetter->type_id = ImplTy::TYPE_ID_LOW;
     return 0;
 }
 

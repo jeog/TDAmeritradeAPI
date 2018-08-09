@@ -42,6 +42,8 @@ class QuoteGetterImpl
 
 public:
     typedef QuoteGetter ProxyType;
+    static const int TYPE_ID_LOW = TYPE_ID_GETTER_QUOTE;
+    static const int TYPE_ID_HIGH = TYPE_ID_GETTER_QUOTE;
 
     QuoteGetterImpl( Credentials& creds, const string& symbol )
         :
@@ -90,6 +92,8 @@ class QuotesGetterImpl
 
 public:
     typedef QuotesGetter ProxyType;
+    static const int TYPE_ID_LOW = TYPE_ID_GETTER_QUOTES;
+    static const int TYPE_ID_HIGH = TYPE_ID_GETTER_QUOTES;
 
     QuotesGetterImpl( Credentials& creds, const set<string>& symbols)
         :
@@ -128,9 +132,9 @@ QuoteGetter_Create_ABI( Credentials *pcreds,
                            QuoteGetter_C *pgetter,
                            int allow_exceptions )
 {
-    int err = getter_is_creatable<QuoteGetterImpl>(
-        pcreds, pgetter, allow_exceptions
-        );
+    using ImplTy = QuoteGetterImpl;
+
+    int err = getter_is_creatable<ImplTy>(pcreds, pgetter, allow_exceptions);
     if( err )
         return err;
 
@@ -143,10 +147,10 @@ QuoteGetter_Create_ABI( Credentials *pcreds,
     }
 
     static auto meth = +[](Credentials *c, const char* s){
-        return new QuoteGetterImpl(*c, s);
+        return new ImplTy(*c, s);
     };
 
-    QuoteGetterImpl *obj;
+    ImplTy *obj;
     tie(obj, err) = CallImplFromABI(allow_exceptions, meth, pcreds, symbol);
     if( err ){
         pgetter->obj = nullptr;
@@ -155,8 +159,8 @@ QuoteGetter_Create_ABI( Credentials *pcreds,
     }
 
     pgetter->obj = reinterpret_cast<void*>(obj);
-    assert( QuoteGetter::TYPE_ID_LOW == QuoteGetter::TYPE_ID_HIGH );
-    pgetter->type_id = QuoteGetter::TYPE_ID_LOW;
+    assert( ImplTy::TYPE_ID_LOW == ImplTy::TYPE_ID_HIGH );
+    pgetter->type_id = ImplTy::TYPE_ID_LOW;
     return 0;
 }
 
@@ -198,9 +202,9 @@ QuotesGetter_Create_ABI( Credentials *pcreds,
                             QuotesGetter_C *pgetter,
                             int allow_exceptions )
 {
-    int err = getter_is_creatable<QuotesGetterImpl>(
-        pcreds, pgetter, allow_exceptions
-        );
+    using ImplTy = QuotesGetterImpl;
+
+    int err = getter_is_creatable<ImplTy>(pcreds, pgetter, allow_exceptions);
     if( err )
         return err;
 
@@ -216,10 +220,10 @@ QuotesGetter_Create_ABI( Credentials *pcreds,
         std::set<std::string> strs;
         while( n-- )
             strs.insert(s[n]);
-        return new QuotesGetterImpl(*c, strs);
+        return new ImplTy(*c, strs);
     };
 
-    QuotesGetterImpl *obj;
+    ImplTy *obj;
     tie(obj, err) = CallImplFromABI(allow_exceptions, meth, pcreds, symbols,
                                     nsymbols);
     if( err ){
@@ -229,8 +233,8 @@ QuotesGetter_Create_ABI( Credentials *pcreds,
     }
 
     pgetter->obj = reinterpret_cast<void*>(obj);
-    assert( QuotesGetter::TYPE_ID_LOW == QuotesGetter::TYPE_ID_HIGH );
-    pgetter->type_id = QuotesGetter::TYPE_ID_LOW;
+    assert( ImplTy::TYPE_ID_LOW == ImplTy::TYPE_ID_HIGH );
+    pgetter->type_id = ImplTy::TYPE_ID_LOW;
     return 0;
 }
 

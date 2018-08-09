@@ -35,34 +35,34 @@ along with this program.  If not, see http://www.gnu.org/licenses.
 using json = nlohmann::json;
 #endif /* __cplusplus */
 
+
 #define BUILD_ENUM_NAME(n) \
     BUILD_C_CPP_TDMA_ENUM_NAME(StreamerServiceType, n)
-DECL_C_CPP_TDMA_ENUM(StreamerServiceType, 1, 17,
-    BUILD_ENUM_NAME( NONE),
-    BUILD_ENUM_NAME( ADMIN),
-    BUILD_ENUM_NAME( ACTIVES_NASDAQ),
-    BUILD_ENUM_NAME( ACTIVES_NYSE),
-    BUILD_ENUM_NAME( ACTIVES_OTCBB),
-    BUILD_ENUM_NAME( ACTIVES_OPTIONS),
-    BUILD_ENUM_NAME( CHART_EQUITY),
-    BUILD_ENUM_NAME( CHART_FUTURES),
-    BUILD_ENUM_NAME( CHART_OPTIONS),
-    BUILD_ENUM_NAME( QUOTE),
-    BUILD_ENUM_NAME( LEVELONE_FUTURES),
-    BUILD_ENUM_NAME( LEVELONE_FOREX),
-    BUILD_ENUM_NAME( LEVELONE_FUTURES_OPTIONS),
-    BUILD_ENUM_NAME( OPTION),
-    BUILD_ENUM_NAME( NEWS_HEADLINE),
-    BUILD_ENUM_NAME( TIMESALE_EQUITY),
-    BUILD_ENUM_NAME( TIMESALE_FUTURES),
-    BUILD_ENUM_NAME( TIMESALE_OPTIONS)
-    /* NOT WORKING */
-    //BUILD_ENUM_NAME( CHART_FOREX),
-    //BUILD_ENUM_NAME( TIMESALE_FOREX),
+DECL_C_CPP_TDMA_ENUM(StreamerServiceType, 1, 19,
+    BUILD_ENUM_NAME( NONE ),
+    BUILD_ENUM_NAME( QUOTE ),
+    BUILD_ENUM_NAME( OPTION ),
+    BUILD_ENUM_NAME( LEVELONE_FUTURES ),
+    BUILD_ENUM_NAME( LEVELONE_FOREX ),
+    BUILD_ENUM_NAME( LEVELONE_FUTURES_OPTIONS ),
+    BUILD_ENUM_NAME( NEWS_HEADLINE ),
+    BUILD_ENUM_NAME( CHART_EQUITY ),
+    BUILD_ENUM_NAME( CHART_FOREX ), /* NOT WORKING */
+    BUILD_ENUM_NAME( CHART_FUTURES ),
+    BUILD_ENUM_NAME( CHART_OPTIONS ),
+    BUILD_ENUM_NAME( TIMESALE_EQUITY ),
+    BUILD_ENUM_NAME( TIMESALE_FOREX ), /* NOT WORKING */
+    BUILD_ENUM_NAME( TIMESALE_FUTURES ),
+    BUILD_ENUM_NAME( TIMESALE_OPTIONS ),
+    BUILD_ENUM_NAME( ACTIVES_NASDAQ ),
+    BUILD_ENUM_NAME( ACTIVES_NYSE ),
+    BUILD_ENUM_NAME( ACTIVES_OTCBB ),
+    BUILD_ENUM_NAME( ACTIVES_OPTIONS ),
+    BUILD_ENUM_NAME( ADMIN ) // <- NOTE THIS DOESNT MATCH TYPE_ID_SUB_[] consts
     /* NOT IMPLEMENTED YET */
     //BUILD_ENUM_NAME( CHART_HISTORY_FUTURES),
     //BUILD_ENUM_NAME( ACCT_ACTIVITY),
-    /* NOT DOCUMENTED */
+    /* NOT DOCUMENTED BY TDMA */
     //BUILD_ENUM_NAME( FOREX_BOOK,
     //BUILD_ENUM_NAME( FUTURES_BOOK),
     //BUILD_ENUM_NAME( LISTED_BOOK),
@@ -403,17 +403,33 @@ DECL_C_CPP_TDMA_ENUM(StreamingCallbackType, 0, 5,
     );
 
 
-#define SUBSCRIPTION_MAX_FIELDS 100
-#define SUBSCRIPTION_MAX_SYMBOLS 5000
+const int SUBSCRIPTION_MAX_FIELDS = 100;
+const int SUBSCRIPTION_MAX_SYMBOLS = 5000;
+
+const int TYPE_ID_SUB_QUOTES = 1;
+const int TYPE_ID_SUB_OPTIONS = 2;
+const int TYPE_ID_SUB_LEVEL_ONE_FUTURES = 3;
+const int TYPE_ID_SUB_LEVEL_ONE_FOREX = 4;
+const int TYPE_ID_SUB_LEVEL_ONE_FUTURES_OPTIONS = 5;
+const int TYPE_ID_SUB_NEWS_HEADLINE = 6;
+const int TYPE_ID_SUB_CHART_EQUITY = 7;
+const int TYPE_ID_SUB_CHART_FOREX = 8; // not working
+const int TYPE_ID_SUB_CHART_FUTURES = 9;
+const int TYPE_ID_SUB_CHART_OPTIONS = 10;
+const int TYPE_ID_SUB_TIMESALE_EQUITY = 11;
+const int TYPE_ID_SUB_TIMESALE_FOREX = 12; // not working
+const int TYPE_ID_SUB_TIMESALE_FUTURES = 13;
+const int TYPE_ID_SUB_TIMESALE_OPTIONS = 14;
+const int TYPE_ID_SUB_ACTIVES_NASDAQ = 15;
+const int TYPE_ID_SUB_ACTIVES_NYSE = 16;
+const int TYPE_ID_SUB_ACTIVES_OTCBB = 17;
+const int TYPE_ID_SUB_ACTIVES_OPTION = 18;
+
 
 #define DECL_CSUB_STRUCT(name) typedef struct{ void *obj; int type_id; } name
 
 DECL_CSUB_STRUCT(StreamingSubscription_C);
 DECL_CSUB_STRUCT(QuotesSubscription_C);
-DECL_CSUB_STRUCT(NasdaqActivesSubscription_C);
-DECL_CSUB_STRUCT(NYSEActivesSubscription_C);
-DECL_CSUB_STRUCT(OTCBBActivesSubscription_C);
-DECL_CSUB_STRUCT(OptionActivesSubscription_C);
 DECL_CSUB_STRUCT(OptionsSubscription_C);
 DECL_CSUB_STRUCT(LevelOneFuturesSubscription_C);
 DECL_CSUB_STRUCT(LevelOneForexSubscription_C);
@@ -427,6 +443,10 @@ DECL_CSUB_STRUCT(TimesaleEquitySubscription_C);
 //DECL_CSUB_STRUCT(TimesalesForexSubscription_C);
 DECL_CSUB_STRUCT(TimesaleFuturesSubscription_C);
 DECL_CSUB_STRUCT(TimesaleOptionsSubscription_C);
+DECL_CSUB_STRUCT(NasdaqActivesSubscription_C);
+DECL_CSUB_STRUCT(NYSEActivesSubscription_C);
+DECL_CSUB_STRUCT(OTCBBActivesSubscription_C);
+DECL_CSUB_STRUCT(OptionActivesSubscription_C);
 #undef DECL_CSUB_STRUCT
 
 /* SUBSCRIPTION CREATE METHODS */
@@ -809,9 +829,6 @@ class StreamingSubscription{
 public:
     typedef StreamingSubscription_C CType;
 
-    static const int TYPE_ID_LOW = 1;
-    static const int TYPE_ID_HIGH = 18;
-
 private:
     std::shared_ptr<CType> _csub;
     friend class StreamingSession;
@@ -944,9 +961,6 @@ protected:
 
 
 public:
-    static const int TYPE_ID_LOW = 1;
-    static const int TYPE_ID_HIGH = 14;
-
     std::set<std::string>
     get_symbols() const
     {
@@ -973,11 +987,10 @@ class QuotesSubscription
         : public SubscriptionBySymbolBase {
 public:
     using FieldType = QuotesSubscriptionField;
-
     typedef QuotesSubscription_C CType;
 
-    static const int TYPE_ID_LOW = 1;
-    static const int TYPE_ID_HIGH = 1;
+    static const StreamerServiceType STREAMER_SERVICE_TYPE =
+        StreamerServiceType::QUOTE;
 
     QuotesSubscription( const std::set<std::string>& symbols,
                           const std::set<FieldType>& fields )
@@ -987,6 +1000,7 @@ public:
                                       symbols,
                                       fields )
         {
+            assert( csub<>()->type_id == TYPE_ID_SUB_QUOTES );
         }
 
     std::set<FieldType>
@@ -1000,11 +1014,10 @@ class OptionsSubscription
         : public SubscriptionBySymbolBase {
 public:
     using FieldType = OptionsSubscriptionField;
-
     typedef OptionsSubscription_C CType;
 
-    static const int TYPE_ID_LOW = 2;
-    static const int TYPE_ID_HIGH = 2;
+    static const StreamerServiceType STREAMER_SERVICE_TYPE =
+        StreamerServiceType::OPTION;
 
     OptionsSubscription( const std::set<std::string>& symbols,
                          const std::set<FieldType>& fields )
@@ -1014,6 +1027,7 @@ public:
                                       symbols,
                                       fields )
         {
+            assert( csub<>()->type_id == TYPE_ID_SUB_OPTIONS);
         }
 
     std::set<FieldType>
@@ -1026,11 +1040,10 @@ class LevelOneFuturesSubscription
         : public SubscriptionBySymbolBase {
 public:
     using FieldType = LevelOneFuturesSubscriptionField;
-
     typedef LevelOneFuturesSubscription_C CType;
 
-    static const int TYPE_ID_LOW = 3;
-    static const int TYPE_ID_HIGH = 3;
+    static const StreamerServiceType STREAMER_SERVICE_TYPE =
+        StreamerServiceType::LEVELONE_FUTURES;
 
     LevelOneFuturesSubscription( const std::set<std::string>& symbols,
                                     const std::set<FieldType>& fields )
@@ -1040,6 +1053,7 @@ public:
                                       symbols,
                                       fields )
         {
+            assert( csub<>()->type_id == TYPE_ID_SUB_LEVEL_ONE_FUTURES);
         }
 
     std::set<FieldType>
@@ -1056,11 +1070,10 @@ class LevelOneForexSubscription
         : public SubscriptionBySymbolBase {
 public:
     using FieldType = LevelOneForexSubscriptionField;
-
     typedef LevelOneForexSubscription_C CType;
 
-    static const int TYPE_ID_LOW = 4;
-    static const int TYPE_ID_HIGH = 4;
+    static const StreamerServiceType STREAMER_SERVICE_TYPE =
+        StreamerServiceType::LEVELONE_FOREX;
 
     LevelOneForexSubscription( const std::set<std::string>& symbols,
                                   const std::set<FieldType>& fields )
@@ -1070,6 +1083,7 @@ public:
                                       symbols,
                                       fields )
         {
+            assert( csub<>()->type_id == TYPE_ID_SUB_LEVEL_ONE_FOREX);
         }
 
     std::set<FieldType>
@@ -1086,11 +1100,10 @@ class LevelOneFuturesOptionsSubscription
         : public SubscriptionBySymbolBase {
 public:
     using FieldType = LevelOneFuturesOptionsSubscriptionField;
-
     typedef LevelOneFuturesOptionsSubscription_C CType;
 
-    static const int TYPE_ID_LOW = 5;
-    static const int TYPE_ID_HIGH = 5;
+    static const StreamerServiceType STREAMER_SERVICE_TYPE =
+        StreamerServiceType::LEVELONE_FUTURES_OPTIONS;
 
     LevelOneFuturesOptionsSubscription( const std::set<std::string>& symbols,
                                             const std::set<FieldType>& fields )
@@ -1100,6 +1113,7 @@ public:
                                       symbols,
                                       fields )
         {
+            assert( csub<>()->type_id == TYPE_ID_SUB_LEVEL_ONE_FUTURES_OPTIONS);
         }
 
     std::set<FieldType>
@@ -1111,15 +1125,15 @@ public:
     }
 };
 
+
 class NewsHeadlineSubscription
         : public SubscriptionBySymbolBase {
 public:
     using FieldType = NewsHeadlineSubscriptionField;
-
     typedef NewsHeadlineSubscription_C CType;
 
-    static const int TYPE_ID_LOW = 6;
-    static const int TYPE_ID_HIGH = 6;
+    static const StreamerServiceType STREAMER_SERVICE_TYPE =
+        StreamerServiceType::NEWS_HEADLINE;
 
     NewsHeadlineSubscription( const std::set<std::string>& symbols,
                                  const std::set<FieldType>& fields )
@@ -1129,6 +1143,7 @@ public:
                                       symbols,
                                       fields )
         {
+            assert( csub<>()->type_id == TYPE_ID_SUB_NEWS_HEADLINE );
         }
 
     std::set<FieldType>
@@ -1142,11 +1157,10 @@ class ChartEquitySubscription
         : public SubscriptionBySymbolBase {
 public:
     using FieldType = ChartEquitySubscriptionField;
-
     typedef ChartEquitySubscription_C CType;
 
-    static const int TYPE_ID_LOW = 7;
-    static const int TYPE_ID_HIGH = 7;
+    static const StreamerServiceType STREAMER_SERVICE_TYPE =
+        StreamerServiceType::CHART_EQUITY;
 
     ChartEquitySubscription( const std::set<std::string>& symbols,
                              const std::set<FieldType>& fields )
@@ -1156,7 +1170,7 @@ public:
                                       symbols,
                                       fields )
         {
-
+            assert( csub<>()->type_id == TYPE_ID_SUB_CHART_EQUITY );
         }
 
     std::set<FieldType>
@@ -1169,9 +1183,6 @@ class ChartSubscriptionBase
         : public SubscriptionBySymbolBase {
 public:
     using FieldType = ChartSubscriptionField;
-
-    static const int TYPE_ID_LOW = 8;
-    static const int TYPE_ID_HIGH = 10;
 
 protected:
     template<typename CTy, typename F>
@@ -1199,8 +1210,6 @@ class ChartForexSubscription
 public:
     typedef ChartFuturesSubscription_C CType;
 
-    static const int TYPE_ID_LOW = 8;
-    static const int TYPE_ID_HIGH = 8;
 
     ChartForexSubscription( const std::set<std::string>& symbols,
                                const std::set<FieldType>& fields )
@@ -1215,8 +1224,8 @@ class ChartFuturesSubscription
 public:
     typedef ChartFuturesSubscription_C CType;
 
-    static const int TYPE_ID_LOW = 9;
-    static const int TYPE_ID_HIGH = 9;
+    static const StreamerServiceType STREAMER_SERVICE_TYPE =
+        StreamerServiceType::CHART_FUTURES;
 
     ChartFuturesSubscription( const std::set<std::string>& symbols,
                                  const std::set<FieldType>& fields )
@@ -1225,6 +1234,7 @@ public:
                                    ChartFuturesSubscription_Create_ABI,
                                    symbols, fields )
         {
+            assert( csub<>()->type_id == TYPE_ID_SUB_CHART_FUTURES );
         }
 };
 
@@ -1234,8 +1244,8 @@ class ChartOptionsSubscription
 public:
     typedef ChartOptionsSubscription_C CType;
 
-    static const int TYPE_ID_LOW = 10;
-    static const int TYPE_ID_HIGH = 10;
+    static const StreamerServiceType STREAMER_SERVICE_TYPE =
+        StreamerServiceType::CHART_OPTIONS;
 
     ChartOptionsSubscription( const std::set<std::string>& symbols,
                                  const std::set<FieldType>& fields )
@@ -1244,6 +1254,7 @@ public:
                                    ChartOptionsSubscription_Create_ABI,
                                    symbols, fields )
         {
+            assert( csub<>()->type_id == TYPE_ID_SUB_CHART_OPTIONS );
         }
 };
 
@@ -1252,9 +1263,6 @@ class TimesaleSubscriptionBase
         : public SubscriptionBySymbolBase {
 public:
     using FieldType = TimesaleSubscriptionField;
-
-    static const int TYPE_ID_LOW = 11;
-    static const int TYPE_ID_HIGH = 14;
 
 protected:
     template<typename CTy, typename F>
@@ -1283,8 +1291,8 @@ class TimesaleEquitySubscription
 public:
     typedef TimesaleEquitySubscription_C CType;
 
-    static const int TYPE_ID_LOW = 11;
-    static const int TYPE_ID_HIGH = 11;
+    static const StreamerServiceType STREAMER_SERVICE_TYPE =
+        StreamerServiceType::TIMESALE_EQUITY;
 
     TimesaleEquitySubscription( const std::set<std::string>& symbols,
                                    const std::set<FieldType>& fields )
@@ -1293,6 +1301,7 @@ public:
                                       TimesaleEquitySubscription_Create_ABI,
                                      symbols, fields)
         {
+            assert( csub<>()->type_id == TYPE_ID_SUB_TIMESALE_EQUITY );
         }
 };
 
@@ -1302,9 +1311,6 @@ class TimesaleForexSubscription
         : public TimesaleSubscriptionBase {
 public:
     typedef TimesaleForexSubscription_C CType;
-
-    static const int TYPE_ID_LOW = 12;
-    static const int TYPE_ID_HIGH = 12;
 
     TimesaleForexSubscription( const std::set<std::string>& symbols,
                                const std::set<FieldType>& fields )
@@ -1319,8 +1325,8 @@ class TimesaleFuturesSubscription
 public:
     typedef TimesaleFuturesSubscription_C CType;
 
-    static const int TYPE_ID_LOW = 13;
-    static const int TYPE_ID_HIGH = 13;
+    static const StreamerServiceType STREAMER_SERVICE_TYPE =
+        StreamerServiceType::TIMESALE_FUTURES;
 
     TimesaleFuturesSubscription( const std::set<std::string>& symbols,
                                    const std::set<FieldType>& fields )
@@ -1329,6 +1335,7 @@ public:
                                       TimesaleFuturesSubscription_Create_ABI,
                                       symbols, fields)
         {
+            assert( csub<>()->type_id == TYPE_ID_SUB_TIMESALE_FUTURES );
         }
 };
 
@@ -1337,8 +1344,8 @@ class TimesaleOptionsSubscription
 public:
     typedef TimesaleOptionsSubscription_C CType;
 
-    static const int TYPE_ID_LOW = 14;
-    static const int TYPE_ID_HIGH = 14;
+    static const StreamerServiceType STREAMER_SERVICE_TYPE =
+        StreamerServiceType::TIMESALE_OPTIONS;
 
     TimesaleOptionsSubscription( const std::set<std::string>& symbols,
                                     const std::set<FieldType>& fields )
@@ -1347,6 +1354,7 @@ public:
                                       TimesaleOptionsSubscription_Create_ABI,
                                       symbols, fields)
         {
+            assert( csub<>()->type_id == TYPE_ID_SUB_TIMESALE_OPTIONS );
         }
 };
 
@@ -1362,9 +1370,6 @@ protected:
         }
 
 public:
-    static const int TYPE_ID_LOW = 15;
-    static const int TYPE_ID_HIGH = 18;
-
     DurationType
     get_duration() const
     {
@@ -1376,14 +1381,13 @@ public:
 };
 
 
-
 class NasdaqActivesSubscription
         : public ActivesSubscriptionBase {
 public:
     typedef NasdaqActivesSubscription_C CType;
 
-    static const int TYPE_ID_LOW = 15;
-    static const int TYPE_ID_HIGH = 15;
+    static const StreamerServiceType STREAMER_SERVICE_TYPE =
+        StreamerServiceType::ACTIVES_NASDAQ;
 
     NasdaqActivesSubscription(DurationType duration)
         :
@@ -1391,6 +1395,7 @@ public:
                                      NasdaqActivesSubscription_Create_ABI,
                                      static_cast<int>(duration) )
         {
+            assert( csub<>()->type_id == TYPE_ID_SUB_ACTIVES_NASDAQ );
         }
 };
 
@@ -1399,8 +1404,8 @@ class NYSEActivesSubscription
 public:
     typedef NYSEActivesSubscription_C CType;
 
-    static const int TYPE_ID_LOW = 16;
-    static const int TYPE_ID_HIGH = 16;
+    static const StreamerServiceType STREAMER_SERVICE_TYPE =
+        StreamerServiceType::ACTIVES_NYSE;
 
     NYSEActivesSubscription(DurationType duration)
         :
@@ -1408,6 +1413,7 @@ public:
                                      NYSEActivesSubscription_Create_ABI,
                                      static_cast<int>(duration) )
         {
+            assert( csub<>()->type_id == TYPE_ID_SUB_ACTIVES_NYSE );
         }
 };
 
@@ -1416,8 +1422,8 @@ class OTCBBActivesSubscription
 public:
     typedef OTCBBActivesSubscription_C CType;
 
-    static const int TYPE_ID_LOW = 17;
-    static const int TYPE_ID_HIGH = 17;
+    static const StreamerServiceType STREAMER_SERVICE_TYPE =
+        StreamerServiceType::ACTIVES_OTCBB;
 
     OTCBBActivesSubscription(DurationType duration)
         :
@@ -1425,6 +1431,7 @@ public:
                                      OTCBBActivesSubscription_Create_ABI,
                                      static_cast<int>(duration) )
         {
+            assert( csub<>()->type_id == TYPE_ID_SUB_ACTIVES_OTCBB );
         }
 };
 
@@ -1433,8 +1440,8 @@ class OptionActivesSubscription
 public:
     typedef OptionActivesSubscription_C CType;
 
-    static const int TYPE_ID_LOW = 18;
-    static const int TYPE_ID_HIGH = 18;
+    static const StreamerServiceType STREAMER_SERVICE_TYPE =
+        StreamerServiceType::ACTIVES_OPTIONS;
 
     OptionActivesSubscription(VenueType venue, DurationType duration)
         :
@@ -1443,8 +1450,8 @@ public:
                                      static_cast<int>(venue),
                                      static_cast<int>(duration) )
         {
+            assert( csub<>()->type_id == TYPE_ID_SUB_ACTIVES_OPTION );
         }
-
 
     VenueType
     get_venue() const
@@ -1499,6 +1506,8 @@ public:
 #define STREAMING_DEF_LISTENING_TIMEOUT 30000
 #define STREAMING_DEF_SUBSCRIBE_TIMEOUT 1500
 #define STREAMING_MAX_SUBSCRIPTIONS 50
+
+const int TYPE_ID_STREAMING_SESSION = 100;
 
 typedef struct{
     void *obj;
@@ -1698,6 +1707,7 @@ public:
                                             request_response_to_cout),
                                         ss->_obj.get(),
                                         1);
+            assert( ss->_obj.get()->type_id == TYPE_ID_STREAMING_SESSION );
         }catch(...){
             delete ss;
             throw;

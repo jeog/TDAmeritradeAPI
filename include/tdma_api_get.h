@@ -248,6 +248,25 @@ VALID_FREQUENCIES_BY_FREQUENCY_TYPE[FrequencyType_monthly + 1][5] = {
  *        using new) and SHOULD NOT be dealloced by the client
  */
 
+const int TYPE_ID_GETTER_QUOTE = 1;
+const int TYPE_ID_GETTER_QUOTES = 2;
+const int TYPE_ID_GETTER_MARKET_HOURS = 3;
+const int TYPE_ID_GETTER_MOVERS = 4;
+const int TYPE_ID_GETTER_HISTORICAL_PERIOD = 5;
+const int TYPE_ID_GETTER_HISTORICAL_RANGE = 6;
+const int TYPE_ID_GETTER_OPTION_CHAIN = 7;
+const int TYPE_ID_GETTER_OPTION_CHAIN_STRATEGY = 8;
+const int TYPE_ID_GETTER_OPTION_CHAIN_ANALYTICAL = 9;
+const int TYPE_ID_GETTER_ACCOUNT_INFO = 10;
+const int TYPE_ID_GETTER_PREFERENCES = 11;
+const int TYPE_ID_GETTER_SUBSCRIPTION_KEYS = 12;
+const int TYPE_ID_GETTER_TRANSACTION_HISTORY = 13;
+const int TYPE_ID_GETTER_IND_TRANSACTION_HISTORY = 14;
+const int TYPE_ID_GETTER_USER_PRINCIPALS = 15;
+const int TYPE_ID_GETTER_INSTRUMENT_INFO = 16;
+
+
+
 #define DECL_CGETTER_STRUCT(name) typedef struct {void *obj; int type_id; } name
 
 DECL_CGETTER_STRUCT(Getter_C);
@@ -2016,9 +2035,6 @@ class APIGetter{
 public:
     typedef Getter_C CType;
 
-    static const int TYPE_ID_LOW = 1;
-    static const int TYPE_ID_HIGH = 16;
-
 private:
     std::unique_ptr<CType> _cgetter;
 
@@ -2142,9 +2158,6 @@ class QuoteGetter
 public:
     typedef QuoteGetter_C CType;
 
-    static const int TYPE_ID_LOW = 1;
-    static const int TYPE_ID_HIGH = 1;
-
     QuoteGetter( Credentials& creds, const std::string& symbol )
         :
             APIGetter( QuoteGetter_C{},
@@ -2195,9 +2208,6 @@ class QuotesGetter
     }
 public:
     typedef QuotesGetter_C CType;
-
-    static const int TYPE_ID_LOW = 2;
-    static const int TYPE_ID_HIGH = 2;
 
     QuotesGetter(Credentials& creds, const std::set<std::string>& symbols)
         :
@@ -2270,9 +2280,6 @@ class MarketHoursGetter
 public:
     typedef MarketHoursGetter_C CType;
 
-    static const int TYPE_ID_LOW = 3;
-    static const int TYPE_ID_HIGH = 3;
-
     MarketHoursGetter( Credentials& creds,
                           MarketType market_type,
                           const std::string& date )
@@ -2339,9 +2346,6 @@ class MoversGetter
         : public APIGetter{
 public:
     typedef MoversGetter_C CType;
-
-    static const int TYPE_ID_LOW = 4;
-    static const int TYPE_ID_HIGH = 4;
 
     MoversGetter( Credentials& creds,
                   MoversIndex index,
@@ -2445,11 +2449,6 @@ protected:
     operator=( HistoricalGetterBase&& getter ) = default;
 
 public:
-    typedef Getter_C CType;
-
-    static const int TYPE_ID_LOW = 5;
-    static const int TYPE_ID_HIGH = 6;
-
     std::string
     get_symbol() const
     { return str_from_abi<>(HistoricalGetterBase_GetSymbol_ABI); }
@@ -2501,9 +2500,6 @@ class HistoricalPeriodGetter
         : public HistoricalGetterBase {
 public:
     typedef HistoricalPeriodGetter_C CType;
-
-    static const int TYPE_ID_LOW = 5;
-    static const int TYPE_ID_HIGH = 5;
 
     HistoricalPeriodGetter( Credentials& creds,
                             const std::string& symbol,
@@ -2593,9 +2589,6 @@ class HistoricalRangeGetter
         : public HistoricalGetterBase {
 public:
     typedef HistoricalRangeGetter_C CType;
-
-    static const int TYPE_ID_LOW = 6;
-    static const int TYPE_ID_HIGH = 6;
 
     HistoricalRangeGetter( Credentials& creds,
                               const std::string& symbol,
@@ -2902,9 +2895,6 @@ protected:
 public:
     typedef OptionChainGetter_C CType;
 
-    static const int TYPE_ID_LOW = 7;
-    static const int TYPE_ID_HIGH = 9;
-
     OptionChainGetter( Credentials& creds,
                        const std::string& symbol,
                        const OptionStrikes& strikes,                    
@@ -3082,9 +3072,6 @@ class OptionChainStrategyGetter
 public:
     typedef OptionChainStrategyGetter_C CType;
 
-    static const int TYPE_ID_LOW = 8;
-    static const int TYPE_ID_HIGH = 8;
-
     OptionChainStrategyGetter(
             Credentials& creds,
             const std::string& symbol,
@@ -3169,9 +3156,6 @@ class OptionChainAnalyticalGetter
         : public OptionChainGetter {
 public:
     typedef OptionChainAnalyticalGetter_C CType;
-
-    static const int TYPE_ID_LOW = 9;
-    static const int TYPE_ID_HIGH = 9;
 
     OptionChainAnalyticalGetter(
             Credentials& creds,
@@ -3334,11 +3318,6 @@ protected:
     operator=( AccountGetterBase&& getter ) = default;
 
 public:
-    typedef Getter_C CType;
-
-    static const int TYPE_ID_LOW = 10;
-    static const int TYPE_ID_HIGH = 14;
-
     std::string
     get_account_id() const
     { return str_from_abi<>(AccountGetterBase_GetAccountId_ABI); }
@@ -3353,9 +3332,6 @@ class AccountInfoGetter
         : public AccountGetterBase{
 public:
     typedef AccountInfoGetter_C CType;
-
-    static const int TYPE_ID_LOW = 10;
-    static const int TYPE_ID_HIGH = 10;
 
     AccountInfoGetter( Credentials& creds,
                        const std::string& account_id,
@@ -3431,9 +3407,6 @@ class PreferencesGetter
 public:
     typedef PreferencesGetter_C CType;
 
-    static const int TYPE_ID_LOW = 11;
-    static const int TYPE_ID_HIGH = 11;
-
     PreferencesGetter( Credentials& creds, const std::string& account_id )
         :
             AccountGetterBase( PreferencesGetter_C{},
@@ -3463,9 +3436,6 @@ class StreamerSubscriptionKeysGetter
         : public AccountGetterBase{
 public:
     typedef StreamerSubscriptionKeysGetter_C CType;
-
-    static const int TYPE_ID_LOW = 12;
-    static const int TYPE_ID_HIGH = 12;
 
     StreamerSubscriptionKeysGetter( Credentials& creds,
                                         const std::string& account_id )
@@ -3498,9 +3468,6 @@ class TransactionHistoryGetter
         : public AccountGetterBase{
 public:
     typedef TransactionHistoryGetter_C CType;
-
-     static const int TYPE_ID_LOW = 13;
-     static const int TYPE_ID_HIGH = 13;
 
     TransactionHistoryGetter( Credentials& creds,
                               const std::string& account_id,
@@ -3618,9 +3585,6 @@ class IndividualTransactionHistoryGetter
 public:
     typedef IndividualTransactionHistoryGetter_C CType;
 
-     static const int TYPE_ID_LOW = 14;
-     static const int TYPE_ID_HIGH = 14;
-
     IndividualTransactionHistoryGetter(
             Credentials& creds,
             const std::string& account_id,
@@ -3678,9 +3642,6 @@ class UserPrincipalsGetter
         : public APIGetter{
 public:
     typedef UserPrincipalsGetter_C CType;
-
-    static const int TYPE_ID_LOW = 15;
-    static const int TYPE_ID_HIGH = 15;
 
     UserPrincipalsGetter( Credentials& creds,                         
                           bool streamer_subscription_keys,
@@ -3802,9 +3763,6 @@ class InstrumentInfoGetter
         : public APIGetter {
 public:
     typedef InstrumentInfoGetter_C CType;
-
-    static const int TYPE_ID_LOW = 16;
-    static const int TYPE_ID_HIGH = 16;
 
     InstrumentInfoGetter( Credentials& creds,
                             InstrumentSearchType search_type,

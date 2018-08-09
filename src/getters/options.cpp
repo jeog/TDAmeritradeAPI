@@ -96,6 +96,8 @@ protected:
 
 public:
     typedef OptionChainGetter ProxyType;
+    static const int TYPE_ID_LOW = TYPE_ID_GETTER_OPTION_CHAIN;
+    static const int TYPE_ID_HIGH = TYPE_ID_GETTER_OPTION_CHAIN_ANALYTICAL;
 
     OptionChainGetterImpl( Credentials& creds,
                                const std::string& symbol,
@@ -260,6 +262,8 @@ protected:
 
 public:
     typedef OptionChainStrategyGetter ProxyType;
+    static const int TYPE_ID_LOW = TYPE_ID_GETTER_OPTION_CHAIN_STRATEGY;
+    static const int TYPE_ID_HIGH = TYPE_ID_GETTER_OPTION_CHAIN_STRATEGY;
 
     OptionChainStrategyGetterImpl(
             Credentials& creds,
@@ -334,6 +338,8 @@ protected:
 
 public:
     typedef OptionChainAnalyticalGetter ProxyType;
+    static const int TYPE_ID_LOW = TYPE_ID_GETTER_OPTION_CHAIN_ANALYTICAL;
+    static const int TYPE_ID_HIGH = TYPE_ID_GETTER_OPTION_CHAIN_ANALYTICAL;
 
     OptionChainAnalyticalGetterImpl(
             Credentials& creds,
@@ -424,9 +430,9 @@ OptionChainGetter_Create_ABI( struct Credentials *pcreds,
                                   OptionChainGetter_C *pgetter,
                                   int allow_exceptions )
 {
-    int err = getter_is_creatable<OptionChainGetterImpl>(
-        pcreds, pgetter, allow_exceptions
-        );
+    using ImplTy = OptionChainGetterImpl;
+
+    int err = getter_is_creatable<ImplTy>(pcreds, pgetter, allow_exceptions);
     if( err )
         return err;
 
@@ -465,15 +471,13 @@ OptionChainGetter_Create_ABI( struct Credentials *pcreds,
              int ct, int iq, const char* fd, const char* td, int em, int ot){
 
         OptionStrikes os(static_cast<OptionStrikesType>(st), sv);
-        return new OptionChainGetterImpl( *c, s, os,
-                                          static_cast<OptionContractType>(ct),
-                                          static_cast<bool>(iq),
-                                          (fd ? fd : ""), (td ? td : ""),
-                                          static_cast<OptionExpMonth>(em),
-                                          static_cast<OptionType>(ot) );
+        return new ImplTy( *c, s, os, static_cast<OptionContractType>(ct),
+                           static_cast<bool>(iq), (fd ? fd : ""),
+                           (td ? td : ""), static_cast<OptionExpMonth>(em),
+                           static_cast<OptionType>(ot) );
     };
 
-    OptionChainGetterImpl *obj;
+    ImplTy *obj;
     tie(obj, err) = CallImplFromABI( allow_exceptions, meth, pcreds, symbol,
                                      strikes_type, strikes_value, contract_type,
                                      include_quotes, from_date, to_date,
@@ -485,7 +489,7 @@ OptionChainGetter_Create_ABI( struct Credentials *pcreds,
     }
 
     pgetter->obj = reinterpret_cast<void*>(obj);
-    pgetter->type_id = OptionChainGetter::TYPE_ID_LOW;
+    pgetter->type_id = ImplTy::TYPE_ID_LOW;
     return 0;
 }
 
@@ -756,9 +760,9 @@ OptionChainStrategyGetter_Create_ABI( struct Credentials *pcreds,
                                           OptionChainStrategyGetter_C *pgetter,
                                           int allow_exceptions )
 {
-    int err = getter_is_creatable<OptionChainStrategyGetterImpl>(
-        pcreds, pgetter, allow_exceptions
-        );
+    using ImplTy = OptionChainStrategyGetterImpl;
+
+    int err = getter_is_creatable<ImplTy>(pcreds, pgetter, allow_exceptions);
     if( err )
         return err;
 
@@ -802,15 +806,14 @@ OptionChainStrategyGetter_Create_ABI( struct Credentials *pcreds,
 
         OptionStrategy ostrat(static_cast<OptionStrategyType>(strat), sprd);
         OptionStrikes os(static_cast<OptionStrikesType>(st), sv);
-        return new OptionChainStrategyGetterImpl( *c, s, ostrat, os,
-                                          static_cast<OptionContractType>(ct),
-                                          static_cast<bool>(iq),
-                                          (fd ? fd : ""), (td ? td : ""),
-                                          static_cast<OptionExpMonth>(em),
-                                          static_cast<OptionType>(ot) );
+
+        return new ImplTy(*c, s, ostrat, os, static_cast<OptionContractType>(ct),
+                          static_cast<bool>(iq), (fd ? fd : ""), (td ? td : ""),
+                          static_cast<OptionExpMonth>(em),
+                          static_cast<OptionType>(ot) );
     };
 
-    OptionChainStrategyGetterImpl *obj;
+    ImplTy *obj;
     tie(obj, err) = CallImplFromABI( allow_exceptions, meth, pcreds, symbol,
                                      strategy_type, spread_interval, strikes_type,
                                      strikes_value, contract_type, include_quotes,
@@ -822,7 +825,7 @@ OptionChainStrategyGetter_Create_ABI( struct Credentials *pcreds,
     }
 
     pgetter->obj = reinterpret_cast<void*>(obj);
-    pgetter->type_id = OptionChainStrategyGetter::TYPE_ID_LOW;
+    pgetter->type_id = ImplTy::TYPE_ID_LOW;
     return 0;
 }
 
@@ -924,9 +927,9 @@ OptionChainAnalyticalGetter_Create_ABI( struct Credentials *pcreds,
                                           OptionChainAnalyticalGetter_C *pgetter,
                                           int allow_exceptions )
 {
-    int err = getter_is_creatable<OptionChainAnalyticalGetterImpl>(
-        pcreds, pgetter, allow_exceptions
-        );
+    using ImplTy = OptionChainAnalyticalGetterImpl;
+
+    int err = getter_is_creatable<ImplTy>(pcreds, pgetter, allow_exceptions);
     if( err )
         return err;
 
@@ -964,14 +967,14 @@ OptionChainAnalyticalGetter_Create_ABI( struct Credentials *pcreds,
              const char* fd, const char* td, int em, int ot){
 
         OptionStrikes os(static_cast<OptionStrikesType>(st), sv);
-        return new OptionChainAnalyticalGetterImpl(
-            *c, s, vol, up, ir, exp, os, static_cast<OptionContractType>(ct),
-            static_cast<bool>(iq), (fd ? fd : ""), (td ? td : ""),
-            static_cast<OptionExpMonth>(em), static_cast<OptionType>(ot)
-            );
+        return new ImplTy( *c, s, vol, up, ir, exp, os,
+                           static_cast<OptionContractType>(ct),
+                           static_cast<bool>(iq), (fd ? fd : ""), (td ? td : ""),
+                           static_cast<OptionExpMonth>(em),
+                           static_cast<OptionType>(ot) );
     };
 
-    OptionChainAnalyticalGetterImpl *obj;
+    ImplTy *obj;
     tie(obj, err) = CallImplFromABI( allow_exceptions, meth, pcreds, symbol,
                                      volatility, underlying_price, interest_rate,
                                      days_to_exp, strikes_type,strikes_value,
@@ -984,7 +987,7 @@ OptionChainAnalyticalGetter_Create_ABI( struct Credentials *pcreds,
     }
 
     pgetter->obj = reinterpret_cast<void*>(obj);
-    pgetter->type_id = OptionChainAnalyticalGetter::TYPE_ID_LOW;
+    pgetter->type_id = ImplTy::TYPE_ID_LOW;
     return 0;
 }
 

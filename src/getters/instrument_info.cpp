@@ -53,6 +53,8 @@ class InstrumentInfoGetterImpl
 
 public:
     typedef InstrumentInfoGetter ProxyType;
+    static const int TYPE_ID_LOW = TYPE_ID_GETTER_INSTRUMENT_INFO;
+    static const int TYPE_ID_HIGH = TYPE_ID_GETTER_INSTRUMENT_INFO;
 
     InstrumentInfoGetterImpl( Credentials& creds,
                                  InstrumentSearchType search_type,
@@ -97,9 +99,9 @@ InstrumentInfoGetter_Create_ABI( struct Credentials *pcreds,
                                      InstrumentInfoGetter_C *pgetter,
                                      int allow_exceptions )
 {
-    int err = getter_is_creatable<InstrumentInfoGetterImpl>(
-        pcreds, pgetter, allow_exceptions
-        );
+    using ImplTy = InstrumentInfoGetterImpl;
+
+    int err = getter_is_creatable<ImplTy>(pcreds, pgetter, allow_exceptions);
     if( err )
         return err;
 
@@ -107,7 +109,6 @@ InstrumentInfoGetter_Create_ABI( struct Credentials *pcreds,
                          allow_exceptions);
     if( err )
         return err;
-
 
     if( !query_string ){
         pgetter->obj = nullptr;
@@ -118,12 +119,10 @@ InstrumentInfoGetter_Create_ABI( struct Credentials *pcreds,
     }
 
     static auto meth = +[]( Credentials *c, int s, const char* q ){
-        return new InstrumentInfoGetterImpl(
-            *c, static_cast<InstrumentSearchType>(s), q
-            );
+        return new ImplTy(*c, static_cast<InstrumentSearchType>(s), q);
     };
 
-    InstrumentInfoGetterImpl *obj;
+    ImplTy *obj;
     tie(obj, err) = CallImplFromABI( allow_exceptions, meth, pcreds,
                                      search_type, query_string );
     if( err ){
@@ -133,9 +132,8 @@ InstrumentInfoGetter_Create_ABI( struct Credentials *pcreds,
     }
 
     pgetter->obj = reinterpret_cast<void*>(obj);
-    assert( InstrumentInfoGetterImpl::ProxyType::TYPE_ID_LOW ==
-            InstrumentInfoGetterImpl::ProxyType::TYPE_ID_HIGH );
-    pgetter->type_id = InstrumentInfoGetterImpl::ProxyType::TYPE_ID_LOW;
+    assert( ImplTy::TYPE_ID_LOW == ImplTy::TYPE_ID_HIGH );
+    pgetter->type_id = ImplTy::TYPE_ID_LOW;
     return 0;
 }
 

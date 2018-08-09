@@ -88,6 +88,8 @@ protected:
 
 public:
     typedef HistoricalGetterBase ProxyType;
+    static const int TYPE_ID_LOW = TYPE_ID_GETTER_HISTORICAL_PERIOD;
+    static const int TYPE_ID_HIGH = TYPE_ID_GETTER_HISTORICAL_RANGE;
 
     std::string
     get_symbol() const
@@ -178,6 +180,8 @@ class HistoricalPeriodGetterImpl
 
 public:
     typedef HistoricalPeriodGetter ProxyType;
+    static const int TYPE_ID_LOW = TYPE_ID_GETTER_HISTORICAL_PERIOD;
+    static const int TYPE_ID_HIGH = TYPE_ID_GETTER_HISTORICAL_PERIOD;
 
     HistoricalPeriodGetterImpl( Credentials& creds,
                             const std::string& symbol,
@@ -257,6 +261,8 @@ class HistoricalRangeGetterImpl
 
 public:
     typedef HistoricalRangeGetter ProxyType;
+    static const int TYPE_ID_LOW = TYPE_ID_GETTER_HISTORICAL_RANGE;
+    static const int TYPE_ID_HIGH = TYPE_ID_GETTER_HISTORICAL_RANGE;
 
     HistoricalRangeGetterImpl( Credentials& creds,
                               const std::string& symbol,
@@ -391,9 +397,9 @@ HistoricalPeriodGetter_Create_ABI( struct Credentials *pcreds,
                                        HistoricalPeriodGetter_C *pgetter,
                                        int allow_exceptions )
 {
-    int err = getter_is_creatable<HistoricalPeriodGetterImpl>(
-        pcreds, pgetter, allow_exceptions
-        );
+    using ImplTy = HistoricalPeriodGetterImpl;
+
+    int err = getter_is_creatable<ImplTy>(pcreds, pgetter, allow_exceptions);
     if( err )
         return err;
 
@@ -417,12 +423,12 @@ HistoricalPeriodGetter_Create_ABI( struct Credentials *pcreds,
 
     static auto meth = +[]( Credentials *c, const char* s, int pt,
                             unsigned int p, int ft, unsigned int f, int eh ){
-        return new HistoricalPeriodGetterImpl( *c, s, static_cast<PeriodType>(pt),
-                                               p, static_cast<FrequencyType>(ft),
-                                               f, static_cast<bool>(eh) );
+        return new ImplTy( *c, s, static_cast<PeriodType>(pt), p,
+                           static_cast<FrequencyType>(ft), f,
+                           static_cast<bool>(eh) );
     };
 
-    HistoricalPeriodGetterImpl *obj;
+    ImplTy *obj;
     tie(obj, err) = CallImplFromABI( allow_exceptions, meth, pcreds, symbol,
                                      period_type, period, frequency_type,
                                      frequency, extended_hours );
@@ -433,9 +439,8 @@ HistoricalPeriodGetter_Create_ABI( struct Credentials *pcreds,
     }
 
     pgetter->obj = reinterpret_cast<void*>(obj);
-    assert( HistoricalPeriodGetter::TYPE_ID_LOW ==
-            HistoricalPeriodGetter::TYPE_ID_HIGH );
-    pgetter->type_id = HistoricalPeriodGetter::TYPE_ID_LOW;
+    assert( ImplTy::TYPE_ID_LOW == ImplTy::TYPE_ID_HIGH );
+    pgetter->type_id = ImplTy::TYPE_ID_LOW;
     return 0;
 }
 
@@ -516,9 +521,9 @@ HistoricalRangeGetter_Create_ABI( struct Credentials *pcreds,
                                        HistoricalRangeGetter_C *pgetter,
                                        int allow_exceptions )
 {
-    int err = getter_is_creatable<HistoricalRangeGetterImpl>(
-        pcreds, pgetter, allow_exceptions
-        );
+    using ImplTy = HistoricalRangeGetterImpl;
+
+    int err = getter_is_creatable<ImplTy>(pcreds, pgetter, allow_exceptions);
     if( err )
         return err;
 
@@ -538,12 +543,11 @@ HistoricalRangeGetter_Create_ABI( struct Credentials *pcreds,
     static auto meth = +[]( Credentials *c, const char* s, int ft,
                             unsigned int f, unsigned long long sm,
                             unsigned long long em, int eh ){
-        return new HistoricalRangeGetterImpl( *c, s,
-                                              static_cast<FrequencyType>(ft),
-                                              f, sm, em, static_cast<bool>(eh) );
+        return new ImplTy( *c, s, static_cast<FrequencyType>(ft), f, sm, em,
+                           static_cast<bool>(eh) );
     };
 
-    HistoricalRangeGetterImpl *obj;
+    ImplTy *obj;
     tie(obj, err) = CallImplFromABI( allow_exceptions, meth, pcreds, symbol,
                                      frequency_type, frequency,
                                      start_msec_since_epoch, end_msec_since_epoch,
@@ -556,9 +560,8 @@ HistoricalRangeGetter_Create_ABI( struct Credentials *pcreds,
     }
 
     pgetter->obj = reinterpret_cast<void*>(obj);
-    assert( HistoricalRangeGetter::TYPE_ID_LOW ==
-            HistoricalRangeGetter::TYPE_ID_HIGH );
-    pgetter->type_id = HistoricalRangeGetter::TYPE_ID_LOW;
+    assert( ImplTy::TYPE_ID_LOW == ImplTy::TYPE_ID_HIGH );
+    pgetter->type_id = ImplTy::TYPE_ID_LOW;
     return 0;
 }
 

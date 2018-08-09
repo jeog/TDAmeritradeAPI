@@ -42,6 +42,8 @@ protected:
 
 public:
     typedef StreamingSubscription ProxyType;
+    static const int TYPE_ID_LOW = TYPE_ID_SUB_QUOTES;
+    static const int TYPE_ID_HIGH = TYPE_ID_SUB_ACTIVES_OPTION;
 
     static
     std::string
@@ -91,6 +93,8 @@ class SubscriptionBySymbolBaseImpl
 
 public:
     typedef SubscriptionBySymbolBase ProxyType;
+    static const int TYPE_ID_LOW = TYPE_ID_SUB_QUOTES;
+    static const int TYPE_ID_HIGH = TYPE_ID_SUB_TIMESALE_OPTIONS;
 
     std::set<std::string>
     get_symbols() const
@@ -115,13 +119,15 @@ class QuotesSubscriptionImpl
         : public SubscriptionBySymbolBaseImpl {
 public:
     using FieldType = QuotesSubscriptionField;
-    static std::function<bool(int)> is_valid_field;
 
 private:
     std::set<FieldType> _fields;
 
 public:
     typedef QuotesSubscription ProxyType;
+    static const int TYPE_ID_LOW = TYPE_ID_SUB_QUOTES;
+    static const int TYPE_ID_HIGH = TYPE_ID_SUB_QUOTES;
+    static std::function<bool(int)> is_valid_field;
 
     QuotesSubscriptionImpl( const std::set<std::string>& symbols,
                                const std::set<FieldType>& fields )
@@ -142,13 +148,15 @@ class OptionsSubscriptionImpl
         : public SubscriptionBySymbolBaseImpl {
 public:
     using FieldType = OptionsSubscriptionField;
-    static std::function<bool(int)> is_valid_field;
 
 private:
     std::set<FieldType> _fields;
 
 public:
     typedef OptionsSubscription ProxyType;
+    static const int TYPE_ID_LOW = TYPE_ID_SUB_OPTIONS;
+    static const int TYPE_ID_HIGH = TYPE_ID_SUB_OPTIONS;
+    static std::function<bool(int)> is_valid_field;
 
     OptionsSubscriptionImpl( const std::set<std::string>& symbols,
                          const std::set<FieldType>& fields )
@@ -169,13 +177,15 @@ class LevelOneFuturesSubscriptionImpl
         : public SubscriptionBySymbolBaseImpl {
 public:
     using FieldType = LevelOneFuturesSubscriptionField;
-    static std::function<bool(int)> is_valid_field;
 
 private:
     std::set<FieldType> _fields;
 
 public:
     typedef LevelOneFuturesSubscription ProxyType;
+    static const int TYPE_ID_LOW = TYPE_ID_SUB_LEVEL_ONE_FUTURES;
+    static const int TYPE_ID_HIGH = TYPE_ID_SUB_LEVEL_ONE_FUTURES;
+    static std::function<bool(int)> is_valid_field;
 
     LevelOneFuturesSubscriptionImpl( const std::set<std::string>& symbols,
                                  const std::set<FieldType>& fields )
@@ -196,13 +206,15 @@ class LevelOneForexSubscriptionImpl
         : public SubscriptionBySymbolBaseImpl {
 public:
     using FieldType = LevelOneForexSubscriptionField;
-    static std::function<bool(int)> is_valid_field;
 
 private:
     std::set<FieldType> _fields;
 
 public:
     typedef LevelOneForexSubscription ProxyType;
+    static const int TYPE_ID_LOW = TYPE_ID_SUB_LEVEL_ONE_FOREX;
+    static const int TYPE_ID_HIGH = TYPE_ID_SUB_LEVEL_ONE_FOREX;
+    static std::function<bool(int)> is_valid_field;
 
     LevelOneForexSubscriptionImpl( const std::set<std::string>& symbols,
                                const std::set<FieldType>& fields )
@@ -223,13 +235,15 @@ class LevelOneFuturesOptionsSubscriptionImpl
         : public SubscriptionBySymbolBaseImpl {
 public:
     using FieldType = LevelOneFuturesOptionsSubscriptionField;
-    static std::function<bool(int)> is_valid_field;
 
 private:
     std::set<FieldType> _fields;
 
 public:
     typedef LevelOneFuturesOptionsSubscription ProxyType;
+    static const int TYPE_ID_LOW = TYPE_ID_SUB_LEVEL_ONE_FUTURES_OPTIONS;
+    static const int TYPE_ID_HIGH = TYPE_ID_SUB_LEVEL_ONE_FUTURES_OPTIONS;
+    static std::function<bool(int)> is_valid_field;
 
     LevelOneFuturesOptionsSubscriptionImpl( const std::set<std::string>& symbols,
                                         const std::set<FieldType>& fields )
@@ -245,17 +259,20 @@ public:
     { return _fields; }
 };
 
+
 class NewsHeadlineSubscriptionImpl
         : public SubscriptionBySymbolBaseImpl {
 public:
     using FieldType = NewsHeadlineSubscriptionField;
-    static std::function<bool(int)> is_valid_field;
 
 private:
     std::set<FieldType> _fields;
 
 public:
     typedef NewsHeadlineSubscription ProxyType;
+    static const int TYPE_ID_LOW = TYPE_ID_SUB_NEWS_HEADLINE;
+    static const int TYPE_ID_HIGH = TYPE_ID_SUB_NEWS_HEADLINE;
+    static std::function<bool(int)> is_valid_field;
 
     NewsHeadlineSubscriptionImpl( const std::set<std::string>& symbols,
                               const std::set<FieldType>& fields )
@@ -277,13 +294,15 @@ class ChartEquitySubscriptionImpl
         : public SubscriptionBySymbolBaseImpl {
 public:
     using FieldType = ChartEquitySubscriptionField;
-    static std::function<bool(int)> is_valid_field;
 
 private:
     std::set<FieldType> _fields;
 
 public:
     typedef ChartEquitySubscription ProxyType;
+    static const int TYPE_ID_LOW = TYPE_ID_SUB_CHART_EQUITY;
+    static const int TYPE_ID_HIGH = TYPE_ID_SUB_CHART_EQUITY;
+    static std::function<bool(int)> is_valid_field;
 
     ChartEquitySubscriptionImpl( const std::set<std::string>& symbols,
                              const std::set<FieldType>& fields )
@@ -304,13 +323,6 @@ class ChartSubscriptionBaseImpl
         : public SubscriptionBySymbolBaseImpl {
 public:
     using FieldType = ChartSubscriptionField;
-    static std::function<bool(int)> is_valid_field;
-
-    typedef ChartSubscriptionBase ProxyType;
-
-    std::set<FieldType>
-    get_fields() const
-    { return _fields; }
 
 private:
     std::set<FieldType> _fields;
@@ -325,6 +337,15 @@ protected:
         {
         }
 
+public:
+    typedef ChartSubscriptionBase ProxyType;
+    static const int TYPE_ID_LOW = TYPE_ID_SUB_CHART_FOREX;
+    static const int TYPE_ID_HIGH = TYPE_ID_SUB_CHART_OPTIONS;
+    static std::function<bool(int)> is_valid_field;
+
+    std::set<FieldType>
+    get_fields() const
+    { return _fields; }
 };
 
 
@@ -334,6 +355,9 @@ protected:
 class ChartForexSubscriptionImpl
         : public ChartSubscriptionBaseImpl {
 public:
+    static const int TYPE_ID_LOW = TYPE_ID_SUB_CHART_FOREX;
+    static const int TYPE_ID_HIGH = TYPE_ID_SUB_CHART_FOREX;
+
     ChartForexSubscriptionImpl( const std::set<std::string>& symbols,
                                const std::set<FieldType>& fields )
         : ChartSubscriptionBaseImpl( StreamerServiceType::CHART_FOREX,
@@ -346,6 +370,8 @@ class ChartFuturesSubscriptionImpl
         : public ChartSubscriptionBaseImpl {
 public:
     typedef ChartFuturesSubscription ProxyType;
+    static const int TYPE_ID_LOW = TYPE_ID_SUB_CHART_FUTURES;
+    static const int TYPE_ID_HIGH = TYPE_ID_SUB_CHART_FUTURES;
 
     ChartFuturesSubscriptionImpl( const std::set<std::string>& symbols,
                               const std::set<FieldType>& fields )
@@ -359,6 +385,8 @@ class ChartOptionsSubscriptionImpl
         : public ChartSubscriptionBaseImpl {
 public:
     typedef ChartOptionsSubscription ProxyType;
+    static const int TYPE_ID_LOW = TYPE_ID_SUB_CHART_OPTIONS;
+    static const int TYPE_ID_HIGH = TYPE_ID_SUB_CHART_OPTIONS;
 
     ChartOptionsSubscriptionImpl( const std::set<std::string>& symbols,
                               const std::set<FieldType>& fields )
@@ -373,14 +401,6 @@ class TimesaleSubscriptionBaseImpl
 public:
     using FieldType = TimesaleSubscriptionField;
 
-    typedef TimesaleSubscriptionBase ProxyType;
-
-    static std::function<bool(int)> is_valid_field;
-
-    std::set<FieldType>
-    get_fields() const
-    { return _fields; }
-
 private:
     std::set<FieldType> _fields;
 
@@ -393,6 +413,17 @@ protected:
             _fields(fields)
         {
         }
+
+public:
+    typedef TimesaleSubscriptionBase ProxyType;
+    static const int TYPE_ID_LOW = TYPE_ID_SUB_TIMESALE_EQUITY;
+    static const int TYPE_ID_HIGH = TYPE_ID_SUB_TIMESALE_OPTIONS;
+    static std::function<bool(int)> is_valid_field;
+
+    std::set<FieldType>
+    get_fields() const
+    { return _fields; }
+
 };
 
 
@@ -400,6 +431,8 @@ class  TimesaleEquitySubscriptionImpl
         : public TimesaleSubscriptionBaseImpl {
 public:
     typedef TimesaleEquitySubscription ProxyType;
+    static const int TYPE_ID_LOW = TYPE_ID_SUB_TIMESALE_EQUITY;
+    static const int TYPE_ID_HIGH = TYPE_ID_SUB_TIMESALE_EQUITY;
 
     TimesaleEquitySubscriptionImpl( const std::set<std::string>& symbols,
                                 const std::set<FieldType>& fields )
@@ -413,6 +446,9 @@ public:
 class TimesaleForexSubscriptionImpl
         : public TimesaleSubscriptionBaseImpl {
 public:
+    static const int TYPE_ID_LOW = TYPE_ID_SUB_TIMESALE_FOREX;
+    static const int TYPE_ID_HIGH = TYPE_ID_SUB_TIMESALE_FOREX;
+
     TimesaleForexSubscriptionImpl( const std::set<std::string>& symbols,
                                const std::set<FieldType>& fields )
         : TimesaleSubscriptionBaseImpl( StreamerServiceType::TIMESALE_FOREX,
@@ -425,6 +461,8 @@ class TimesaleFuturesSubscriptionImpl
         : public TimesaleSubscriptionBaseImpl {
 public:
     typedef TimesaleFuturesSubscription ProxyType;
+    static const int TYPE_ID_LOW = TYPE_ID_SUB_TIMESALE_FUTURES;
+    static const int TYPE_ID_HIGH = TYPE_ID_SUB_TIMESALE_FUTURES;
 
     TimesaleFuturesSubscriptionImpl( const std::set<std::string>& symbols,
                                  const std::set<FieldType>& fields )
@@ -437,6 +475,8 @@ class TimesaleOptionsSubscriptionImpl
         : public TimesaleSubscriptionBaseImpl {
 public:
     typedef TimesaleOptionsSubscription ProxyType;
+    static const int TYPE_ID_LOW = TYPE_ID_SUB_TIMESALE_OPTIONS;
+    static const int TYPE_ID_HIGH = TYPE_ID_SUB_TIMESALE_OPTIONS;
 
     TimesaleOptionsSubscriptionImpl( const std::set<std::string>& symbols,
                                  const std::set<FieldType>& fields )
@@ -465,7 +505,8 @@ protected:
 
 public:
     typedef ActivesSubscriptionBase ProxyType;
-
+    static const int TYPE_ID_LOW = TYPE_ID_SUB_ACTIVES_NASDAQ;
+    static const int TYPE_ID_HIGH = TYPE_ID_SUB_ACTIVES_OPTION;
     static std::function<bool(int)> is_valid_duration;
 
     DurationType
@@ -479,6 +520,8 @@ class NasdaqActivesSubscriptionImpl
         : public ActivesSubscriptionBaseImpl {
 public:
     typedef NasdaqActivesSubscription ProxyType;
+    static const int TYPE_ID_LOW = TYPE_ID_SUB_ACTIVES_NASDAQ;
+    static const int TYPE_ID_HIGH = TYPE_ID_SUB_ACTIVES_NASDAQ;
 
     NasdaqActivesSubscriptionImpl(DurationType duration)
         : ActivesSubscriptionBaseImpl(StreamerServiceType::ACTIVES_NASDAQ,
@@ -490,6 +533,8 @@ class NYSEActivesSubscriptionImpl
         : public ActivesSubscriptionBaseImpl {
 public:
     typedef NYSEActivesSubscription ProxyType;
+    static const int TYPE_ID_LOW = TYPE_ID_SUB_ACTIVES_NYSE;
+    static const int TYPE_ID_HIGH = TYPE_ID_SUB_ACTIVES_NYSE;
 
     NYSEActivesSubscriptionImpl(DurationType duration)
         : ActivesSubscriptionBaseImpl(StreamerServiceType::ACTIVES_NYSE,
@@ -501,6 +546,8 @@ class OTCBBActivesSubscriptionImpl
         : public ActivesSubscriptionBaseImpl {
 public:
     typedef OTCBBActivesSubscription ProxyType;
+    static const int TYPE_ID_LOW = TYPE_ID_SUB_ACTIVES_OTCBB;
+    static const int TYPE_ID_HIGH = TYPE_ID_SUB_ACTIVES_OTCBB;
 
     OTCBBActivesSubscriptionImpl(DurationType duration)
         : ActivesSubscriptionBaseImpl(StreamerServiceType::ACTIVES_OTCBB,
@@ -514,6 +561,8 @@ class OptionActivesSubscriptionImpl
 
 public:
     typedef OptionActivesSubscription ProxyType;
+    static const int TYPE_ID_LOW = TYPE_ID_SUB_ACTIVES_OPTION;
+    static const int TYPE_ID_HIGH = TYPE_ID_SUB_ACTIVES_OPTION;
     static std::function<bool(int)> is_valid_venue;
 
     OptionActivesSubscriptionImpl(VenueType venue, DurationType duration)

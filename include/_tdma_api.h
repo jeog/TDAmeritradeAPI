@@ -108,6 +108,8 @@ protected:
 
 public:
     typedef APIGetter ProxyType;
+    static const int TYPE_ID_LOW = 1;
+    static const int TYPE_ID_HIGH = 16;
 
     static const std::chrono::milliseconds DEF_WAIT_MSEC;
 
@@ -216,8 +218,7 @@ getter_is_creatable( Credentials *pcreds,
                        typename ImplTy::ProxyType::CType *pgetter,
                        int allow_exceptions )
 {
-    static_assert( ImplTy::ProxyType::TYPE_ID_LOW > 0 &&
-                   ImplTy::ProxyType::TYPE_ID_HIGH > 0,
+    static_assert( ImplTy::TYPE_ID_LOW > 0 && ImplTy::TYPE_ID_HIGH > 0,
                    "invalid getter type" );
     if( !pgetter )
         return handle_error<tdma::ValueException>(
@@ -270,8 +271,8 @@ getter_is_callable( typename ImplTy::ProxyType::CType *pgetter,
     if( err )
         return err;
 
-    if( pgetter->type_id < ImplTy::ProxyType::TYPE_ID_LOW ||
-        pgetter->type_id > ImplTy::ProxyType::TYPE_ID_HIGH )
+    if( pgetter->type_id < ImplTy::TYPE_ID_LOW ||
+        pgetter->type_id > ImplTy::TYPE_ID_HIGH )
     {
         return handle_error<tdma::TypeException>(
             "getter has invalid type id", allow_exceptions

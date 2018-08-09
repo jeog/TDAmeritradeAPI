@@ -520,8 +520,8 @@ StreamerServiceType_to_string_ABI(int v, char** buf, size_t* n, int allow_except
         return alloc_C_str("ACTIVES_OPTIONS", buf, n, allow_exceptions);
     case tdma::StreamerServiceType::CHART_EQUITY:
         return alloc_C_str("CHART_EQUITY", buf, n, allow_exceptions);
-    //case tdma::StreamerServiceType::CHART_FOREX:
-    //    return alloc_C_str("CHART_FOREX", buf, n, allow_exceptions);
+    case tdma::StreamerServiceType::CHART_FOREX:
+        return alloc_C_str("CHART_FOREX", buf, n, allow_exceptions);
     case tdma::StreamerServiceType::CHART_FUTURES:
         return alloc_C_str("CHART_FUTURES", buf, n, allow_exceptions);
     case tdma::StreamerServiceType::CHART_OPTIONS:
@@ -542,8 +542,8 @@ StreamerServiceType_to_string_ABI(int v, char** buf, size_t* n, int allow_except
         return alloc_C_str("TIMESALE_EQUITY", buf, n, allow_exceptions);
     case tdma::StreamerServiceType::TIMESALE_FUTURES:
         return alloc_C_str("TIMESALE_FUTURES", buf, n, allow_exceptions);
-    //case tdma::StreamerServiceType::TIMESALE_FOREX:
-    //    return alloc_C_str("TIMESALE_FOREX", buf, n, allow_exceptions);
+    case tdma::StreamerServiceType::TIMESALE_FOREX:
+        return alloc_C_str("TIMESALE_FOREX", buf, n, allow_exceptions);
     case tdma::StreamerServiceType::TIMESALE_OPTIONS:
         return alloc_C_str("TIMESALE_OPTIONS", buf, n, allow_exceptions);
     default:

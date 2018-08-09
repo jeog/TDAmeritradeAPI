@@ -335,8 +335,8 @@ class StreamingSessionImpl{
     }
 
 public:
-    static const int TYPE_ID_LOW = numeric_limits<int>::max();
-    static const int TYPE_ID_HIGH = TYPE_ID_LOW;
+    static const int TYPE_ID_LOW = TYPE_ID_STREAMING_SESSION;
+    static const int TYPE_ID_HIGH = TYPE_ID_STREAMING_SESSION;
 
     StreamingSessionImpl( const StreamerInfo& streamer_info,
                         const std::string& account_id,

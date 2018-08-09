@@ -102,6 +102,11 @@ int main(int argc, char* argv[])
     if( (err = LoadCredentials( argv[2], argv[3], &creds )) )
         CHECK_AND_RETURN_ON_ERROR(err, "LoadCredentials");
 
+
+    err = Test_Streaming(&creds, argv[1]);
+    if( err )
+        return err;
+
     err = Test_QuoteGetter(&creds);
     if( err )
         return err;
@@ -182,10 +187,6 @@ int main(int argc, char* argv[])
         return err;
     SleepFor(2000);
 
-    err = Test_Streaming(&creds, argv[1]);
-    if( err )
-        return err;
-
     if( (err = StoreCredentials( argv[2], argv[3], &creds)) )
         CHECK_AND_RETURN_ON_ERROR(err, "StoreCredentials");
 
@@ -199,8 +200,8 @@ streaming_callback( int cb_type, int ss_type, unsigned long long ts, const char*
     char *buf = NULL;
     size_t n;
 
-    if( (err = StreamingCallbackType_to_string_ABI(cb_type, &buf, &n, 0)) ){
-        fprintf(stderr, "error(%i): StreamingCallbackType_to_string_ABI\n", err);
+    if( (err = StreamingCallbackType_to_string(cb_type, &buf, &n)) ){
+        fprintf(stderr, "error(%i): StreamingCallbackType_to_string\n", err);
         return;
     }
     printf("\t Callback Type: %s \n", buf);
@@ -209,8 +210,34 @@ streaming_callback( int cb_type, int ss_type, unsigned long long ts, const char*
         buf = NULL;
     }
 
-    if( (err = StreamerServiceType_to_string_ABI(cb_type, &buf, &n, 0)) ){
-        fprintf(stderr, "error(%i): StreamingServiceType_to_string_ABI\n", err);
+    switch( ss_type ){
+    case StreamerServiceType_QUOTE:
+        if(ss_type != TYPE_ID_SUB_QUOTES){
+            fprintf(stderr, "Service type and type id don't match(%i,%i) \n",
+                     ss_type, TYPE_ID_SUB_QUOTES);
+            exit(TDMA_API_TYPE_ERROR);
+        }
+        break;
+    case StreamerServiceType_ACTIVES_NASDAQ:
+        if(ss_type != TYPE_ID_SUB_ACTIVES_NASDAQ){
+            fprintf(stderr, "Service type and type id don't match(%i,%i) \n",
+                     ss_type, TYPE_ID_SUB_ACTIVES_NASDAQ);
+            exit(TDMA_API_TYPE_ERROR);
+        }
+        break;
+    case StreamerServiceType_TIMESALE_FUTURES:
+        if(ss_type != TYPE_ID_SUB_TIMESALE_FUTURES){
+            fprintf(stderr, "Service type and type id don't match(%i,%i) \n",
+                     ss_type, TYPE_ID_SUB_TIMESALE_FUTURES);
+            exit(TDMA_API_TYPE_ERROR);
+        }
+        break;
+    default:
+        break;
+    }
+
+    if( (err = StreamerServiceType_to_string(cb_type, &buf, &n)) ){
+        fprintf(stderr, "error(%i): StreamingServiceType_to_string\n", err);
         return;
     }
     printf("\t Streamer Service: %s \n", buf);
@@ -243,8 +270,8 @@ test_quotes_subscription(QuotesSubscription_C* sub )
     if( (err = QuotesSubscription_GetService(sub, &sst)) )
         CHECK_AND_RETURN_ON_ERROR(err, "QuotesSubscription_GetService");
 
-    if( (err = StreamerServiceType_to_string_ABI(sst, &buf, &n, 0)) )
-        CHECK_AND_RETURN_ON_ERROR(err, "StreamerServiceType_to_string_ABI");
+    if( (err = StreamerServiceType_to_string(sst, &buf, &n)) )
+        CHECK_AND_RETURN_ON_ERROR(err, "StreamerServiceType_to_string");
 
     printf("Service: %s \n", buf);
     if( buf ){
@@ -321,8 +348,8 @@ test_quotes_subscription(QuotesSubscription_C* sub )
              return -1;
         }
         size_t n2;
-        if( (err = QuotesSubscriptionField_to_string_ABI(f, &buf, &n2, 0)) )
-            CHECK_AND_RETURN_ON_ERROR(err, "QuotesSubscriptionField_to_string_ABI");
+        if( (err = QuotesSubscriptionField_to_string(f, &buf, &n2)) )
+            CHECK_AND_RETURN_ON_ERROR(err, "QuotesSubscriptionField_to_string");
 
         printf("%s ", buf);
         if( buf ){
@@ -356,8 +383,8 @@ test_timesale_futures_subscription(TimesaleFuturesSubscription_C* sub )
     if( (err = TimesaleFuturesSubscription_GetService(sub, &sst)) )
         CHECK_AND_RETURN_ON_ERROR(err, "TimesaleFuturesSubscription_GetService");
 
-    if( (err = StreamerServiceType_to_string_ABI(sst, &buf, &n, 0)) )
-        CHECK_AND_RETURN_ON_ERROR(err, "StreamerServiceType_to_string_ABI");
+    if( (err = StreamerServiceType_to_string(sst, &buf, &n)) )
+        CHECK_AND_RETURN_ON_ERROR(err, "StreamerServiceType_to_string");
 
     printf("Service: %s \n", buf);
     if( buf ){
@@ -434,8 +461,8 @@ test_timesale_futures_subscription(TimesaleFuturesSubscription_C* sub )
              return -1;
         }
         size_t n2;
-        if( (err = TimesaleSubscriptionField_to_string_ABI(f, &buf, &n2, 0)) )
-            CHECK_AND_RETURN_ON_ERROR(err, "TimesaleFuturesSubscriptionField_to_string_ABI");
+        if( (err = TimesaleSubscriptionField_to_string(f, &buf, &n2)) )
+            CHECK_AND_RETURN_ON_ERROR(err, "TimesaleFuturesSubscriptionField_to_string");
 
         printf("%s ", buf);
         if( buf ){
@@ -468,8 +495,8 @@ test_nasdaq_actives_subscription(NasdaqActivesSubscription_C* sub )
     if( (err = NasdaqActivesSubscription_GetService(sub, &sst)) )
         CHECK_AND_RETURN_ON_ERROR(err, "NasdaqActivesSubscription_GetService");
 
-    if( (err = StreamerServiceType_to_string_ABI(sst, &buf, &n, 0)) )
-        CHECK_AND_RETURN_ON_ERROR(err, "StreamerServiceType_to_string_ABI");
+    if( (err = StreamerServiceType_to_string(sst, &buf, &n)) )
+        CHECK_AND_RETURN_ON_ERROR(err, "StreamerServiceType_to_string");
 
     printf("Service: %s \n", buf);
     if( buf ){
@@ -501,8 +528,8 @@ test_nasdaq_actives_subscription(NasdaqActivesSubscription_C* sub )
                 (int)dt);
         return -1;
     }
-    if( (err = DurationType_to_string_ABI(dt2, &buf, &n, 0)) )
-        CHECK_AND_RETURN_ON_ERROR(err, "DurationType_to_string_ABI");
+    if( (err = DurationType_to_string(dt2, &buf, &n)) )
+        CHECK_AND_RETURN_ON_ERROR(err, "DurationType_to_string");
 
     printf("Duration: %s \n", buf);
     if( buf ){
@@ -530,6 +557,13 @@ Test_Streaming(struct Credentials* c, const char* account_id)
             n = 0;
             code = 0;
         }
+        return -1;
+    }
+
+    if( q1.type_id != TYPE_ID_SUB_QUOTES ){
+        fprintf(stderr, "invalid type id (%i,%i) \n", q1.type_id,
+                 TYPE_ID_SUB_QUOTES);
+        return -1;
     }
 
     TimesaleFuturesSubscription_C q2;
@@ -543,6 +577,13 @@ Test_Streaming(struct Credentials* c, const char* account_id)
               n = 0;
               code = 0;
           }
+        return -1;
+    }
+
+    if( q2.type_id != TYPE_ID_SUB_TIMESALE_FUTURES ){
+        fprintf(stderr, "invalid type id (%i,%i) \n", q2.type_id,
+                 TYPE_ID_SUB_TIMESALE_FUTURES );
+        return -1;
     }
 
     NasdaqActivesSubscription_C q3;
@@ -556,6 +597,13 @@ Test_Streaming(struct Credentials* c, const char* account_id)
               n = 0;
               code = 0;
           }
+        return -1;
+    }
+
+    if( q3.type_id != TYPE_ID_SUB_ACTIVES_NASDAQ ){
+        fprintf(stderr, "invalid type id (%i,%i) \n", q3.type_id,
+                 TYPE_ID_SUB_ACTIVES_NASDAQ);
+        return -1;
     }
 
     // CREATE SESSION 1
@@ -699,6 +747,12 @@ Test_QuoteGetter(struct Credentials* creds)
     if( (err = QuoteGetter_Create(creds, "SPY", &qg)) )
         CHECK_AND_RETURN_ON_ERROR(err, "QuoteGetter_Create");
 
+    if( qg.type_id != TYPE_ID_GETTER_QUOTE ){
+        fprintf(stderr, "invalid type id (%i,%i) \n", qg.type_id,
+                 TYPE_ID_GETTER_QUOTE);
+        return -1;
+    }
+
     if( (err = QuoteGetter_Get(&qg, &buf, &n)) )
         CHECK_AND_RETURN_ON_ERROR(err, "QuoteGetter_Get");
 
@@ -761,6 +815,11 @@ Test_QuotesGetter(struct Credentials* creds)
     if( (err = QuotesGetter_Create(creds, symbols_in, 2, &qsg)) )
         CHECK_AND_RETURN_ON_ERROR(err, "QuotesGetter_Create");
 
+    if( qsg.type_id != TYPE_ID_GETTER_QUOTES ){
+        fprintf(stderr, "invalid type id (%i,%i) \n", qsg.type_id,
+                 TYPE_ID_GETTER_QUOTES);
+        return -1;
+    }
     if( (err = QuotesGetter_GetSymbols(&qsg, &symbols_out, &nsymbols)) )
         CHECK_AND_RETURN_ON_ERROR(err, "QuotesGetter_GetSymbol");
 
@@ -837,10 +896,15 @@ Test_MarketHoursGetter(struct Credentials *creds)
     if( (err = MarketHoursGetter_Create(creds, MarketType_bond, "2019-07-04", &mhg)) )
         CHECK_AND_RETURN_ON_ERROR(err, "MarketHoursGetter_Create");
 
+    if( mhg.type_id != TYPE_ID_GETTER_MARKET_HOURS ){
+        fprintf(stderr, "invalid type id (%i,%i) \n", mhg.type_id,
+                 TYPE_ID_GETTER_MARKET_HOURS);
+        return -1;
+    }
     if( (err = MarketHoursGetter_GetMarketType(&mhg, &mt)) )
         CHECK_AND_RETURN_ON_ERROR(err, "MarketHoursGetter_GetMarketType");
 
-    MarketType_to_string_ABI(mt, &str, &n, 0);
+    MarketType_to_string(mt, &str, &n);
     if( str ){
         printf("MarketType: %s \n", str);
         free(str);
@@ -874,7 +938,7 @@ Test_MarketHoursGetter(struct Credentials *creds)
     if( (err = MarketHoursGetter_GetMarketType(&mhg, &mt)) )
         CHECK_AND_RETURN_ON_ERROR(err, "MarketHoursGetter_GetMarketType");
 
-    MarketType_to_string_ABI(mt, &str, &n, 0);
+    MarketType_to_string(mt, &str, &n);
     if( str ){
         printf("MarketType: %s \n", str);
         free(str);
@@ -920,6 +984,12 @@ Test_MoversGetter(struct Credentials *creds)
                                    MoversChangeType_value, &mg)) )
         CHECK_AND_RETURN_ON_ERROR(err, "MoversGetter_Create");
 
+    if( mg.type_id != TYPE_ID_GETTER_MOVERS ){
+        fprintf(stderr, "invalid type id (%i,%i) \n", mg.type_id,
+                 TYPE_ID_GETTER_MOVERS);
+        return -1;
+    }
+
     if( (err = MoversGetter_GetIndex(&mg, &mi)) )
         CHECK_AND_RETURN_ON_ERROR(err, "MoversGetter_GetIndex");
 
@@ -931,21 +1001,21 @@ Test_MoversGetter(struct Credentials *creds)
 
     char* str;
     size_t n;
-    MoversIndex_to_string_ABI(mi, &str, &n, 0);
+    MoversIndex_to_string(mi, &str, &n);
     if( str ){
         printf("MoversIndex: %s \n", str);
         free(str);
         str = NULL;
     }
 
-    MoversDirectionType_to_string_ABI(mdt, &str, &n, 0);
+    MoversDirectionType_to_string(mdt, &str, &n);
     if( str ){
         printf("MoversDirectionType: %s \n", str);
         free(str);
         str = NULL;
     }
 
-    MoversChangeType_to_string_ABI(mct, &str, &n, 0);
+    MoversChangeType_to_string(mct, &str, &n);
     if( str ){
         printf("MoversChangeType: %s \n", str);
         free(str);
@@ -980,21 +1050,21 @@ Test_MoversGetter(struct Credentials *creds)
     if( (err = MoversGetter_GetChangeType(&mg, &mct)) )
         CHECK_AND_RETURN_ON_ERROR(err, "MoversGetter_GetChangeType");
 
-    MoversIndex_to_string_ABI(mi, &str, &n, 0);
+    MoversIndex_to_string(mi, &str, &n);
     if( str ){
         printf("MoversIndex: %s \n", str);
         free(str);
         str = NULL;
     }
 
-    MoversDirectionType_to_string_ABI(mdt, &str, &n, 0);
+    MoversDirectionType_to_string(mdt, &str, &n);
     if( str ){
         printf("MoversDirectionType: %s \n", str);
         free(str);
         str = NULL;
     }
 
-    MoversChangeType_to_string_ABI(mct, &str, &n, 0);
+    MoversChangeType_to_string(mct, &str, &n);
     if( str ){
         printf("MoversChangeType: %s \n", str);
         free(str);
@@ -1032,6 +1102,13 @@ Test_HistoricalPeriodGetter(struct Credentials *creds)
                                              freq, 1, &hpg)) )
         CHECK_AND_RETURN_ON_ERROR(err, "HistoricalPeriodGetter_Create");
 
+
+    if( hpg.type_id != TYPE_ID_GETTER_HISTORICAL_PERIOD ){
+        fprintf(stderr, "invalid type id (%i,%i) \n", hpg.type_id,
+                 TYPE_ID_GETTER_HISTORICAL_PERIOD);
+        return -1;
+    }
+
     PeriodType pt2;
     unsigned int period2;
     FrequencyType ft2;
@@ -1065,7 +1142,7 @@ Test_HistoricalPeriodGetter(struct Credentials *creds)
     }
 
     char* str;
-    PeriodType_to_string_ABI(pt2, &str, &n, 0);
+    PeriodType_to_string(pt2, &str, &n);
     if( str ){
         printf("PeriodType: %s \n", str);
         free(str);
@@ -1074,7 +1151,7 @@ Test_HistoricalPeriodGetter(struct Credentials *creds)
 
     printf("Period: %i \n", period2);
 
-    FrequencyType_to_string_ABI(ft2, &str, &n, 0);
+    FrequencyType_to_string(ft2, &str, &n);
     if( str ){
         printf("FrequencyType: %s \n", str);
         free(str);
@@ -1137,7 +1214,7 @@ Test_HistoricalPeriodGetter(struct Credentials *creds)
         symbol = NULL;
     }
 
-    PeriodType_to_string_ABI(pt2, &str, &n, 0);
+    PeriodType_to_string(pt2, &str, &n);
     if( str ){
         printf("PeriodType: %s \n", str);
         free(str);
@@ -1146,7 +1223,7 @@ Test_HistoricalPeriodGetter(struct Credentials *creds)
 
     printf("Period: %i \n", period2);
 
-    FrequencyType_to_string_ABI(ft2, &str, &n, 0);
+    FrequencyType_to_string(ft2, &str, &n);
     if( str ){
         printf("FrequencyType: %s \n", str);
         free(str);
@@ -1190,6 +1267,12 @@ Test_HistoricalRangeGetter(struct Credentials *creds)
         CHECK_AND_RETURN_ON_ERROR(err, "HistoricalRangeGetter_Create");
 
 
+    if( hpg.type_id != TYPE_ID_GETTER_HISTORICAL_RANGE ){
+        fprintf(stderr, "invalid type id (%i,%i) \n", hpg.type_id,
+                 TYPE_ID_GETTER_HISTORICAL_RANGE);
+        return -1;
+    }
+
     FrequencyType ft2;
     unsigned int freq2;
     char *symbol;
@@ -1222,7 +1305,7 @@ Test_HistoricalRangeGetter(struct Credentials *creds)
     }
 
     char* str;
-    FrequencyType_to_string_ABI(ft2, &str, &n, 0);
+    FrequencyType_to_string(ft2, &str, &n);
     if( str ){
         printf("FrequencyType: %s \n", str);
         free(str);
@@ -1291,7 +1374,7 @@ Test_HistoricalRangeGetter(struct Credentials *creds)
         symbol = NULL;
     }
 
-    FrequencyType_to_string_ABI(ft2, &str, &n, 0);
+    FrequencyType_to_string(ft2, &str, &n);
     if( str ){
         printf("FrequencyType: %s \n", str);
         free(str);
@@ -1345,6 +1428,13 @@ Test_OptionChainGetter(struct Credentials *creds)
                                         oep, ot, &ocg)) )
         CHECK_AND_RETURN_ON_ERROR(err, "OptionChainGetter_Create");
 
+
+    if( ocg.type_id != TYPE_ID_GETTER_OPTION_CHAIN ){
+        fprintf(stderr, "invalid type id (%i,%i) \n", ocg.type_id,
+                 TYPE_ID_GETTER_OPTION_CHAIN);
+        return -1;
+    }
+
     OptionStrikesType ost2;
     OptionStrikesValue osv2;
     OptionContractType oct2;
@@ -1384,7 +1474,7 @@ Test_OptionChainGetter(struct Credentials *creds)
         str = NULL;
     }
 
-    OptionStrikesType_to_string_ABI(ost2, &str, &n, 0);
+    OptionStrikesType_to_string(ost2, &str, &n);
     if( str ){
         printf("OptionStrikesType: %s \n", str);
         free(str);
@@ -1392,7 +1482,7 @@ Test_OptionChainGetter(struct Credentials *creds)
     }
     printf("OptionStrikesValue: %lf \n", osv2.single);
 
-    OptionContractType_to_string_ABI(oct2, &str, &n, 0);
+    OptionContractType_to_string(oct2, &str, &n);
     if( str ){
         printf("OptionContractType: %s \n", str);
         free(str);
@@ -1413,14 +1503,14 @@ Test_OptionChainGetter(struct Credentials *creds)
         to_date2 = NULL;
     }
 
-    OptionExpMonth_to_string_ABI(oep2, &str, &n, 0);
+    OptionExpMonth_to_string(oep2, &str, &n);
     if( str ){
         printf("OptionExpMonth: %s \n", str);
         free(str);
         str = NULL;
     }
 
-    OptionType_to_string_ABI(ot2, &str, &n, 0);
+    OptionType_to_string(ot2, &str, &n);
     if( str ){
         printf("OptionType: %s \n", str);
         free(str);
@@ -1497,7 +1587,7 @@ Test_OptionChainGetter(struct Credentials *creds)
         str = NULL;
     }
 
-    OptionStrikesType_to_string_ABI(ost2, &str, &n, 0);
+    OptionStrikesType_to_string(ost2, &str, &n);
     if( str ){
         printf("OptionStrikesType: %s \n", str);
         free(str);
@@ -1505,7 +1595,7 @@ Test_OptionChainGetter(struct Credentials *creds)
     }
     printf("OptionStrikesValue: %i \n", osv2.n_atm);
 
-    OptionContractType_to_string_ABI(oct2, &str, &n, 0);
+    OptionContractType_to_string(oct2, &str, &n);
     if( str ){
         printf("OptionContractType: %s \n", str);
         free(str);
@@ -1526,14 +1616,14 @@ Test_OptionChainGetter(struct Credentials *creds)
         to_date2 = NULL;
     }
 
-    OptionExpMonth_to_string_ABI(oep2, &str, &n, 0);
+    OptionExpMonth_to_string(oep2, &str, &n);
     if( str ){
         printf("OptionExpMonth: %s \n", str);
         free(str);
         str = NULL;
     }
 
-    OptionType_to_string_ABI(ot2, &str, &n, 0);
+    OptionType_to_string(ot2, &str, &n);
     if( str ){
         printf("OptionType: %s \n", str);
         free(str);
@@ -1586,6 +1676,13 @@ Test_OptionChainStrategyGetter(struct Credentials *creds)
         CHECK_AND_RETURN_ON_ERROR(err, "OptionChainStrategyGetter_Create");
     }
 
+
+    if( ocg.type_id != TYPE_ID_GETTER_OPTION_CHAIN_STRATEGY ){
+        fprintf(stderr, "invalid type id (%i,%i) \n", ocg.type_id,
+                 TYPE_ID_GETTER_OPTION_CHAIN_STRATEGY);
+        return -1;
+    }
+
     OptionStrategyType ostrat2;
     double ospread2;
     OptionStrikesType ost2;
@@ -1630,7 +1727,7 @@ Test_OptionChainStrategyGetter(struct Credentials *creds)
         str = NULL;
     }
 
-    OptionStrategyType_to_string_ABI(ostrat2, &str, &n, 0);
+    OptionStrategyType_to_string(ostrat2, &str, &n);
     if( str ){
         printf("OptionStrategyType: %s \n", str);
         free(str);
@@ -1638,7 +1735,7 @@ Test_OptionChainStrategyGetter(struct Credentials *creds)
     }
     printf("Strategy Spread: %lf \n", ospread2);
 
-    OptionStrikesType_to_string_ABI(ost2, &str, &n, 0);
+    OptionStrikesType_to_string(ost2, &str, &n);
     if( str ){
         printf("OptionStrikesType: %s \n", str);
         free(str);
@@ -1646,7 +1743,7 @@ Test_OptionChainStrategyGetter(struct Credentials *creds)
     }
     printf("OptionStrikesValue: %lf \n", osv2.single);
 
-    OptionContractType_to_string_ABI(oct2, &str, &n, 0);
+    OptionContractType_to_string(oct2, &str, &n);
     if( str ){
         printf("OptionContractType: %s \n", str);
         free(str);
@@ -1667,14 +1764,14 @@ Test_OptionChainStrategyGetter(struct Credentials *creds)
         to_date2 = NULL;
     }
 
-    OptionExpMonth_to_string_ABI(oep2, &str, &n, 0);
+    OptionExpMonth_to_string(oep2, &str, &n);
     if( str ){
         printf("OptionExpMonth: %s \n", str);
         free(str);
         str = NULL;
     }
 
-    OptionType_to_string_ABI(ot2, &str, &n, 0);
+    OptionType_to_string(ot2, &str, &n);
     if( str ){
         printf("OptionType: %s \n", str);
         free(str);
@@ -1759,7 +1856,7 @@ Test_OptionChainStrategyGetter(struct Credentials *creds)
         str = NULL;
     }
 
-    OptionStrategyType_to_string_ABI(ostrat2, &str, &n, 0);
+    OptionStrategyType_to_string(ostrat2, &str, &n);
     if( str ){
         printf("OptionStrategyType: %s \n", str);
         free(str);
@@ -1767,7 +1864,7 @@ Test_OptionChainStrategyGetter(struct Credentials *creds)
     }
     printf("Strategy Spread: %lf \n", ospread2);
 
-    OptionStrikesType_to_string_ABI(ost2, &str, &n, 0);
+    OptionStrikesType_to_string(ost2, &str, &n);
     if( str ){
         printf("OptionStrikesType: %s \n", str);
         free(str);
@@ -1775,7 +1872,7 @@ Test_OptionChainStrategyGetter(struct Credentials *creds)
     }
     printf("OptionStrikesValue: %i \n", osv2.n_atm);
 
-    OptionContractType_to_string_ABI(oct2, &str, &n, 0);
+    OptionContractType_to_string(oct2, &str, &n);
     if( str ){
         printf("OptionContractType: %s \n", str);
         free(str);
@@ -1796,14 +1893,14 @@ Test_OptionChainStrategyGetter(struct Credentials *creds)
         to_date2 = NULL;
     }
 
-    OptionExpMonth_to_string_ABI(oep2, &str, &n, 0);
+    OptionExpMonth_to_string(oep2, &str, &n);
     if( str ){
         printf("OptionExpMonth: %s \n", str);
         free(str);
         str = NULL;
     }
 
-    OptionType_to_string_ABI(ot2, &str, &n, 0);
+    OptionType_to_string(ot2, &str, &n);
     if( str ){
         printf("OptionType: %s \n", str);
         free(str);
@@ -1857,6 +1954,13 @@ Test_OptionChainAnalyticalGetter(struct Credentials *creds)
                                                 ost, osv, oct, includes_quotes,
                                                 from_date, to_date, oep, ot, &ocg)) ){
         CHECK_AND_RETURN_ON_ERROR(err, "OptionChainAnalyticalGetter_Create");
+    }
+
+
+    if( ocg.type_id != TYPE_ID_GETTER_OPTION_CHAIN_ANALYTICAL ){
+        fprintf(stderr, "invalid type id (%i,%i) \n", ocg.type_id,
+                 TYPE_ID_GETTER_OPTION_CHAIN_ANALYTICAL);
+        return -1;
     }
 
     double vol2;
@@ -1919,7 +2023,7 @@ Test_OptionChainAnalyticalGetter(struct Credentials *creds)
     printf("Interest Rate: %lf \n", ir2);
     printf("Days To Exp: %i \n", exp2);
 
-    OptionStrikesType_to_string_ABI(ost2, &str, &n, 0);
+    OptionStrikesType_to_string(ost2, &str, &n);
     if( str ){
         printf("OptionStrikesType: %s \n", str);
         free(str);
@@ -1927,7 +2031,7 @@ Test_OptionChainAnalyticalGetter(struct Credentials *creds)
     }
     printf("OptionStrikesValue: %lf \n", osv2.single);
 
-    OptionContractType_to_string_ABI(oct2, &str, &n, 0);
+    OptionContractType_to_string(oct2, &str, &n);
     if( str ){
         printf("OptionContractType: %s \n", str);
         free(str);
@@ -1948,14 +2052,14 @@ Test_OptionChainAnalyticalGetter(struct Credentials *creds)
         to_date2 = NULL;
     }
 
-    OptionExpMonth_to_string_ABI(oep2, &str, &n, 0);
+    OptionExpMonth_to_string(oep2, &str, &n);
     if( str ){
         printf("OptionExpMonth: %s \n", str);
         free(str);
         str = NULL;
     }
 
-    OptionType_to_string_ABI(ot2, &str, &n, 0);
+    OptionType_to_string(ot2, &str, &n);
     if( str ){
         printf("OptionType: %s \n", str);
         free(str);
@@ -2065,7 +2169,7 @@ Test_OptionChainAnalyticalGetter(struct Credentials *creds)
     printf("Interest Rate: %lf \n", ir2);
     printf("Days To Exp: %iu \n", exp2);
 
-    OptionStrikesType_to_string_ABI(ost2, &str, &n, 0);
+    OptionStrikesType_to_string(ost2, &str, &n);
     if( str ){
         printf("OptionStrikesType: %s \n", str);
         free(str);
@@ -2073,7 +2177,7 @@ Test_OptionChainAnalyticalGetter(struct Credentials *creds)
     }
     printf("OptionStrikesValue: %i \n", osv2.n_atm);
 
-    OptionContractType_to_string_ABI(oct2, &str, &n, 0);
+    OptionContractType_to_string(oct2, &str, &n);
     if( str ){
         printf("OptionContractType: %s \n", str);
         free(str);
@@ -2094,14 +2198,14 @@ Test_OptionChainAnalyticalGetter(struct Credentials *creds)
         to_date2 = NULL;
     }
 
-    OptionExpMonth_to_string_ABI(oep2, &str, &n, 0);
+    OptionExpMonth_to_string(oep2, &str, &n);
     if( str ){
         printf("OptionExpMonth: %s \n", str);
         free(str);
         str = NULL;
     }
 
-    OptionType_to_string_ABI(ot2, &str, &n, 0);
+    OptionType_to_string(ot2, &str, &n);
     if( str ){
         printf("OptionType: %s \n", str);
         free(str);
@@ -2138,6 +2242,12 @@ Test_AccountInfoGetter(struct Credentials *creds, const char* acct)
 
     if( (err = AccountInfoGetter_Create(creds, acct, 1, 1, &aig)) )
         CHECK_AND_RETURN_ON_ERROR(err, "AccountInfoGetter_Create");
+
+    if( aig.type_id != TYPE_ID_GETTER_ACCOUNT_INFO ){
+        fprintf(stderr, "invalid type id (%i,%i) \n", aig.type_id,
+                 TYPE_ID_GETTER_ACCOUNT_INFO );
+        return -1;
+    }
 
     if( (err = AccountInfoGetter_GetAccountId(&aig, &str, &n)) )
         CHECK_AND_RETURN_ON_ERROR(err, "AccountInfoGetter_GetAccountId");
@@ -2213,6 +2323,12 @@ Test_PreferencesGetter(struct Credentials *creds, const char* acct)
     if( (err = PreferencesGetter_Create(creds, acct, &pg)) )
         CHECK_AND_RETURN_ON_ERROR(err, "PreferencesGetter_Create");
 
+    if( pg.type_id != TYPE_ID_GETTER_PREFERENCES ){
+        fprintf(stderr, "invalid type id (%i,%i) \n", pg.type_id,
+                 TYPE_ID_GETTER_PREFERENCES);
+        return -1;
+    }
+
     if( (err = PreferencesGetter_GetAccountId(&pg, &str, &n)) )
         CHECK_AND_RETURN_ON_ERROR(err, "PreferencesGetter_GetAccountId");
 
@@ -2262,6 +2378,12 @@ Test_StreamerSubscriptionKeysGetter(struct Credentials *creds, const char* acct)
 
     if( (err = StreamerSubscriptionKeysGetter_Create(creds, acct, &sskg)) )
         CHECK_AND_RETURN_ON_ERROR(err, "StreamerSubscriptionKeysGetter_Create");
+
+    if( sskg.type_id != TYPE_ID_GETTER_SUBSCRIPTION_KEYS ){
+        fprintf(stderr, "invalid type id (%i,%i) \n", sskg.type_id,
+                 TYPE_ID_GETTER_SUBSCRIPTION_KEYS );
+        return -1;
+    }
 
     if( (err = StreamerSubscriptionKeysGetter_GetAccountId(&sskg, &str, &n)) )
         CHECK_AND_RETURN_ON_ERROR(err, "StreamerSubscriptionKeysGetter_GetAccountId");
@@ -2318,6 +2440,12 @@ Test_TransactionHistoryGetter(struct Credentials *creds, const char* acct)
     if( (err = TransactionHistoryGetter_Create(creds, acct, tt, sym1, sd1, se1, &th)) )
         CHECK_AND_RETURN_ON_ERROR(err, "TransactionHistoryGetter_Create");
 
+    if( th.type_id != TYPE_ID_GETTER_TRANSACTION_HISTORY ){
+        fprintf(stderr, "invalid type id (%i,%i) \n", th.type_id,
+                 TYPE_ID_GETTER_TRANSACTION_HISTORY);
+        return -1;
+    }
+
     if( (err = TransactionHistoryGetter_GetAccountId(&th, &str, &n)) )
         CHECK_AND_RETURN_ON_ERROR(err, "TransactionHistoryGetter_GetAccountId");
 
@@ -2330,7 +2458,7 @@ Test_TransactionHistoryGetter(struct Credentials *creds, const char* acct)
     if( (err = TransactionHistoryGetter_GetTransactionType(&th, &tt)) )
         CHECK_AND_RETURN_ON_ERROR(err, "TransactionHistoryGetter_GetTransactionType");
 
-    TransactionType_to_string_ABI(tt, &str, &n, 0);
+    TransactionType_to_string(tt, &str, &n);
     if( str ){
         printf("TransactionType: %s \n", str);
         free(str);
@@ -2389,7 +2517,7 @@ Test_TransactionHistoryGetter(struct Credentials *creds, const char* acct)
    if( (err = TransactionHistoryGetter_GetTransactionType(&th, &tt)) )
        CHECK_AND_RETURN_ON_ERROR(err, "TransactionHistoryGetter_GetTransactionType");
 
-   TransactionType_to_string_ABI(tt, &str, &n, 0);
+   TransactionType_to_string(tt, &str, &n);
    if( str ){
        printf("TransactionType: %s \n", str);
        free(str);
@@ -2448,9 +2576,14 @@ Test_IndividualTransactionHistoryGetter(struct Credentials *creds, const char* a
     IndividualTransactionHistoryGetter_C ith;
     memset(&ith, 0, sizeof(IndividualTransactionHistoryGetter_C));
 
-
     if( (err = IndividualTransactionHistoryGetter_Create(creds, acct, "093432432", &ith)) )
         CHECK_AND_RETURN_ON_ERROR(err, "IndividualTransactionHistoryGetter_Create");
+
+    if( ith.type_id != TYPE_ID_GETTER_IND_TRANSACTION_HISTORY ){
+        fprintf(stderr, "invalid type id (%i,%i) \n", ith.type_id,
+                 TYPE_ID_GETTER_IND_TRANSACTION_HISTORY);
+        return -1;
+    }
 
     if( (err = IndividualTransactionHistoryGetter_GetAccountId(&ith, &str, &n)) )
         CHECK_AND_RETURN_ON_ERROR(err, "IndividualTransactionHistoryGetter_GetAccountId");
@@ -2529,6 +2662,12 @@ Test_UserPrincipalsGetter(struct Credentials *creds)
 
     if( (err = UserPrincipalsGetter_Create(creds, 1,1,1,1, &upg)) )
         CHECK_AND_RETURN_ON_ERROR(err, "UserPrincipalsGetter_Create");
+
+    if( upg.type_id != TYPE_ID_GETTER_USER_PRINCIPALS ){
+        fprintf(stderr, "invalid type id (%i,%i) \n", upg.type_id,
+                 TYPE_ID_GETTER_USER_PRINCIPALS );
+        return -1;
+    }
 
     if( (err = UserPrincipalsGetter_ReturnsSubscriptionKeys(&upg, &skeys)) )
         CHECK_AND_RETURN_ON_ERROR(err, "UserPrincipalsGetter_ReturnsSubscriptionKeys");
@@ -2621,10 +2760,16 @@ Test_InstrumentInfoGetter(struct Credentials *creds)
                                             "78462F103", &iig)) )
         CHECK_AND_RETURN_ON_ERROR(err, "InstrumentInfoGetter_Create");
 
+    if( iig.type_id != TYPE_ID_GETTER_INSTRUMENT_INFO ){
+        fprintf(stderr, "invalid type id (%i,%i) \n", iig.type_id,
+                 TYPE_ID_GETTER_INSTRUMENT_INFO);
+        return -1;
+    }
+
     if( (err = InstrumentInfoGetter_GetSearchType(&iig, &ist)) )
         CHECK_AND_RETURN_ON_ERROR(err, "InstrumentInfoGetter_GetSearchType");
 
-    InstrumentSearchType_to_string_ABI(ist, &str, &n, 0);
+    InstrumentSearchType_to_string(ist, &str, &n);
     if( str ){
         printf("InstrumentSearchType: %s \n", str);
         free(str);
@@ -2656,7 +2801,7 @@ Test_InstrumentInfoGetter(struct Credentials *creds)
    if( (err = InstrumentInfoGetter_GetSearchType(&iig, &ist)) )
        CHECK_AND_RETURN_ON_ERROR(err, "InstrumentInfoGetter_GetSearchType");
 
-   InstrumentSearchType_to_string_ABI(ist, &str, &n, 0);
+   InstrumentSearchType_to_string(ist, &str, &n);
    if( str ){
        printf("InstrumentSearchType: %s \n", str);
        free(str);

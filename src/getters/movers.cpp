@@ -55,6 +55,8 @@ class MoversGetterImpl
 
 public:
     typedef MoversGetter ProxyType;
+    static const int TYPE_ID_LOW = TYPE_ID_GETTER_MOVERS;
+    static const int TYPE_ID_HIGH = TYPE_ID_GETTER_MOVERS;
 
     MoversGetterImpl( Credentials& creds,
                         MoversIndex index,
@@ -115,9 +117,9 @@ MoversGetter_Create_ABI( struct Credentials *pcreds,
                             MoversGetter_C *pgetter,
                             int allow_exceptions )
 {
-    int err = getter_is_creatable<MoversGetterImpl>(
-        pcreds, pgetter, allow_exceptions
-        );
+    using ImplTy = MoversGetterImpl;
+
+    int err = getter_is_creatable<ImplTy>(pcreds, pgetter, allow_exceptions);
     if( err )
         return err;
 
@@ -136,12 +138,12 @@ MoversGetter_Create_ABI( struct Credentials *pcreds,
         return err;
 
     static auto meth = +[](Credentials *c, int m, int d, int ct){
-        return new MoversGetterImpl(*c, static_cast<MoversIndex>(m),
-                                    static_cast<MoversDirectionType>(d),
-                                    static_cast<MoversChangeType>(ct));
+        return new ImplTy( *c, static_cast<MoversIndex>(m),
+                           static_cast<MoversDirectionType>(d),
+                           static_cast<MoversChangeType>(ct) );
     };
 
-    MoversGetterImpl *obj;
+    ImplTy *obj;
     tie(obj, err) = CallImplFromABI( allow_exceptions, meth, pcreds,
                                      index, direction_type, change_type);
     if( err ){
@@ -151,8 +153,8 @@ MoversGetter_Create_ABI( struct Credentials *pcreds,
     }
 
     pgetter->obj = reinterpret_cast<void*>(obj);
-    assert( MoversGetter::TYPE_ID_LOW == MoversGetter::TYPE_ID_HIGH );
-    pgetter->type_id = MoversGetter::TYPE_ID_LOW;
+    assert( ImplTy::TYPE_ID_LOW == ImplTy::TYPE_ID_HIGH );
+    pgetter->type_id = ImplTy::TYPE_ID_LOW;
     return 0;
 }
 

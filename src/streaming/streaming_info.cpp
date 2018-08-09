@@ -133,8 +133,8 @@ streamer_service_from_str(string service_name)
         return StreamerServiceType::ACTIVES_OPTIONS;
     else if( service_name == "CHART_EQUITY" )
         return StreamerServiceType::CHART_EQUITY;
-    //else if( service_name == "CHART_FOREX" )
-    //    return StreamerServiceType::CHART_FOREX;
+    else if( service_name == "CHART_FOREX" )
+        return StreamerServiceType::CHART_FOREX;
     else if( service_name == "CHART_FUTURES" )
         return StreamerServiceType::CHART_FUTURES;
     else if( service_name == "CHART_OPTIONS" )
@@ -155,8 +155,8 @@ streamer_service_from_str(string service_name)
         return StreamerServiceType::TIMESALE_EQUITY;
     else if( service_name == "TIMESALE_FUTURES" )
         return StreamerServiceType::TIMESALE_FUTURES;
-    //else if( service_name == "TIMESALE_FOREX" )
-    //    return StreamerServiceType::TIMESALE_FOREX;
+    else if( service_name == "TIMESALE_FOREX" )
+        return StreamerServiceType::TIMESALE_FOREX;
     else if( service_name == "TIMESALE_OPTIONS" )
         return StreamerServiceType::TIMESALE_OPTIONS;
     else
