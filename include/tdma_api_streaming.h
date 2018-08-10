@@ -93,7 +93,7 @@ DECL_C_CPP_TDMA_ENUM(QOSType, 0, 5,
 
 #define BUILD_ENUM_NAME(n) \
     BUILD_C_CPP_TDMA_ENUM_NAME(QuotesSubscriptionField, n)
-DECL_C_CPP_TDMA_ENUM(QuotesSubscriptionField, 0, 100,
+DECL_C_CPP_TDMA_ENUM(QuotesSubscriptionField, 0, 52,
     BUILD_ENUM_NAME(symbol),
     BUILD_ENUM_NAME(bid_price),
     BUILD_ENUM_NAME(ask_price),
@@ -393,10 +393,11 @@ DECL_C_CPP_TDMA_ENUM(TimesaleSubscriptionField, 0, 5,
     BUILD_C_CPP_TDMA_ENUM_NAME(TimesaleSubscriptionField, last_sequence)
     );
 
-DECL_C_CPP_TDMA_ENUM(StreamingCallbackType, 0, 5,
+DECL_C_CPP_TDMA_ENUM(StreamingCallbackType, 0, 6,
     BUILD_C_CPP_TDMA_ENUM_NAME(StreamingCallbackType, listening_start),
     BUILD_C_CPP_TDMA_ENUM_NAME(StreamingCallbackType, listening_stop),
     BUILD_C_CPP_TDMA_ENUM_NAME(StreamingCallbackType, data),
+    BUILD_C_CPP_TDMA_ENUM_NAME(StreamingCallbackType, request_response),
     BUILD_C_CPP_TDMA_ENUM_NAME(StreamingCallbackType, notify),
     BUILD_C_CPP_TDMA_ENUM_NAME(StreamingCallbackType, timeout),
     BUILD_C_CPP_TDMA_ENUM_NAME(StreamingCallbackType, error)
@@ -1524,7 +1525,6 @@ StreamingSession_Create_ABI( struct Credentials *pcreds,
                                 unsigned long connect_timeout,
                                 unsigned long listening_timeout,
                                 unsigned long subscribe_timeout,
-                                int request_response_to_cout,
                                 StreamingSession_C *psession,
                                 int allow_exceptions );
 
@@ -1553,6 +1553,11 @@ StreamingSession_Stop_ABI( StreamingSession_C *psession,
                                int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
+StreamingSession_IsActive_ABI( StreamingSession_C *psession,
+                                  int *is_active,
+                                  int allow_exceptions );
+
+EXTERN_C_SPEC_ DLL_SPEC_ int
 StreamingSession_SetQOS_ABI( StreamingSession_C *psession,
                                 int qos,
                                 int *result,
@@ -1577,7 +1582,7 @@ StreamingSession_Create( struct Credentials *pcreds,
                                        STREAMING_DEF_CONNECT_TIMEOUT,
                                        STREAMING_DEF_LISTENING_TIMEOUT,
                                        STREAMING_DEF_SUBSCRIBE_TIMEOUT,
-                                       0, psession, 0);
+                                       psession, 0);
 }
 
 inline int
@@ -1587,13 +1592,11 @@ StreamingSession_CreateEx( struct Credentials *pcreds,
                             unsigned long connect_timeout,
                             unsigned long listening_timeout,
                             unsigned long subscribe_timeout,
-                            int request_response_to_cout,
                             StreamingSession_C *psession )
 {
     return StreamingSession_Create_ABI(pcreds, account_id, callback,
                                        connect_timeout, listening_timeout,
-                                       subscribe_timeout,
-                                       request_response_to_cout, psession, 0);
+                                       subscribe_timeout, psession, 0);
 }
 
 inline int
@@ -1620,6 +1623,10 @@ StreamingSession_AddSubscriptions( StreamingSession_C *psession,
 inline int
 StreamingSession_Stop( StreamingSession_C *psession )
 { return StreamingSession_Stop_ABI(psession, 0); }
+
+inline int
+StreamingSession_IsActive( StreamingSession_C *psession, int *is_active )
+{ return StreamingSession_IsActive_ABI( psession, is_active, 0 ); }
 
 inline int
 StreamingSession_SetQOS(StreamingSession_C *psession, QOSType qos, int *result)
@@ -1694,8 +1701,8 @@ public:
              streaming_cb_ty callback,
              std::chrono::milliseconds connect_timeout=DEF_CONNECT_TIMEOUT,
              std::chrono::milliseconds listening_timeout=DEF_LISTENING_TIMEOUT,
-             std::chrono::milliseconds subscribe_timeout=DEF_SUBSCRIBE_TIMEOUT,
-             bool request_response_to_cout = false )
+             std::chrono::milliseconds subscribe_timeout=DEF_SUBSCRIBE_TIMEOUT
+             )
     {
         auto ss = new StreamingSession;
         try{
@@ -1703,8 +1710,6 @@ public:
                                         connect_timeout.count(),
                                         listening_timeout.count(),
                                         subscribe_timeout.count(),
-                                        static_cast<int>(
-                                            request_response_to_cout),
                                         ss->_obj.get(),
                                         1);
             assert( ss->_obj.get()->type_id == TYPE_ID_STREAMING_SESSION );
@@ -1731,6 +1736,14 @@ public:
     void
     stop()
     { StreamingSession_Stop_ABI(_obj.get(), 1); }
+
+    bool
+    is_active() const
+    {
+        int active;
+        StreamingSession_IsActive_ABI(_obj.get(), &active, 1);
+        return static_cast<bool>(active);
+    }
 
     std::deque<bool> // success/fails in the order passed
     add_subscriptions(const std::vector<StreamingSubscription>& subscriptions)

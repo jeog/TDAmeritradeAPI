@@ -346,7 +346,7 @@ streaming(string id, Credentials& c)
     test_sub_fields_symbols(q9, "ChartFuturesSubscription", symbols9, fields9,
                             StreamerServiceType::CHART_FUTURES);
 
-    set<string> symbols10 = {"SPY_072718C276"};
+    set<string> symbols10 = {"SPY_081718C276"};
     set<cft> fields10 = {cft::symbol, cft::volume};
     ChartOptionsSubscription q10(symbols10, fields10);
     display_sub(q10);
@@ -400,8 +400,7 @@ streaming(string id, Credentials& c)
         auto ss = StreamingSession::Create(c, id, callback,
                                            milliseconds(3000),
                                            milliseconds(15000),
-                                           StreamingSession::DEF_SUBSCRIBE_TIMEOUT,
-                                           true );
+                                           StreamingSession::DEF_SUBSCRIBE_TIMEOUT);
         bool res;
         deque<bool> results;
 

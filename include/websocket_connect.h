@@ -82,8 +82,10 @@ class WebSocketClient{
 
         void
         operator()(){
+            util::debug_out("WebSocket", "SocketThreadTarget IN", _wsc, cout);
             _wsc->_hub.connect(_wsc->_url, nullptr, {}, _timeout.count());
             _wsc->_hub.run();
+            util::debug_out("WebSocket", "SocketThreadTarget OUT", _wsc, cout);
         }
 
         SocketThreadTarget(WebSocketClient *wsc, chrono::milliseconds timeout)

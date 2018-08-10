@@ -16,7 +16,7 @@
 # 
 
 
-from ctypes import CDLL, c_int, c_char_p, byref as REF, POINTER
+from ctypes import CDLL, c_int, c_char_p, c_size_t, byref as REF, POINTER
 
 _lib = None
 
@@ -77,11 +77,16 @@ def free_buffers(bufs, n):
     if _lib is None:
         raise LibraryNotLoaded()
     _lib.FreeBuffers_ABI(bufs, n, 0)
-        
+
+def free_fields_buffer(fields):
+    global _lib 
+    if _lib is None:
+        raise LibraryNotLoaded()
+    _lib.FreeFieldsBuffer_ABI(fields)       
         
 def get_str(fname, obj=None):
     c = c_char_p()
-    n = c_int()
+    n = c_size_t()
     if obj:
         call(fname, REF(obj), REF(c), REF(n))
     else:
@@ -100,7 +105,7 @@ def set_str(fname, s, obj=None):
     
 def get_strs(fname, obj=None):
     p = POINTER(c_char_p)()
-    n = c_int()
+    n = c_size_t()
     if obj:
         call(fname, REF(obj), REF(p), REF(n))
     else:
@@ -132,6 +137,27 @@ def set_val(fname, ty, val, obj=None):
     else:
         call(fname, ty(val))
         
+        
+def get_vals(fname, ty, obj=None, free=None):    
+    ptr = POINTER(ty)()
+    n = c_size_t()
+    if obj:
+        call(fname, REF(obj), REF(ptr), REF(n))
+    else:
+        call(fname, REF(ptr), REF(n))
+    vals = [ptr[i] for i in range(n.value)]
+    if free:
+        free(ptr)
+    return vals
+    
+def to_str(fname, ty, v):
+    c = c_char_p()
+    n = c_size_t()
+    call(fname, ty(v), REF(c), REF(n))
+    s = c.value.decode() 
+    free_buffer(c)
+    return s
+            
 def get_last_error_msg():
     return get_str('LastErrorMsg_ABI')
 

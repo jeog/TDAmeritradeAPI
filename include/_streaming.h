@@ -75,6 +75,12 @@ class SubscriptionBySymbolBaseImpl
     build_paramaters( const std::set<std::string>& symbols,
                         const std::set<F>& fields )
     {
+        if( symbols.empty() )
+            throw ValueException("no symbols");
+
+        if( fields.empty() )
+            throw ValueException("no fields");
+
         std::vector<std::string> symbols_enc;
         for(auto& s : symbols)
             symbols_enc.emplace_back(

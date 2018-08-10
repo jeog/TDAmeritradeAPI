@@ -20,15 +20,15 @@ along with this program.  If not, see http://www.gnu.org/licenses.
 
 #include "../include/websocket_connect.h"
 
-namespace {
-    void
-    D(std::string msg)
-    { util::debug_out("WebSocket", msg); }
-}
+
 
 namespace conn{
 
 using namespace std;
+
+void
+D(string msg, WebSocketClient *obj)
+{ util::debug_out("WebSocket", msg, obj, std::cout); }
 
 WebSocketClient *WebSocketClient::Callbacks::wsc = nullptr;
 
@@ -53,21 +53,21 @@ WebSocketClient::WebSocketClient(string url)
         _hub.onMessage( Callbacks::on_message );
         _signal->start( Callbacks::on_signal );
         _signal->setData( reinterpret_cast<void*>(this) );
-        D("construct");
+        D("construct", this);
     }
 
 
 WebSocketClient::~WebSocketClient()
 {
-    D("destruct");
-    close(false);
+    D("destruct", this);
+    close(false); 
 }
 
 
 void
 WebSocketClient::Callbacks::on_connect( uws_client_ty *ws, uWS::HttpRequest r)
 {
-    D("on_connect");
+    D("on_connect", wsc);
 
     assert(wsc);
     wsc->_ws = ws;
@@ -85,12 +85,12 @@ WebSocketClient::Callbacks::on_disconnect( uws_client_ty *ws,
                                                 char* msg,
                                                 size_t msg_len )
 {
-    D("on_disconnect");
+    D("on_disconnect", wsc);
 
     assert(wsc);
     wsc->_ws = nullptr;
 
-    D("on_disconnect _signal->close");
+    D("on_disconnect, _signal->close", wsc);
     wsc->_signal->close();
 }
 
@@ -98,12 +98,12 @@ WebSocketClient::Callbacks::on_disconnect( uws_client_ty *ws,
 void
 WebSocketClient::Callbacks::on_error(void *v)
 {
-    D("on_error");
+    D("on_error", wsc);
 
     assert(wsc);
     wsc->_ws = nullptr;
 
-    D("on_error _signal->close");
+    D("on_error, _signal->close", wsc);
     wsc->_signal->close();
     {
         lock_guard<mutex> _(wsc->_init_mtx);
@@ -119,13 +119,13 @@ WebSocketClient::Callbacks::on_message( uws_client_ty *ws,
                                              size_t msg_len,
                                              uWS::OpCode op )
 {
-    D("on_message");
+    D("on_message", wsc);
 
     assert(wsc);
     string msg_s(msg, msg_len);
     assert( !msg_s.empty() );
 
-    D("message: " + msg_s);
+    D("message: " + msg_s, wsc);
     wsc->_in_queue.emplace( msg_s );
 }
 
@@ -133,7 +133,7 @@ WebSocketClient::Callbacks::on_message( uws_client_ty *ws,
 void
 WebSocketClient::Callbacks::on_signal(uS::Async *a)
 {
-    D("on_signal");
+    D("on_signal", wsc);
 
     auto wsc = reinterpret_cast<WebSocketClient*>(a->getData());
     assert(wsc);
@@ -141,7 +141,7 @@ WebSocketClient::Callbacks::on_signal(uS::Async *a)
     assert(wsc->_ws);
 
     if( wsc->_closing_state == CloseType::immediate ){
-        D("on_signal _ws->terminate");
+        D("on_signal, _ws->terminate", wsc);
         wsc->_ws->terminate();
         return;
     }
@@ -149,12 +149,12 @@ WebSocketClient::Callbacks::on_signal(uS::Async *a)
     while( !wsc->_out_queue.empty() ){
         string msg = wsc->_out_queue.front();
         wsc->_out_queue.pop();
-        D("on_signal _ws->send: " + msg);
+        D("on_signal, _ws->send: " + msg, wsc);
         wsc->_ws->send(msg.c_str(), msg.size(), uWS::OpCode::TEXT);
     }
 
     if( wsc->_closing_state == CloseType::graceful ){
-        D("on_signal _ws->close");
+        D("on_signal, _ws->close", wsc);
         wsc->_ws->close();
     }
 }
@@ -163,14 +163,14 @@ WebSocketClient::Callbacks::on_signal(uS::Async *a)
 void
 WebSocketClient::connect(chrono::milliseconds timeout)
 {
-    D("connect");
+    D("connect", this);
     if( _ws || _closing_state != CloseType::none )
         return;
 
-    D("connect move new _thread");
+    D("connect, move new _thread", this);
     _thread = move( thread( SocketThreadTarget(this, timeout) ) );
 
-    D("connect wait for callback notify");
+    D("connect, wait for callback notify", this);
     /*
      * let the socket handle the timeout
      *
@@ -196,17 +196,18 @@ WebSocketClient::is_connected() const
 void
 WebSocketClient::close(bool graceful)
 {
-    D("close");
+    D("close", this);
     if( is_connected() ){
         _closing_state = graceful ? CloseType::graceful : CloseType::immediate;
-        D("close _signal->send");
+        D("close, _signal->send", this);
         _signal->send();
     }
 
-    D("close join _thread");
+    D("close, join _thread", this);
     if( _thread.joinable() ){
         _thread.join();
     }
+    D("close, join _thread DONE", this);
 }
 
 
@@ -215,7 +216,7 @@ WebSocketClient::send(string msg)
 {
     if( is_connected() ){
         _out_queue.emplace(msg);
-        D("send _signal->send: " + msg);
+        D("send, _signal->send: " + msg, this);
         _signal->send();
     }
 }

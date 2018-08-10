@@ -22,8 +22,11 @@ along with this program.  If not, see http://www.gnu.org/licenses.
 #include <sstream>
 #include <vector>
 #include <iostream>
+#include <iomanip>
 #include <set>
 #include <chrono>
+#include <mutex>
+#include <thread>
 #include <signal.h>
 
 #include "_common.h"
@@ -45,6 +48,24 @@ public:
 
 void
 debug_out(std::string tag, std::string message, std::ostream& out=std::cout);
+
+template<typename T>
+void
+debug_out( std::string tag,
+            std::string message,
+            T *obj,
+            std::ostream& out )
+{
+    using namespace std;
+#ifdef DEBUG_VERBOSE_1_
+    static mutex mtx;
+    lock_guard<mutex> _(mtx);
+    out<< setw(20) << left << tag << ' '
+       << setw(20) << left << hex << reinterpret_cast<size_t>(obj) << dec << ' '
+       << setw(20) << left << this_thread::get_id() << ' '
+       << message << endl;
+#endif /* DEBUG_VERBOSE_1_ */
+}
 
 std::string
 url_encode(const std::string& url);

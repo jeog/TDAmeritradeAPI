@@ -5,6 +5,7 @@
 *.cproject
 *.project
 *.creds
+*core
 
 python/build/*
 *.pydevproject

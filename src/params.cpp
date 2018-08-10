@@ -62,6 +62,7 @@ VALID_FREQUENCIES_BY_FREQUENCY_TYPE = {
 
 #endif /* __cplusplus */
 
+using namespace tdma;
 
 int
 FreeBuffer_ABI( char* buf, int allow_exceptions )
@@ -102,7 +103,7 @@ alloc_C_str(const std::string& s, char** buf, size_t* n, bool raise_exception)
     *buf = reinterpret_cast<char*>(malloc(*n));
     if( !*(buf) ){
         if( raise_exception ){
-            throw tdma::MemoryError("not enough memory to allocate enum string");
+            throw MemoryError("not enough memory to allocate enum string");
         }
         return TDMA_API_MEMORY_ERROR;
     }
@@ -114,14 +115,18 @@ alloc_C_str(const std::string& s, char** buf, size_t* n, bool raise_exception)
 int
 PeriodType_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
 {
-    switch(static_cast<tdma::PeriodType>(v)){
-    case tdma::PeriodType::day:
+    int err = check_abi_enum(PeriodType_is_valid, v, allow_exceptions);
+    if( err )
+        return err;
+
+    switch(static_cast<PeriodType>(v)){
+    case PeriodType::day:
         return alloc_C_str("day", buf, n, allow_exceptions);
-    case tdma::PeriodType::month:
+    case PeriodType::month:
         return alloc_C_str("month", buf, n, allow_exceptions);
-    case tdma::PeriodType::year:
+    case PeriodType::year:
         return alloc_C_str("year", buf, n, allow_exceptions);
-    case tdma::PeriodType::ytd:
+    case PeriodType::ytd:
         return alloc_C_str("ytd", buf, n, allow_exceptions);
     default:
         throw std::runtime_error("invalid PeriodType");
@@ -131,14 +136,18 @@ PeriodType_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
 int
 FrequencyType_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
 {
-    switch(static_cast<tdma::FrequencyType>(v)){
-    case tdma::FrequencyType::minute:
+    int err = check_abi_enum(FrequencyType_is_valid, v, allow_exceptions);
+    if( err )
+        return err;
+
+    switch(static_cast<FrequencyType>(v)){
+    case FrequencyType::minute:
         return alloc_C_str("minute", buf, n, allow_exceptions);
-    case tdma::FrequencyType::daily:
+    case FrequencyType::daily:
         return alloc_C_str("daily", buf, n, allow_exceptions);
-    case tdma::FrequencyType::weekly:
+    case FrequencyType::weekly:
         return alloc_C_str("weekly", buf, n, allow_exceptions);
-    case tdma::FrequencyType::monthly:
+    case FrequencyType::monthly:
         return alloc_C_str("monthly", buf, n, allow_exceptions);
     default:
         throw std::runtime_error("invalid FrequencyType");
@@ -148,12 +157,16 @@ FrequencyType_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
 int
 OptionContractType_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
 {
-    switch(static_cast<tdma::OptionContractType>(v)){
-    case tdma::OptionContractType::call:
+    int err = check_abi_enum(OptionContractType_is_valid, v, allow_exceptions);
+    if( err )
+        return err;
+
+    switch(static_cast<OptionContractType>(v)){
+    case OptionContractType::call:
         return alloc_C_str("CALL", buf, n, allow_exceptions);
-    case tdma::OptionContractType::put:
+    case OptionContractType::put:
         return alloc_C_str("PUT", buf, n, allow_exceptions);
-    case tdma::OptionContractType::all:
+    case OptionContractType::all:
         return alloc_C_str("ALL", buf, n, allow_exceptions);
     default:
         throw std::runtime_error("invalid OptionContractType");
@@ -163,28 +176,32 @@ OptionContractType_to_string_ABI(int v, char** buf, size_t* n, int allow_excepti
 int
 OptionStrategyType_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
 {
-    switch(static_cast<tdma::OptionStrategyType>(v)){
+    int err = check_abi_enum(OptionStrategyType_is_valid, v, allow_exceptions);
+    if( err )
+        return err;
+
+    switch(static_cast<OptionStrategyType>(v)){
     //case OptionStrategyType::single: return "SINGLE";
     //case OptionStrategyType::analytical: return "ANALYTICAL";
-    case tdma::OptionStrategyType::covered:
+    case OptionStrategyType::covered:
         return alloc_C_str("COVERED", buf, n, allow_exceptions);
-    case tdma::OptionStrategyType::vertical:
+    case OptionStrategyType::vertical:
         return alloc_C_str("VERTICAL", buf, n, allow_exceptions);
-    case tdma::OptionStrategyType::calendar:
+    case OptionStrategyType::calendar:
         return alloc_C_str("CALENDAR", buf, n, allow_exceptions);
-    case tdma::OptionStrategyType::strangle:
+    case OptionStrategyType::strangle:
         return alloc_C_str("STRANGLE", buf, n, allow_exceptions);
-    case tdma::OptionStrategyType::straddle:
+    case OptionStrategyType::straddle:
         return alloc_C_str("STRADDLE", buf, n, allow_exceptions);
-    case tdma::OptionStrategyType::butterfly:
+    case OptionStrategyType::butterfly:
         return alloc_C_str("BUTTERFLY", buf, n, allow_exceptions);
-    case tdma::OptionStrategyType::condor:
+    case OptionStrategyType::condor:
         return alloc_C_str("CONDOR", buf, n, allow_exceptions);
-    case tdma::OptionStrategyType::diagonal:
+    case OptionStrategyType::diagonal:
         return alloc_C_str("DIAGONAL", buf, n, allow_exceptions);
-    case tdma::OptionStrategyType::collar:
+    case OptionStrategyType::collar:
         return alloc_C_str("COLLAR", buf, n, allow_exceptions);
-    case tdma:: OptionStrategyType::roll:
+    case  OptionStrategyType::roll:
         return alloc_C_str("ROLL", buf, n, allow_exceptions);
     default:
         throw std::runtime_error("invalid OptionStrategyType");
@@ -195,22 +212,26 @@ OptionStrategyType_to_string_ABI(int v, char** buf, size_t* n, int allow_excepti
 int
 OptionRangeType_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
 {
-    switch(static_cast<tdma::OptionRangeType>(v)){
-    case tdma::OptionRangeType::null:
+    int err = check_abi_enum(OptionRangeType_is_valid, v, allow_exceptions);
+    if( err )
+        return err;
+
+    switch(static_cast<OptionRangeType>(v)){
+    case OptionRangeType::null:
         return alloc_C_str("", buf, n, allow_exceptions);
-    case tdma::OptionRangeType::itm:
+    case OptionRangeType::itm:
         return alloc_C_str("ITM", buf, n, allow_exceptions);
-    case tdma::OptionRangeType::ntm:
+    case OptionRangeType::ntm:
         return alloc_C_str("NTM", buf, n, allow_exceptions);
-    case tdma::OptionRangeType::otm:
+    case OptionRangeType::otm:
         return alloc_C_str("OTM", buf, n, allow_exceptions);
-    case tdma::OptionRangeType::sak:
+    case OptionRangeType::sak:
         return alloc_C_str("SAK", buf, n, allow_exceptions);
-    case tdma::OptionRangeType::sbk:
+    case OptionRangeType::sbk:
         return alloc_C_str("SBK", buf, n, allow_exceptions);
-    case tdma::OptionRangeType::snk:
+    case OptionRangeType::snk:
         return alloc_C_str("SNK", buf, n, allow_exceptions);
-    case tdma::OptionRangeType::all:
+    case OptionRangeType::all:
         return alloc_C_str("ALL", buf, n, allow_exceptions);
     default:
         throw std::runtime_error("invalid OptionRangeType");
@@ -221,32 +242,36 @@ OptionRangeType_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions
 int
 OptionExpMonth_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
 {
-    switch(static_cast<tdma::OptionExpMonth>(v)){
-    case tdma::OptionExpMonth::jan:
+    int err = check_abi_enum(OptionExpMonth_is_valid, v, allow_exceptions);
+    if( err )
+        return err;
+
+    switch(static_cast<OptionExpMonth>(v)){
+    case OptionExpMonth::jan:
         return alloc_C_str("JAN", buf, n, allow_exceptions);
-    case tdma::OptionExpMonth::feb:
+    case OptionExpMonth::feb:
         return alloc_C_str("FEB", buf, n, allow_exceptions);
-    case tdma::OptionExpMonth::mar:
+    case OptionExpMonth::mar:
         return alloc_C_str("MAR", buf, n, allow_exceptions);
-    case tdma::OptionExpMonth::apr:
+    case OptionExpMonth::apr:
         return alloc_C_str("APR", buf, n, allow_exceptions);
-    case tdma::OptionExpMonth::may:
+    case OptionExpMonth::may:
         return alloc_C_str("MAY", buf, n, allow_exceptions);
-    case tdma::OptionExpMonth::jun:
+    case OptionExpMonth::jun:
         return alloc_C_str("JUN", buf, n, allow_exceptions);
-    case tdma::OptionExpMonth::jul:
+    case OptionExpMonth::jul:
         return alloc_C_str("JUL", buf, n, allow_exceptions);
-    case tdma::OptionExpMonth::aug:
+    case OptionExpMonth::aug:
         return alloc_C_str("AUG", buf, n, allow_exceptions);
-    case tdma::OptionExpMonth::sep:
+    case OptionExpMonth::sep:
         return alloc_C_str("SEP", buf, n, allow_exceptions);
-    case tdma::OptionExpMonth::oct:
+    case OptionExpMonth::oct:
         return alloc_C_str("OCT", buf, n, allow_exceptions);
-    case tdma::OptionExpMonth::nov:
+    case OptionExpMonth::nov:
         return alloc_C_str("NOV", buf, n, allow_exceptions);
-    case tdma::OptionExpMonth::dec:
+    case OptionExpMonth::dec:
         return alloc_C_str("DEC", buf, n, allow_exceptions);
-    case tdma::OptionExpMonth::all:
+    case OptionExpMonth::all:
         return alloc_C_str("ALL", buf, n, allow_exceptions);
     default:
         throw std::runtime_error("invalid OptionExpMonth");
@@ -257,12 +282,16 @@ OptionExpMonth_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
 int
 OptionType_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
 {
-    switch(static_cast<tdma::OptionType>(v)){
-    case tdma::OptionType::s:
+    int err = check_abi_enum(OptionType_is_valid, v, allow_exceptions);
+    if( err )
+        return err;
+
+    switch(static_cast<OptionType>(v)){
+    case OptionType::s:
         return alloc_C_str("S", buf, n, allow_exceptions);
-    case tdma::OptionType::ns:
+    case OptionType::ns:
         return alloc_C_str("NS", buf, n, allow_exceptions);
-    case tdma::OptionType::all:
+    case OptionType::all:
         return alloc_C_str("ALL", buf, n, allow_exceptions);
     default: throw std::runtime_error("invalid OptionType");
     }
@@ -272,26 +301,30 @@ OptionType_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
 int
 TransactionType_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
 {
-    switch(static_cast<tdma::TransactionType>(v)){
-    case tdma::TransactionType::all:
+    int err = check_abi_enum(TransactionType_is_valid, v, allow_exceptions);
+    if( err )
+        return err;
+
+    switch(static_cast<TransactionType>(v)){
+    case TransactionType::all:
         return alloc_C_str("ALL", buf, n, allow_exceptions);
-    case tdma::TransactionType::trade:
+    case TransactionType::trade:
         return alloc_C_str("TRADE", buf, n, allow_exceptions);
-    case tdma::TransactionType::buy_only:
+    case TransactionType::buy_only:
         return alloc_C_str("BUY_ONLY", buf, n, allow_exceptions);
-    case tdma::TransactionType::sell_only:
+    case TransactionType::sell_only:
         return alloc_C_str("SELL_ONLY", buf, n, allow_exceptions);
-    case tdma::TransactionType::cash_in_or_cash_out:
+    case TransactionType::cash_in_or_cash_out:
         return alloc_C_str("CASH_IN_OR_CASH_OUT", buf, n, allow_exceptions);
-    case tdma::TransactionType::checking:
+    case TransactionType::checking:
         return alloc_C_str("CHECKING", buf, n, allow_exceptions);
-    case tdma::TransactionType::dividend:
+    case TransactionType::dividend:
         return alloc_C_str("DIVIDEND", buf, n, allow_exceptions);
-    case tdma::TransactionType::interest:
+    case TransactionType::interest:
         return alloc_C_str("INTEREST", buf, n, allow_exceptions);
-    case tdma::TransactionType::other:
+    case TransactionType::other:
         return alloc_C_str("OTHER", buf, n, allow_exceptions);
-    case tdma::TransactionType::advisor_fees:
+    case TransactionType::advisor_fees:
         return alloc_C_str("ADVISOR_FEES", buf, n, allow_exceptions);
     default:
         throw std::runtime_error("invliad TransactionType");
@@ -301,18 +334,22 @@ TransactionType_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions
 int
 InstrumentSearchType_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
 {
-    switch(static_cast<tdma::InstrumentSearchType>(v)){
-    case tdma::InstrumentSearchType::symbol_exact:
+    int err = check_abi_enum(InstrumentSearchType_is_valid, v, allow_exceptions);
+    if( err )
+        return err;
+
+    switch(static_cast<InstrumentSearchType>(v)){
+    case InstrumentSearchType::symbol_exact:
         return alloc_C_str("fundamental", buf, n, allow_exceptions);
-    case tdma::InstrumentSearchType::symbol_search:
+    case InstrumentSearchType::symbol_search:
         return alloc_C_str("symbol-search", buf, n, allow_exceptions);
-    case tdma::InstrumentSearchType::symbol_regex:
+    case InstrumentSearchType::symbol_regex:
         return alloc_C_str("symbol-regex", buf, n, allow_exceptions);
-    case tdma::InstrumentSearchType::description_search:
+    case InstrumentSearchType::description_search:
         return alloc_C_str("desc-search", buf, n, allow_exceptions);
-    case tdma::InstrumentSearchType::description_regex:
+    case InstrumentSearchType::description_regex:
         return alloc_C_str("desc-regex", buf, n, allow_exceptions);
-    case tdma::InstrumentSearchType::cusip:
+    case InstrumentSearchType::cusip:
         return alloc_C_str("cusip", buf, n, allow_exceptions);
     default:
         throw std::runtime_error("invalid InstrumentSearchType");
@@ -323,16 +360,20 @@ InstrumentSearchType_to_string_ABI(int v, char** buf, size_t* n, int allow_excep
 int
 MarketType_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
 {
-    switch(static_cast<tdma::MarketType>(v)){
-    case tdma::MarketType::equity:
+    int err = check_abi_enum(MarketType_is_valid, v, allow_exceptions);
+    if( err )
+        return err;
+
+    switch(static_cast<MarketType>(v)){
+    case MarketType::equity:
         return alloc_C_str("EQUITY", buf, n, allow_exceptions);
-    case tdma::MarketType::option:
+    case MarketType::option:
         return alloc_C_str("OPTION", buf, n, allow_exceptions);
-    case tdma::MarketType::future:
+    case MarketType::future:
         return alloc_C_str("FUTURE", buf, n, allow_exceptions);
-    case tdma::MarketType::bond:
+    case MarketType::bond:
         return alloc_C_str("BOND", buf, n, allow_exceptions);
-    case tdma::MarketType::forex:
+    case MarketType::forex:
         return alloc_C_str("FOREX", buf, n, allow_exceptions);
     default:
         throw std::runtime_error("Invalid MarketType");
@@ -342,12 +383,16 @@ MarketType_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
 int
 MoversIndex_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
 {
-    switch(static_cast<tdma::MoversIndex>(v)){
-    case tdma::MoversIndex::compx:
+    int err = check_abi_enum(MoversIndex_is_valid, v, allow_exceptions);
+    if( err )
+        return err;
+
+    switch(static_cast<MoversIndex>(v)){
+    case MoversIndex::compx:
         return alloc_C_str("$COMPX", buf, n, allow_exceptions);
-    case tdma::MoversIndex::dji:
+    case MoversIndex::dji:
         return alloc_C_str("$DJI", buf, n, allow_exceptions);
-    case tdma::MoversIndex::spx:
+    case MoversIndex::spx:
         return alloc_C_str("$SPX.X", buf, n, allow_exceptions);
     default:
         throw std::runtime_error("invalid MoversIndex");
@@ -358,12 +403,16 @@ MoversIndex_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
 int
 MoversDirectionType_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
 {
-    switch(static_cast<tdma::MoversDirectionType>(v)){
-    case tdma::MoversDirectionType::up:
+    int err = check_abi_enum(MoversDirectionType_is_valid, v, allow_exceptions);
+    if( err )
+        return err;
+
+    switch(static_cast<MoversDirectionType>(v)){
+    case MoversDirectionType::up:
         return alloc_C_str("up", buf, n, allow_exceptions);
-    case tdma::MoversDirectionType::down:
+    case MoversDirectionType::down:
         return alloc_C_str("down", buf, n, allow_exceptions);
-    case tdma::MoversDirectionType::up_and_down:
+    case MoversDirectionType::up_and_down:
         return alloc_C_str("up_and_down", buf, n, allow_exceptions);
     default:
         throw std::runtime_error("invalid MoversDirectionType");
@@ -373,10 +422,14 @@ MoversDirectionType_to_string_ABI(int v, char** buf, size_t* n, int allow_except
 int
 MoversChangeType_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
 {
-    switch(static_cast<tdma::MoversChangeType>(v)){
-    case tdma::MoversChangeType::percent:
+    int err = check_abi_enum(MoversChangeType_is_valid, v, allow_exceptions);
+    if( err )
+        return err;
+
+    switch(static_cast<MoversChangeType>(v)){
+    case MoversChangeType::percent:
         return alloc_C_str("percent", buf, n, allow_exceptions);
-    case tdma::MoversChangeType::value:
+    case MoversChangeType::value:
         return alloc_C_str("value", buf, n, allow_exceptions);
     default:
         throw std::runtime_error("invalid MoversChangeType");
@@ -386,14 +439,18 @@ MoversChangeType_to_string_ABI(int v, char** buf, size_t* n, int allow_exception
 int
 OptionStrikesType_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
 {
-    switch(static_cast<tdma::OptionStrikesType>(v)){
-    case tdma::OptionStrikesType::n_atm:
+    int err = check_abi_enum(OptionStrikesType_is_valid, v, allow_exceptions);
+    if( err )
+        return err;
+
+    switch(static_cast<OptionStrikesType>(v)){
+    case OptionStrikesType::n_atm:
         return alloc_C_str("n_atm", buf, n, allow_exceptions);
-    case tdma::OptionStrikesType::single:
+    case OptionStrikesType::single:
         return alloc_C_str("single", buf, n, allow_exceptions);
-    case tdma::OptionStrikesType::range:
+    case OptionStrikesType::range:
         return alloc_C_str("range", buf, n, allow_exceptions);
-    case tdma::OptionStrikesType::none:
+    case OptionStrikesType::none:
         return alloc_C_str("none", buf, n, allow_exceptions);
     default:
         throw std::runtime_error("invalid MoversChangeType");
@@ -403,12 +460,16 @@ OptionStrikesType_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptio
 int
 AdminCommandType_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
 {
-    switch(static_cast<tdma::AdminCommandType>(v)){
-    case tdma::AdminCommandType::LOGIN:
+    int err = check_abi_enum(AdminCommandType_is_valid, v, allow_exceptions);
+    if( err )
+        return err;
+
+    switch(static_cast<AdminCommandType>(v)){
+    case AdminCommandType::LOGIN:
         return alloc_C_str("LOGIN", buf, n, allow_exceptions);
-    case tdma::AdminCommandType::LOGOUT:
+    case AdminCommandType::LOGOUT:
         return alloc_C_str("LOGOUT", buf, n, allow_exceptions);
-    case tdma::AdminCommandType::QOS:
+    case AdminCommandType::QOS:
         return alloc_C_str("QOS", buf, n, allow_exceptions);
     default:
         throw std::runtime_error("Invalid AdminCommandType");
@@ -418,18 +479,22 @@ AdminCommandType_to_string_ABI(int v, char** buf, size_t* n, int allow_exception
 int
 QOSType_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
 {
-    switch(static_cast<tdma::QOSType>(v)){
-    case tdma::QOSType::delayed:
+    int err = check_abi_enum(QOSType_is_valid, v, allow_exceptions);
+    if( err )
+        return err;
+
+    switch(static_cast<QOSType>(v)){
+    case QOSType::delayed:
         return alloc_C_str("delayed", buf, n, allow_exceptions);
-    case tdma::QOSType::express:
+    case QOSType::express:
         return alloc_C_str("express", buf, n, allow_exceptions);
-    case tdma::QOSType::fast:
+    case QOSType::fast:
         return alloc_C_str("fast", buf, n, allow_exceptions);
-    case tdma::QOSType::moderate:
+    case QOSType::moderate:
         return alloc_C_str("moderate", buf, n, allow_exceptions);
-    case tdma::QOSType::real_time:
+    case QOSType::real_time:
         return alloc_C_str("real-time", buf, n, allow_exceptions);
-    case tdma::QOSType::slow:
+    case QOSType::slow:
         return alloc_C_str("slow", buf, n, allow_exceptions);
     default:
         throw std::runtime_error("Invalid QOSType");
@@ -441,18 +506,22 @@ QOSType_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
 int
 DurationType_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
 {
-    switch(static_cast<tdma::DurationType>(v)){
-    case tdma::DurationType::all_day:
+    int err = check_abi_enum(DurationType_is_valid, v, allow_exceptions);
+    if( err )
+        return err;
+
+    switch(static_cast<DurationType>(v)){
+    case DurationType::all_day:
         return alloc_C_str("ALL", buf, n, allow_exceptions);
-    case tdma::DurationType::min_60:
+    case DurationType::min_60:
         return alloc_C_str("3600", buf, n, allow_exceptions);
-    case tdma::DurationType::min_30:
+    case DurationType::min_30:
         return alloc_C_str("1800", buf, n, allow_exceptions);
-    case tdma::DurationType::min_10:
+    case DurationType::min_10:
         return alloc_C_str("600", buf, n, allow_exceptions);
-    case tdma::DurationType::min_5:
+    case DurationType::min_5:
         return alloc_C_str("300", buf, n, allow_exceptions);
-    case tdma::DurationType::min_1:
+    case DurationType::min_1:
         return alloc_C_str("60", buf, n, allow_exceptions);
     default:
         throw std::runtime_error("Invalid DurationType");
@@ -463,18 +532,22 @@ DurationType_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
 int
 VenueType_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
 {
-    switch(static_cast<tdma::VenueType>(v)){
-    case tdma::VenueType::opts:
+    int err = check_abi_enum(VenueType_is_valid, v, allow_exceptions);
+    if( err )
+        return err;
+
+    switch(static_cast<VenueType>(v)){
+    case VenueType::opts:
         return alloc_C_str("OPTS", buf, n, allow_exceptions);
-    case tdma::VenueType::calls:
+    case VenueType::calls:
         return alloc_C_str("CALLS", buf, n, allow_exceptions);
-    case tdma::VenueType::puts:
+    case VenueType::puts:
         return alloc_C_str("PUTS", buf, n, allow_exceptions);
-    case tdma::VenueType::opts_desc:
+    case VenueType::opts_desc:
         return alloc_C_str("OPTS-DESC", buf, n, allow_exceptions);
-    case tdma::VenueType::calls_desc:
+    case VenueType::calls_desc:
         return alloc_C_str("CALLS-DESC", buf, n, allow_exceptions);
-    case tdma::VenueType::puts_desc:
+    case VenueType::puts_desc:
         return alloc_C_str("PUTS-DESC", buf, n, allow_exceptions);
     default: throw std::runtime_error("Invalid VenueType");
     }
@@ -484,18 +557,24 @@ VenueType_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
 int
 StreamingCallbackType_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
 {
-    switch(static_cast<tdma::StreamingCallbackType>(v)){
-    case tdma::StreamingCallbackType::listening_start:
+    int err = check_abi_enum(StreamingCallbackType_is_valid, v, allow_exceptions);
+    if( err )
+        return err;
+
+    switch(static_cast<StreamingCallbackType>(v)){
+    case StreamingCallbackType::listening_start:
         return alloc_C_str("listening_start", buf, n, allow_exceptions);
-    case tdma::StreamingCallbackType::listening_stop:
+    case StreamingCallbackType::listening_stop:
         return alloc_C_str("listening_stop", buf, n, allow_exceptions);
-    case tdma::StreamingCallbackType::data:
+    case StreamingCallbackType::data:
         return alloc_C_str("data", buf, n, allow_exceptions);
-    case tdma::StreamingCallbackType::notify:
+    case StreamingCallbackType::request_response:
+        return alloc_C_str("request_response", buf, n, allow_exceptions);
+    case StreamingCallbackType::notify:
         return alloc_C_str("notify", buf, n, allow_exceptions);
-    case tdma::StreamingCallbackType::timeout:
+    case StreamingCallbackType::timeout:
         return alloc_C_str("timeout", buf, n, allow_exceptions);
-    case tdma::StreamingCallbackType::error:
+    case StreamingCallbackType::error:
         return alloc_C_str("error", buf, n, allow_exceptions);
     default:
         throw std::runtime_error("Invalid StreamingCallbackType");
@@ -505,46 +584,53 @@ StreamingCallbackType_to_string_ABI(int v, char** buf, size_t* n, int allow_exce
 int
 StreamerServiceType_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
 {
-    switch( static_cast<tdma::StreamerServiceType>(v) ){
-    case tdma::StreamerServiceType::NONE:
+    if( v ){ // ::NONE (0) can't be allowed to fail in this particular case
+        int err = check_abi_enum(StreamerServiceType_is_valid, v,
+                                 allow_exceptions);
+        if( err )
+            return err;
+    }
+
+    switch( static_cast<StreamerServiceType>(v) ){
+    case StreamerServiceType::NONE:
         return alloc_C_str("NONE", buf, n, allow_exceptions);
-    case tdma::StreamerServiceType::ADMIN:
+    case StreamerServiceType::ADMIN:
         return alloc_C_str("ADMIN", buf, n, allow_exceptions);
-    case tdma::StreamerServiceType::ACTIVES_NASDAQ:
+    case StreamerServiceType::ACTIVES_NASDAQ:
         return alloc_C_str("ACTIVES_NASDAQ", buf, n, allow_exceptions);
-    case tdma::StreamerServiceType::ACTIVES_NYSE:
+    case StreamerServiceType::ACTIVES_NYSE:
         return alloc_C_str("ACTIVES_NYSE", buf, n, allow_exceptions);
-    case tdma::StreamerServiceType::ACTIVES_OTCBB:
+    case StreamerServiceType::ACTIVES_OTCBB:
         return alloc_C_str("ACTIVES_OTCBB", buf, n, allow_exceptions);
-    case tdma::StreamerServiceType::ACTIVES_OPTIONS:
+    case StreamerServiceType::ACTIVES_OPTIONS:
         return alloc_C_str("ACTIVES_OPTIONS", buf, n, allow_exceptions);
-    case tdma::StreamerServiceType::CHART_EQUITY:
+    case StreamerServiceType::CHART_EQUITY:
         return alloc_C_str("CHART_EQUITY", buf, n, allow_exceptions);
-    case tdma::StreamerServiceType::CHART_FOREX:
+    case StreamerServiceType::CHART_FOREX:
         return alloc_C_str("CHART_FOREX", buf, n, allow_exceptions);
-    case tdma::StreamerServiceType::CHART_FUTURES:
+    case StreamerServiceType::CHART_FUTURES:
         return alloc_C_str("CHART_FUTURES", buf, n, allow_exceptions);
-    case tdma::StreamerServiceType::CHART_OPTIONS:
+    case StreamerServiceType::CHART_OPTIONS:
         return alloc_C_str("CHART_OPTIONS", buf, n, allow_exceptions);
-    case tdma::StreamerServiceType::QUOTE:
+    case StreamerServiceType::QUOTE:
         return alloc_C_str("QUOTE", buf, n, allow_exceptions);
-    case tdma::StreamerServiceType::LEVELONE_FUTURES:
+    case StreamerServiceType::LEVELONE_FUTURES:
         return alloc_C_str("LEVELONE_FUTURES", buf, n, allow_exceptions);
-    case tdma::StreamerServiceType::LEVELONE_FOREX:
+    case StreamerServiceType::LEVELONE_FOREX:
         return alloc_C_str("LEVELONE_FOREX", buf, n, allow_exceptions);
-    case tdma::StreamerServiceType::LEVELONE_FUTURES_OPTIONS:
+    case StreamerServiceType::LEVELONE_FUTURES_OPTIONS:
         return alloc_C_str("LEVELONE_FUTURES_OPTIONS", buf, n, allow_exceptions);
-    case tdma::StreamerServiceType::OPTION:
+    case StreamerServiceType::OPTION:
         return alloc_C_str("OPTION", buf, n, allow_exceptions);
-    case tdma::StreamerServiceType::NEWS_HEADLINE:
+    case StreamerServiceType::NEWS_HEADLINE:
         return alloc_C_str("NEWS_HEADLINE", buf, n, allow_exceptions);
-    case tdma::StreamerServiceType::TIMESALE_EQUITY:
+    case StreamerServiceType::TIMESALE_EQUITY:
         return alloc_C_str("TIMESALE_EQUITY", buf, n, allow_exceptions);
-    case tdma::StreamerServiceType::TIMESALE_FUTURES:
+    case StreamerServiceType::TIMESALE_FUTURES:
         return alloc_C_str("TIMESALE_FUTURES", buf, n, allow_exceptions);
-    case tdma::StreamerServiceType::TIMESALE_FOREX:
+    case StreamerServiceType::TIMESALE_FOREX:
         return alloc_C_str("TIMESALE_FOREX", buf, n, allow_exceptions);
-    case tdma::StreamerServiceType::TIMESALE_OPTIONS:
+    case StreamerServiceType::TIMESALE_OPTIONS:
         return alloc_C_str("TIMESALE_OPTIONS", buf, n, allow_exceptions);
     default:
         throw std::runtime_error("Invalid StreamerServiceType");
@@ -556,8 +642,12 @@ StreamerServiceType_to_string_ABI(int v, char** buf, size_t* n, int allow_except
 #define DEF_TEMP_FIELD_TO_STRING(name) \
 int \
 name##_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions) \
-{ return alloc_C_str(#name"-" + std::to_string(v), buf, n, \
-                       allow_exceptions); }
+{ \
+    int err = check_abi_enum(name##_is_valid, v, allow_exceptions); \
+    if( err ) \
+        return err; \
+    return alloc_C_str(#name"-" + std::to_string(v), buf, n, allow_exceptions); \
+}
 
 DEF_TEMP_FIELD_TO_STRING(QuotesSubscriptionField)
 DEF_TEMP_FIELD_TO_STRING(OptionsSubscriptionField)

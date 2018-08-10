@@ -70,7 +70,7 @@ This project would not be possible without some of the great open-source project
 -------------------|---------------|---------------------|--------------------
 **C**              | *Working*     | *Working*       | *Coming Soon*
 **C++**            | *Working (incomplete ABI)* | *Working (incomplete ABI)* | *Coming Soon*
-**Python**         | *Working*     | *Coming Soon*       | *Coming Soon*
+**Python**         | *Working*     | *Working*       | *Coming Soon*
 
 *Note: 'Working' does not necessarily mean 'Stable'*
 
@@ -129,6 +129,8 @@ include it in the docs.)
 - As mentioned above the C++ interfaces still have binary compatibility issues so you'll need to compile/link your C++ code the same way you compile/link this library.
 
 - If you have a build issue file an issue or send an email.
+
+- Define ```DEBUG_VERBOSE_1_``` to send verbose logging/debug info to stdout. (Debug builds do this automatically.)
 
 #### Unix-Like
 

@@ -32,6 +32,10 @@ along with this program.  If not, see http://www.gnu.org/licenses.
 #define USE_SIGNAL_BLOCKER_
 #endif /* _WIN32 */
 
+#ifdef DEBUG
+#define DEBUG_VERBOSE_1_
+#endif /* DEBUG */
+
 #ifdef __cplusplus
 #include <string>
 extern std::string certificate_bundle_path;

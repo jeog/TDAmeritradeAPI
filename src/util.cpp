@@ -31,7 +31,7 @@ namespace util {
 using namespace std;
 
 #ifdef USE_SIGNAL_BLOCKER_
-SignalBlocker::SignalBlocker( std::set<int> signums )
+SignalBlocker::SignalBlocker( set<int> signums )
     :
         _mask(),
         _active(false)
@@ -42,7 +42,7 @@ SignalBlocker::SignalBlocker( std::set<int> signums )
                 sigaddset(&_mask, sig);
             }
             if( pthread_sigmask(SIG_BLOCK, &_mask, &_mask_old) )
-                throw std::runtime_error("pthread_sigmask failed");
+                throw runtime_error("pthread_sigmask failed");
             _active = true;
         }
     }
@@ -66,15 +66,15 @@ SignalBlocker::~SignalBlocker()
 #endif /* USE_SIGNAL_BLOCKER_ */
 
 void
-debug_out(std::string tag, std::string message, std::ostream& out)
+debug_out(string tag, string message, ostream& out)
 {
-#ifdef DEBUG
-    static std::mutex mtx;
-    std::lock_guard<std::mutex> _(mtx);
-    out<< std::setw(20) << std::left << tag << ' '
-       << std::setw(20) << std::left << this_thread::get_id() << ' '
+#ifdef DEBUG_VERBOSE_1_
+    static mutex mtx;
+    lock_guard<mutex> _(mtx);
+    out<< setw(20) << left << tag << ' '
+       << setw(20) << left << this_thread::get_id() << ' '
        << message << endl;
-#endif
+#endif /* DEBUG_VERBOSE_1_ */
 }
 
 

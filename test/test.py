@@ -17,14 +17,16 @@
 
 from platform import system, architecture
 from traceback import print_exc
-from time import strftime, perf_counter
-import argparse
+from time import strftime, perf_counter, sleep
+import argparse, gc, os
 
-from tdma_api import get, auth, clib
+from tdma_api import get, auth, clib, stream
 
 SYSTEM = system()
 ARCH = architecture()[0]
-LIBRARY_PATH = "../Release/libTDAmeritradeAPI.so"
+TEST_DIR = os.path.dirname(os.path.realpath(__file__))
+LIBRARY_PATH = os.path.join(TEST_DIR, "../Release/libTDAmeritradeAPI.so")
+#LIBRARY_PATH = os.path.join(TEST_DIR, "../Debug/libTDAmeritradeAPI.so")
 if SYSTEM == 'Windows':
     if '64' in ARCH:
         LIBRARY_PATH = "../vsbuild/x64/Release/TDAmeritradeAPI.dll"
@@ -37,8 +39,6 @@ parser.add_argument("credentials_path", type=str,
                     help="path of encrypted credentials file")
 parser.add_argument("credentials_password", type=str,
                     help="password to decrypt credentials files")
-args = parser.parse_args()
-
             
 def print_title(s):
     l = len(s) + 4
@@ -59,7 +59,7 @@ def test(func, *args):
         raise SystemExit()        
                  
                                
-def init():
+def init():    
     if not clib._lib:
         if not clib.init(LIBRARY_PATH):        
             raise clib.LibraryNotLoaded()   
@@ -472,17 +472,255 @@ def test_instrument_info_getters(creds):
     assert g.get_query_string() == "78462F103"
     j = g.get()
     print(str(j))    
-      
+
+
+def test_streaming(creds, account_id):
+    
+    QS = stream.QuotesSubscription
+    try:
+        QS( [], (QS.FIELD_SYMBOL, QS.FIELD_BID_PRICE, QS.FIELD_ASK_PRICE))
+        raise Exception("failed to catch exception(1)")
+    except clib.CLibException as e:
+        print("+ successfully caught exception: ", str(e))    
+    try:
+        QS( ("SPY",), [])
+        raise Exception("failed to catch exception(2)")
+    except clib.CLibException as e:
+        print("+ successfully caught exception: ", str(e)) 
+    try:
+        QS( ("SPY",), [100000])
+        raise Exception("failed to catch exception(3)")
+    except clib.CLibException as e:
+        print("+ successfully caught exception: ", str(e)) 
+                
+  
+    symbols = ('SPY', 'QQQ')    
+    fields = (QS.FIELD_SYMBOL, QS.FIELD_BID_PRICE, QS.FIELD_ASK_PRICE)                
+    qs = QS(symbols, fields)
+    assert qs.get_command() == "SUBS"
+    assert qs.get_service() == stream.SERVICE_TYPE_QUOTE
+    assert set(qs.get_symbols()) == set(symbols)
+    assert set(qs.get_fields()) == set(fields)
+    
+    OS = stream.OptionsSubscription
+    symbols = ["SPY_081718P286"]
+    fields = [OS.FIELD_DELTA, OS.FIELD_GAMMA, OS.FIELD_VEGA, OS.FIELD_VOLATILITY]
+    os = OS(symbols, fields)
+    assert os.get_service() == stream.SERVICE_TYPE_OPTION
+    assert set(os.get_symbols()) == set(symbols)
+    assert set(os.get_fields()) == set(fields)    
+    
+    LOFS = stream.LevelOneFuturesSubscription
+    symbols = ('/ES', '/GC')
+    fields = (LOFS.FIELD_ASK_SIZE, LOFS.FIELD_BID_SIZE, LOFS.FIELD_FUTURE_EXPIRATION_DATE)
+    lofs = LOFS(symbols, fields)
+    assert lofs.get_service() == stream.SERVICE_TYPE_LEVELONE_FUTURES
+    assert set(lofs.get_symbols()) == set(symbols)
+    assert set(lofs.get_fields()) == set(fields)  
+    
+    LOFXS = stream.LevelOneForexSubscription
+    symbols = ('EUR/USD',)
+    fields = (LOFXS.FIELD_DIGITS, LOFXS.FIELD_TRADING_HOURS)
+    lofxs = LOFXS(symbols, fields)
+    assert lofxs.get_service() == stream.SERVICE_TYPE_LEVELONE_FOREX
+    assert set(lofxs.get_symbols()) == set(symbols)
+    assert set(lofxs.get_fields()) == set(fields)          
+    
+    LOFOS = stream.LevelOneFuturesOptionsSubscription
+    symbols = ('/ESZ92800')
+    fields = (LOFOS.FIELD_HIGH_PRICE, LOFOS.FIELD_LOW_PRICE)
+    lofos = LOFOS(symbols, fields)
+    assert lofos.get_service() == stream.SERVICE_TYPE_LEVELONE_FUTURES_OPTIONS
+    assert set(lofos.get_symbols()) == set(symbols)
+    assert set(lofos.get_fields()) == set(fields)  
+    
+    NHS = stream.NewsHeadlineSubscription
+    symbols = ("SPY", "GOOG", "TSLA")
+    fields = (NHS.FIELD_HEADLINE, NHS.FIELD_STORY_DATETIME, NHS.FIELD_STORY_SOURCE)
+    nhs = NHS(symbols, fields)
+    assert nhs.get_service() == stream.SERVICE_TYPE_NEWS_HEADLINE
+    assert set(nhs.get_symbols()) == set(symbols)
+    assert set(nhs.get_fields()) == set(fields)  
+    
+    CES = stream.ChartEquitySubscription
+    symbols = ("SPY",)
+    fields = (CES.FIELD_CHART_TIME, CES.FIELD_CLOSE_PRICE, CES.FIELD_VOLUME)
+    ces = CES(symbols, fields)
+    assert ces.get_service() == stream.SERVICE_TYPE_CHART_EQUITY
+    assert set(ces.get_symbols()) == set(symbols)
+    assert set(ces.get_fields()) == set(fields)  
+    
+    CFS = stream.ChartFuturesSubscription
+    symbols = ["/ZN"]
+    fields = (CFS.FIELD_HIGH_PRICE,)
+    cfs = CFS(symbols,fields)
+    assert cfs.get_service() == stream.SERVICE_TYPE_CHART_FUTURES
+    assert set(cfs.get_symbols()) == set(symbols)
+    assert set(cfs.get_fields()) == set(fields)  
+    
+    COS = stream.ChartOptionsSubscription
+    symbols = ("SPY_081718C276",)
+    fields = (COS.FIELD_LOW_PRICE,)
+    cos = COS(symbols, fields)
+    assert cos.get_service() == stream.SERVICE_TYPE_CHART_OPTIONS
+    assert set(cos.get_symbols()) == set(symbols)
+    assert set(cos.get_fields()) == set(fields)  
+    
+    TES = stream.TimesaleEquitySubscription
+    symbols = ("EEM",)
+    fields = (TES.FIELD_SYMBOL, TES.FIELD_LAST_PRICE)
+    tes = TES(symbols,fields)
+    assert tes.get_service() == stream.SERVICE_TYPE_TIMESALE_EQUITY
+    assert set(tes.get_symbols()) == set(symbols)
+    assert set(tes.get_fields()) == set(fields)  
+    
+    TFS = stream.TimesaleFuturesSubscription
+    symbols = ("/ES", "/GC")
+    tfs = TFS(symbols, fields)
+    assert tfs.get_service() == stream.SERVICE_TYPE_TIMESALE_FUTURES
+    assert set(tfs.get_symbols()) == set(symbols)
+    assert set(tfs.get_fields()) == set(fields)
+    
+    TOS = stream.TimesaleOptionsSubscription
+    symbols = ("SPY_081718C276",)  
+    tos = TOS(symbols, fields)
+    assert tos.get_service() == stream.SERVICE_TYPE_TIMESALE_OPTIONS
+    assert set(tos.get_symbols()) == set(symbols)
+    assert set(tos.get_fields()) == set(fields) 
+    
+    NAS = stream.NasdaqActivesSubscription        
+    nas = NAS(NAS.DURATION_TYPE_ALL_DAY)
+    assert nas.get_service() == stream.SERVICE_TYPE_ACTIVES_NASDAQ    
+    assert nas.get_command() == "SUBS"
+    assert nas.get_duration() == NAS.DURATION_TYPE_ALL_DAY
+    
+    NYAS = stream.NYSEActivesSubscription    
+    nyas = NYAS(NAS.DURATION_TYPE_MIN_1)
+    assert nyas.get_service() == stream.SERVICE_TYPE_ACTIVES_NYSE   
+    assert nyas.get_command() == "SUBS"
+    assert nyas.get_duration() == NYAS.DURATION_TYPE_MIN_1
+    
+    OCAS = stream.OTCBBActivesSubscription
+    ocas = OCAS(OCAS.DURATION_TYPE_MIN_60)
+    assert ocas.get_service() == stream.SERVICE_TYPE_ACTIVES_OTCBB   
+    assert ocas.get_command() == "SUBS"
+    assert ocas.get_duration() == OCAS.DURATION_TYPE_MIN_60
+    
+    OPAS = stream.OptionActivesSubscription
+    opas = OPAS(OPAS.VENUE_TYPE_PUTS_DESC, OPAS.DURATION_TYPE_MIN_30)
+    assert opas.get_service() == stream.SERVICE_TYPE_ACTIVES_OPTIONS
+    assert opas.get_command() == "SUBS"
+    assert opas.get_duration() == OPAS.DURATION_TYPE_MIN_30   
         
+        
+    def callback( cb, ss, ts, msg):
+        print("--CALLBACK" + "-" * 70)
+        print("  Type      ::", stream.callback_type_to_str(cb).ljust(16))
+        print("  Service   ::", stream.service_type_to_str(ss).ljust(25))
+        print("  TimeStamp ::", str(ts))
+        print("  Msg/Data  ::", str(msg))
+        print("-" * 80)
+
+    _pause = lambda s : print("pause for %f sec..." % s) or sleep(s)
+
+    session = stream.StreamingSession(creds, account_id, callback)
+    assert not session.is_active()
+    assert session.get_qos() == stream.QOS_FAST
+    
+    try:
+        session.start()
+        raise Exception("failed to catch exception(4)")
+    except ValueError as e:
+        print("+ successfully caught exception: ", str(e))
+    try:
+        class Dummy(stream._StreamingSubscription):
+            def __init__(self):
+                self._obj = None
+        session.start(Dummy(), qs)
+        raise Exception("failed to catch exception(5)")
+    except TypeError as e:
+        print("+ successfully caught exception: ", str(e))    
+    try:       
+        session.start(os,1,2,3)
+        raise Exception("failed to catch exception(6)")
+    except TypeError as e:
+        print("+ successfully caught exception: ", str(e)) 
+ 
+    assert all(session.start(qs))    
+    _pause(1)
+    
+    try:
+        session.start(os)
+        raise Exception("failed to catch exception(7)")
+    except clib.CLibException as e:
+        print("+ successfully caught exception: ", str(e))    
+    
+    assert all(session.add_subscriptions(os))
+    _pause(1)
+    
+    assert all(session.add_subscriptions(lofs))
+    _pause(1)
+    
+    assert all(session.add_subscriptions(lofxs, lofos))
+    assert session.set_qos(stream.QOS_REAL_TIME)
+    assert session.get_qos() == stream.QOS_REAL_TIME
+    
+    ## EXC THROWN BEFORE HERE (at least never got through C++ constructor)
+    session2 = stream.StreamingSession(creds, account_id, callback)
+    
+    try:
+        session2.start(nhs)
+        raise Exception("failed to catch exception(8)")
+    except clib.CLibException as e:
+        print("+ successfully caught exception: ", str(e))
+    
+    _pause(10)
+    print("... pause done")
+    session.stop()
+    
+    assert not session.is_active()
+    assert not session2.is_active()
+    _pause(3)
+    
+    assert all(session2.start(nhs, ces, cfs, cos))
+    assert session2.is_active()
+    
+    try:
+        session.add_subscriptions(tes, tfs)
+        raise Exception("failed to catch exception(9)")
+    except clib.CLibException as e:
+        print("+ successfully caught exception: ", str(e))
+    try:
+        session.start(tes, tfs)
+        raise Exception("failed to catch exception(10)")
+    except clib.CLibException as e:
+        print("+ successfully caught exception: ", str(e))
+        
+    _pause(3)
+    assert all(session2.add_subscriptions(tes, tfs, tos, nas, nyas, ocas, opas))
+    _pause(10)
+    
+    session2.stop()
+    assert not session2.is_active()
+    
+    session = None
+    session2 = None
+    _pause(.5)
+    gc.collect()
+    _pause(1)
+                
 if __name__ == '__main__':
     print("\n*** TDAmeritradeAPI test.py ***")
     print("+", strftime("%m/%d/%Y %H:%M:%S"))
     print("+", SYSTEM)
     print("+", ARCH)
+    print("+ PID:", os.getpid())
+    args = parser.parse_args()
     test(init)
     print_title("load credentials") 
     with auth.CredentialsManager(args.credentials_path, \
-                                  args.credentials_password, True) as cm:    
+                                  args.credentials_password, True) as cm:  
+        test(test_streaming, cm.credentials, args.account_id)                       
         test(test_quote_getters, cm.credentials)
         test(test_throttling, cm.credentials)
         test(test_quotes_getters, cm.credentials)
@@ -498,7 +736,8 @@ if __name__ == '__main__':
         test(test_subscription_keys_getter, cm.credentials, args.account_id)                       
         test(test_transaction_history_getters, cm.credentials, args.account_id)
         test(test_individual_transaction_history_getters, cm.credentials, 
-             args.account_id)
+        args.account_id)
         test(test_user_principals_getters, cm.credentials)
         test(test_instrument_info_getters, cm.credentials)
+        
         

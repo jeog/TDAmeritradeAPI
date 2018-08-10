@@ -16,6 +16,7 @@
     - [Destroy](#destroy-1)
 - [Example Usage C++](#example-usage-c)
 - [Example Usage C](#example-usage-c-1)
+- [Example Usage Python](#example-usage-python)
 - [Subscription Classes](#subscription-classes)
     - [QuotesSubscription](#quotessubscription)  
     - [OptionsSubscription](#optionssubscription)  
@@ -54,8 +55,9 @@ C uses a similar object-oriented approach where methods are passed a pointer to 
 
 ### StreamingSession
 
-To create a new session the authenticated user will pass their Credentials struct and account id (as they did for the [HTTPS Get Interface](README_GET.md)), a callback function, and some optional timeout and output args.
+To create a new session the authenticated user will pass their Credentials struct and account id (as they did for the [HTTPS Get Interface](README_GET.md)), a callback function, and some optional timeout args.
 
+***Note - each time a session is created a HTTPS/Get request for the account's streamer information is made.***
 ```
 [C++]
 static shared_ptr<StreamingSession>
@@ -64,8 +66,7 @@ StreamingSession::Create( Credentials& creds,
                           streaming_cb_ty callback,
                           std::chrono::milliseconds connect_timeout=DEF_CONNECT_TIMEOUT,
                           std::chrono::milliseconds listening_timeout=DEF_LISTENING_TIMEOUT,
-                          std::chrono::milliseconds subscribe_timeout=DEF_SUBSCRIBE_TIMEOUT,
-                          bool request_response_to_cout = false );
+                          std::chrono::milliseconds subscribe_timeout=DEF_SUBSCRIBE_TIMEOUT );
 
     creds                    ::  credentials struct received from RequestAccessToken 
                                  / LoadCredentials / CredentialsManager.credentials
@@ -74,9 +75,7 @@ StreamingSession::Create( Credentials& creds,
                                  out etc. (see below)
     connect_timeout          ::  milliseconds to wait for a connection
     listening_timeout        ::  milliseconds to wait for any response from server
-    subscribe_timeout        ::  milliseconds to wait for a subscription response ( see below)
-    request_response_to_cout ::  print login/logout/subscription response info to 
-                                 stdout when received
+    subscribe_timeout        ::  milliseconds to wait for a subscription response ( see below)   
 ```
 
 
@@ -109,8 +108,7 @@ StreamingSession_CreateEx( struct Credentials *pcreds,
                            streaming_cb_ty callback,
                            unsigned long connect_timeout,
                            unsigned long listening_timeout,
-                           unsigned long subscribe_timeout,
-                           int request_response_to_cout,
+                           unsigned long subscribe_timeout                         
                            StreamingSession_C *psession ); // <-populated on success
     ...
     returns -> 0 on success, error code on failure
@@ -137,12 +135,13 @@ certain values to native types.
     ```
     [C++]
     enum class StreamingCallbackType : int {
-        listening_start, /* 0 */
-        listening_stop,  /* 1 */
-        data,            /* 2 */
-        notify,          /* 3 */
-        timeout,         /* 4 */
-        error            /* 5 */
+        listening_start,  /* 0 */
+        listening_stop,   /* 1 */
+        data,             /* 2 */
+        request_response, /* 3 */
+        notify,           /* 4 */
+        timeout,          /* 5 */
+        error             /* 6 */
     }
 
     [C]
@@ -150,19 +149,18 @@ certain values to native types.
         StreamingCallbackType_listening_start,
         StreamingCallbackType_listening_stop,
         StreamingCallbackType_data,
+        StreamingCallbackType_request_response,
         StreamingCallbackType_notify,
         StreamingCallbackType_timeout,
         StreamingCallbackType_error
     }
     ```
 
-    - ***```listening_start``` ```listening_stop```*** - are simple signals about the 
-    listening state of the session and *should* occur after you call ```start```
-    and ```stop```, respectively
+    - ***```listening_start``` ```listening_stop```*** - are simple signals about the listening state of the session and *should* occur after you call ```start``` and ```stop```, respectively.
 
-    - ***```error```*** - indicates some type of error/exception state that has propagated
-    up from the listening thread and caused it to close. The 4th arg will be a json string
-    of the form ```{{"error": <error message>}}```
+    - ***```request_response```*** - indicates a response from the server for a particular request e.g login, set QOS, subscribe. The 4th arg with contain a json string of relevant fields of the form ```{"request_id":<id>,"command":<command>, "code":<code> , "message":<message>}```
+
+    - ***```error```*** - indicates some type of error/exception state that has propagated up from the listening thread and caused it to close. The 4th arg will be a json string of the form ```{"error": <error message>}```
 
     - ***```timeout```*** - indicates the listening thread hasn't received a message in 
     *listening_timeout* milliseconds (defaults to 30000) and has shutdown. You'll need 
@@ -177,39 +175,42 @@ certain values to native types.
 2. The second argument will contain the service type enum of the data as an int (for ```data``` callback type only):
 
     ```
-    DECL_C_CPP_TDMA_ENUM(StreamerServiceType, 1, 17,
-        BUILD_ENUM_NAME( NONE),                    /* 0 */
-        BUILD_ENUM_NAME( ADMIN),                   /* 1 */
-        BUILD_ENUM_NAME( ACTIVES_NASDAQ),          /* 2 */
-        BUILD_ENUM_NAME( ACTIVES_NYSE),            /* 3 */
-        BUILD_ENUM_NAME( ACTIVES_OTCBB),           /* 4 */
-        BUILD_ENUM_NAME( ACTIVES_OPTIONS),         /* 5 */
-        BUILD_ENUM_NAME( CHART_EQUITY),            /* 6 */
-        BUILD_ENUM_NAME( CHART_FUTURES),           /* 7 */
-        BUILD_ENUM_NAME( CHART_OPTIONS),           /* 8 */
-        BUILD_ENUM_NAME( QUOTE),                   /* 9 */
-        BUILD_ENUM_NAME( LEVELONE_FUTURES),        /* 10 */
-        BUILD_ENUM_NAME( LEVELONE_FOREX),          /* 11 */
-        BUILD_ENUM_NAME( LEVELONE_FUTURES_OPTIONS),/* 12 */
-        BUILD_ENUM_NAME( OPTION),                  /* 13 */
-        BUILD_ENUM_NAME( NEWS_HEADLINE),           /* 14 */
-        BUILD_ENUM_NAME( TIMESALE_EQUITY),         /* 15 */
-        BUILD_ENUM_NAME( TIMESALE_FUTURES),        /* 16 */
-        BUILD_ENUM_NAME( TIMESALE_OPTIONS)         /* 17 */
-        //BUILD_ENUM_NAME( CHART_FOREX),           /* NOT WORKING */
-        //BUILD_ENUM_NAME( TIMESALE_FOREX),        /* NOT WORKING */
-        //BUILD_ENUM_NAME( CHART_HISTORY_FUTURES), /* NOT IMPLEMENTED YET */
-        //BUILD_ENUM_NAME( ACCT_ACTIVITY),         /* NOT IMPLEMENTED YET */
-        //BUILD_ENUM_NAME( FOREX_BOOK,             /* NOT DOCUMENTED */
-        //BUILD_ENUM_NAME( FUTURES_BOOK),          /* NOT DOCUMENTED */
-        //BUILD_ENUM_NAME( LISTED_BOOK),           /* NOT DOCUMENTED */
-        //BUILD_ENUM_NAME( NASDAQ_BOOK),           /* NOT DOCUMENTED */
-        //BUILD_ENUM_NAME( OPTIONS_BOOK),          /* NOT DOCUMENTED */
-        //BUILD_ENUM_NAME( FUTURES_OPTION_BOOK),   /* NOT DOCUMENTED */
-        //BUILD_ENUM_NAME( NEWS_STORY),            /* NOT DOCUMENTED */
-        //BUILD_ENUM_NAME( NEWS_HEADLINE_LIST),    /* NOT DOCUMENTED */
-        //BUILD_ENUM_NAME( STREAMER_SERVER)        /* OLD API ? */
-        );
+	DECL_C_CPP_TDMA_ENUM(StreamerServiceType, 1, 19,
+	    BUILD_ENUM_NAME( NONE ),
+	    BUILD_ENUM_NAME( QUOTE ),
+	    BUILD_ENUM_NAME( OPTION ),
+	    BUILD_ENUM_NAME( LEVELONE_FUTURES ),
+	    BUILD_ENUM_NAME( LEVELONE_FOREX ),
+	    BUILD_ENUM_NAME( LEVELONE_FUTURES_OPTIONS ),
+	    BUILD_ENUM_NAME( NEWS_HEADLINE ),
+	    BUILD_ENUM_NAME( CHART_EQUITY ),
+	    BUILD_ENUM_NAME( CHART_FOREX ), /* NOT WORKING */
+	    BUILD_ENUM_NAME( CHART_FUTURES ),
+	    BUILD_ENUM_NAME( CHART_OPTIONS ),
+	    BUILD_ENUM_NAME( TIMESALE_EQUITY ),
+	    BUILD_ENUM_NAME( TIMESALE_FOREX ), /* NOT WORKING */
+	    BUILD_ENUM_NAME( TIMESALE_FUTURES ),
+	    BUILD_ENUM_NAME( TIMESALE_OPTIONS ),
+	    BUILD_ENUM_NAME( ACTIVES_NASDAQ ),
+	    BUILD_ENUM_NAME( ACTIVES_NYSE ),
+	    BUILD_ENUM_NAME( ACTIVES_OTCBB ),
+	    BUILD_ENUM_NAME( ACTIVES_OPTIONS ),
+	    BUILD_ENUM_NAME( ADMIN ) // 
+	    /* NOT IMPLEMENTED YET */
+	    //BUILD_ENUM_NAME( CHART_HISTORY_FUTURES),
+	    //BUILD_ENUM_NAME( ACCT_ACTIVITY),
+	    /* NOT DOCUMENTED BY TDMA */
+	    //BUILD_ENUM_NAME( FOREX_BOOK,
+	    //BUILD_ENUM_NAME( FUTURES_BOOK),
+	    //BUILD_ENUM_NAME( LISTED_BOOK),
+	    //BUILD_ENUM_NAME( NASDAQ_BOOK),
+	    //BUILD_ENUM_NAME( OPTIONS_BOOK),
+	    //BUILD_ENUM_NAME( FUTURES_OPTION_BOOK),
+	    //BUILD_ENUM_NAME( NEWS_STORY),
+	    //BUILD_ENUM_NAME( NEWS_HEADLINE_LIST),
+	    /* OLD API ? */
+	    //BUILD_ENUM_NAME( STREAMER_SERVER)
+	    );
     ```
 
     These macros expand like so:
@@ -232,17 +233,18 @@ certain values to native types.
 3. The third argument is a timestamp from the server in milliseconds since the epoch that
 is (currently) only relevant for ```data``` callbacks. 
 
-4. The fourth argument is a json string containing the actual raw data returned from the server. C++ users can use ```json::parse(string(data))``` on it. Its json structure will be dependent on the service type. In order to understand how to parse the object you'll need to refer to the relevant section in [Ameritrade's Streaming documentation](https://developer.tdameritrade.com/content/streaming-data) and the [json library documentation](https://github.com/nlohmann/json).
+4. The fourth argument is a json string containing admin/error info OR the actual raw data returned from the server. C++ users can use ```json::parse(string(data))``` on it. Its json structure will be dependent on the callback and service type. In order to understand how to parse the object you'll need to refer to the relevant section in [Ameritrade's Streaming documentation](https://developer.tdameritrade.com/content/streaming-data) and the [json library documentation](https://github.com/nlohmann/json).
 
 ##### Summary
-StreamingCallbackType   | StreamingService  | timestamp   | json 
-------------------------|-------------------|-------------|-----
+StreamingCallbackType | StreamingService  | timestamp   | json 
+----------------------|-------------------|-------------|-----
 ```listening_start``` | ```NONE```      | 0           | {}
 ```listening_stop```  | ```NONE```      | 0           | {}
-```data```            | *YES*             | *YES*       | *StreamingService dependent*
+```data```            | *YES*           | *YES*       | *StreamingService dependent*
+```request_response```| *YES*           | *YES*       | {"request_id":12, "command":"SUBS", "code":0, "message":"msg from server"}
 ```notify```          | ```NONE```      | 0           | *Message Type dependent*
 ```timeout```         | ```NONE```      | 0           | {}
-```error```           | ```NONE```      | 0           | {{"error", "error message"}}
+```error```           | ```NONE```      | 0           | {"error":"error message"}
 
 #### Start
 
@@ -354,7 +356,7 @@ StreamingSession::set_qos(const QOSType& qos);
 
 [C+]
 inline int
-StreamingSession_SetQOS( StreamingSession_C *psession, QOSType qos);
+StreamingSession_SetQOS( StreamingSession_C *psession, QOSType qos, int *result);
 ```
 ```
 [C++]
@@ -751,6 +753,9 @@ Using the proxy object after this point results in ***UNDEFINED BEHAVIOR***.
 
     ...
 ```
+
+### Example Usage [Python]
+**TODO**
 
 ### Subscription Classes
 - - -
