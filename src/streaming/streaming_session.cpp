@@ -855,7 +855,7 @@ StreamingSessionImpl::set_qos(const QOSType& qos)
         };
 
     AdminSubscriptionImpl sub(
-        AdminCommandType::QOS, {{"qoslevel", to_string(qos)}}
+        AdminCommandType::QOS, {{"qoslevel", to_string(static_cast<int>(qos))}}
     );
     _subscribe( {sub}, cb );
 

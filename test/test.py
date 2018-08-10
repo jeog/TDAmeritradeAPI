@@ -24,14 +24,20 @@ from tdma_api import get, auth, clib, stream
 
 SYSTEM = system()
 ARCH = architecture()[0]
-TEST_DIR = os.path.dirname(os.path.realpath(__file__))
-LIBRARY_PATH = os.path.join(TEST_DIR, "../Release/libTDAmeritradeAPI.so")
-#LIBRARY_PATH = os.path.join(TEST_DIR, "../Debug/libTDAmeritradeAPI.so")
+
+CONFIG_DIR = "Release/"
+#CONFIG_DIR = "Debug/"
+REL_LIB_PATH = os.path.join("../", CONFIG_DIR, "libTDAmeritradeAPI.so")
 if SYSTEM == 'Windows':
     if '64' in ARCH:
-        LIBRARY_PATH = "../vsbuild/x64/Release/TDAmeritradeAPI.dll"
+        REL_LIB_PATH = os.path.join("../vsbuild/x64/", CONFIG_DIR,
+                                    "TDAmeritradeAPI.dll")
     else: 
-        LIBRARY_PATH = "../vsbuild/Win32/Release/TDAmeritradeAPI.dll"
+        REL_LIB_PATH = os.path.join("../vsbuild/Win32/", CONFIG_DIR,
+                                    "TDAmeritradeAPI.dll")
+
+TEST_DIR = os.path.dirname(os.path.realpath(__file__))
+LIBRARY_PATH = os.path.join(TEST_DIR, REL_LIB_PATH)
         
 parser = argparse.ArgumentParser("test tdma_api")
 parser.add_argument("account_id", type=str, help="account id" )
@@ -61,6 +67,7 @@ def test(func, *args):
                                
 def init():    
     if not clib._lib:
+        print("+ try to manually load: ", LIBRARY_PATH)
         if not clib.init(LIBRARY_PATH):        
             raise clib.LibraryNotLoaded()   
       
