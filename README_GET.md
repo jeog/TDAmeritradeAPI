@@ -36,10 +36,14 @@
 #### Overview
 
 ```
+[C, C++]
 #include "tdma_api_get.h"
 
 [C++]
 using namespace tdma;
+
+[Python]
+from tdma_api import get
 ```
 
 The C++ Get Interface consists of 'Getter' objects that derive from ```APIGetter```, and related convenience functions. ```APIGetter``` is built on ```conn::CurlConnection```: an object-oriented wrapper to libcurl  in curl_connect.h/cpp.

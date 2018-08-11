@@ -91,11 +91,11 @@ QOS_DELAYED = 5
 
 CALLBACK_TYPE_LISTENING_START = 0
 CALLBACK_TYPE_LISTENING_STOP = 1
-CALLBACK_TYPE_LISTENING_DATA = 2
-CALLBACK_TYPE_LISTENING_REQ_RESP = 3
-CALLBACK_TYPE_LISTENING_NOTIFY = 4
-CALLBACK_TYPE_LISTENING_TIMEOUT = 5
-CALLBACK_TYPE_LISTENING_ERROR = 6
+CALLBACK_TYPE_DATA = 2
+CALLBACK_TYPE_REQUES_RESPONSE = 3
+CALLBACK_TYPE_NOTIFY = 4
+CALLBACK_TYPE_TIMEOUT = 5
+CALLBACK_TYPE_ERROR = 6
 
 
 def service_type_to_str(service):
@@ -148,10 +148,7 @@ class StreamingSession:
     
     When done call .stop() to logout and close the connection.
     
-        def __init__( self, 
-                      creds, 
-                      account_id, 
-                      callback, 
+        def __init__( self, creds, account_id, callback, 
                       connect_timeout=DEF_CONNECT_TIMEOUT,
                       listening_timeout=DEF_LISTENING_TIMEOUT,
                       subscribe_timeout=DEF_SUBSCRIBE_TIMEOUT ):
@@ -167,10 +164,7 @@ class StreamingSession:
         
         ALL METHODS THROW -> LibraryNotLoaded, CLibException
     """
-    def __init__( self, 
-                  creds, 
-                  account_id, 
-                  callback, 
+    def __init__( self, creds, account_id, callback, 
                   connect_timeout=DEF_CONNECT_TIMEOUT,
                   listening_timeout=DEF_LISTENING_TIMEOUT,
                   subscribe_timeout=DEF_SUBSCRIBE_TIMEOUT ):                

@@ -39,10 +39,14 @@
 ### Overview
 
 ```
+[C, C++]
 #include "tdma_api_streaming.h"
 
 [C++]
 using namespace tdma;
+
+[Python]
+from tdma_api import stream
 ```
 
 Streaming functionality in C++ is provided via ```StreamingSession``` which acts
@@ -52,30 +56,32 @@ Once created, streaming objects are passed subscription objects for the particul
 
 C uses a similar object-oriented approach where methods are passed a pointer to C proxy objects that are manually created and destroyed by the client.
 
+The Python interface(```tdma_api/stream.py```) uses ```stream.StreamingSession``` which mirrors C++ almost exactly. (see below)
 
 ### StreamingSession
 
-To create a new session the authenticated user will pass their Credentials struct and account id (as they did for the [HTTPS Get Interface](README_GET.md)), a callback function, and some optional timeout args.
+To create a new session the authenticated user will pass their Credentials object and account id string (as they did for the [HTTPS Get Interface](README_GET.md)), a callback function, and some optional timeout args.
 
-***Note - each time a session is created a HTTPS/Get request for the account's streamer information is made.***
+***Note - each time a session is created a single HTTPS/Get request for the account's streamer information is made.***
 ```
 [C++]
 static shared_ptr<StreamingSession>
-StreamingSession::Create( Credentials& creds,
-                          const std::string& account_id,
-                          streaming_cb_ty callback,
-                          std::chrono::milliseconds connect_timeout=DEF_CONNECT_TIMEOUT,
-                          std::chrono::milliseconds listening_timeout=DEF_LISTENING_TIMEOUT,
-                          std::chrono::milliseconds subscribe_timeout=DEF_SUBSCRIBE_TIMEOUT );
+StreamingSession::Create( 
+        Credentials& creds,
+        const std::string& account_id,
+        streaming_cb_ty callback,
+        std::chrono::milliseconds connect_timeout=DEF_CONNECT_TIMEOUT,
+        std::chrono::milliseconds listening_timeout=DEF_LISTENING_TIMEOUT,
+        std::chrono::milliseconds subscribe_timeout=DEF_SUBSCRIBE_TIMEOUT 
+        );
 
-    creds                    ::  credentials struct received from RequestAccessToken 
-                                 / LoadCredentials / CredentialsManager.credentials
-    account_id               ::  id string of account to use
-    callback                 ::  callback for when session receives data, times
-                                 out etc. (see below)
-    connect_timeout          ::  milliseconds to wait for a connection
-    listening_timeout        ::  milliseconds to wait for any response from server
-    subscribe_timeout        ::  milliseconds to wait for a subscription response ( see below)   
+    creds             ::  credentials struct received from RequestAccessToken 
+                          / LoadCredentials / CredentialsManager.credentials
+    account_id        ::  id string of account to use
+    callback          ::  callback for when notifications, data etc. 
+    connect_timeout   ::  milliseconds to wait for a connection
+    listening_timeout ::  milliseconds to wait for any response from server
+    subscribe_timeout ::  milliseconds to wait for a subscription response 
 ```
 
 
@@ -114,15 +120,26 @@ StreamingSession_CreateEx( struct Credentials *pcreds,
     returns -> 0 on success, error code on failure
 ```
 
+The Python interface uses the ```stream.StreamingSession``` class directly.
+```
+class StreamingSession:
+    def __init__( self, creds, account_id, callback, 
+                  connect_timeout=DEF_CONNECT_TIMEOUT,
+                  listening_timeout=DEF_LISTENING_TIMEOUT,
+                  subscribe_timeout=DEF_SUBSCRIBE_TIMEOUT ):
+
+```
+
+
 #### Callback 
 
-The primary means of signaling changes in session state AND returning data to the user is via the callback function. As you'll see, the current design is a bit confusing and error prone so expect changes. 
+The primary means of signaling changes in session state AND returning data to the user is the callback function. As you'll see, the current design is a bit confusing and error prone so expect changes. 
 
 ```
 typedef void(*streaming_cb_ty)(int, int, unsigned long long, const char*);
 ```
 
-- **DO NOT** call back into StreamingSession from inside the callback  
+- **DO NOT** call into StreamingSession(i.e use its methods) from inside the callback  
 - **DO NOT** block the callback thread for extended periods  
 - **DO NOT** assume exceptions will get handled higher up (assume program termination)  
 
@@ -154,25 +171,31 @@ certain values to native types.
         StreamingCallbackType_timeout,
         StreamingCallbackType_error
     }
+
+    [Python]
+    CALLBACK_TYPE_LISTENING_START = 0
+    CALLBACK_TYPE_LISTENING_STOP = 1
+    CALLBACK_TYPE_DATA = 2
+    CALLBACK_TYPE_REQUES_RESPONSE = 3
+    CALLBACK_TYPE_NOTIFY = 4
+    CALLBACK_TYPE_TIMEOUT = 5
+    CALLBACK_TYPE_ERROR = 6
     ```
 
     - ***```listening_start``` ```listening_stop```*** - are simple signals about the listening state of the session and *should* occur after you call ```start``` and ```stop```, respectively.
 
-    - ***```request_response```*** - indicates a response from the server for a particular request e.g login, set QOS, subscribe. The 4th arg with contain a json string of relevant fields of the form ```{"request_id":<id>,"command":<command>, "code":<code> , "message":<message>}```
+    - ***```request_response```*** - indicates a response from the server for a particular request e.g LOGIN or set QOS. The 4th arg will contain a json string of relevant fields of the form ```{"request_id":<id>,"command":<command>, "code":<code> , "message":<message>}```
 
-    - ***```error```*** - indicates some type of error/exception state that has propagated up from the listening thread and caused it to close. The 4th arg will be a json string of the form ```{"error": <error message>}```
+    - ***```error```*** - indicates some type of error/exception state has propagated up from the listening thread and caused it to close. The 4th arg will be a json string of the form ```{"error": <error message>}```
 
-    - ***```timeout```*** - indicates the listening thread hasn't received a message in 
-    *listening_timeout* milliseconds (defaults to 30000) and has shutdown. You'll need 
-    to restart the session ***from the original thread*** or destroy it.
+    - ***```timeout```*** - indicates the listening thread hasn't received a message in *listening_timeout* milliseconds (defaults to 30000) and has shutdown. You'll need to restart the session ***from the original thread*** or destroy it.
 
-    - ***```notify```*** - indicates some type of 'urgent' message from the server. The 
-    actual message will be in json form and passed to the 4th arg.
+    - ***```notify```*** - indicates some type of 'urgent' message from the server. The actual message will be in json form and passed to the 4th arg.
 
     - ***```data```*** - will be the bulk of the callbacks and contain the subscribed-to data (see below).
 
 
-2. The second argument will contain the service type enum of the data as an int (for ```data``` callback type only):
+2. The second argument will contain the ```StreamerServiceType``` of the data or server response, as an int:
 
     ```
 	DECL_C_CPP_TDMA_ENUM(StreamerServiceType, 1, 19,
@@ -230,10 +253,36 @@ certain values to native types.
     }
     ```
 
+    Python defines its own constant values:
+
+    ```
+    [Python]
+    SERVICE_TYPE_NONE = 0
+    SERVICE_TYPE_QUOTE = 1
+    SERVICE_TYPE_OPTION = 2
+    SERVICE_TYPE_LEVELONE_FUTURES = 3
+    SERVICE_TYPE_LEVELONE_FOREX = 4
+    SERVICE_TYPE_LEVELONE_FUTURES_OPTIONS = 5
+    SERVICE_TYPE_NEWS_HEADLINE = 6
+    SERVICE_TYPE_CHART_EQUITY = 7
+    #SERVICE_TYPE_CHART_FOREX = 8
+    SERVICE_TYPE_CHART_FUTURES = 9
+    SERVICE_TYPE_CHART_OPTIONS = 10
+    SERVICE_TYPE_TIMESALE_EQUITY = 11
+    #SERVICE_TYPE_TIMESALE_FOREX = 12
+    SERVICE_TYPE_TIMESALE_FUTURES = 13
+    SERVICE_TYPE_TIMESALE_OPTIONS = 14
+    SERVICE_TYPE_ACTIVES_NASDAQ = 15
+    SERVICE_TYPE_ACTIVES_NYSE = 16
+    SERVICE_TYPE_ACTIVES_OTCBB = 17
+    SERVICE_TYPE_ACTIVES_OPTIONS = 18
+    SERVICE_TYPE_ADMIN = 19
+    ```
+
 3. The third argument is a timestamp from the server in milliseconds since the epoch that
 is (currently) only relevant for ```data``` callbacks. 
 
-4. The fourth argument is a json string containing admin/error info OR the actual raw data returned from the server. C++ users can use ```json::parse(string(data))``` on it. Its json structure will be dependent on the callback and service type. In order to understand how to parse the object you'll need to refer to the relevant section in [Ameritrade's Streaming documentation](https://developer.tdameritrade.com/content/streaming-data) and the [json library documentation](https://github.com/nlohmann/json).
+4. The fourth argument is a json string (C/C++) containing admin/error info OR the actual raw data returned from the server. C++ users can use ```json::parse(string(data))``` on it. **The python callback will automatically convert the string to a list, dict, or None via json.loads().** Its json structure will be dependent on the callback and service type. In order to understand how to parse the object you'll need to refer to the relevant section in [Ameritrade's Streaming documentation](https://developer.tdameritrade.com/content/streaming-data) and the [json library documentation](https://github.com/nlohmann/json).
 
 ##### Summary
 StreamingCallbackType | StreamingService  | timestamp   | json 
@@ -250,7 +299,7 @@ StreamingCallbackType | StreamingService  | timestamp   | json
 
 Once a Session is created it needs to be started and different services need to be subscribed to.  Starting a session will automatically try to log the user in using the credentials and account_id information passed.
 
-In order to start two conditions must be met (If not the start call will throw ```StreamingException``` (C++) or return ```TDMA_API_STREAM_ERROR``` (C) ):
+In order to start two conditions must be met (If not the start call will throw ```StreamingException``` (C++), ```clib.CLibException``` (Python) or return ```TDMA_API_STREAM_ERROR``` (C) ):
 1. No other Sessions with the same Primary Account ID can be active. An active session is one that's been started and not stopped. 
 2. It must have at least one subscription. (Subscription objects are explained in the [Subscriptions Section](#subscriptions).)
 
@@ -269,10 +318,15 @@ StreamingSession_Start( StreamingSession_C *psession,
                         StreamingSubscription_C **subs,
                         size_t nsubs,
                         int *results_buffer );
+
+[Python]
+def stream.StreamingSession.start(self, *subscriptions):   
 ```
 
 
 The C++ methods take a single subscription object or a vector of different ones and returns the success/failure state of each subscription in the order they were passed. Other errors result in a ```StreamingException```.
+
+The Python method takes 1 or more subscription objects, returning a list of bools to indicate success/failure of each. Other errors result in a ```clib.CLibException```.
 
 The C method takes an array of subscription proxy objects (cast to their generic 'base' type pointer) and returns the success/failure state of each subscription in a 'results_buffer'
 array. This int array must be allocated by the caller to at least the size of the 'subs' array, or the arg can be set to NULL to ignore results.
@@ -290,11 +344,13 @@ StreamingSession::stop();
 inline int
 StreamingSession_Stop( StreamingSession_C *psession );
 
+[Python]
+def stream.StreamingSession.stop(self):
 ```
 
 #### Add 
 
-Subscriptions can only be added **to a started session**. If you try to add a subscription to a stopped session it will throw ```StreamingException``` (C++) or return ```TDMA_API_STREAM_ERROR``` (C).
+Subscriptions can only be added **to a started session**. If you try to add a subscription to a stopped session it will throw ```StreamingException``` (C++), ```clib.CLibException``` (Python), or return ```TDMA_API_STREAM_ERROR``` (C). The return value(s) or populated results buffer(C) indicate the success/failure of each subscription.
 
 ```
 [C++]
@@ -311,6 +367,9 @@ StreamingSession_AddSubscriptions( StreamingSession_C *psession,
                                    StreamingSubscription_C **subs,
                                    size_t nsubs,
                                    int *results_buffer ); 
+
+[Python]
+def stream.StreamingSession.add_subscriptions(self, *subscriptions):
 ```
 
 You can add multiple subscription instances but instances of the same type ***usually***
@@ -348,6 +407,9 @@ StreamingSession::get_qos() const;
 [C]
 inline int
 StreamingSession_GetQOS( StreamingSession_C *psession, QOSType *qos);
+
+[Python]
+def stream.StreamingSession.get_qos(self):
 ```
 ```
 [C++]
@@ -357,6 +419,9 @@ StreamingSession::set_qos(const QOSType& qos);
 [C+]
 inline int
 StreamingSession_SetQOS( StreamingSession_C *psession, QOSType qos, int *result);
+
+[Python]
+def stream.StreamingSession.set_qos(self, qos):
 ```
 ```
 [C++]
@@ -378,11 +443,19 @@ enum QOSType {
     QOSType_slow,      /* 3000 ms */
     QOSType_delayed    /* 5000 ms */
 };
+
+[Python]
+QOS_EXPRESS = 0 
+QOS_REAL_TIME = 1
+QOS_FAST = 2
+QOS_MODERATE = 3
+QOS_SLOW = 4
+QOS_DELAYED = 5
 ```
 
 #### Destroy
 
-When completely done, the session should be destroyed. The C++ shared_ptr will do this for you(assuming all references are gone). 
+When completely done, the session should be destroyed. The C++ shared_ptr and Python class will do this for you(assuming all references are gone). 
 
 In C you'll need to use:
 ```
@@ -395,8 +468,7 @@ Destruction will stop the session first, logging the user out. Using the proxy o
 
 ### Subscriptions
 
-Subscriptions in C++ are managed using classes that derive from ```StreamingSubscription```.
-The [Subscription Classes section](README_STREAMING.md#subscription-classes) below describes the interfaces for each of the classes.
+Subscriptions in C++ and Python are managed using classes that derive from ```StreamingSubscription``` and ```stream._StreamingSubscription```, respectively. The [Subscription Classes section](README_STREAMING.md#subscription-classes) below describes the interfaces for each of the classes.
 
 Subscriptions in C are managed using proxies(simple C structs) that contain a generic pointer to the underlying C++ subscription object and can be passed to calls that mimic the methods of the underlying C++ object.
 
@@ -417,7 +489,7 @@ Currently there are two basic types of subscription objects:
 - ```TimesaleEquitySubscription```
 - ```TimesaleOptionsSubscription```
 
-These use a combination of security symbols/strings and field numbers representing what type of data to return. These field numbers are found in the 'Field' suffixed enums:
+These use a combination of security symbols/strings and field numbers representing what type of data to return. In C/C++ these field numbers are found in the 'Field' suffixed enums:
 
 - ```QuotesSubscriptionField```
 - ```OptionsSubscriptionField```
@@ -431,8 +503,11 @@ These use a combination of security symbols/strings and field numbers representi
 
 See the [Subscription Classes Section](#subscription-classes) for the subscription interfaces and enum definitions.
 
+In Python these fields are defined in the subscription class (or its base class) and are all of the form FIELD_[].
+
 Some objects share a Field enum. For instance, ```TimesaleEquitySubscription``` and
-```TimesaleOptionsSubscription``` use fields from ```enum TimesaleSubscriptionField```. 
+```TimesaleOptionsSubscription``` use fields from ```enum TimesaleSubscriptionField```. In Python these fields
+are defined in a shared base class. For instance, ```TimesaleEquitySubscription.FIELD_TRADE_TIME``` and ```TimesaleOptionSubscription.FIELD_TRADE_TIME``` are inherited from ```_TimesaleSubscriptionBase```.
 
 To create a subscription you'll pass symbol strings AND values from the appropriate
 enum, e.g:
@@ -454,13 +529,19 @@ QuotesSubscription_Create(const char** symbols,
                           size_t nfields,
                           QuotesSubscription_C *psub); // <-- to be populated on success
 
+[Python]
+class QuotesSubscription(_SubscriptionBySymbolBase):
+    def __init__(self, symbols, fields): 
 ```
 
-The C++ objects derive from ```SubscriptionBySymbolBase``` and expose:
+The C++ and Python objects derive from ```SubscriptionBySymbolBase``` and ```_SubscriptionBySymbolBase```, respectively, and expose:
 ```
 [C++]
 std::set<std::string>
 SubscriptionBySymbolBase::get_symbols() const
+
+[Python]
+def stream._SubscriptionBySymbolBase.get_symbols():
 ```
 
 In C you'll use the appropraitely named call, e.g:
@@ -493,9 +574,11 @@ To access the fields, e.g:
 std::set<FieldType> 
 QuotesSubscription::get_fields() const
 
+[Python]
+def stream._SubscriptionBySymbolBase.get_fields():
 ```
 
-In C you'll use the appropraitely named call, e.g:
+In C you'll use the appropriately named call, e.g:
 ```
 [C]
 int
@@ -540,6 +623,10 @@ int
 OptionActivesSubscription_Create( VenueType venue,
                                   DurationType duration_type,                     
                                   OptionActivesSubscription_C *psub);
+
+[Python]
+class OptionActivesSubscription(_ActivesSubscriptionBase):
+    def __init__(self, venue, duration):
 ```
 
 See the [Subscription Classes Section](#subscription-classes) for more details.
@@ -547,7 +634,7 @@ See the [Subscription Classes Section](#subscription-classes) for more details.
 #### Destroy
 
 When done with a subscription it should be destroyed. This is done automatically
-in C++ by the object's destructor.
+in C++ and Python by the object's destructor.
 
 In C either cast the proxy object to StreamingSubscription_C*  and use the generic 'Destroy' call:
 ```
@@ -755,12 +842,92 @@ Using the proxy object after this point results in ***UNDEFINED BEHAVIOR***.
 ```
 
 ### Example Usage [Python]
-**TODO**
+```
+    import time
+    from tdma_api import clib, auth, stream
+    
+    ...    
+
+    if not clib._lib:
+        clib.init("path/to/lib/libTDAmeritrade.so")
+
+    def callback(cb, ss, ts, msg):
+        cb_str = stream.callback_type_to_str(cb)
+        ss_str = stream.service_type_to_str(ss)
+        print("--CALLBACK" + "-" * 70)
+        print("  Type      ::", cb_str.ljust(16))
+        print("  Service   ::", ss_str.ljust(25))
+        print("  TimeStamp ::", str(ts))
+        if cb == stream.CALLBACK_TYPE_DATA:   
+            print("  Data     ::", ss_str)
+                if type(msg) is dict:
+                    for k, v in msg.items():
+                        print( "   ", k, str(v) )
+                elif type(msg) is list:
+                    for v in msg:
+                        print( "   ", str(k) ) 
+                else:
+                    print( "   ", str(msg) )
+        else:
+            print("  Message  ::", str(msg))
+        print("-" * 80)
+
+    with auth.CredentialManager("path/to/creds/file", "password") as cm:
+        try:
+            # CREATE A SUBSCRIPTION
+            QSUB = stream.QuotesSubscription
+            symbols = ('SPY', 'QQQ', 'IWM')    
+            fields = (QSUB.FIELD_SYMBOL, QSUB.FIELD_BID_PRICE, QSUB.FIELD_ASK_PRICE)
+            qsub = QSUB(symbols, fields)   
+
+            assert set(qsub.get_symbols()) == set(symbols)         
+
+            # CREATE A SESSION
+            session = stream.StreamingSession(cm.credentials, "123456789", callback)
+
+            # START THE SESSION
+            assert session.start(qsub)
+            assert session.is_active()
+
+            # DECREASE THE LATENCY
+            assert session.set_qos(stream.QOS_REAL_TIME)
+            assert session.get_qos() == stream.QOS_REAL_TIME
+            time.sleep(10)
+
+            # CREATE A SECOND SUBSCRIPTION
+            OPSUB = stream.OptionsSubscription
+            symbols = ["SPY_081718C286", "SPY_081718P286"]
+            fields = [OPSUB.FIELD_DELTA, OPSUB.FIELD_GAMMA, OPSUB.FIELD_VEGA]
+            opsub = OPSUB(symbols, fields)
+
+            assert OPSUB.FIELD_DELTA in opsub.get_fields()
+
+            # CREATE A THIRD SUBSCRIPTION
+            ASUB = stream.OptionActivesSubscription
+            asub = ASUB( venue=ASUB.VENUE_TYPE_PUTS_DESC,
+                         duration=ASUB.DURATION_TYPE_MIN_60 )
+
+            assert asub.get_duration() == ASUB.DURATION_TYPE_MIN_60
+
+            # ADD THEM TO THE SESSION
+            assert all( session.add_subscriptions(opsub, asub) )
+            time.sleep(10)
+
+            # STOP THE SESSION
+            session.stop()
+            assert not session.is_active()
+      
+        except clib.CLibException as e:
+            print( str(e) )
+            raise
+    
+    ...
+```
 
 ### Subscription Classes
 - - -
 
-*Only the C++ Subscriptions are shown. The C interface uses appropriately named functions to mimic the methods of the C++ classes and requires explicit use of the ```Create``` functions for construction and ```Destroy``` functions for destruction. See tdma_api_streaming.h for function prototypes.*
+*Only the C++ Subscriptions are shown. The Python and C interfaces match these closely. The C interface uses appropriately named functions to mimic the methods of the C++ classes and requires explicit use of the ```Create``` functions for construction and ```Destroy``` functions for destruction. See tdma_api_streaming.h for function prototypes.*
 
 *The C++ enum types are shown below; The C versions prepend the enum type name and an underscore to the value name, e.g*
 ```
@@ -771,6 +938,18 @@ QuotesSubscriptionField field = QuotesSubscription::FieldType::last_price;
 
 [C]
 QuotesSubscriptionField field = QuotesSubscriptionField_last_price;
+```
+
+*The Python versions are defined as class variables of the particular subcription object in the form of FIELD_[], e.g*
+```
+[Python]
+class stream.QuotesSubscription(_SubscriptionBySymbolBase):
+    ...
+    FIELD_SYMBOL = 0
+    FIELD_BID_PRICE = 1
+    FIELD_ASK_PRICE = 2
+    FIELD_LAST_PRICE = 3
+    ...
 ```
 
 ### QuotesSubscription
