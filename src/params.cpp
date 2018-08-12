@@ -115,9 +115,7 @@ alloc_C_str(const std::string& s, char** buf, size_t* n, bool raise_exception)
 int
 PeriodType_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
 {
-    int err = check_abi_enum(PeriodType_is_valid, v, allow_exceptions);
-    if( err )
-        return err;
+    CHECK_ENUM(PeriodType, v, allow_exceptions);
 
     switch(static_cast<PeriodType>(v)){
     case PeriodType::day:
@@ -136,9 +134,7 @@ PeriodType_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
 int
 FrequencyType_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
 {
-    int err = check_abi_enum(FrequencyType_is_valid, v, allow_exceptions);
-    if( err )
-        return err;
+    CHECK_ENUM(FrequencyType, v, allow_exceptions);
 
     switch(static_cast<FrequencyType>(v)){
     case FrequencyType::minute:
@@ -157,9 +153,7 @@ FrequencyType_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
 int
 OptionContractType_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
 {
-    int err = check_abi_enum(OptionContractType_is_valid, v, allow_exceptions);
-    if( err )
-        return err;
+    CHECK_ENUM(OptionContractType, v, allow_exceptions);
 
     switch(static_cast<OptionContractType>(v)){
     case OptionContractType::call:
@@ -176,9 +170,7 @@ OptionContractType_to_string_ABI(int v, char** buf, size_t* n, int allow_excepti
 int
 OptionStrategyType_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
 {
-    int err = check_abi_enum(OptionStrategyType_is_valid, v, allow_exceptions);
-    if( err )
-        return err;
+    CHECK_ENUM(OptionStrategyType, v, allow_exceptions);
 
     switch(static_cast<OptionStrategyType>(v)){
     //case OptionStrategyType::single: return "SINGLE";
@@ -212,9 +204,7 @@ OptionStrategyType_to_string_ABI(int v, char** buf, size_t* n, int allow_excepti
 int
 OptionRangeType_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
 {
-    int err = check_abi_enum(OptionRangeType_is_valid, v, allow_exceptions);
-    if( err )
-        return err;
+    CHECK_ENUM(OptionRangeType, v, allow_exceptions);
 
     switch(static_cast<OptionRangeType>(v)){
     case OptionRangeType::null:
@@ -242,9 +232,7 @@ OptionRangeType_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions
 int
 OptionExpMonth_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
 {
-    int err = check_abi_enum(OptionExpMonth_is_valid, v, allow_exceptions);
-    if( err )
-        return err;
+    CHECK_ENUM(OptionExpMonth, v, allow_exceptions);
 
     switch(static_cast<OptionExpMonth>(v)){
     case OptionExpMonth::jan:
@@ -282,9 +270,7 @@ OptionExpMonth_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
 int
 OptionType_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
 {
-    int err = check_abi_enum(OptionType_is_valid, v, allow_exceptions);
-    if( err )
-        return err;
+    CHECK_ENUM(OptionType, v, allow_exceptions);
 
     switch(static_cast<OptionType>(v)){
     case OptionType::s:
@@ -301,9 +287,7 @@ OptionType_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
 int
 TransactionType_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
 {
-    int err = check_abi_enum(TransactionType_is_valid, v, allow_exceptions);
-    if( err )
-        return err;
+    CHECK_ENUM(TransactionType, v, allow_exceptions);
 
     switch(static_cast<TransactionType>(v)){
     case TransactionType::all:
@@ -334,9 +318,7 @@ TransactionType_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions
 int
 InstrumentSearchType_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
 {
-    int err = check_abi_enum(InstrumentSearchType_is_valid, v, allow_exceptions);
-    if( err )
-        return err;
+    CHECK_ENUM(InstrumentSearchType, v, allow_exceptions);
 
     switch(static_cast<InstrumentSearchType>(v)){
     case InstrumentSearchType::symbol_exact:
@@ -360,9 +342,7 @@ InstrumentSearchType_to_string_ABI(int v, char** buf, size_t* n, int allow_excep
 int
 MarketType_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
 {
-    int err = check_abi_enum(MarketType_is_valid, v, allow_exceptions);
-    if( err )
-        return err;
+    CHECK_ENUM(MarketType, v, allow_exceptions);
 
     switch(static_cast<MarketType>(v)){
     case MarketType::equity:
@@ -383,9 +363,7 @@ MarketType_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
 int
 MoversIndex_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
 {
-    int err = check_abi_enum(MoversIndex_is_valid, v, allow_exceptions);
-    if( err )
-        return err;
+    CHECK_ENUM(MoversIndex, v, allow_exceptions);
 
     switch(static_cast<MoversIndex>(v)){
     case MoversIndex::compx:
@@ -403,9 +381,7 @@ MoversIndex_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
 int
 MoversDirectionType_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
 {
-    int err = check_abi_enum(MoversDirectionType_is_valid, v, allow_exceptions);
-    if( err )
-        return err;
+    CHECK_ENUM(MoversDirectionType, v, allow_exceptions);
 
     switch(static_cast<MoversDirectionType>(v)){
     case MoversDirectionType::up:
@@ -422,9 +398,7 @@ MoversDirectionType_to_string_ABI(int v, char** buf, size_t* n, int allow_except
 int
 MoversChangeType_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
 {
-    int err = check_abi_enum(MoversChangeType_is_valid, v, allow_exceptions);
-    if( err )
-        return err;
+    CHECK_ENUM(MoversChangeType, v, allow_exceptions);
 
     switch(static_cast<MoversChangeType>(v)){
     case MoversChangeType::percent:
@@ -439,9 +413,7 @@ MoversChangeType_to_string_ABI(int v, char** buf, size_t* n, int allow_exception
 int
 OptionStrikesType_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
 {
-    int err = check_abi_enum(OptionStrikesType_is_valid, v, allow_exceptions);
-    if( err )
-        return err;
+    CHECK_ENUM(OptionStrikesType, v, allow_exceptions);
 
     switch(static_cast<OptionStrikesType>(v)){
     case OptionStrikesType::n_atm:
@@ -460,9 +432,7 @@ OptionStrikesType_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptio
 int
 AdminCommandType_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
 {
-    int err = check_abi_enum(AdminCommandType_is_valid, v, allow_exceptions);
-    if( err )
-        return err;
+    CHECK_ENUM(AdminCommandType, v, allow_exceptions);
 
     switch(static_cast<AdminCommandType>(v)){
     case AdminCommandType::LOGIN:
@@ -479,9 +449,7 @@ AdminCommandType_to_string_ABI(int v, char** buf, size_t* n, int allow_exception
 int
 QOSType_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
 {
-    int err = check_abi_enum(QOSType_is_valid, v, allow_exceptions);
-    if( err )
-        return err;
+    CHECK_ENUM(QOSType, v, allow_exceptions);
 
     switch(static_cast<QOSType>(v)){
     case QOSType::delayed:
@@ -506,9 +474,7 @@ QOSType_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
 int
 DurationType_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
 {
-    int err = check_abi_enum(DurationType_is_valid, v, allow_exceptions);
-    if( err )
-        return err;
+    CHECK_ENUM(DurationType, v, allow_exceptions);
 
     switch(static_cast<DurationType>(v)){
     case DurationType::all_day:
@@ -532,9 +498,7 @@ DurationType_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
 int
 VenueType_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
 {
-    int err = check_abi_enum(VenueType_is_valid, v, allow_exceptions);
-    if( err )
-        return err;
+    CHECK_ENUM(VenueType, v, allow_exceptions);
 
     switch(static_cast<VenueType>(v)){
     case VenueType::opts:
@@ -557,9 +521,7 @@ VenueType_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
 int
 StreamingCallbackType_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
 {
-    int err = check_abi_enum(StreamingCallbackType_is_valid, v, allow_exceptions);
-    if( err )
-        return err;
+    CHECK_ENUM(StreamingCallbackType, v, allow_exceptions);
 
     switch(static_cast<StreamingCallbackType>(v)){
     case StreamingCallbackType::listening_start:
@@ -585,10 +547,7 @@ int
 StreamerServiceType_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
 {
     if( v ){ // ::NONE (0) can't be allowed to fail in this particular case
-        int err = check_abi_enum(StreamerServiceType_is_valid, v,
-                                 allow_exceptions);
-        if( err )
-            return err;
+        CHECK_ENUM(StreamerServiceType, v, allow_exceptions);
     }
 
     switch( static_cast<StreamerServiceType>(v) ){
@@ -643,9 +602,7 @@ StreamerServiceType_to_string_ABI(int v, char** buf, size_t* n, int allow_except
 int \
 name##_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions) \
 { \
-    int err = check_abi_enum(name##_is_valid, v, allow_exceptions); \
-    if( err ) \
-        return err; \
+    CHECK_ENUM(name, v, allow_exceptions); \
     return alloc_C_str(#name"-" + std::to_string(v), buf, n, allow_exceptions); \
 }
 

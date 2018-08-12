@@ -110,19 +110,8 @@ MarketHoursGetter_Create_ABI( struct Credentials *pcreds,
     if( err )
         return err;
 
-    err = check_abi_enum(MarketType_is_valid, market_type, pgetter,
-                         allow_exceptions);
-    if( err )
-        return err;
-
-
-    if( !date ){
-        pgetter->obj = nullptr;
-        pgetter->type_id = -1;
-        return tdma::handle_error<tdma::ValueException>(
-            "null date", allow_exceptions
-            );
-    }
+    CHECK_ENUM_KILL_PROXY(MarketType, market_type, allow_exceptions, pgetter);
+    CHECK_PTR_KILL_PROXY(date, "date", allow_exceptions, pgetter);
 
     static auto meth = +[](Credentials *c, int m, const char* d){
         return new ImplTy(*c, static_cast<MarketType>(m), d);
@@ -132,8 +121,7 @@ MarketHoursGetter_Create_ABI( struct Credentials *pcreds,
     tie(obj, err) = CallImplFromABI( allow_exceptions, meth, pcreds,
                                            market_type, date );
     if( err ){
-        pgetter->obj = nullptr;
-        pgetter->type_id = -1;
+        kill_proxy(pgetter);
         return err;
     }
 
@@ -148,7 +136,7 @@ int
 MarketHoursGetter_Destroy_ABI( MarketHoursGetter_C *pgetter,
                                   int allow_exceptions )
 {
-    return destroy_getter<MarketHoursGetterImpl>(pgetter, allow_exceptions);
+    return destroy_proxy<MarketHoursGetterImpl>(pgetter, allow_exceptions);
 }
 
 
@@ -170,9 +158,7 @@ MarketHoursGetter_SetMarketType_ABI( MarketHoursGetter_C *pgetter,
                                          int market_type,
                                          int allow_exceptions )
 {
-    int err = check_abi_enum(MarketType_is_valid, market_type, allow_exceptions);
-    if( err )
-        return err;
+    CHECK_ENUM(MarketType, market_type, allow_exceptions);
 
     return GetterImplAccessor<int>::template
         set<MarketHoursGetterImpl, MarketType>(

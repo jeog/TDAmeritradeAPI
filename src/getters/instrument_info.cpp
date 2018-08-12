@@ -105,18 +105,10 @@ InstrumentInfoGetter_Create_ABI( struct Credentials *pcreds,
     if( err )
         return err;
 
-    err = check_abi_enum(InstrumentSearchType_is_valid, search_type,  pgetter,
-                         allow_exceptions);
-    if( err )
-        return err;
-
-    if( !query_string ){
-        pgetter->obj = nullptr;
-        pgetter->type_id = -1;
-        return tdma::handle_error<tdma::ValueException>(
-            "null query string", allow_exceptions
-            );
-    }
+    CHECK_ENUM_KILL_PROXY( InstrumentSearchType, search_type,
+                               allow_exceptions, pgetter );
+    CHECK_PTR_KILL_PROXY( query_string, "query_string",
+                               allow_exceptions, pgetter );
 
     static auto meth = +[]( Credentials *c, int s, const char* q ){
         return new ImplTy(*c, static_cast<InstrumentSearchType>(s), q);
@@ -126,8 +118,7 @@ InstrumentInfoGetter_Create_ABI( struct Credentials *pcreds,
     tie(obj, err) = CallImplFromABI( allow_exceptions, meth, pcreds,
                                      search_type, query_string );
     if( err ){
-        pgetter->obj = nullptr;
-        pgetter->type_id = -1;
+        kill_proxy(pgetter);
         return err;
     }
 
@@ -140,7 +131,7 @@ InstrumentInfoGetter_Create_ABI( struct Credentials *pcreds,
 int
 InstrumentInfoGetter_Destroy_ABI( InstrumentInfoGetter_C *pgetter,
                                       int allow_exceptions )
-{ return destroy_getter<InstrumentInfoGetterImpl>(pgetter, allow_exceptions); }
+{ return destroy_proxy<InstrumentInfoGetterImpl>(pgetter, allow_exceptions); }
 
 int
 InstrumentInfoGetter_GetSearchType_ABI( InstrumentInfoGetter_C *pgetter,
@@ -173,10 +164,7 @@ InstrumentInfoGetter_SetQuery_ABI( InstrumentInfoGetter_C *pgetter,
                                        const char* query_string,
                                        int allow_exceptions )
 {
-    int err = check_abi_enum(InstrumentSearchType_is_valid, search_type,
-                             allow_exceptions);
-    if( err )
-        return err;
+    CHECK_ENUM(InstrumentSearchType, search_type,allow_exceptions);
 
     return GetterImplAccessor<int>::template
         set<InstrumentInfoGetterImpl, InstrumentSearchType>(

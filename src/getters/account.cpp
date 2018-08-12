@@ -496,13 +496,8 @@ AccountInfoGetter_Create_ABI( struct Credentials *pcreds,
     if( err )
         return err;
 
-    if( !account_id ){
-        pgetter->obj = nullptr;
-        pgetter->type_id = -1;
-        return tdma::handle_error<tdma::ValueException>(
-            "null account_id", allow_exceptions
-            );
-    }
+    CHECK_PTR_KILL_PROXY( account_id, "account_id", allow_exceptions,
+                               pgetter );
 
     static auto meth = +[]( Credentials *c, const char* s, int p, int o ){
         return new ImplTy(*c, s, static_cast<bool>(p), static_cast<bool>(o) );
@@ -512,8 +507,7 @@ AccountInfoGetter_Create_ABI( struct Credentials *pcreds,
     tie(obj, err) = CallImplFromABI( allow_exceptions, meth, pcreds, account_id,
                                      positions, orders);
     if( err ){
-        pgetter->obj = nullptr;
-        pgetter->type_id = -1;
+        kill_proxy(pgetter);
         return err;
     }
 
@@ -527,7 +521,7 @@ int
 AccountInfoGetter_Destroy_ABI( AccountInfoGetter_C *pgetter,
                                   int allow_exceptions )
 {
-    return destroy_getter<AccountInfoGetterImpl>(pgetter, allow_exceptions);
+    return destroy_proxy<AccountInfoGetterImpl>(pgetter, allow_exceptions);
 }
 
 int
@@ -590,13 +584,8 @@ PreferencesGetter_Create_ABI( struct Credentials *pcreds,
     if( err )
         return err;
 
-    if( !account_id ){
-        pgetter->obj = nullptr;
-        pgetter->type_id = -1;
-        return tdma::handle_error<tdma::ValueException>(
-            "null account_id", allow_exceptions
-            );
-    }
+    CHECK_PTR_KILL_PROXY( account_id, "account_id", allow_exceptions,
+                               pgetter );
 
     static auto meth = +[]( Credentials *c, const char* s ){
         return new ImplTy( *c, s );
@@ -605,8 +594,7 @@ PreferencesGetter_Create_ABI( struct Credentials *pcreds,
     ImplTy *obj;
     tie(obj, err) = CallImplFromABI(allow_exceptions, meth, pcreds, account_id);
     if( err ){
-        pgetter->obj = nullptr;
-        pgetter->type_id = -1;
+        kill_proxy(pgetter);
         return err;
     }
 
@@ -619,7 +607,7 @@ PreferencesGetter_Create_ABI( struct Credentials *pcreds,
 int
 PreferencesGetter_Destroy_ABI( PreferencesGetter_C *pgetter,
                                   int allow_exceptions )
-{ return destroy_getter<PreferencesGetterImpl>(pgetter, allow_exceptions); }
+{ return destroy_proxy<PreferencesGetterImpl>(pgetter, allow_exceptions); }
 
 
 int
@@ -636,13 +624,8 @@ StreamerSubscriptionKeysGetter_Create_ABI(
     if( err )
         return err;
 
-    if( !account_id ){
-        pgetter->obj = nullptr;
-        pgetter->type_id = -1;
-        return tdma::handle_error<tdma::ValueException>(
-            "null account_id", allow_exceptions
-            );
-    }
+    CHECK_PTR_KILL_PROXY( account_id, "account_id", allow_exceptions,
+                               pgetter );
 
     static auto meth = +[]( Credentials *c, const char* s ){
         return new ImplTy( *c, s );
@@ -651,8 +634,7 @@ StreamerSubscriptionKeysGetter_Create_ABI(
     ImplTy *obj;
     tie(obj, err) = CallImplFromABI(allow_exceptions, meth, pcreds, account_id);
     if( err ){
-        pgetter->obj = nullptr;
-        pgetter->type_id = -1;
+        kill_proxy(pgetter);
         return err;
     }
 
@@ -668,7 +650,7 @@ StreamerSubscriptionKeysGetter_Destroy_ABI(
     int allow_exceptions
     )
 {
-    return destroy_getter<StreamerSubscriptionKeysGetterImpl>(
+    return destroy_proxy<StreamerSubscriptionKeysGetterImpl>(
         pgetter, allow_exceptions
     );
 }
@@ -690,24 +672,15 @@ TransactionHistoryGetter_Create_ABI( struct Credentials *pcreds,
     if( err )
         return err;
 
-    err = check_abi_enum(TransactionType_is_valid, transaction_type, pgetter,
-                         allow_exceptions);
-    if( err )
-        return err;
+    CHECK_ENUM_KILL_PROXY( TransactionType, transaction_type,
+                               allow_exceptions, pgetter );
 
-    if( !account_id ){
-        pgetter->obj = nullptr;
-        pgetter->type_id = -1;
-        return tdma::handle_error<tdma::ValueException>(
-            "null account_id", allow_exceptions
-            );
-    }
+    CHECK_PTR_KILL_PROXY(account_id, "account_id", allow_exceptions, pgetter);
 
     static auto meth = +[]( Credentials *c, const char* s, int t,
                             const char* sym, const char* sd, const char* ed ){
-        return new ImplTy( *c, s,
-                                                 static_cast<TransactionType>(t),
-                                                 sym, sd, ed );
+        return new ImplTy( *c, s, static_cast<TransactionType>(t),
+                           (sym ? sym : ""), (sd ? sd : ""), (ed ? ed : "") );
     };
 
     ImplTy *obj;
@@ -715,8 +688,7 @@ TransactionHistoryGetter_Create_ABI( struct Credentials *pcreds,
                                      transaction_type, symbol, start_date,
                                      end_date);
     if( err ){
-        pgetter->obj = nullptr;
-        pgetter->type_id = -1;
+        kill_proxy(pgetter);
         return err;
     }
 
@@ -729,7 +701,7 @@ TransactionHistoryGetter_Create_ABI( struct Credentials *pcreds,
 int
 TransactionHistoryGetter_Destroy_ABI( TransactionHistoryGetter_C *pgetter,
                                       int allow_exceptions )
-{ return destroy_getter<TransactionHistoryGetterImpl>(pgetter, allow_exceptions); }
+{ return destroy_proxy<TransactionHistoryGetterImpl>(pgetter, allow_exceptions); }
 
 int
 TransactionHistoryGetter_GetTransactionType_ABI(
@@ -750,10 +722,7 @@ TransactionHistoryGetter_SetTransactionType_ABI(
     int transaction_type,
     int allow_exceptions )
 {
-    int err = check_abi_enum(TransactionType_is_valid, transaction_type,
-                             allow_exceptions);
-    if( err )
-        return err;
+    CHECK_ENUM(TransactionType, transaction_type, allow_exceptions);
 
     return GetterImplAccessor<int>::template
         set<TransactionHistoryGetterImpl, TransactionType>(
@@ -859,21 +828,11 @@ IndividualTransactionHistoryGetter_Create_ABI(
     if( err )
         return err;
 
-    if( !account_id ){
-        pgetter->obj = nullptr;
-        pgetter->type_id = -1;
-        return tdma::handle_error<tdma::ValueException>(
-            "null account_id", allow_exceptions
-            );
-    }
+    CHECK_PTR_KILL_PROXY( account_id, "account_id", allow_exceptions,
+                               pgetter );
 
-    if( !transaction_id ){
-        pgetter->obj = nullptr;
-        pgetter->type_id = -1;
-        return tdma::handle_error<tdma::ValueException>(
-            "null transaction_id", allow_exceptions
-            );
-    }
+    CHECK_PTR_KILL_PROXY( transaction_id, "transaction_id",
+                               allow_exceptions, pgetter );
 
     static auto meth = +[]( Credentials *c, const char* s, const char* t ){
         return new ImplTy( *c, s, t );
@@ -883,8 +842,7 @@ IndividualTransactionHistoryGetter_Create_ABI(
     tie(obj, err) = CallImplFromABI( allow_exceptions, meth, pcreds, account_id,
                                      transaction_id );
     if( err ){
-        pgetter->obj = nullptr;
-        pgetter->type_id = -1;
+        kill_proxy(pgetter);
         return err;
     }
 
@@ -900,7 +858,7 @@ IndividualTransactionHistoryGetter_Destroy_ABI(
     int allow_exceptions
     )
 {
-    return destroy_getter<IndividualTransactionHistoryGetterImpl>(
+    return destroy_proxy<IndividualTransactionHistoryGetterImpl>(
         pgetter, allow_exceptions
         );
 }
@@ -959,8 +917,7 @@ UserPrincipalsGetter_Create_ABI( struct Credentials *pcreds,
                                      streamer_connection_info, preferences,
                                      surrogate_ids );
     if( err ){
-        pgetter->obj = nullptr;
-        pgetter->type_id = -1;
+        kill_proxy(pgetter);
         return err;
     }
 
@@ -974,7 +931,7 @@ UserPrincipalsGetter_Create_ABI( struct Credentials *pcreds,
 int
 UserPrincipalsGetter_Destroy_ABI( UserPrincipalsGetter_C *pgetter,
                                       int allow_exceptions )
-{ return destroy_getter<UserPrincipalsGetterImpl>(pgetter, allow_exceptions); }
+{ return destroy_proxy<UserPrincipalsGetterImpl>(pgetter, allow_exceptions); }
 
 int
 UserPrincipalsGetter_ReturnsSubscriptionKeys_ABI(

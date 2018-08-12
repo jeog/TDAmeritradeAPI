@@ -138,13 +138,7 @@ QuoteGetter_Create_ABI( Credentials *pcreds,
     if( err )
         return err;
 
-    if( !symbol ){
-        pgetter->obj = nullptr;
-        pgetter->type_id = -1;
-        return tdma::handle_error<tdma::ValueException>(
-            "null symbol", allow_exceptions
-            );
-    }
+    CHECK_PTR_KILL_PROXY(symbol, "symbol", allow_exceptions, pgetter);
 
     static auto meth = +[](Credentials *c, const char* s){
         return new ImplTy(*c, s);
@@ -153,8 +147,7 @@ QuoteGetter_Create_ABI( Credentials *pcreds,
     ImplTy *obj;
     tie(obj, err) = CallImplFromABI(allow_exceptions, meth, pcreds, symbol);
     if( err ){
-        pgetter->obj = nullptr;
-        pgetter->type_id = -1;
+        kill_proxy(pgetter);
         return err;
     }
 
@@ -168,7 +161,7 @@ QuoteGetter_Create_ABI( Credentials *pcreds,
 int
 QuoteGetter_Destroy_ABI(QuoteGetter_C *pgetter, int allow_exceptions)
 {
-    return destroy_getter<QuoteGetterImpl>(pgetter, allow_exceptions);
+    return destroy_proxy<QuoteGetterImpl>(pgetter, allow_exceptions);
 }
 
 
@@ -208,13 +201,7 @@ QuotesGetter_Create_ABI( Credentials *pcreds,
     if( err )
         return err;
 
-    if( !symbols ){
-        pgetter->obj = nullptr;
-        pgetter->type_id = -1;
-        return tdma::handle_error<tdma::ValueException>(
-            "null symbols", allow_exceptions
-            );
-    }
+    CHECK_PTR_KILL_PROXY(symbols, "symbols", allow_exceptions, pgetter);
 
     static auto meth = +[](Credentials *c, const char** s, size_t n){
         std::set<std::string> strs;
@@ -227,8 +214,7 @@ QuotesGetter_Create_ABI( Credentials *pcreds,
     tie(obj, err) = CallImplFromABI(allow_exceptions, meth, pcreds, symbols,
                                     nsymbols);
     if( err ){
-        pgetter->obj = nullptr;
-        pgetter->type_id = -1;
+        kill_proxy(pgetter);
         return err;
     }
 
@@ -242,7 +228,7 @@ QuotesGetter_Create_ABI( Credentials *pcreds,
 int
 QuotesGetter_Destroy_ABI(QuotesGetter_C *pgetter, int allow_exceptions)
 {
-    return destroy_getter<QuotesGetterImpl>(pgetter, allow_exceptions);
+    return destroy_proxy<QuotesGetterImpl>(pgetter, allow_exceptions);
 }
 
 

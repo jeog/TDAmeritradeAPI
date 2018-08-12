@@ -429,7 +429,6 @@ const int TYPE_ID_SUB_ACTIVES_OPTION = 18;
 
 #define DECL_CSUB_STRUCT(name) typedef struct{ void *obj; int type_id; } name
 
-DECL_CSUB_STRUCT(StreamingSubscription_C);
 DECL_CSUB_STRUCT(QuotesSubscription_C);
 DECL_CSUB_STRUCT(OptionsSubscription_C);
 DECL_CSUB_STRUCT(LevelOneFuturesSubscription_C);
@@ -1510,11 +1509,6 @@ public:
 
 const int TYPE_ID_STREAMING_SESSION = 100;
 
-typedef struct{
-    void *obj;
-    int type_id;
-    void *ctx; // reserved
-} StreamingSession_C;
 
 typedef void(*streaming_cb_ty)(int, int, unsigned long long, const char*);
 

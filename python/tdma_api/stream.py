@@ -28,9 +28,9 @@ Before using you'll need to have obtained a valid Credentials object. (See
 tdma_api.auth.__doc__ or README.md for details.)
 
 Each session is passed a Credentials object, account id, callback function,
-and some option timeout and display args.
+and some optional timeout args.
 
-The session is started by passing a collection of Subscription options for
+The session is started by passing a collection of Subscription objects for
 the particular streaming services desired. Subscriptions can also be added 
 later. THERE CAN BE ONLY ONE ACTIVE SESSION  FOR EACH PRIMARY ACCOUNT ID.
 

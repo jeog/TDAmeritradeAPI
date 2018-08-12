@@ -30,7 +30,6 @@ along with this program.  If not, see http://www.gnu.org/licenses.
 #include "tdma_api_streaming.h"
 #include "curl_connect.h"
 
-
 namespace tdma{
 
 const std::string URL_BASE = "https://api.tdameritrade.com/v1/";
@@ -200,10 +199,46 @@ CallImplFromABI(bool allow_throw, RetTy(*func)(Args...), Args2... args)
     return ImplReturnHelper<RetTy>::from_error(err);
 }
 
-template<typename ExcTy>
-int
-handle_error(std::string msg, bool exc)
+
+
+template<typename ProxyTy>
+void
+kill_proxy( ProxyTy *proxy,
+             typename std::enable_if<
+                 IsValidCProxy<ProxyTy, Getter_C>::value ||
+                 IsValidCProxy<ProxyTy, StreamingSubscription_C>::value
+                 >::type* _ = nullptr )
 {
+    proxy->obj = nullptr;
+    proxy->type_id = -1;
+}
+
+template<typename ProxyTy>
+void
+kill_proxy( ProxyTy *proxy,
+             typename std::enable_if<
+                 std::is_same<ProxyTy, StreamingSession_C>::value
+                 >::type* _ = nullptr )
+{
+    proxy->obj = nullptr;
+    proxy->type_id = -1;
+    proxy->ctx = nullptr;
+}
+
+template<typename ProxyTy>
+void
+kill_proxy( ProxyTy *proxy,
+             typename std::enable_if<
+                 std::is_same<ProxyTy, nullptr_t>::value
+                 >::type* _ = nullptr )
+{}
+
+template<typename ExcTy, typename ProxyTy=nullptr_t>
+int
+handle_error(std::string msg, bool exc, ProxyTy *proxy=nullptr)
+{
+    if( proxy )
+        kill_proxy(proxy);
     int code = ExcTy::ERROR_CODE;
     set_error_state(code, msg);
     if( exc ){
@@ -211,6 +246,28 @@ handle_error(std::string msg, bool exc)
     }
     return code;
 }
+
+
+#define CHECK_PTR(ptr, name, exc) \
+if( !(ptr) ) \
+    return tdma::handle_error<tdma::ValueException>(\
+        "null " name " pointer", exc )
+
+#define CHECK_PTR_KILL_PROXY(ptr, name, exc, proxy) \
+if( !(ptr) ) \
+    return tdma::handle_error<tdma::ValueException>(\
+        "null " name " pointer", exc, proxy )
+
+#define CHECK_ENUM(name, val, exc) \
+if( !(name##_is_valid(val)) ) \
+    return tdma::handle_error<tdma::ValueException>( \
+        "invalid " #name " enum value", exc )
+
+#define CHECK_ENUM_KILL_PROXY(name, val, exc, proxy) \
+if( !(name##_is_valid(val)) ) \
+    return tdma::handle_error<tdma::ValueException>( \
+        "invalid " #name " enum value", exc, proxy )
+
 
 template<typename ImplTy>
 int
@@ -220,63 +277,43 @@ getter_is_creatable( Credentials *pcreds,
 {
     static_assert( ImplTy::TYPE_ID_LOW > 0 && ImplTy::TYPE_ID_HIGH > 0,
                    "invalid getter type" );
-    if( !pgetter )
-        return handle_error<tdma::ValueException>(
-            "null getter pointer", allow_exceptions
-            );
 
-    if( !pcreds ){
-        pgetter->obj = nullptr;
-        pgetter->type_id = -1;
-        return handle_error<tdma::ValueException>(
-            "null credentials pointer", allow_exceptions
-            );
-    }
+    CHECK_PTR(pgetter, "getter", allow_exceptions);
+
+    CHECK_PTR_KILL_PROXY(pcreds, "credentials", allow_exceptions, pgetter);
 
     if( !pcreds->access_token | !pcreds->refresh_token | !pcreds->client_id ){
-        pgetter->obj = nullptr;
-        pgetter->type_id = -1;
         return handle_error<tdma::LocalCredentialException>(
-            "invalid credentials struct", allow_exceptions
+            "invalid credentials struct", allow_exceptions, pgetter
             );
     }
 
     return 0;
 }
 
-inline int // TODOD
-base_getter_is_callable( Getter_C *pgetter, int allow_exceptions )
+template<typename T>
+inline int
+base_proxy_is_callable( T *proxy, int allow_exceptions )
 {
-    if( !pgetter )
-        return handle_error<tdma::ValueException>(
-            "null getter pointer", allow_exceptions
-            );
-
-    if( !pgetter->obj )
-        return handle_error<tdma::ValueException>(
-            "null getter pointer->obj", allow_exceptions
-            );
-
+    static_assert( IsValidCProxy<T>::value, "invalid C Proxy");
+    CHECK_PTR(proxy, "proxy", allow_exceptions);
+    CHECK_PTR(proxy->obj, "proxy->obj", allow_exceptions);
     return 0;
 }
 
 template<typename ImplTy>
 int
-getter_is_callable( typename ImplTy::ProxyType::CType *pgetter,
+proxy_is_callable( typename ImplTy::ProxyType::CType *proxy,
                       int allow_exceptions )
 {
-    int err = base_getter_is_callable(
-        reinterpret_cast<Getter_C*>(pgetter), allow_exceptions
-        );
+    int err = base_proxy_is_callable(proxy, allow_exceptions);
     if( err )
         return err;
 
-    if( pgetter->type_id < ImplTy::TYPE_ID_LOW ||
-        pgetter->type_id > ImplTy::TYPE_ID_HIGH )
+    if( proxy->type_id < ImplTy::TYPE_ID_LOW ||
+        proxy->type_id > ImplTy::TYPE_ID_HIGH )
     {
-        return handle_error<tdma::TypeException>(
-            "getter has invalid type id", allow_exceptions
-            );
+        return handle_error<TypeException>("invalid type id", allow_exceptions);
     }
     return 0;
 }
@@ -284,9 +321,9 @@ getter_is_callable( typename ImplTy::ProxyType::CType *pgetter,
 
 template<typename ImplTy>
 int
-destroy_getter(typename ImplTy::ProxyType::CType *pgetter, int allow_exceptions)
+destroy_proxy(typename ImplTy::ProxyType::CType *proxy, int allow_exceptions)
 {
-    int err = getter_is_callable<ImplTy>(pgetter, allow_exceptions);
+    int err = proxy_is_callable<ImplTy>(proxy, allow_exceptions);
     if( err )
         return err;
 
@@ -294,32 +331,9 @@ destroy_getter(typename ImplTy::ProxyType::CType *pgetter, int allow_exceptions)
         delete reinterpret_cast<ImplTy*>(obj);
     };
 
-    return CallImplFromABI(allow_exceptions, meth, pgetter->obj);
-}
-
-template<typename CTy>
-int
-check_abi_enum(std::function<bool(int)> func , int val, CTy* p, int allow_exceptions)
-{
-    if( !func(val) ){
-        p->obj = nullptr;
-        p->type_id = -1;
-        return handle_error<tdma::ValueException>(
-            "invalid enum value", allow_exceptions
-            );
-    }
-    return 0;
-}
-
-inline int
-check_abi_enum(std::function<bool(int)> func , int val, int allow_exceptions)
-{
-    if( !func(val) ){
-        return handle_error<tdma::ValueException>(
-            "invalid enum value", allow_exceptions
-            );
-    }
-    return 0;
+    err = CallImplFromABI(allow_exceptions, meth, proxy->obj);
+    kill_proxy(proxy);
+    return err;
 }
 
 
@@ -333,7 +347,7 @@ struct GetterImplAccessor{
          T val,
          int allow_exceptions)
     {
-        int err = getter_is_callable<ImplTy>(pgetter, allow_exceptions);
+        int err = proxy_is_callable<ImplTy>(pgetter, allow_exceptions);
         if( err )
             return err;
 
@@ -355,9 +369,7 @@ struct GetterImplAccessor{
          T2 val2,
          int allow_exceptions)
     {
-        int err = getter_is_callable<ImplTy>(
-            pgetter, allow_exceptions
-            );
+        int err = proxy_is_callable<ImplTy>(pgetter, allow_exceptions);
         if( err )
             return err;
 
@@ -381,7 +393,7 @@ struct GetterImplAccessor{
          std::string val_name,
          int allow_exceptions )
     {
-        int err = getter_is_callable<ImplTy>(pgetter, allow_exceptions);
+        int err = proxy_is_callable<ImplTy>(pgetter, allow_exceptions);
         if( err )
             return err;
 
@@ -405,8 +417,6 @@ struct GetterImplAccessor{
         *pval = static_cast<T>(val);
         return 0;
     }
-
-
 };
 
 
@@ -419,7 +429,7 @@ struct GetterImplAccessor<char**>{
          const char* val,
          int allow_exceptions)
     {
-        int err = getter_is_callable<ImplTy>(pgetter, allow_exceptions);
+        int err = proxy_is_callable<ImplTy>(pgetter, allow_exceptions);
         if( err )
             return err;
 
@@ -439,19 +449,12 @@ struct GetterImplAccessor<char**>{
          size_t *n,
          int allow_exceptions )
     {
-        int err = getter_is_callable<ImplTy>(pgetter, allow_exceptions);
+        int err = proxy_is_callable<ImplTy>(pgetter, allow_exceptions);
         if( err )
             return err;
 
-        if( !pval )
-            return handle_error<tdma::ValueException>(
-                "null 'buf' pointer", allow_exceptions
-                );
-
-        if( !n )
-            return handle_error<tdma::ValueException>(
-                "null 'n' pointer", allow_exceptions
-                );
+        CHECK_PTR(pval, "buf", allow_exceptions);
+        CHECK_PTR(n, "n", allow_exceptions);
 
         static auto mwrap =
             +[](void* obj, std::string(ImplTy::*meth)(void) const){
@@ -499,7 +502,7 @@ struct GetterImplAccessor<char***>{
          size_t n,
          int allow_exceptions)
     {
-        int err = getter_is_callable<ImplTy>(pgetter, allow_exceptions);
+        int err = proxy_is_callable<ImplTy>(pgetter, allow_exceptions);
         if( err )
             return err;
 
@@ -524,19 +527,12 @@ struct GetterImplAccessor<char***>{
          size_t *n,
          int allow_exceptions )
     {
-        int err = getter_is_callable<ImplTy>(pgetter, allow_exceptions);
+        int err = proxy_is_callable<ImplTy>(pgetter, allow_exceptions);
         if( err )
             return err;
 
-        if( !pval )
-            return handle_error<tdma::ValueException>(
-                "null 'buf' pointer", allow_exceptions
-                );
-
-        if( !n )
-            return handle_error<tdma::ValueException>(
-                "null 'n' pointer", allow_exceptions
-                );
+        CHECK_PTR(pval, "buf", allow_exceptions);
+        CHECK_PTR(n, "n", allow_exceptions);
 
         static auto mwrap =
             +[](void* obj, std::set<std::string>(ImplTy::*meth)(void) const){

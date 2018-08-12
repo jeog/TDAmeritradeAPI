@@ -369,7 +369,7 @@ APIGetter_Get_ABI( Getter_C *pgetter,
                      size_t *n,
                      int allow_exceptions )
 {
-    return tdma::GetterImplAccessor<char**>::template
+    return GetterImplAccessor<char**>::template
         get<APIGetterImpl>(
             pgetter, &APIGetterImpl::get, buf, n, allow_exceptions
         );
@@ -378,57 +378,50 @@ APIGetter_Get_ABI( Getter_C *pgetter,
 int
 APIGetter_Close_ABI(Getter_C *pgetter, int allow_exceptions)
 {
-    int err = getter_is_callable<APIGetterImpl>(pgetter, allow_exceptions);
+    int err = proxy_is_callable<APIGetterImpl>(pgetter, allow_exceptions);
     if( err )
         return err;
 
     static auto meth = +[](void* obj){
-        reinterpret_cast<tdma::APIGetterImpl*>(obj)->close();
+        reinterpret_cast<APIGetterImpl*>(obj)->close();
     };
 
-    return tdma::CallImplFromABI(allow_exceptions, meth, pgetter->obj);
+    return CallImplFromABI(allow_exceptions, meth, pgetter->obj);
 }
 
 int
 APIGetter_IsClosed_ABI(Getter_C *pgetter, int*b, int allow_exceptions)
 {
-    int err = getter_is_callable<APIGetterImpl>(pgetter, allow_exceptions);
+    int err = proxy_is_callable<APIGetterImpl>(pgetter, allow_exceptions);
     if( err )
         return err;
 
-    if( !b )
-        return tdma::handle_error<tdma::ValueException>(
-            "null 'b' pointer", allow_exceptions
-            );
+    CHECK_PTR(b, "b", allow_exceptions);
 
     static auto meth = +[](void* obj){
-        return reinterpret_cast<tdma::APIGetterImpl*>(obj)->is_closed();
+        return reinterpret_cast<APIGetterImpl*>(obj)->is_closed();
     };
 
-    tie(*b, err) = tdma::CallImplFromABI(allow_exceptions, meth, pgetter->obj);
+    tie(*b, err) = CallImplFromABI(allow_exceptions, meth, pgetter->obj);
     return err ? err : 0;
 }
 
 int
 APIGetter_SetWaitMSec_ABI(unsigned long long msec, int allow_exceptions)
 {
-    return tdma::CallImplFromABI( allow_exceptions,
-                                  tdma::APIGetterImpl::set_wait_msec,
-                                  milliseconds(msec) );
+    return CallImplFromABI( allow_exceptions, APIGetterImpl::set_wait_msec,
+                            milliseconds(msec) );
 }
 
 int
 APIGetter_GetWaitMSec_ABI(unsigned long long *msec, int allow_exceptions)
 {
-    if( !msec)
-        return tdma::handle_error<tdma::ValueException>(
-            "null 'msec' pointer", allow_exceptions
-            );
+    CHECK_PTR(msec, "msec", allow_exceptions);
 
     milliseconds ms;
     int err;
-    tie(ms, err) = tdma::CallImplFromABI( allow_exceptions,
-                                          tdma::APIGetterImpl::get_wait_msec );
+    tie(ms, err) = CallImplFromABI( allow_exceptions,
+                                          APIGetterImpl::get_wait_msec );
     if(err)
         return err;
 
@@ -439,13 +432,10 @@ APIGetter_GetWaitMSec_ABI(unsigned long long *msec, int allow_exceptions)
 int
 APIGetter_GetDefWaitMSec_ABI(unsigned long long *msec, int allow_exceptions)
 {
-    if( !msec )
-        return tdma::handle_error<tdma::ValueException>(
-            "null 'msec' pointer", allow_exceptions
-            );
+    CHECK_PTR(msec, "msec", allow_exceptions);
 
     *msec = static_cast<unsigned long long>(
-        tdma::APIGetterImpl::DEF_WAIT_MSEC.count()
+        APIGetterImpl::DEF_WAIT_MSEC.count()
         );
     return 0;
 }

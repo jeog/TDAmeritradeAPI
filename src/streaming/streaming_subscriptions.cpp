@@ -102,84 +102,8 @@ subscription_is_creatable( typename ImplTy::ProxyType::CType *sub,
 {
     static_assert( ImplTy::TYPE_ID_LOW > 0 && ImplTy::TYPE_ID_HIGH > 0,
                    "invalid subscription type" );
-    if( !sub )
-        return handle_error<tdma::ValueException>(
-            "null subscription pointer", allow_exceptions
-            );
 
-    return 0;
-}
-
-template<typename ImplTy>
-int
-subscription_is_creatable( typename ImplTy::ProxyType::CType *sub,
-                              const char **symbols,
-                              size_t nsymbols,
-                              int *fields,
-                              size_t nfields,
-                              int allow_exceptions )
-{
-    int err = subscription_is_creatable<ImplTy>(sub, allow_exceptions);
-    if( err )
-        return err;
-
-    if( !symbols )
-        return handle_error<tdma::ValueException>(
-            "null symbols pointer", allow_exceptions
-            );
-
-    if( !fields )
-        return handle_error<tdma::ValueException>(
-            "null fields pointer", allow_exceptions
-            );
-
-    if( nsymbols > SUBSCRIPTION_MAX_SYMBOLS )
-        return handle_error<tdma::ValueException>(
-            "nsymbols > SUBSCRIPTION_MAX_SYMBOLS", allow_exceptions
-            );
-
-    if( nfields > SUBSCRIPTION_MAX_FIELDS )
-        return handle_error<tdma::ValueException>(
-            "nfields > SUBSCRIPTION_MAX_FIELDSS", allow_exceptions
-            );
-
-    return 0;
-}
-
-inline int //TODO
-base_subscription_is_callable( StreamingSubscription_C *sub,
-                                   int allow_exceptions )
-{
-    if( !sub )
-        return handle_error<tdma::ValueException>(
-            "null subscription pointer", allow_exceptions
-            );
-
-    if( !sub->obj )
-        return handle_error<tdma::ValueException>(
-            "null subscription pointer->obj", allow_exceptions
-            );
-    return 0;
-}
-
-template<typename ImplTy>
-int
-subscription_is_callable( typename ImplTy::ProxyType::CType *sub,
-                      int allow_exceptions )
-{
-    int err = base_subscription_is_callable(
-        reinterpret_cast<StreamingSubscription_C*>(sub), allow_exceptions
-        );
-    if( err )
-        return err;
-
-    if( sub->type_id < ImplTy::TYPE_ID_LOW ||
-        sub->type_id > ImplTy::TYPE_ID_HIGH )
-    {
-        return handle_error<tdma::TypeException>(
-            "getter has invalid type id", allow_exceptions
-            );
-    }
+    CHECK_PTR(sub, "subscription", allow_exceptions);
     return 0;
 }
 
@@ -187,7 +111,7 @@ subscription_is_callable( typename ImplTy::ProxyType::CType *sub,
 StreamingSubscriptionImpl*
 C_sub_ptr_to_impl_ptr(StreamingSubscription_C *psub)
 {
-    base_subscription_is_callable(psub, 1);
+    base_proxy_is_callable(psub, 1);
     switch( psub->type_id ){
     case TYPE_ID_SUB_QUOTES:
         return reinterpret_cast<QuotesSubscriptionImpl*>(psub->obj);
@@ -233,6 +157,7 @@ StreamingSubscriptionImpl
 C_sub_ptr_to_impl(StreamingSubscription_C *psub)
 {  return *C_sub_ptr_to_impl_ptr(psub); }
 
+
 template<typename ImplTy>
 int
 create_symbol_field_subscription( const char **symbols,
@@ -242,20 +167,34 @@ create_symbol_field_subscription( const char **symbols,
                                      typename ImplTy::ProxyType::CType *psub,
                                      int allow_exceptions )
 {
-    int err = subscription_is_creatable<ImplTy>(
-        psub, symbols, nsymbols, fields, nfields, allow_exceptions
-        );
+    int err = subscription_is_creatable<ImplTy>(psub, allow_exceptions);
     if( err )
         return err;
+
+    CHECK_PTR_KILL_PROXY(symbols, "symbols", allow_exceptions, psub);
+    CHECK_PTR_KILL_PROXY(fields, "fields", allow_exceptions, psub);
+
+    if( nsymbols > SUBSCRIPTION_MAX_SYMBOLS ){
+        return handle_error<ValueException>(
+            "nsymbols > SUBSCRIPTION_MAX_SYMBOLS", allow_exceptions, psub
+            );
+    }
+
+    if( nfields > SUBSCRIPTION_MAX_FIELDS ){
+        return handle_error<ValueException>(
+            "nfields > SUBSCRIPTION_MAX_FIELDS", allow_exceptions, psub
+            );
+    }
     
     auto s_symbols = buffers_to_set<string>(symbols, nsymbols);
 
-    //TODO combin with buffers_to_set
+    //TODO combine with buffers_to_set
     for(size_t i = 0; i < nfields; ++i){
-        err = check_abi_enum(ImplTy::is_valid_field, fields[i],
-                              psub, allow_exceptions);
-        if( err )
-            return err;
+        if( !ImplTy::is_valid_field(fields[i]) ){
+            return handle_error<ValueException>(
+                "invalid FieldType value", allow_exceptions, psub
+                );
+        }
     }
 
     auto s_fields = buffers_to_set<typename ImplTy::FieldType>(fields, nfields);
@@ -268,8 +207,7 @@ create_symbol_field_subscription( const char **symbols,
     ImplTy *obj;
     tie(obj, err) = CallImplFromABI( allow_exceptions, meth, s_symbols, s_fields);
     if( err ){
-        psub->obj = nullptr;
-        psub->type_id = -1;
+        kill_proxy(psub);
         return err;
     }
 
@@ -278,6 +216,7 @@ create_symbol_field_subscription( const char **symbols,
     psub->type_id = ImplTy::TYPE_ID_LOW;
     return 0;
 }
+
 
 template<typename ImplTy>
 int
@@ -289,10 +228,11 @@ create_duration_subscription( int duration,
     if( err )
         return err;
 
-    err = check_abi_enum(ImplTy::is_valid_duration, duration, psub,
-                          allow_exceptions);
-    if( err )
-        return err;
+    if( !ImplTy::is_valid_duration(duration) ){
+        return handle_error<ValueException>(
+            "invalid DurationType value", allow_exceptions, psub
+            );
+    }
 
     static auto meth = +[]( int d ){
         return new ImplTy( static_cast<DurationType>(d) );
@@ -301,8 +241,7 @@ create_duration_subscription( int duration,
     ImplTy *obj;
     tie(obj, err) = CallImplFromABI( allow_exceptions, meth, duration);
     if( err ){
-        psub->obj = nullptr;
-        psub->type_id = -1;
+        kill_proxy(psub);
         return err;
     }
 
@@ -312,27 +251,13 @@ create_duration_subscription( int duration,
     return 0;
 }
 
-template<typename ImplTy>
-int
-destroy_subscription(typename ImplTy::ProxyType::CType *psub, int allow_exceptions)
-{
-    int err = subscription_is_callable<ImplTy>(psub, allow_exceptions);
-    if( err )
-        return err;
-
-    static auto meth = +[](void* obj){
-        delete reinterpret_cast<ImplTy*>(obj);
-    };
-
-    return CallImplFromABI(allow_exceptions, meth, psub->obj);
-}
 
 template<typename ImplTy>
 int
 get_fields(typename ImplTy::ProxyType::CType *psub, int** fields, size_t *n,
             int allow_exceptions)
 {
-    int err = subscription_is_callable<ImplTy>(psub, allow_exceptions);
+    int err = proxy_is_callable<ImplTy>(psub, allow_exceptions);
     if( err )
         return err;
 
@@ -348,7 +273,7 @@ get_fields(typename ImplTy::ProxyType::CType *psub, int** fields, size_t *n,
     *n = f.size();
     *fields = reinterpret_cast<int*>(malloc(*n * sizeof(int)));
     if( !*fields ){
-        return handle_error<tdma::MemoryError>(
+        return handle_error<MemoryError>(
             "failed to allocate buffer memory", allow_exceptions
             );
     }
@@ -370,7 +295,7 @@ using namespace tdma;
 #define DEFINE_CSUB_DESTROY_FUNC(name) \
 int \
 name##_Destroy_ABI(name##_C *psub, int allow_exceptions) \
-{ return destroy_subscription<name##Impl>(psub, allow_exceptions); }
+{ return destroy_proxy<name##Impl>(psub, allow_exceptions); }
 
 DEFINE_CSUB_DESTROY_FUNC(QuotesSubscription);
 DEFINE_CSUB_DESTROY_FUNC(OptionsSubscription);
@@ -395,20 +320,20 @@ int
 StreamingSubscription_Destroy_ABI(StreamingSubscription_C *psub,
                                       int allow_exceptions)
 {
-    int err = base_subscription_is_callable(psub, allow_exceptions);
+    int err = proxy_is_callable<StreamingSubscriptionImpl>(
+        psub, allow_exceptions
+        );
     if( err )
         return err;
 
-    if( psub->type_id < 1 )
-        return handle_error<ValueException>(
-            "invalid type ID", allow_exceptions
-            );
-
     static auto meth = +[](StreamingSubscription_C * obj){
+        // this can throw, so needs to pass through CallImplFromABI
         delete C_sub_ptr_to_impl_ptr(obj);
     };
 
-    return CallImplFromABI(allow_exceptions, meth, psub);
+    err = CallImplFromABI(allow_exceptions, meth, psub);
+    kill_proxy(psub);
+    return err;
 }
 
 
@@ -417,14 +342,13 @@ StreamingSubscription_GetService_ABI( StreamingSubscription_C *psub,
                                           int *service,
                                           int allow_exceptions )
 {
-    int err = base_subscription_is_callable(psub, allow_exceptions);
+    int err = proxy_is_callable<StreamingSubscriptionImpl>(
+        psub, allow_exceptions
+        );
     if( err )
         return err;
 
-    if( !service )
-        return handle_error<ValueException>(
-            "null service pointer", allow_exceptions
-            );
+    CHECK_PTR(service, "service", allow_exceptions);
 
     static auto meth = +[]( void *obj ){
         return static_cast<int>(
@@ -433,7 +357,7 @@ StreamingSubscription_GetService_ABI( StreamingSubscription_C *psub,
     };
 
     tie(*service, err) = CallImplFromABI( allow_exceptions, meth, psub->obj);
-    return err ? err : 0;
+    return err;
 }
 
 int
@@ -442,19 +366,14 @@ StreamingSubscription_GetCommand_ABI( StreamingSubscription_C *psub,
                                           size_t *n,
                                           int allow_exceptions )
 {
-    int err = base_subscription_is_callable(psub, allow_exceptions);
+    int err = proxy_is_callable<StreamingSubscriptionImpl>(
+        psub, allow_exceptions
+        );
     if( err )
         return err;
 
-    if( !buf )
-        return handle_error<ValueException>(
-            "null 'buf' pointer", allow_exceptions
-            );
-
-    if( !n )
-        return handle_error<ValueException>(
-            "null 'n' pointer", allow_exceptions
-            );
+    CHECK_PTR(buf, "buf", allow_exceptions);
+    CHECK_PTR(n, "n", allow_exceptions);
 
     static auto meth = +[]( void *obj ){
         return reinterpret_cast<StreamingSubscriptionImpl*>(obj)->get_command();
@@ -468,7 +387,7 @@ StreamingSubscription_GetCommand_ABI( StreamingSubscription_C *psub,
     *n = r.size() + 1;
     *buf = reinterpret_cast<char*>(malloc(*n));
     if( !*buf ){
-        return handle_error<tdma::MemoryError>(
+        return handle_error<MemoryError>(
             "failed to allocate buffer memory", allow_exceptions
             );
     }
@@ -483,29 +402,14 @@ SubscriptionBySymbolBase_GetSymbols_ABI( StreamingSubscription_C *psub,
                                               size_t *n,
                                               int allow_exceptions)
 {
-    int err = base_subscription_is_callable(
-        reinterpret_cast<StreamingSubscription_C*>(psub), allow_exceptions
+    int err = proxy_is_callable<SubscriptionBySymbolBaseImpl>(
+        psub, allow_exceptions
         );
     if( err )
         return err;
 
-    if( !buffers )
-        return handle_error<ValueException>(
-            "null 'buffers' pointer", allow_exceptions
-            );
-
-    if( !n )
-        return handle_error<ValueException>(
-            "null 'n' pointer", allow_exceptions
-            );
-
-    if( psub->type_id < SubscriptionBySymbolBaseImpl::TYPE_ID_LOW ||
-        psub->type_id > SubscriptionBySymbolBaseImpl::TYPE_ID_HIGH )
-    {
-        return handle_error<tdma::TypeException>(
-            "invalid type id", allow_exceptions
-            );
-    }
+    CHECK_PTR(buffers, "buffers", allow_exceptions);
+    CHECK_PTR(n, "n", allow_exceptions);
 
     static auto meth = +[]( void *obj ){
         return reinterpret_cast<SubscriptionBySymbolBaseImpl*>(obj)->get_symbols();
@@ -519,7 +423,7 @@ SubscriptionBySymbolBase_GetSymbols_ABI( StreamingSubscription_C *psub,
     *n = strs.size();
     *buffers = reinterpret_cast<char**>(malloc((*n) * sizeof(char*)));
     if( !*buffers ){
-       return handle_error<tdma::MemoryError>(
+       return handle_error<MemoryError>(
            "failed to allocate buffer memory", allow_exceptions
            );
     }
@@ -529,7 +433,7 @@ SubscriptionBySymbolBase_GetSymbols_ABI( StreamingSubscription_C *psub,
        size_t s_sz = s.size();
        (*buffers)[cnt] = reinterpret_cast<char*>(malloc(s_sz+1));
        if( !(*buffers)[cnt] ){
-           return handle_error<tdma::MemoryError>(
+           return handle_error<MemoryError>(
                "failed to allocate buffer memory", allow_exceptions
                );
        }
@@ -570,16 +474,13 @@ ActivesSubscriptionBase_GetDuration_ABI(StreamingSubscription_C *psub,
                                              int *duration,
                                              int allow_exceptions)
 {
-    int err = subscription_is_callable<ActivesSubscriptionBaseImpl>(
+    int err = proxy_is_callable<ActivesSubscriptionBaseImpl>(
         psub, allow_exceptions
         );
     if( err )
         return err;
 
-    if( !duration )
-        return handle_error<ValueException>(
-            "null duration pointer", allow_exceptions
-            );
+    CHECK_PTR(duration, "duration", allow_exceptions);
 
     static auto meth = +[]( void *obj ){
         return static_cast<int>(
@@ -588,7 +489,7 @@ ActivesSubscriptionBase_GetDuration_ABI(StreamingSubscription_C *psub,
     };
 
     tie(*duration, err) = CallImplFromABI( allow_exceptions, meth, psub->obj);
-    return err ? err : 0;
+    return err;
 }
 
 int
@@ -596,16 +497,13 @@ OptionActivesSubscription_GetVenue_ABI(OptionActivesSubscription_C *psub,
                                             int *venue,
                                             int allow_exceptions)
 {
-    int err = subscription_is_callable<OptionActivesSubscriptionImpl>(
+    int err = proxy_is_callable<OptionActivesSubscriptionImpl>(
         psub, allow_exceptions
         );
     if( err )
         return err;
 
-    if( !venue )
-        return handle_error<ValueException>(
-            "null venue pointer", allow_exceptions
-            );
+    CHECK_PTR(venue, "venue", allow_exceptions);
 
     static auto meth = +[]( void *obj ){
         return static_cast<int>(
@@ -614,7 +512,7 @@ OptionActivesSubscription_GetVenue_ABI(OptionActivesSubscription_C *psub,
     };
 
     tie(*venue, err) = CallImplFromABI( allow_exceptions, meth, psub->obj);
-    return err ? err : 0;
+    return err;
 }
 
 int
@@ -833,15 +731,17 @@ OptionActivesSubscription_Create_ABI( int venue,
     if( err )
         return err;
 
-    err = check_abi_enum(OptionActivesSubscriptionImpl::is_valid_venue,
-                          venue, psub, allow_exceptions);
-    if( err )
-        return err;
+    if( !OptionActivesSubscriptionImpl::is_valid_venue(venue) ){
+        return handle_error<ValueException>(
+            "invalid VenueType value", allow_exceptions, psub
+            );
+    }
 
-    err = check_abi_enum(OptionActivesSubscriptionImpl::is_valid_duration,
-                          duration_type, psub, allow_exceptions);
-    if( err )
-        return err;
+    if( !OptionActivesSubscriptionImpl::is_valid_duration(duration_type) ){
+        return handle_error<ValueException>(
+            "invalid DurationType value", allow_exceptions, psub
+            );
+    }
 
     static auto meth = +[]( int v, int d ){
         return new OptionActivesSubscriptionImpl( static_cast<VenueType>(v),
@@ -851,8 +751,7 @@ OptionActivesSubscription_Create_ABI( int venue,
     OptionActivesSubscriptionImpl *obj;
     tie(obj, err) = CallImplFromABI( allow_exceptions, meth, venue, duration_type);
     if( err ){
-        psub->obj = nullptr;
-        psub->type_id = -1;
+        kill_proxy(psub);
         return err;
     }
 

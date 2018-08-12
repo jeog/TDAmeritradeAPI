@@ -102,7 +102,6 @@ int main(int argc, char* argv[])
     if( (err = LoadCredentials( argv[2], argv[3], &creds )) )
         CHECK_AND_RETURN_ON_ERROR(err, "LoadCredentials");
 
-
     err = Test_Streaming(&creds, argv[1]);
     if( err )
         return err;

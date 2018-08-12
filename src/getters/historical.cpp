@@ -403,23 +403,11 @@ HistoricalPeriodGetter_Create_ABI( struct Credentials *pcreds,
     if( err )
         return err;
 
-    err = check_abi_enum(FrequencyType_is_valid, frequency_type, pgetter,
-                         allow_exceptions);
-    if( err )
-        return err;
-
-    err = check_abi_enum(PeriodType_is_valid, period_type,  pgetter,
-                         allow_exceptions);
-    if( err )
-        return err;
-
-    if( !symbol ){
-        pgetter->obj = nullptr;
-        pgetter->type_id = -1;
-        return tdma::handle_error<tdma::ValueException>(
-            "null symbol", allow_exceptions
-            );
-    }
+    CHECK_ENUM_KILL_PROXY( FrequencyType, frequency_type, allow_exceptions,
+                               pgetter );
+    CHECK_ENUM_KILL_PROXY( PeriodType, period_type, allow_exceptions,
+                               pgetter );
+    CHECK_PTR_KILL_PROXY(symbol, "symbol", allow_exceptions, pgetter);
 
     static auto meth = +[]( Credentials *c, const char* s, int pt,
                             unsigned int p, int ft, unsigned int f, int eh ){
@@ -433,8 +421,7 @@ HistoricalPeriodGetter_Create_ABI( struct Credentials *pcreds,
                                      period_type, period, frequency_type,
                                      frequency, extended_hours );
     if( err ){
-        pgetter->obj = nullptr;
-        pgetter->type_id = -1;
+        kill_proxy(pgetter);
         return err;
     }
 
@@ -447,7 +434,7 @@ HistoricalPeriodGetter_Create_ABI( struct Credentials *pcreds,
 int
 HistoricalPeriodGetter_Destroy_ABI( HistoricalPeriodGetter_C *pgetter,
                                         int allow_exceptions)
-{ return destroy_getter<HistoricalPeriodGetterImpl>(pgetter, allow_exceptions); }
+{ return destroy_proxy<HistoricalPeriodGetterImpl>(pgetter, allow_exceptions); }
 
 int
 HistoricalPeriodGetter_GetPeriodType_ABI( HistoricalPeriodGetter_C *pgetter,
@@ -480,9 +467,7 @@ HistoricalPeriodGetter_SetPeriod_ABI( HistoricalPeriodGetter_C *pgetter,
                                            unsigned int period,
                                            int allow_exceptions )
 {
-    int err = check_abi_enum(PeriodType_is_valid, period_type, allow_exceptions);
-    if( err )
-        return err;
+    CHECK_ENUM(PeriodType, period_type, allow_exceptions);
 
     return GetterImplAccessor<int>::template
         set<HistoricalPeriodGetterImpl, PeriodType>(
@@ -497,10 +482,7 @@ HistoricalPeriodGetter_SetFrequency_ABI( HistoricalPeriodGetter_C *pgetter,
                                              unsigned int frequency,
                                              int allow_exceptions )
 {
-    int err = check_abi_enum(FrequencyType_is_valid, frequency_type,
-                             allow_exceptions);
-    if( err )
-        return err;
+    CHECK_ENUM(FrequencyType, frequency_type, allow_exceptions);
 
     return GetterImplAccessor<int>::template
         set<HistoricalPeriodGetterImpl, FrequencyType>(
@@ -527,18 +509,9 @@ HistoricalRangeGetter_Create_ABI( struct Credentials *pcreds,
     if( err )
         return err;
 
-    err = check_abi_enum(FrequencyType_is_valid, frequency_type, pgetter,
-                         allow_exceptions);
-    if( err )
-        return err;
-
-    if( !symbol ){
-        pgetter->obj = nullptr;
-        pgetter->type_id = -1;
-        return tdma::handle_error<tdma::ValueException>(
-            "null symbol", allow_exceptions
-            );
-    }
+    CHECK_ENUM_KILL_PROXY( FrequencyType, frequency_type, allow_exceptions,
+                               pgetter );
+    CHECK_PTR_KILL_PROXY(symbol, "symbol", allow_exceptions, pgetter);
 
     static auto meth = +[]( Credentials *c, const char* s, int ft,
                             unsigned int f, unsigned long long sm,
@@ -554,8 +527,7 @@ HistoricalRangeGetter_Create_ABI( struct Credentials *pcreds,
                                      extended_hours );
 
     if( err ){
-        pgetter->obj = nullptr;
-        pgetter->type_id = -1;
+        kill_proxy(pgetter);
         return err;
     }
 
@@ -568,7 +540,7 @@ HistoricalRangeGetter_Create_ABI( struct Credentials *pcreds,
 int
 HistoricalRangeGetter_Destroy_ABI( HistoricalRangeGetter_C *pgetter,
                                         int allow_exceptions)
-{ return destroy_getter<HistoricalRangeGetterImpl>(pgetter, allow_exceptions); }
+{ return destroy_proxy<HistoricalRangeGetterImpl>(pgetter, allow_exceptions); }
 
 int
 HistoricalRangeGetter_GetEndMSecSinceEpoch_ABI(
@@ -630,10 +602,7 @@ HistoricalRangeGetter_SetFrequency_ABI( HistoricalRangeGetter_C *pgetter,
                                              unsigned int frequency,
                                              int allow_exceptions )
 {
-    int err = check_abi_enum(FrequencyType_is_valid, frequency_type,
-                             allow_exceptions);
-    if( err )
-        return err;
+    CHECK_ENUM(FrequencyType, frequency_type, allow_exceptions);
 
     return GetterImplAccessor<int>::template
         set<HistoricalRangeGetterImpl, FrequencyType>(

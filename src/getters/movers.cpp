@@ -123,19 +123,11 @@ MoversGetter_Create_ABI( struct Credentials *pcreds,
     if( err )
         return err;
 
-    err = check_abi_enum(MoversIndex_is_valid, index, pgetter, allow_exceptions);
-    if( err )
-        return err;
-
-    err = check_abi_enum(MoversDirectionType_is_valid, direction_type,
-                         pgetter, allow_exceptions);
-    if( err )
-        return err;
-
-    err = check_abi_enum(MoversChangeType_is_valid, change_type, pgetter,
-                         allow_exceptions);
-    if( err )
-        return err;
+    CHECK_ENUM_KILL_PROXY( MoversIndex, index, allow_exceptions, pgetter );
+    CHECK_ENUM_KILL_PROXY( MoversDirectionType, direction_type,
+                               allow_exceptions, pgetter );
+    CHECK_ENUM_KILL_PROXY( MoversChangeType, change_type, allow_exceptions,
+                               pgetter );
 
     static auto meth = +[](Credentials *c, int m, int d, int ct){
         return new ImplTy( *c, static_cast<MoversIndex>(m),
@@ -147,8 +139,7 @@ MoversGetter_Create_ABI( struct Credentials *pcreds,
     tie(obj, err) = CallImplFromABI( allow_exceptions, meth, pcreds,
                                      index, direction_type, change_type);
     if( err ){
-        pgetter->obj = nullptr;
-        pgetter->type_id = -1;
+        kill_proxy(pgetter);
         return err;
     }
 
@@ -161,7 +152,7 @@ MoversGetter_Create_ABI( struct Credentials *pcreds,
 int
 MoversGetter_Destroy_ABI( MoversGetter_C *pgetter, int allow_exceptions)
 {
-    return destroy_getter<MoversGetterImpl>(pgetter, allow_exceptions);
+    return destroy_proxy<MoversGetterImpl>(pgetter, allow_exceptions);
 }
 
 int
@@ -179,9 +170,7 @@ MoversGetter_SetIndex_ABI( MoversGetter_C *pgetter,
                               int index,
                               int allow_exceptions )
 {
-    int err = check_abi_enum(MoversIndex_is_valid, index, allow_exceptions);
-    if( err )
-        return err;
+    CHECK_ENUM(MoversIndex, index, allow_exceptions);
 
     return GetterImplAccessor<int>::template set<MoversGetterImpl, MoversIndex>(
         pgetter, &MoversGetterImpl::set_index, index, allow_exceptions
@@ -205,10 +194,7 @@ MoversGetter_SetDirectionType_ABI( MoversGetter_C *pgetter,
                                        int direction_type,
                                        int allow_exceptions )
 {
-    int err = check_abi_enum(MoversDirectionType_is_valid, direction_type,
-                             allow_exceptions);
-    if( err )
-        return err;
+    CHECK_ENUM( MoversDirectionType, direction_type, allow_exceptions );
 
     return GetterImplAccessor<int>::template
         set<MoversGetterImpl, MoversDirectionType>(
@@ -234,10 +220,7 @@ MoversGetter_SetChangeType_ABI( MoversGetter_C *pgetter,
                                    int change_type,
                                    int allow_exceptions )
 {
-    int err = check_abi_enum(MoversChangeType_is_valid, change_type,
-                             allow_exceptions);
-    if( err )
-        return err;
+    CHECK_ENUM( MoversChangeType, change_type, allow_exceptions );
 
     return GetterImplAccessor<int>::template
         set<MoversGetterImpl, MoversChangeType>(

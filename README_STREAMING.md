@@ -14,9 +14,10 @@
     - [Symbol / Field ](#symbol--field)
     - [Duration / Venue ](#symbol--field)
     - [Destroy](#destroy-1)
-- [Example Usage C++](#example-usage-c)
-- [Example Usage C](#example-usage-c-1)
-- [Example Usage Python](#example-usage-python)
+- [Example Usage](#example-usage)
+    - [C++](#c)
+    - [C](#c-1)
+    - [Python](#python)
 - [Subscription Classes](#subscription-classes)
     - [QuotesSubscription](#quotessubscription)  
     - [OptionsSubscription](#optionssubscription)  
@@ -280,7 +281,7 @@ certain values to native types.
     ```
 
 3. The third argument is a timestamp from the server in milliseconds since the epoch that
-is (currently) only relevant for ```data``` callbacks. 
+is (currently) only relevant for certain callbacks. 
 
 4. The fourth argument is a json string (C/C++) containing admin/error info OR the actual raw data returned from the server. C++ users can use ```json::parse(string(data))``` on it. **The python callback will automatically convert the string to a list, dict, or None via json.loads().** Its json structure will be dependent on the callback and service type. In order to understand how to parse the object you'll need to refer to the relevant section in [Ameritrade's Streaming documentation](https://developer.tdameritrade.com/content/streaming-data) and the [json library documentation](https://github.com/nlohmann/json).
 
@@ -299,9 +300,10 @@ StreamingCallbackType | StreamingService  | timestamp   | json
 
 Once a Session is created it needs to be started and different services need to be subscribed to.  Starting a session will automatically try to log the user in using the credentials and account_id information passed.
 
-In order to start two conditions must be met (If not the start call will throw ```StreamingException``` (C++), ```clib.CLibException``` (Python) or return ```TDMA_API_STREAM_ERROR``` (C) ):
+In order to start two conditions must be met:
 1. No other Sessions with the same Primary Account ID can be active. An active session is one that's been started and not stopped. 
 2. It must have at least one subscription. (Subscription objects are explained in the [Subscriptions Section](#subscriptions).)
+... if not the start call will throw ```StreamingException``` (C++), ```clib.CLibException``` (Python) or return ```TDMA_API_STREAM_ERROR``` (C) ).
 
 ```
 [C++]
@@ -324,9 +326,9 @@ def stream.StreamingSession.start(self, *subscriptions):
 ```
 
 
-The C++ methods take a single subscription object or a vector of different ones and returns the success/failure state of each subscription in the order they were passed. Other errors result in a ```StreamingException```.
+The C++ methods take a single subscription object or a vector of different ones and return the success/failure state of each subscription in the order they were passed. Other errors result in a ```StreamingException```.
 
-The Python method takes 1 or more subscription objects, returning a list of bools to indicate success/failure of each. Other errors result in a ```clib.CLibException```.
+The Python method takes one or more subscription objects, returning a list of bools to indicate success/failure of each. Other errors result in a ```clib.CLibException```.
 
 The C method takes an array of subscription proxy objects (cast to their generic 'base' type pointer) and returns the success/failure state of each subscription in a 'results_buffer'
 array. This int array must be allocated by the caller to at least the size of the 'subs' array, or the arg can be set to NULL to ignore results.
@@ -383,11 +385,11 @@ with new subscriptions.
 It's best to avoid doing this frequently because the session object will go through 
 a somewhat costly life-cycle:
 ```
-    .stop() / StreamingSession_Stop()
+    STOP
         ._stop_listener_thread()
         ._logout() 
         ._client->close() 
-    .start() / StreamingSession_Start()
+    START
         ._client->connect() 
         ._login() 
         ._start_listener_thread()
@@ -455,7 +457,7 @@ QOS_DELAYED = 5
 
 #### Destroy
 
-When completely done, the session should be destroyed. The C++ shared_ptr and Python class will do this for you(assuming all references are gone). 
+When completely done, the session should be destroyed. The C++ shared_ptr and Python class will do this for you(assuming there aren't any other references to the object). 
 
 In C you'll need to use:
 ```
@@ -649,7 +651,9 @@ TimesaleEquitySubscription_Destroy( TimesaleEquitySubscription_C *sub ):
 ```
 Using the proxy object after this point results in ***UNDEFINED BEHAVIOR***.
 
-### Example Usage [C++]
+### Example Usage 
+
+#### [C++]
 ```
     #include <string>  
     #include <iostream>
@@ -720,7 +724,7 @@ Using the proxy object after this point results in ***UNDEFINED BEHAVIOR***.
     ...
 ```
 
-### Example Usage [C]
+#### [C]
 ```
     #include <stdio.h>
     #include <stdlib.h>
@@ -841,7 +845,7 @@ Using the proxy object after this point results in ***UNDEFINED BEHAVIOR***.
     ...
 ```
 
-### Example Usage [Python]
+#### [Python]
 ```
     import time
     from tdma_api import clib, auth, stream

@@ -436,33 +436,15 @@ OptionChainGetter_Create_ABI( struct Credentials *pcreds,
     if( err )
         return err;
 
-    err = check_abi_enum(OptionStrikesType_is_valid, strikes_type,
-                         pgetter, allow_exceptions);
-    if( err )
-        return err;
-
-    err = check_abi_enum(OptionContractType_is_valid, contract_type,
-                         pgetter, allow_exceptions);
-    if( err )
-        return err;
-
-    err = check_abi_enum(OptionType_is_valid, option_type, pgetter,
-                         allow_exceptions);
-    if( err )
-        return err;
-
-    err = check_abi_enum(OptionExpMonth_is_valid, exp_month, pgetter,
-                         allow_exceptions);
-    if( err )
-        return err;
-
-    if( !symbol ){
-        pgetter->obj = nullptr;
-        pgetter->type_id = -1;
-        return tdma::handle_error<tdma::ValueException>(
-            "null symbol", allow_exceptions
-            );
-    }
+    CHECK_ENUM_KILL_PROXY( OptionStrikesType, strikes_type,
+                               allow_exceptions, pgetter );
+    CHECK_ENUM_KILL_PROXY( OptionContractType, contract_type,
+                               allow_exceptions, pgetter );
+    CHECK_ENUM_KILL_PROXY( OptionType, option_type, allow_exceptions,
+                               pgetter );
+    CHECK_ENUM_KILL_PROXY( OptionExpMonth, exp_month, allow_exceptions,
+                               pgetter );
+    CHECK_PTR_KILL_PROXY(symbol, "symbol", allow_exceptions, pgetter);
 
     // null from_date/to_date -> empty string
 
@@ -483,8 +465,7 @@ OptionChainGetter_Create_ABI( struct Credentials *pcreds,
                                      include_quotes, from_date, to_date,
                                      exp_month, option_type );
     if( err ){
-        pgetter->obj = nullptr;
-        pgetter->type_id = -1;
+        kill_proxy(pgetter);
         return err;
     }
 
@@ -496,7 +477,7 @@ OptionChainGetter_Create_ABI( struct Credentials *pcreds,
 int
 OptionChainGetter_Destroy_ABI( OptionChainGetter_C *pgetter,
                                   int allow_exceptions )
-{ return destroy_getter<OptionChainGetterImpl>(pgetter, allow_exceptions); }
+{ return destroy_proxy<OptionChainGetterImpl>(pgetter, allow_exceptions); }
 
 int
 OptionChainGetter_GetSymbol_ABI( OptionChainGetter_C *pgetter,
@@ -527,21 +508,14 @@ OptionChainGetter_GetStrikes_ABI( OptionChainGetter_C *pgetter,
                                           OptionStrikesValue *strikes_value,
                                           int allow_exceptions)
 {
-    int err = getter_is_callable<OptionChainGetterImpl>(pgetter, allow_exceptions);
+    int err = proxy_is_callable<OptionChainGetterImpl>(
+        pgetter, allow_exceptions
+        );
     if( err )
         return err;
 
-    if( !strikes_type ){
-        return tdma::handle_error<tdma::ValueException>(
-            "null strikes_type", allow_exceptions
-            );
-    }
-
-    if( !strikes_value ){
-        return tdma::handle_error<tdma::ValueException>(
-            "null strikes_value", allow_exceptions
-            );
-    }
+    CHECK_PTR(strikes_type, "strikes_type", allow_exceptions);
+    CHECK_PTR(strikes_value, "strikes_value", allow_exceptions);
 
     static auto mwrap = +[](void* obj){
         return reinterpret_cast<OptionChainGetterImpl*>(obj)->get_strikes();
@@ -563,14 +537,13 @@ OptionChainGetter_SetStrikes_ABI( OptionChainGetter_C *pgetter,
                                           OptionStrikesValue strikes_value,
                                           int allow_exceptions)
 {
-    int err = getter_is_callable<OptionChainGetterImpl>(pgetter, allow_exceptions);
+    int err = proxy_is_callable<OptionChainGetterImpl>(
+        pgetter, allow_exceptions
+        );
     if( err )
         return err;
 
-    err = check_abi_enum(OptionStrikesType_is_valid, strikes_type,
-                         allow_exceptions);
-    if( err )
-        return err;
+    CHECK_ENUM(OptionStrikesType, strikes_type, allow_exceptions);
 
     static auto mwrap = +[](void* obj, int st, OptionStrikesValue sv){
         OptionStrikes os(static_cast<OptionStrikesType>(st), sv);
@@ -598,10 +571,7 @@ OptionChainGetter_SetContractType_ABI( OptionChainGetter_C *pgetter,
                                             int contract_type,
                                            int allow_exceptions)
 {
-    int err = check_abi_enum(OptionContractType_is_valid, contract_type,
-                             allow_exceptions);
-    if( err )
-        return err;
+    CHECK_ENUM(OptionContractType, contract_type, allow_exceptions);
 
     return GetterImplAccessor<int>::template
         set<OptionChainGetterImpl, OptionContractType>(
@@ -702,10 +672,7 @@ OptionChainGetter_SetExpMonth_ABI( OptionChainGetter_C *pgetter,
                                            int exp_month,
                                            int allow_exceptions)
 {
-    int err = check_abi_enum(OptionExpMonth_is_valid, exp_month,
-                             allow_exceptions);
-    if( err )
-        return err;
+    CHECK_ENUM(OptionExpMonth, exp_month, allow_exceptions);
 
     return GetterImplAccessor<int>::template
         set<OptionChainGetterImpl, OptionExpMonth>(
@@ -731,10 +698,7 @@ OptionChainGetter_SetOptionType_ABI( OptionChainGetter_C *pgetter,
                                            int option_type,
                                            int allow_exceptions)
 {
-    int err = check_abi_enum(OptionType_is_valid, option_type,
-                             allow_exceptions);
-    if( err )
-        return err;
+    CHECK_ENUM(OptionType, option_type, allow_exceptions);
 
     return GetterImplAccessor<int>::template
         set<OptionChainGetterImpl, OptionType>(
@@ -766,38 +730,17 @@ OptionChainStrategyGetter_Create_ABI( struct Credentials *pcreds,
     if( err )
         return err;
 
-    err = check_abi_enum(OptionStrategyType_is_valid, strategy_type, pgetter,
-                         allow_exceptions);
-    if( err )
-        return err;
-
-    err = check_abi_enum(OptionStrikesType_is_valid, strikes_type, pgetter,
-                         allow_exceptions);
-    if( err )
-        return err;
-
-    err = check_abi_enum(OptionContractType_is_valid, contract_type, pgetter,
-                         allow_exceptions);
-    if( err )
-        return err;
-
-    err = check_abi_enum(OptionType_is_valid, option_type,  pgetter,
-                         allow_exceptions);
-    if( err )
-        return err;
-
-    err = check_abi_enum(OptionExpMonth_is_valid, exp_month,  pgetter,
-                         allow_exceptions);
-    if( err )
-        return err;
-
-    if( !symbol ){
-        pgetter->obj = nullptr;
-        pgetter->type_id = -1;
-        return tdma::handle_error<tdma::ValueException>(
-            "null symbol", allow_exceptions
-            );
-    }
+    CHECK_ENUM_KILL_PROXY( OptionStrategyType, strategy_type,
+                               allow_exceptions, pgetter );
+    CHECK_ENUM_KILL_PROXY( OptionStrikesType, strikes_type,
+                               allow_exceptions, pgetter );
+    CHECK_ENUM_KILL_PROXY( OptionContractType, contract_type,
+                               allow_exceptions, pgetter );
+    CHECK_ENUM_KILL_PROXY( OptionType, option_type, allow_exceptions,
+                               pgetter );
+    CHECK_ENUM_KILL_PROXY( OptionExpMonth, exp_month, allow_exceptions,
+                               pgetter );
+    CHECK_PTR_KILL_PROXY(symbol, "symbol", allow_exceptions, pgetter);
 
     static auto meth =
         +[]( Credentials *c, const char* s, int strat, double sprd, int st,
@@ -819,8 +762,7 @@ OptionChainStrategyGetter_Create_ABI( struct Credentials *pcreds,
                                      strikes_value, contract_type, include_quotes,
                                      from_date, to_date, exp_month, option_type );
     if( err ){
-        pgetter->obj = nullptr;
-        pgetter->type_id = -1;
+        kill_proxy(pgetter);
         return err;
     }
 
@@ -833,7 +775,7 @@ int
 OptionChainStrategyGetter_Destroy_ABI( OptionChainStrategyGetter_C *pgetter,
                                             int allow_exceptions )
 {
-    return destroy_getter<OptionChainStrategyGetterImpl>(
+    return destroy_proxy<OptionChainStrategyGetterImpl>(
         pgetter, allow_exceptions
         );
 }
@@ -846,23 +788,14 @@ OptionChainStrategyGetter_GetStrategy_ABI(
     int allow_exceptions
     )
 {
-    int err = getter_is_callable<OptionChainStrategyGetterImpl>(
+    int err = proxy_is_callable<OptionChainStrategyGetterImpl>(
         pgetter, allow_exceptions
         );
     if( err )
         return err;
 
-    if( !strategy_type ){
-        return tdma::handle_error<tdma::ValueException>(
-            "null strategy_type", allow_exceptions
-            );
-    }
-
-    if( !spread_interval ){
-        return tdma::handle_error<tdma::ValueException>(
-            "null spread_interval", allow_exceptions
-            );
-    }
+    CHECK_PTR(strategy_type, "strategy_type", allow_exceptions);
+    CHECK_PTR(spread_interval, "spread_interval", allow_exceptions);
 
     static auto mwrap = +[](void* obj){
         return reinterpret_cast<OptionChainStrategyGetterImpl*>(obj)
@@ -887,16 +820,13 @@ OptionChainStrategyGetter_SetStrategy_ABI(
     int allow_exceptions
     )
 {
-    int err = getter_is_callable<OptionChainStrategyGetterImpl>(
+    int err = proxy_is_callable<OptionChainStrategyGetterImpl>(
         pgetter, allow_exceptions
         );
     if( err )
         return err;
 
-    err = check_abi_enum(OptionStrategyType_is_valid, strategy_type,
-                         allow_exceptions);
-    if( err )
-        return err;
+    CHECK_ENUM(OptionStrategyType, strategy_type, allow_exceptions);
 
     static auto mwrap = +[](void* obj, int st, double si){
         OptionStrategy os(static_cast<OptionStrategyType>(st), si);
@@ -933,33 +863,15 @@ OptionChainAnalyticalGetter_Create_ABI( struct Credentials *pcreds,
     if( err )
         return err;
 
-    err = check_abi_enum(OptionStrikesType_is_valid, strikes_type, pgetter,
-                         allow_exceptions);
-    if( err )
-        return err;
-
-    err = check_abi_enum(OptionContractType_is_valid, contract_type, pgetter,
-                         allow_exceptions);
-    if( err )
-        return err;
-
-    err = check_abi_enum(OptionType_is_valid, option_type, pgetter,
-                         allow_exceptions);
-    if( err )
-        return err;
-
-    err = check_abi_enum(OptionExpMonth_is_valid, exp_month, pgetter,
-                         allow_exceptions);
-    if( err )
-        return err;
-
-    if( !symbol ){
-        pgetter->obj = nullptr;
-        pgetter->type_id = -1;
-        return tdma::handle_error<tdma::ValueException>(
-            "null symbol", allow_exceptions
-            );
-    }
+    CHECK_ENUM_KILL_PROXY( OptionStrikesType, strikes_type,
+                               allow_exceptions, pgetter );
+    CHECK_ENUM_KILL_PROXY( OptionContractType, contract_type,
+                               allow_exceptions, pgetter );
+    CHECK_ENUM_KILL_PROXY( OptionType, option_type, allow_exceptions,
+                               pgetter );
+    CHECK_ENUM_KILL_PROXY( OptionExpMonth, exp_month, allow_exceptions,
+                               pgetter );
+    CHECK_PTR_KILL_PROXY(symbol, "symbol", allow_exceptions, pgetter);
 
     static auto meth =
         +[]( Credentials *c, const char* s, double vol, double up, double ir,
@@ -981,8 +893,7 @@ OptionChainAnalyticalGetter_Create_ABI( struct Credentials *pcreds,
                                      contract_type, include_quotes, from_date,
                                      to_date, exp_month, option_type );
     if( err ){
-        pgetter->obj = nullptr;
-        pgetter->type_id = -1;
+        kill_proxy(pgetter);
         return err;
     }
 
@@ -997,7 +908,7 @@ OptionChainAnalyticalGetter_Destroy_ABI(
     int allow_exceptions
     )
 {
-    return destroy_getter<OptionChainAnalyticalGetterImpl>(
+    return destroy_proxy<OptionChainAnalyticalGetterImpl>(
         pgetter, allow_exceptions
         );
 }

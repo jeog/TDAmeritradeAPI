@@ -49,6 +49,18 @@ class Credentials(_Structure):
         ("epoch_sec_token_expiration", c_longlong),
         ("client_id", c_char_p)
         ]
+    def __del__(self):
+        if hasattr(self,'access_token') and self.access_token:           
+            try:
+                try:                                  
+                    clib.call("CloseCredentials_ABI", _REF(self))
+                    print('done')
+                except clib.CLibException as e:
+                    print("CLibException in", self.__del__, ":", str(e))
+                except clib.LibraryNotLoaded:
+                    pass                      
+            except NameError:
+                pass
 
     
 def load_credentials(path, password):

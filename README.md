@@ -107,20 +107,21 @@ include it in the docs.)
 ```
   FunctionImpl(string)                [C++ implementation code defined in lib]
   Funtion_ABI(const char*)            [C ABI code defined in lib and exported]
-----/\----/\---/\-------------------------------------------------------------
-----||----||---||---------------------[lib boundary]--------------------------
-----||----||---||-------------------------------------------------------------
+    /\    /\   /\
+====||====||===||=====================[lib boundary]==========================
+    ||    ||   ||
     ||    ||   ||   ---------------------[headers]----------------------------
     ||    ||   ||      #ifdef __cplusplus
     ||    ||   ||<===  Function(string)        [C++ wrapper defined in header]
     ||    ||           #else
     ||    ||<=======   Function(const char *)  [C wrapper defined in header]
     ||                 #endif
-    ||              ---------------------[headers]----------------------------
+    ||              --------/\------------------------------------------------
+    ||              --------||-------------------------------------------------
     ||                 Function("foo")         [Client C/C++]
     ||              ----------------------------------------------------------
     ||   
-    ||<===  ctypes.CDll.Function_ABI("foo")  [ctypes.py access to library] 
+    ||<===  ctypes.CDll.Function_ABI("foo")    [ctypes.py access to library] 
            
 ```
 
@@ -209,8 +210,7 @@ else except deal with TDAmeritradeAPI. If not you'll to have deal with ALL the l
 
 1. include headers:
     - "tdma_api_get.h" for the 'HTTPS Get' interface 
-    - "tdma_api_streaming.h" for the 'Streaming' interface 
-    - make sure the compiler can find them 
+    - "tdma_api_streaming.h" for the 'Streaming' interface  
     - *(headers/source use relative include links, don't change the directory structure)*
 2. add Library/API calls to your code
 3. compile *(read the message above on binary compatibility)*
@@ -229,8 +229,7 @@ else except deal with TDAmeritradeAPI. If not you'll to have deal with ALL the l
         - to load it manually: ```>>> tdma_api.clib.init("path/to/lib")```
     - if you get an error message concerning the dependencies you'll need to
       move them to a location the dynamic linker can find.
-5. Currently only the 'Get' interface is implemented; it matches the C++ interface almost exactly so use [those docs](README_GET.md) for now. 
-6. The authorization methods/objects are in ```tdma_api.auth``` and the getter objects are in ```tdma_api.get```.
+6. The authorization methods/objects are in ```tdma_api/auth.py```, the getter objects are in ```tdma_api/get.py```, and the streaming objects are in ```tdma_api/stream.py```.
 
 ### Namespaces
 - - -
@@ -240,7 +239,7 @@ All front-end C++ library code is in namespace ```tdma```. We mostly exclude it 
 ### Conventions
 - - -
 
-- Enums are defined for both C and C++ code using MACROS. For example:
+- Enums are defined for both C and C++ code using MACROS. Python mimics these enums by defining constant values. For example:
     ```
     DECL_C_CPP_TDMA_ENUM(AdminCommandType, 0, 2,
         BUILD_C_CPP_TDMA_ENUM_NAME(AdminCommandType, LOGIN),
@@ -248,7 +247,7 @@ All front-end C++ library code is in namespace ```tdma```. We mostly exclude it 
         BUILD_C_CPP_TDMA_ENUM_NAME(AdminCommandType, QOS)
         );
     ```
-    ... indicates values in index 0 to 2(inclusive) are valid to pass to theAPI. The macros expand to:
+    ... indicates values from index 0(LOGIN) to 2(QOS) are valid to pass to theAPI. The macros expand to:
     ```
     [C++]
     enum class AdminCommandType : int {
@@ -264,6 +263,12 @@ All front-end C++ library code is in namespace ```tdma```. We mostly exclude it 
         AdminCommandType_QOS
     };
     ```
+    In python they would look like:
+    ```
+    ADMIN_COMMAND_TYPE_LOGIN = 0
+    ADMIN_COMMAND_TYPE_LOGOUT = 1
+    ADMIN_COMMAND_TYPE_QOS = 2
+    ```
 
 - C++ methods return values/objects and throw exceptions
 - C functions populate pointers/buffers and return error codes
@@ -271,10 +276,10 @@ All front-end C++ library code is in namespace ```tdma```. We mostly exclude it 
         - ```FreeBuffer(char *buf)```
         - ```FreeBuffers(char **bufers, size_t n)```
         - ```FreeFieldsBuffer(int* fields)```
-    - All buffers are accompanied w/ a size_t* arg to be filled w/ the size of the populated buffer EXCEPT char buffers (char*) which return the size of the string + 1 for the null term
-    - Arrays passed by caller generally have to also pass a size_t value of the number of elements
+    - All buffers are accompanied w/ a size_t* arg to be filled w/ the size of the populated buffer. Buffers of type char* return the size of the string + 1 for the null term.
+    - Arrays passed by caller have to pass a size_t value of the number of elements
 
-- Only ABI functions (ending in '_ABI') are directly exported from the library. The C interface calls and C++ classes wrap these as header-defined inlines.
+- Only ABI functions(those ending in '_ABI') are directly exported from the library. The C interface calls and C++ classes wrap these as header-defined inlines.
 
 ### Errors & Exceptions
 - - -
@@ -401,8 +406,8 @@ securely store your credentials:
         ...
         creds :: the Credentials class return from 'request_access_token'
         throws CLibException on error
-```        
-    
+```           
+
 In the future construct a new Credentials struct from the saved credentials file:
 ```
     [C++]
@@ -464,6 +469,11 @@ You can, for instance, create a static or global ```CredentialsManager``` instan
 ```.credentials``` member as an argument for the following API calls, where required. Keep in mind, with this approach the password will be stored in memory, in plain-text, for 
 the life of the ```CredentialsManager``` object.
     
+**C code should explicitly close the Credentials object to deallocate the underlying resources.** (C++ and Python define destructors that do this for you.)
+```
+inline int
+CloseCredentials(struct Credentials* pcreds );
+```
 
 ### Access
 - - -

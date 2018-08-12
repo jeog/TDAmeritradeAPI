@@ -233,35 +233,6 @@ const chrono::milliseconds StreamingSession::DEF_SUBSCRIBE_TIMEOUT(
     STREAMING_DEF_SUBSCRIBE_TIMEOUT);
 
 
-/*
- * CALLBACK passed to StreamingSession:
- *
- * callback(StreamingCallbackType, StreamerServerType, timestamp, json msg);
- *         (int, int, unsigned long long, const char*)
- *
- *   listening_start - listening thread has started, other args empty
- *
- *   listening_stop - listening thread has stopped (w/o error), other args empty
- *
- *   data - json data of StreamerServiceType::type type returned from server
- *          with timestamp
- *
- *   request_response - server response to a request(long, subscribe etc.)
- *
- *   notify - notify response indicating some 'urgent' message from server
- *
- *   timeout - listening thread has timed out, connection closed/reset,
- *             other args empty
- *
- *   error - error or exception in listening thread, connection closed/reset,
- *           json = {{"error": error message}}
- *
- * DO NOT CALL BACK INTO StreamingSession from inside the callback.
- * DO NOT TRY TO STOP OR RESTART from inside the callback.
- * DO NOT BLOCK THE THREAD from inside the callback.
- *
- */
-
 class StreamingSessionImpl{
     StreamerInfo _streamer_info;
     string _account_id;
@@ -349,6 +320,7 @@ class StreamingSessionImpl{
 public:
     static const int TYPE_ID_LOW = TYPE_ID_STREAMING_SESSION;
     static const int TYPE_ID_HIGH = TYPE_ID_STREAMING_SESSION;
+    typedef StreamingSession ProxyType;
 
     StreamingSessionImpl( const StreamerInfo& streamer_info,
                         const string& account_id,
@@ -1077,30 +1049,6 @@ StreamingSessionImpl::_stop_listener_thread()
 
 
 int
-session_is_callable( StreamingSession_C *psession,
-                        int allow_exceptions )
-{
-    if( !psession )
-        return handle_error<ValueException>(
-            "null session pointer", allow_exceptions
-            );
-
-    if( !psession->obj )
-        return handle_error<ValueException>(
-            "null session pointer->obj", allow_exceptions
-            );
-
-    if( psession->type_id < StreamingSessionImpl::TYPE_ID_LOW ||
-        psession->type_id > StreamingSessionImpl::TYPE_ID_HIGH )
-    {
-        return handle_error<TypeException>(
-            "session has invalid type id", allow_exceptions
-            );
-    }
-    return 0;
-}
-
-int
 call_session_with_subs(
     StreamingSession_C *psession,
     StreamingSubscription_C **subs,
@@ -1109,7 +1057,7 @@ call_session_with_subs(
     deque<bool>(*meth)(void*, const vector<StreamingSubscriptionImpl>&),
     int allow_exceptions )
 {
-    int err = session_is_callable(psession, allow_exceptions);
+    int err = proxy_is_callable<StreamingSessionImpl>(psession, allow_exceptions);
     if( err )
         return err;
 
@@ -1154,6 +1102,9 @@ call_session_with_subs(
 
 using namespace tdma;
 
+//
+// TODO do we actually need account ID ?
+//
 int
 StreamingSession_Create_ABI( struct Credentials *pcreds,
                                 const char *account_id,
@@ -1164,32 +1115,15 @@ StreamingSession_Create_ABI( struct Credentials *pcreds,
                                 StreamingSession_C *psession,
                                 int allow_exceptions )
 {
-    if( !psession )
-        return handle_error<ValueException>(
-            "null session pointer", allow_exceptions
-            );
+    CHECK_PTR(psession, "session", allow_exceptions);
+    CHECK_PTR_KILL_PROXY(account_id, "account_id", allow_exceptions, psession);
+    CHECK_PTR_KILL_PROXY(pcreds, "credentials", allow_exceptions, psession);
+    CHECK_PTR_KILL_PROXY(callback, "callback", allow_exceptions, psession);
 
-    if( !pcreds ){
-        psession->obj = psession->ctx = nullptr;
-        psession->type_id = -1;
-        return handle_error<ValueException>(
-            "null credentials pointer", allow_exceptions
-            );
-    }
-
-    if( !pcreds->access_token | !pcreds->refresh_token | !pcreds->client_id ){
-        psession->obj = psession->ctx = nullptr;
-        psession->type_id = -1;
+    if( !pcreds->access_token | !pcreds->refresh_token | !pcreds->client_id )
         return handle_error<LocalCredentialException>(
-            "invalid credentials struct", allow_exceptions
+            "invalid credentials struct", allow_exceptions, psession
             );
-    }
-
-    if( !callback ){
-        psession->obj = psession->ctx = nullptr;
-        psession->type_id = -1;
-        return handle_error<ValueException>("null callback", allow_exceptions);
-    }
 
     static auto meth = +[](struct Credentials *pcreds, const char* a,
                            streaming_cb_ty cb, unsigned long cto,
@@ -1207,8 +1141,7 @@ StreamingSession_Create_ABI( struct Credentials *pcreds,
                                     callback, connect_timeout, listening_timeout,
                                     subscribe_timeout);
     if( err ){
-        psession->obj = psession->ctx = nullptr;
-        psession->type_id = -1;
+        kill_proxy(psession);
         return err;
     }
 
@@ -1223,18 +1156,7 @@ int
 StreamingSession_Destroy_ABI( StreamingSession_C *psession,
                                  int allow_exceptions )
 
-{
-    int err = session_is_callable(psession, allow_exceptions);
-    if( err )
-        return err;
-
-    static auto meth = +[](void* obj){
-        delete reinterpret_cast<StreamingSessionImpl*>(obj);
-    };
-
-    err = CallImplFromABI(allow_exceptions, meth, psession->obj);
-    return err ? err : 0;
-}
+{ return destroy_proxy<StreamingSessionImpl>(psession, allow_exceptions); }
 
 int
 StreamingSession_Start_ABI( StreamingSession_C *psession,
@@ -1255,7 +1177,7 @@ int
 StreamingSession_Stop_ABI( StreamingSession_C *psession,
                                int allow_exceptions )
 {
-    int err = session_is_callable(psession, allow_exceptions);
+    int err = proxy_is_callable<StreamingSessionImpl>(psession, allow_exceptions);
     if( err )
         return err;
 
@@ -1272,7 +1194,7 @@ StreamingSession_IsActive_ABI( StreamingSession_C *psession,
                                    int *is_active,
                                    int allow_exceptions )
 {
-    int err = session_is_callable(psession, allow_exceptions);
+    int err = proxy_is_callable<StreamingSessionImpl>(psession, allow_exceptions);
     if( err )
         return err;
 
@@ -1283,7 +1205,7 @@ StreamingSession_IsActive_ABI( StreamingSession_C *psession,
     };
 
     tie(*is_active, err) = CallImplFromABI(allow_exceptions, meth, psession->obj);
-    return err ? err : 0;
+    return err;
 }
 
 int
@@ -1307,13 +1229,11 @@ StreamingSession_SetQOS_ABI( StreamingSession_C *psession,
                                 int *result,
                                 int allow_exceptions )
 {
-    int err = session_is_callable(psession, allow_exceptions);
+    int err = proxy_is_callable<StreamingSessionImpl>(psession, allow_exceptions);
     if( err )
         return err;
 
-    err = check_abi_enum(QOSType_is_valid, qos, allow_exceptions);
-    if( err )
-        return err;
+    CHECK_ENUM(QOSType, qos, allow_exceptions);
 
     auto meth = +[](void *obj, int q){
         return static_cast<int>(
@@ -1325,7 +1245,7 @@ StreamingSession_SetQOS_ABI( StreamingSession_C *psession,
 
     tie(*result, err) = CallImplFromABI(allow_exceptions, meth,
                                         psession->obj, qos);
-    return err ? err : 0;
+    return err;
 }
 
 int
@@ -1333,7 +1253,7 @@ StreamingSession_GetQOS_ABI( StreamingSession_C *psession,
                                 int *qos,
                                 int allow_exceptions )
 {
-    int err = session_is_callable(psession, allow_exceptions);
+    int err = proxy_is_callable<StreamingSessionImpl>(psession, allow_exceptions);
     if( err )
         return err;
 
@@ -1344,5 +1264,5 @@ StreamingSession_GetQOS_ABI( StreamingSession_C *psession,
     };
 
     tie(*qos, err) = CallImplFromABI(allow_exceptions, meth, psession->obj);
-    return err ? err : 0;
+    return err;
 }

@@ -2,14 +2,16 @@
 - - -
 
 - [Overview](#overview)
-    - [Certificates](#certificates)
-    - [Using Getter Objects C++](#using-getter-objects-c)
-    - [Using Getter Objects C](#using-getter-objects-c-1)
-    - [Using Getter Objects Python](#using-getter-objects-python)
+- [Certificates](#certificates)
+- [Using Getter Objects](#using-getter-objects)
+    - [C++](#c)
+    - [C](#c-1)
+    - [Python](#python)
 - [Throttling](#throttling)
-- [Example Usage C++](#example-usage-c)
-- [Example Usage C](#example-usage-c-1)
-- [Example Usage Python](#example-usage-python)
+- [Example Usage](#example-usage)
+    - [C++](#c-2)
+    - [C](#c-3)
+    - [Python](#python-1)
 - [Getter Classes](#getter-classes)
     - [QuoteGetter](#quotegetter)  
     - [QuotesGetter](#quotesgetter)  
@@ -33,7 +35,7 @@
 - *On Jun 30 2018 API behavior was changed (by Ameritrade) to fix a bug w/ expired token messages. This will result in an ```InvalidRequest``` exception being thrown with error code 401 in older versions of the library (before commit b75586). If so upgrade to a newer version of the library.*
 - - - 
 
-#### Overview
+### Overview
 
 ```
 [C, C++]
@@ -46,15 +48,15 @@ using namespace tdma;
 from tdma_api import get
 ```
 
-The C++ Get Interface consists of 'Getter' objects that derive from ```APIGetter```, and related convenience functions. ```APIGetter``` is built on ```conn::CurlConnection```: an object-oriented wrapper to libcurl  in curl_connect.h/cpp.
+The C++ Get Interface consists of 'Getter' objects that derive from ```APIGetter```, and related convenience functions. 
 
-The C++ 'Getter' objects are simple 'proxies', all defined inline, that call through library-exported C calls to provide a stable ABI. These calls access the actual C++ implementation objects in the library, throwing exceptions if called by C++ code or returning error codes if called by C.
+The C++ 'Getter' objects are simple 'proxies', all defined inline, that call through the ABI to the corresponding implementation objects. The implementation objects are built on top of ```conn::CurlConnection```: an object-oriented wrapper to libcurl found in curl_connect.h/cpp.
 
-The C interface uses something of an object-oriented approach as well, returning a struct for each getter object that contains a generic pointer to the underlying C++ object. Pointers to these structs can then be passed to the appropriate functions to replicate the behavior of the C++ methods. (see below)
+C uses a similar object-oriented approach where methods are passed a pointer to C proxy objects that are manually created and destroyed by the client.
 
 The Python interface mirrors C++ almost exactly. (see below)
 
-##### Certificates
+### Certificates
 
 Certificates are required to validate the hosts. If libcurl is built against the native ssl lib(e.g openssl on linux) or you use the pre-built dependencies for Windows(we built libcurl with -ENABLE_WINSSL) the default certificate store ***should*** take care of this for you. If this doesn't happen an ```APIExecutionException```  will be thrown with code CURLE_SSL_CACERT(60) and you'll have to use your own certificates via:
 ```
@@ -80,13 +82,16 @@ There is a default 'cacert.pem' file in the base directory extracted from Firefo
 (You can get updated versions from the [curl site](https://curl.haxx.se/docs/caextract.html).) The 
 path of this file, *hard-coded during compilation*, can be found in the DEF_CERTIFICATE_BUNDLE_PATH string.
 
-##### Using Getter Objects [C++]
+### Using Getter Objects 
 
-1. construct a Getter object passing a reference to the Credentials struct and the 
-relevant arguments.
+Getter objects are fundamental to accessing the API. Before using you'll need to have obtained a [valid Credentials object](README.md#authentication). 
+
+Each object sets up an underlying HTTPS/Get connection(via libcurl) using the credentials object and the relevant arguments for that particular request type. The connection sets the Keep-Alive header and will execute a request each ```get / Get``` is called, until ```close / Close``` is called. C++ and Python getters will call ```close``` on destruction.
+
+#### [C++]
+
+1. construct a Getter object 
 2. use the ```.get()``` method which returns a json object from the server OR throws an exception.
-
-```.get()``` can be called more than once for new data until its ```.close()``` method or destructor is called.
 
 Each object has accessor methods for querying the fields passed to the constructor and updating 
 those to be used in subsequent ```.get()``` call. 
@@ -124,9 +129,15 @@ GetQuote(Credentials& creds, string symbol)
 { return QuoteGetter(creds, symbol).get(); }
 ```
 
-##### Using Getter Objects [C]
+#### [C]
 
-1. 'construct' a getter object using the appropriately named ```Create``` function, e.g:
+1. define a a getter struct that will serve as the proxy instance, e.g:
+```
+QuoteGetter_C qg;
+memset(&qg, 0, sizeof(qg));
+```
+
+2. initialize the getter object using the appropriately named ```Create``` function, e.g:
 ```
 inline int
 QuoteGetter_Create( struct Credentials *pcreds, 
@@ -139,7 +150,7 @@ QuoteGetter_Create( struct Credentials *pcreds,
     returns -> 0 on success, error code on failure
 ```
 
-2. use the ```pgetter``` from above to return (un-parsed) json data, e.g:
+3. use a pointer to the proxy instance to return (un-parsed) json data, e.g:
 ```
 inline int
 QuoteGetter_Get(QuoteGetter_C *getter, char **buf, size_t *n)
@@ -151,19 +162,29 @@ QuoteGetter_Get(QuoteGetter_C *getter, char **buf, size_t *n)
               char buffer (size of data + 1 for the null term)
 ```
 Note that a heap allocated char buffer is returned. It's the caller's responsibility
-to free the object. For a single buffer(char*) use:
+to free the object with:
 
 ```
 inline int
 FreeBuffer( char* buf )
-```
-For an 'array' of buffers(char**) use:
-```
+
 inline int
 FreeBuffers( char** bufs, size_t n)
 ```
 
-To change the paramaters of the getter use the accessor methods, e.g:
+Basic use of the Get call looks like:
+```
+char* raw;
+size_t n;
+int err = QuoteGetter_Get(&qg, &raw, &n);
+if( err ){
+   //
+}
+// do something with 'raw' before you free it 
+FreeBuffer( raw ); // notice we are using the char* version for a single buffer
+```
+
+To view or change the paramaters of the getter use the accessor methods, e.g:
 ```
 inline int
 QuoteGetter_GetSymbol(QuoteGetter_C *getter, char **buf, size_t *n)
@@ -171,6 +192,7 @@ QuoteGetter_GetSymbol(QuoteGetter_C *getter, char **buf, size_t *n)
 inline int
 QuoteGetter_SetSymbol(QuoteGetter_C *getter, const char *symbol)
 ```
+Again, remember to free the char buffer returned by the 'GetSymbol' call.
 
 When done you can close the object to end the connection and/or destroy it
 to release the underlying resources e.g:
@@ -189,13 +211,10 @@ inline int
 QuoteGetter_IsClosed(QuoteGetter_C *getter)
 ```
 
-#### Using Getter Objects [Python]
+#### [Python]
 
-1. construct a Getter object(tdma_api/get.py) passing a reference to the Credentials class and the 
-relevant arguments.
-2. use the ```.get()``` method which returns a parsed json object (via json.loads) from the server OR throws LibraryNotLoaded or CLibException.
-
-```.get()``` can be called more than once for new data until its ```.close()``` method or destructor is called.
+1. construct a Getter object (tdma_api/get.py) 
+2. use the ```.get()``` method which returns a parsed json object(dict, list, or None via json.loads()) from the server OR throws clib.LibraryNotLoaded or clib.CLibException.
 
 Each object has accessor methods for querying the fields passed to the constructor and updating 
 those to be used in subsequent ```.get()``` call. 
@@ -217,7 +236,7 @@ class QuoteGetter(_APIGetter):
     def is_closed(self) /* INHERITED */
 ```
 
-#### Throttling
+### Throttling
 
 The API docs indicate a limit of two requests per second so we implement a throttling/blocking 
 mechanism **across ALL Getter objects** with a default wait of 500 milliseconds. If, for instance, we use the default
@@ -251,7 +270,9 @@ wait and make five ```.get()``` calls in immediate succession the group of calls
 This interface should not be used for streaming data, i.e. repeatedly making getter calls -  
 use [StreamingSession](README_STREAMING.md) for that.
 
-#### Example Usage [C++]
+### Example Usage 
+
+#### [C++]
 ```
     #include <string>
     #include <chrono>
@@ -294,7 +315,7 @@ use [StreamingSession](README_STREAMING.md) for that.
     
 ```
 
-#### Example Usage [C]
+#### [C]
 ```
     #include <stdio.h>
     #include <stdlib.h>
@@ -364,7 +385,7 @@ use [StreamingSession](README_STREAMING.md) for that.
     
 ```
 
-#### Example Usage [Python]
+#### [Python]
 ```
     from tdma_api import get, clib, auth
     

@@ -326,6 +326,18 @@ public:
 };
 #endif /* __cplusplus */
 
+// C proxy bases
+typedef struct {
+    void *obj;
+    int type_id;
+} Getter_C, StreamingSubscription_C;
+
+typedef struct{
+    void *obj;
+    int type_id;
+    void *ctx; // reserved
+} StreamingSession_C;
+
 /* C++ interface */
 
 #ifdef __cplusplus
@@ -336,13 +348,31 @@ public:
 
 namespace tdma{
 
-template<typename CTy, typename CBaseTy>
+template<typename ProxyTy, typename ProxyBaseTy=void>
 struct IsValidCProxy{
-    static constexpr bool value = std::is_class<CTy>::value
-        && std::is_trivial<CTy>::value
-        && std::is_standard_layout<CTy>::value
-        && sizeof(CTy) == sizeof(CBaseTy);
+    static constexpr bool value =
+        std::is_class<ProxyTy>::value
+        && std::is_trivial<ProxyTy>::value
+        && std::is_standard_layout<ProxyTy>::value
+        && sizeof(ProxyTy) == sizeof(ProxyBaseTy);
 };
+
+template<typename ProxyTy>
+struct IsValidCProxy<ProxyTy, void>{
+    static constexpr bool value =
+        IsValidCProxy<ProxyTy, Getter_C>::value
+        || IsValidCProxy<ProxyTy, StreamingSubscription_C>::value
+        || IsValidCProxy<ProxyTy, StreamingSession_C>::value;
+};
+
+template<typename ProxyTy>
+struct IsCProxyBase{
+    static constexpr bool value =
+        std::is_same<ProxyTy, Getter_C>::value
+        || std::is_same<ProxyTy, StreamingSubscription_C>::value
+        || std::is_same<ProxyTy, StreamingSession_C>::value;
+};
+
 
 template<typename T>
 class CProxyDestroyer{

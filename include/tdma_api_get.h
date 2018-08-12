@@ -269,7 +269,6 @@ const int TYPE_ID_GETTER_INSTRUMENT_INFO = 16;
 
 #define DECL_CGETTER_STRUCT(name) typedef struct {void *obj; int type_id; } name
 
-DECL_CGETTER_STRUCT(Getter_C);
 DECL_CGETTER_STRUCT(QuoteGetter_C);
 DECL_CGETTER_STRUCT(QuotesGetter_C);
 DECL_CGETTER_STRUCT(MarketHoursGetter_C);
