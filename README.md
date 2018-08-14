@@ -222,14 +222,21 @@ else except deal with TDAmeritradeAPI. If not you'll to have deal with ALL the l
 1. Be sure to have built/installed the shared library(above)
 2. Be sure the library build(32 vs 64 bit) matches the python build
 3. ```user@host:~/dev/TDAmeritradeAPI/python$ python setup.py install```
-4. ```>>> import tdma_api```
+4. Import the package or module(s):
+	``` 
+	import tdma_api # -or-
+	from tdma_api import auth    # authorization methods and objects
+	from tdma_api import get     # 'getter' objects and utilities
+	from tdma_api import stream  # 'streaming' class and subscriptions
+	```
+
     - the python package will try to load the library automatically
     - if it can't it will output an error message on package import 
         - the most common issue is the library not being installed in the default library search path
-        - to load it manually: ```>>> tdma_api.clib.init("path/to/lib")```
+        - to load it manually: ```>>> tdma_api.clib.init("path/to/lib.so")```
     - if you get an error message concerning the dependencies you'll need to
       move them to a location the dynamic linker can find.
-6. The authorization methods/objects are in ```tdma_api/auth.py```, the getter objects are in ```tdma_api/get.py```, and the streaming objects are in ```tdma_api/stream.py```.
+
 
 ### Namespaces
 - - -
@@ -484,7 +491,7 @@ CloseCredentials(struct Credentials* pcreds );
 
 - ##### *Streaming*
 
-    For real-time, low(er)-latency streaming data you'll establish a long-lived WebSocket connection through the StreamingSession class that will callback with json objects. *StreamingSession is currently a work in progress; you should anticipate bugs and substantive changes to both the interface and implementation going forward.* [Please review the full documentation](README_STREAMING.md).
+    For real-time, low(er)-latency streaming data you'll establish a long-lived WebSocket connection through the StreamingSession class that will callback with json strings/objects. [Please review the full documentation](README_STREAMING.md).
 
 - ##### *HTTPS Update/Execute* 
 

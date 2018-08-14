@@ -190,8 +190,8 @@ api_execute( HTTPSConnection& connection,
 
     if( !connection.has_headers() ){
         /* 
-         * IMPORTANT - don't add the headers if this is a repeat call to avoid a
-         *             malformed request that can lead to http error or SIGPIPE 
+         * IMPORTANT - don't add the headers if this is a repeat call to avoid
+         *             a malformed request
          */
         connection.ADD_headers(
             { {"Accept", "application/json"},

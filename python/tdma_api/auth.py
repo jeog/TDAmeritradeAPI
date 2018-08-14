@@ -53,8 +53,7 @@ class Credentials(_Structure):
         if hasattr(self,'access_token') and self.access_token:           
             try:
                 try:                                  
-                    clib.call("CloseCredentials_ABI", _REF(self))
-                    print('done')
+                    clib.call("CloseCredentials_ABI", _REF(self))                   
                 except clib.CLibException as e:
                     print("CLibException in", self.__del__, ":", str(e))
                 except clib.LibraryNotLoaded:

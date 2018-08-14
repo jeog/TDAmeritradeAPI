@@ -27,7 +27,7 @@ ctypes.py to replicate the functionality.
 Before using you'll need to have obtained a valid Credentials object. (See
 tdma_api.auth.__doc__ or README.md for details.)
 
-Each session is passed a Credentials object, account id, callback function,
+Each session is passed a Credentials object, callback function,
 and some optional timeout args.
 
 The session is started by passing a collection of Subscription objects for
@@ -120,7 +120,7 @@ class StreamingSession:
     """StreamingSession - object used for accessing the Streaming interface.
     
     The authenticated user creates a StreamingSession using their Credentials
-    object, an account ID, and a callback function that will be called
+    object and a callback function that will be called
     whenever session state changes or data is returned from the server.
     
     Callback: 
@@ -148,14 +148,13 @@ class StreamingSession:
     
     When done call .stop() to logout and close the connection.
     
-        def __init__( self, creds, account_id, callback, 
+        def __init__( self, creds, callback, 
                       connect_timeout=DEF_CONNECT_TIMEOUT,
                       listening_timeout=DEF_LISTENING_TIMEOUT,
                       subscribe_timeout=DEF_SUBSCRIBE_TIMEOUT ):
         
-            creds :: Credentials :: instance class received from auth.py
+            creds :: Credentials :: instance class received from auth.py            
             
-            account_id         :: str  :: user account ID
             callback           :: func :: callback function for changes in
                                           session state or returned data                                               
             connect_timeout    :: int  :: time to wait for connection
@@ -164,7 +163,7 @@ class StreamingSession:
         
         ALL METHODS THROW -> LibraryNotLoaded, CLibException
     """
-    def __init__( self, creds, account_id, callback, 
+    def __init__( self, creds, callback, 
                   connect_timeout=DEF_CONNECT_TIMEOUT,
                   listening_timeout=DEF_LISTENING_TIMEOUT,
                   subscribe_timeout=DEF_SUBSCRIBE_TIMEOUT ):                
@@ -172,10 +171,9 @@ class StreamingSession:
         self._cb_raw = callback
         self._cb_wrapper = self._build_callback_wrapper(callback)
         self._obj = _StreamingSession_C()
-        clib.call(self._abi('Create'), _REF(creds), PCHAR(account_id),
-                  self._cb_wrapper, c_ulong(connect_timeout),
-                  c_ulong(listening_timeout), c_ulong(subscribe_timeout),
-                  _REF(self._obj))    
+        clib.call(self._abi('Create'), _REF(creds), self._cb_wrapper, 
+                  c_ulong(connect_timeout), c_ulong(listening_timeout), 
+                  c_ulong(subscribe_timeout), _REF(self._obj))    
         self._alive = True                         
                                                      
     def __del__(self):         

@@ -397,7 +397,7 @@ streaming(string id, Credentials& c)
 
 
     {
-        auto ss = StreamingSession::Create(c, id, callback,
+        auto ss = StreamingSession::Create(c, callback,
                                            milliseconds(3000),
                                            milliseconds(15000),
                                            StreamingSession::DEF_SUBSCRIBE_TIMEOUT);
@@ -443,7 +443,7 @@ streaming(string id, Credentials& c)
             cout<< "successfully caught: " << e.what() << endl;
         }
 
-        auto ss2 = StreamingSession::Create(c, id, callback,
+        auto ss2 = StreamingSession::Create(c, callback,
                                            milliseconds(3000),
                                            milliseconds(15000));
         try{

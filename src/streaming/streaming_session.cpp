@@ -54,7 +54,7 @@ void
 D(string msg, StreamingSessionImpl *obj)
 { util::debug_out("StreamingSessionImpl", msg, obj, cout); }
 
-set<string> active_primary_accounts;
+
 set<string> active_accounts;
 
 
@@ -323,14 +323,12 @@ public:
     typedef StreamingSession ProxyType;
 
     StreamingSessionImpl( const StreamerInfo& streamer_info,
-                        const string& account_id,
-                        streaming_cb_ty callback,
-                        chrono::milliseconds connect_timeout,
-                        chrono::milliseconds listening_timeout,
-                        chrono::milliseconds subscribe_timeout )
+                            streaming_cb_ty callback,
+                            chrono::milliseconds connect_timeout,
+                            chrono::milliseconds listening_timeout,
+                            chrono::milliseconds subscribe_timeout )
         :
             _streamer_info( streamer_info ),
-            _account_id( account_id ),
             _client(nullptr),
             _callback( callback ),
             _connect_timeout( max(connect_timeout,
@@ -349,6 +347,7 @@ public:
             _responses_pending()
         {
             D("construct", this);
+            D("primary account: " + streamer_info.primary_acct_id, this);
             D("connect_timeout: " + to_string(connect_timeout.count()), this);
             D("listening_timeout: " + to_string(listening_timeout.count()), this);
             D("subscribe_timeout: " + to_string(subscribe_timeout.count()), this);
@@ -385,10 +384,6 @@ public:
 
     bool
     set_qos(const QOSType& qos);
-
-    string
-    get_account_id() const
-    { return _account_id; }
 
     string
     get_primary_account_id() const
@@ -953,7 +948,7 @@ StreamingSessionImpl::start(const vector<StreamingSubscriptionImpl>& subscriptio
 
     D("check unique session", this);
     string acct = get_primary_account_id();
-    if( active_primary_accounts.count(acct) )
+    if( active_accounts.count(acct) )
         throw StreamingException( "Can not start Session; "
             "one is already active for this primary account: " + acct );
 
@@ -972,9 +967,7 @@ StreamingSessionImpl::start(const vector<StreamingSubscriptionImpl>& subscriptio
         throw StreamingException("login failed");
 
     /* only after connect AND login do we consider this an active session */
-    active_primary_accounts.insert(acct);
-    active_accounts.insert(get_account_id());
-
+    active_accounts.insert(acct);
     _start_listener_thread();
     return add_subscriptions(subscriptions);
 }
@@ -1009,8 +1002,7 @@ StreamingSessionImpl::_reset()
     _responses_pending.clear();
     _server_id.clear();
     try{
-        active_primary_accounts.erase( get_primary_account_id() );
-        active_accounts.erase( get_account_id() );
+        active_accounts.erase( get_primary_account_id() );
     }catch(...){}
 }
 
@@ -1102,12 +1094,8 @@ call_session_with_subs(
 
 using namespace tdma;
 
-//
-// TODO do we actually need account ID ?
-//
 int
 StreamingSession_Create_ABI( struct Credentials *pcreds,
-                                const char *account_id,
                                 streaming_cb_ty callback,
                                 unsigned long connect_timeout,
                                 unsigned long listening_timeout,
@@ -1116,7 +1104,6 @@ StreamingSession_Create_ABI( struct Credentials *pcreds,
                                 int allow_exceptions )
 {
     CHECK_PTR(psession, "session", allow_exceptions);
-    CHECK_PTR_KILL_PROXY(account_id, "account_id", allow_exceptions, psession);
     CHECK_PTR_KILL_PROXY(pcreds, "credentials", allow_exceptions, psession);
     CHECK_PTR_KILL_PROXY(callback, "callback", allow_exceptions, psession);
 
@@ -1125,20 +1112,20 @@ StreamingSession_Create_ABI( struct Credentials *pcreds,
             "invalid credentials struct", allow_exceptions, psession
             );
 
-    static auto meth = +[](struct Credentials *pcreds, const char* a,
-                           streaming_cb_ty cb, unsigned long cto,
-                           unsigned long lto, unsigned long sto)
+    static auto meth = +[](struct Credentials *pcreds, streaming_cb_ty cb,
+                           unsigned long cto, unsigned long lto,
+                           unsigned long sto)
                            {
         using namespace chrono;
         StreamerInfo si = get_streamer_info(*pcreds);
-        return new StreamingSessionImpl( si, a, cb, milliseconds(cto),
+        return new StreamingSessionImpl( si, cb, milliseconds(cto),
                                          milliseconds(lto), milliseconds(sto) );
     };
 
     int err;
     StreamingSessionImpl *obj;
-    tie(obj, err) = CallImplFromABI(allow_exceptions, meth, pcreds, account_id,
-                                    callback, connect_timeout, listening_timeout,
+    tie(obj, err) = CallImplFromABI(allow_exceptions, meth, pcreds, callback,
+                                    connect_timeout, listening_timeout,
                                     subscribe_timeout);
     if( err ){
         kill_proxy(psession);

@@ -1467,37 +1467,6 @@ public:
 
 #endif /* __cplusplus */
 
-/* 
- * CALLBACK passed to StreamingSession:
- *
- * callback(StreamingCallbackType, service, timestamp, json data);
- *
- *   listening_start - listening thread has started, other args empty
- *
- *   listening_stop - listening thread has stopped (w/o error), other args empty
- *
- *   data - json data of StreamerServiceType::type type returned from server
- *          with timestamp
- *
- *   notify - notify response indicating some 'urgent' message from server
- *
- *   timeout - listening thread has timed out, connection closed/reset,
- *             other args empty
- *
- *   error - error or exception in listening thread, connection closed/reset,
- *           json = {{"error": error message}}
- *
- * All callback types except 'data' have ServiceType::type::None
- *
- * DO NOT CALL BACK INTO StreamingSession from inside the callback.
- * DO NOT TRY TO STOP OR RESTART from inside the callback.
- * DO NOT BLOCK THE THREAD from inside the callback.
- *
- */
-
-//typedef std::function<void(StreamingCallbackType cb_type, StreamerServiceType,
-//                           unsigned long long, json)> streaming_cb_ty;
-
 #define STREAMING_VERSION "1.0"
 #define STREAMING_MIN_TIMEOUT 1000
 #define STREAMING_MIN_LISTENING_TIMEOUT 10000
@@ -1514,7 +1483,6 @@ typedef void(*streaming_cb_ty)(int, int, unsigned long long, const char*);
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 StreamingSession_Create_ABI( struct Credentials *pcreds,
-                                const char *account_id,
                                 streaming_cb_ty callback,
                                 unsigned long connect_timeout,
                                 unsigned long listening_timeout,
@@ -1568,11 +1536,10 @@ StreamingSession_GetQOS_ABI( StreamingSession_C *psession,
 
 inline int
 StreamingSession_Create( struct Credentials *pcreds,
-                        const char *account_id,
                         streaming_cb_ty callback,
                         StreamingSession_C *psession )
 {
-    return StreamingSession_Create_ABI(pcreds, account_id, callback,
+    return StreamingSession_Create_ABI(pcreds, callback,
                                        STREAMING_DEF_CONNECT_TIMEOUT,
                                        STREAMING_DEF_LISTENING_TIMEOUT,
                                        STREAMING_DEF_SUBSCRIBE_TIMEOUT,
@@ -1581,14 +1548,13 @@ StreamingSession_Create( struct Credentials *pcreds,
 
 inline int
 StreamingSession_CreateEx( struct Credentials *pcreds,
-                            const char *account_id,
                             streaming_cb_ty callback,
                             unsigned long connect_timeout,
                             unsigned long listening_timeout,
                             unsigned long subscribe_timeout,
                             StreamingSession_C *psession )
 {
-    return StreamingSession_Create_ABI(pcreds, account_id, callback,
+    return StreamingSession_Create_ABI(pcreds, callback,
                                        connect_timeout, listening_timeout,
                                        subscribe_timeout, psession, 0);
 }
@@ -1691,7 +1657,6 @@ private:
 public:
     static std::shared_ptr<StreamingSession>
     Create( Credentials& creds,
-             const std::string& account_id,
              streaming_cb_ty callback,
              std::chrono::milliseconds connect_timeout=DEF_CONNECT_TIMEOUT,
              std::chrono::milliseconds listening_timeout=DEF_LISTENING_TIMEOUT,
@@ -1700,7 +1665,7 @@ public:
     {
         auto ss = new StreamingSession;
         try{
-            StreamingSession_Create_ABI(&creds, CPP_to_C(account_id), callback,
+            StreamingSession_Create_ABI(&creds, callback,
                                         connect_timeout.count(),
                                         listening_timeout.count(),
                                         subscribe_timeout.count(),

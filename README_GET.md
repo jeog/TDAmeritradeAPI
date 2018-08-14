@@ -54,7 +54,7 @@ The C++ 'Getter' objects are simple 'proxies', all defined inline, that call thr
 
 C uses a similar object-oriented approach where methods are passed a pointer to C proxy objects that are manually created and destroyed by the client.
 
-The Python interface mirrors C++ almost exactly. (see below)
+The Python interface mirrors C++ almost exactly. 
 
 ### Certificates
 
@@ -86,7 +86,7 @@ path of this file, *hard-coded during compilation*, can be found in the DEF_CERT
 
 Getter objects are fundamental to accessing the API. Before using you'll need to have obtained a [valid Credentials object](README.md#authentication). 
 
-Each object sets up an underlying HTTPS/Get connection(via libcurl) using the credentials object and the relevant arguments for that particular request type. The connection sets the Keep-Alive header and will execute a request each ```get / Get``` is called, until ```close / Close``` is called. C++ and Python getters will call ```close``` on destruction.
+Each object sets up an underlying HTTPS/Get connection(via libcurl) using the credentials object and the relevant arguments for that particular request type. The connection sets the Keep-Alive header and will execute a request each time ```get / Get``` is called, until ```close / Close``` is called. C++ and Python getters will call ```close``` on destruction.
 
 #### [C++]
 
@@ -96,7 +96,7 @@ Each object sets up an underlying HTTPS/Get connection(via libcurl) using the cr
 Each object has accessor methods for querying the fields passed to the constructor and updating 
 those to be used in subsequent ```.get()``` call. 
 
-If you only need to make the call once, each 'Getter' object has a similarly name 'Get' function
+If you only need to make the call once, each 'Getter' object has a similarly name 'Get' convenience function
 that wraps the object and calls its ```.get()``` method once before destruction. 
 
 To make this more concrete here is the Getter interface for individual price quotes:

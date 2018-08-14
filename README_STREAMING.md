@@ -61,15 +61,13 @@ The Python interface(```tdma_api/stream.py```) uses ```stream.StreamingSession``
 
 ### StreamingSession
 
-To create a new session the authenticated user will pass their Credentials object and account id string (as they did for the [HTTPS Get Interface](README_GET.md)), a callback function, and some optional timeout args.
+To create a new session the authenticated user will pass their Credentials object (as they did for the [HTTPS Get Interface](README_GET.md)), a callback function, and some optional timeout args to the static factory.
 
-***Note - each time a session is created a single HTTPS/Get request for the account's streamer information is made.***
 ```
 [C++]
 static shared_ptr<StreamingSession>
 StreamingSession::Create( 
-        Credentials& creds,
-        const std::string& account_id,
+        Credentials& creds,     
         streaming_cb_ty callback,
         std::chrono::milliseconds connect_timeout=DEF_CONNECT_TIMEOUT,
         std::chrono::milliseconds listening_timeout=DEF_LISTENING_TIMEOUT,
@@ -78,13 +76,13 @@ StreamingSession::Create(
 
     creds             ::  credentials struct received from RequestAccessToken 
                           / LoadCredentials / CredentialsManager.credentials
-    account_id        ::  id string of account to use
     callback          ::  callback for when notifications, data etc. 
     connect_timeout   ::  milliseconds to wait for a connection
     listening_timeout ::  milliseconds to wait for any response from server
     subscribe_timeout ::  milliseconds to wait for a subscription response 
 ```
 
+***Note - each time a session is created a single HTTPS/Get request for the account's streamer information is made.***
 
 The C interface expects a pointer to a StreamingSession_C struct to be 
 populated with a generic pointer to the underlying C++ object. Once this object
@@ -102,7 +100,6 @@ typedef struct{
 [C]
 inline int
 StreamingSession_Create( struct Credentials *pcreds,
-                         const char* account_id,
                          streaming_cb_ty callback,
                          StreamingSession_C *psession ); // <-populated on success
     ...
@@ -111,7 +108,6 @@ StreamingSession_Create( struct Credentials *pcreds,
 [C]
 inline int
 StreamingSession_CreateEx( struct Credentials *pcreds,
-                           const char* account_id,
                            streaming_cb_ty callback,
                            unsigned long connect_timeout,
                            unsigned long listening_timeout,
@@ -124,7 +120,7 @@ StreamingSession_CreateEx( struct Credentials *pcreds,
 The Python interface uses the ```stream.StreamingSession``` class directly.
 ```
 class StreamingSession:
-    def __init__( self, creds, account_id, callback, 
+    def __init__( self, creds, callback, 
                   connect_timeout=DEF_CONNECT_TIMEOUT,
                   listening_timeout=DEF_LISTENING_TIMEOUT,
                   subscribe_timeout=DEF_SUBSCRIBE_TIMEOUT ):
@@ -177,7 +173,7 @@ certain values to native types.
     CALLBACK_TYPE_LISTENING_START = 0
     CALLBACK_TYPE_LISTENING_STOP = 1
     CALLBACK_TYPE_DATA = 2
-    CALLBACK_TYPE_REQUES_RESPONSE = 3
+    CALLBACK_TYPE_REQUEST_RESPONSE = 3
     CALLBACK_TYPE_NOTIFY = 4
     CALLBACK_TYPE_TIMEOUT = 5
     CALLBACK_TYPE_ERROR = 6
@@ -298,12 +294,12 @@ StreamingCallbackType | StreamingService  | timestamp   | json
 
 #### Start
 
-Once a Session is created it needs to be started and different services need to be subscribed to.  Starting a session will automatically try to log the user in using the credentials and account_id information passed.
+Once a Session is created it needs to be started and different services need to be subscribed to.  Starting a session will automatically try to log the user in. In order to start, two conditions must be met:
 
-In order to start two conditions must be met:
 1. No other Sessions with the same Primary Account ID can be active. An active session is one that's been started and not stopped. 
 2. It must have at least one subscription. (Subscription objects are explained in the [Subscriptions Section](#subscriptions).)
-... if not the start call will throw ```StreamingException``` (C++), ```clib.CLibException``` (Python) or return ```TDMA_API_STREAM_ERROR``` (C) ).
+
+If not the start call will throw ```StreamingException``` (C++), ```clib.CLibException``` (Python) or return ```TDMA_API_STREAM_ERROR``` (C).
 
 ```
 [C++]
@@ -697,8 +693,7 @@ Using the proxy object after this point results in ***UNDEFINED BEHAVIOR***.
 
         {
             std::shared_ptr<StreamingSession> session = 
-                StreamingSession::Create( credentials_manager.credentials,
-                                          "123456789", cb );
+                StreamingSession::Create( credentials_manager.credentials, cb );
 
             bool result = session->start( sub1 );
             //assert result
@@ -708,10 +703,11 @@ Using the proxy object after this point results in ***UNDEFINED BEHAVIOR***.
             //assert result
             this_thread::sleep_for( chrono::seconds(5) );
 
-            session->stop();
+            session->stop(); // clears subscriptions as well
             this_thread::sleep_for( chrono::seconds(5) );
 
-            session->start( {sub1, sub2} ); // same thing we just did
+            auto results = session->start( {sub1, sub2} ); // same thing we just did
+            // assert each result
             this_thread::sleep_for( chrono::seconds(5) );
 
         } /* session goes out of scope:
@@ -797,8 +793,8 @@ Using the proxy object after this point results in ***UNDEFINED BEHAVIOR***.
         // streaming session proxy
         StreamingSession_C session;
     
-        // create a session using a pointer to the Credentials struct, account ID
-        err = StreamingSession_Create( pcreds, "123456789", &callback, &session );
+        // create a session using a pointer to the Credentials struct
+        err = StreamingSession_Create( pcreds, &callback, &session );
         if( err ){
             //
         }
@@ -887,7 +883,7 @@ Using the proxy object after this point results in ***UNDEFINED BEHAVIOR***.
             assert set(qsub.get_symbols()) == set(symbols)         
 
             # CREATE A SESSION
-            session = stream.StreamingSession(cm.credentials, "123456789", callback)
+            session = stream.StreamingSession(cm.credentials, callback)
 
             # START THE SESSION
             assert session.start(qsub)

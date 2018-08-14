@@ -481,7 +481,7 @@ def test_instrument_info_getters(creds):
     print(str(j))    
 
 
-def test_streaming(creds, account_id):
+def test_streaming(creds):
     
     QS = stream.QuotesSubscription
     try:
@@ -630,7 +630,7 @@ def test_streaming(creds, account_id):
 
     _pause = lambda s : print("pause for %f sec..." % s) or sleep(s)
 
-    session = stream.StreamingSession(creds, account_id, callback)
+    session = stream.StreamingSession(creds, callback)
     assert not session.is_active()
     assert session.get_qos() == stream.QOS_FAST
     
@@ -673,7 +673,7 @@ def test_streaming(creds, account_id):
     assert session.get_qos() == stream.QOS_REAL_TIME
     
     ## EXC THROWN BEFORE HERE (at least never got through C++ constructor)
-    session2 = stream.StreamingSession(creds, account_id, callback)
+    session2 = stream.StreamingSession(creds, callback)
     
     try:
         session2.start(nhs)
@@ -727,7 +727,7 @@ if __name__ == '__main__':
     print_title("load credentials") 
     with auth.CredentialsManager(args.credentials_path, \
                                   args.credentials_password, True) as cm:  
-        test(test_streaming, cm.credentials, args.account_id)                       
+        test(test_streaming, cm.credentials)                       
         test(test_quote_getters, cm.credentials)
         test(test_throttling, cm.credentials)
         test(test_quotes_getters, cm.credentials)

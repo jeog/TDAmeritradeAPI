@@ -607,7 +607,7 @@ Test_Streaming(struct Credentials* c, const char* account_id)
 
     // CREATE SESSION 1
     StreamingSession_C ss;
-    if( (err = StreamingSession_Create(c, account_id, streaming_callback, &ss)) )
+    if( (err = StreamingSession_Create(c, streaming_callback, &ss)) )
         CHECK_AND_RETURN_ON_ERROR(err, "StreamingSession_Create");
 
     StreamingSubscription_C* subs[] = {(StreamingSubscription_C*)&q1};
@@ -640,7 +640,7 @@ Test_Streaming(struct Credentials* c, const char* account_id)
 
     // CREATE SESSION 2 (should be ok)
     StreamingSession_C ss2;
-    if( (err = StreamingSession_Create(c, account_id, streaming_callback, &ss2)) )
+    if( (err = StreamingSession_Create(c, streaming_callback, &ss2)) )
         CHECK_AND_RETURN_ON_ERROR(err, "StreamingSession_Create #2");
 
     // TRY TO START SESSION 2 /W ACTIVE SESSION 1 (should get error)
