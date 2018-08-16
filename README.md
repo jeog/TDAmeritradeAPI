@@ -43,6 +43,10 @@ and then uses the library to request an access token, which is refreshed automat
 - [Conventions](#conventions)
 - [Errors & Exceptions](#errors--exceptions)
 - [Authentication](#authentication)
+    - [Access Code](#access-code)
+        - [Simple Approach for Personal Use](#simple-approach-for-personal-use)
+        - [Other Options](#other-options)
+    - [Credentials](#credentials)
 - [Access](#access)
     - [HTTPS Get](#https-get)
     - [Streaming](#streaming)
@@ -329,26 +333,40 @@ for the derived classes)
 - ```LastErrorMsg``` and ```LastErrorCode``` can be used to get the last error message and code, respectively.
 ### Authentication
 - - -
-Authentication is done through OAuth2 using your account login information. 
+Authentication is done through OAuth2 using your account login information.
 
-1. [Follow Ameritrade's Getting Started guide](https://developer.tdameritrade.com/content/getting-started) 
-to setup a developer account.
-    
-2. Get an access code using your account info:
-    - [use your browser and a localhost redirect uri](https://developer.tdameritrade.com/content/simple-auth-local-apps) -or-
-    - [use your own server](https://developer.tdameritrade.com/content/web-server-authentication-python-3) -or-
-    - use a 3rd party solution e.g [auth0](https://auth0.com)
-    - *we'll try to include an automated tool at some point in the future*
+#### Access Code
 
-3. use ```RequestAccessToken``` to get an access token stored in a ```Credentials``` struct (**only has to be done once, until the refresh token expires in 3 months**)
+First, you need to get an access code.
+
+##### Simple Approach For Personal Use
+
+1. [Set up a developer account.](https://developer.tdameritrade.com/user/register)
+    - Set the 'redirect_uri' field to the localhost: https://127.0.0.1
+    - Set a 'client_id' and remember the full name (e.g MY_ID@AMER.OAUTHAP)
+2. Open the ```tools/get-access-code.html``` file with your web broswer and follow instructions.
+    - Temporarily disable any browser add-ons that block pop-ups/redirects/JavaScript
+    - If this doesn't work [follow these instructions](https://developer.tdameritrade.com/content/simple-auth-local-apps).
+3. **Securely** record the access code it gives you. You'll only need to pass this to the API **once**. Once you use this code to create and successfully store a Credentials object(see below) you can dispose of it.
+
+##### Other Options
+  
+These options provide for more robust authentication e.g writing an app for 3rd party users. You'll need to [set up a developer account.](https://developer.tdameritrade.com/user/register) (The 'redirect_uri' field to use depends on what you want to do.)
+  
+1. [Set up your own server](https://developer.tdameritrade.com/content/web-server-authentication-python-3)
+2. Use a 3rd party solution e.g [auth0](https://auth0.com)
+
+#### Credentials
+
+Once you have an access code use ```RequestAccessToken``` to get a ```Credentials``` object that will retrieve and store the access and refresh tokens. **This only has to be done once, until the refresh token expires in 3 months.**
 ```
     [C++]
     Credentials 
     RequestAccessToken(string code, string client_id, string redirect_uri="127.0.0.1");
     
-       code          ::  the code from #2
-       client_id     ::  the client id from #1
-       redirect_uri  ::  the redirect uri from #1    
+       code          ::  the access code retrieved
+       client_id     ::  the client id used to set up the account
+       redirect_uri  ::  the redirect uri used to set up the account
        
     [C]
     inline int

@@ -139,7 +139,7 @@ class StreamingSession:
     
     In order to start the connection call .start() with a collection of
     Subscription objects. THERE CAN BE ONLY ONE ACTIVE SESSION FOR EACH
-    PRIMARY ACCOUNT ID.
+    PRIMARY ACCOUNT.
     
     The SERVICE_TYPE_[] constant passed to the callback(arg2) corresponds with 
     the Subscription classes, e.g SERVICE_TYPE_QUOTE --> QuotesSubscription. 

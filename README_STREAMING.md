@@ -725,7 +725,7 @@ Using the proxy object after this point results in ***UNDEFINED BEHAVIOR***.
     #include <stdio.h>
     #include <stdlib.h>
     
-    #include "tdma_api_get.h"
+    #include "tdma_api_streaming.h"
   
     void
     callback(int cb_type, int ss_type, unsigned long long ts, const char* s){

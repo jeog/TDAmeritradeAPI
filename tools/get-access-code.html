@@ -1,0 +1,76 @@
+<html>
+<head>
+<script type="text/javascript">
+    var baseurl="https://auth.tdameritrade.com/auth?response_type=code";
+    var localhostaddr = encodeURIComponent("https://127.0.0.1") ;
+
+    function getAccessCode() {
+        var client_id = "";
+        do {
+            client_id = prompt("Enter the full 'client_id' for the account (e.g MY_ID@AMER.OAUTHAP):");
+            if( client_id === null ){
+                return;
+            }
+            if( client_id === "" ){
+                alert("'client_id' can not be empty!");
+            }
+        }while( client_id === "" );
+
+        var url = new URL(baseurl + "&redirect_uri=" + localhostaddr
+                          + "&client_id=" + encodeURIComponent(client_id));
+
+        var win = window.open(url.href);
+
+        var ret = "";
+        var code = null;
+        do {
+            ret = prompt( "A new browser window/tab should now open: \n\n" 
+                        + "1) Enter your TDAmeritrade login info. \n\n"
+                        + "2) Confirm external access to the account. \n\n"
+                        + "3) The page will then try to redirect to the localhost and "
+                        + "return a 404 error. Copy the url from that page and enter "
+                        + "it here to retrieve your access code. \n\n"
+                        + "NOTE - You may have to disable certain browser add-ons("
+                        + "e.g NoScript) that may block the redirect attempt. \n\n");
+            if( ret === null ){
+                return;
+            }
+            if( ret === "" ){
+                alert("Input can not be empty!");
+                continue;
+            }      
+            var subs = ret.split("code=");
+            if( subs.length < 2 ){
+                alert("Invalid URL! (Could not find 'code' parameter key)");
+                continue;
+            }
+            if( subs.length > 2 ){
+                alert("Invalid URL! ('code=' found more than once)");
+                continue;
+            } 
+            var rawcode = subs[1];
+            if( rawcode === "" ){
+                alert("Invalid URL! (Could not find 'code' parameter value)");
+                continue;
+            }
+            try{
+                code = decodeURIComponent(rawcode);          
+            }catch(e){
+                alert("Invalid URL! (Could not decode URI)");
+            }
+        }while(code === null);
+
+        alert("Access Code:\n\n" + code + "\n\n");        
+    };
+
+    alert("Retrieve an access code for the TDAmeritrade API. \n\n"
+          + "You should have already set up a Developer Account ("
+          + "https://developer.tdameritrade.com/user/register). \n\n"
+          + "The 'redirect_uri' field of the account needs to be set to the "
+          + "localhost address (https://127.0.0.1)");
+
+    getAccessCode();
+
+</script>
+</head>
+</html>
