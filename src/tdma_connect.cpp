@@ -238,7 +238,7 @@ api_auth_execute(HTTPSPostConnection& connection, std::string fname)
 
     if( r_code != HTTP_RESPONSE_OK ){
         cerr<< "error response: " << r_code << endl;
-        throw AuthenticationException(fname + " failed", r_code);
+        throw AuthenticationException(fname + " failed " + r_data, r_code);
     }
 
     string r_esc = unescape_returned_post_data(r_data); // REMOVE ????

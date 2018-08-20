@@ -430,9 +430,9 @@ struct CredentialsManager{
 
 
 inline Credentials
-RequestAccesToken( std::string code,
-                     std::string client_id,
-                     std::string redirect_uri = "https://127.0.0.1")
+RequestAccessToken( std::string code,
+                      std::string client_id,
+                      std::string redirect_uri = "https://127.0.0.1")
 {
     Credentials c;
     RequestAccessToken_ABI( code.c_str(), client_id.c_str(),

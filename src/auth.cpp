@@ -629,6 +629,7 @@ RequestAccessTokenImpl( const string& code,
 
     vector<pair<string, string>> fields = {
         {"grant_type","authorization_code"},
+        {"refresh_token", ""},
         {"access_type", "offline"},
         {"code", util::url_encode(code)},
         {"client_id", util::url_encode(client_id)},

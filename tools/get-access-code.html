@@ -1,5 +1,7 @@
 <html>
 <head>
+<p id="access-code-head"></p>
+<p id="access-code-body"></p>
 <script type="text/javascript">
     var baseurl="https://auth.tdameritrade.com/auth?response_type=code";
     var localhostaddr = encodeURIComponent("https://127.0.0.1") ;
@@ -60,8 +62,9 @@
             }
         }while(code === null);
 
-        alert("Access Code:\n\n" + code + "\n\n");        
+        return code;           
     };
+  
 
     alert("Retrieve an access code for the TDAmeritrade API. \n\n"
           + "You should have already set up a Developer Account ("
@@ -69,7 +72,12 @@
           + "The 'redirect_uri' field of the account needs to be set to the "
           + "localhost address (https://127.0.0.1)");
 
-    getAccessCode();
+    code = getAccessCode();
+    document.getElementById("access-code-head").innerHTML = "Access Code:"
+    if( code !== null ){          
+        document.getElementById("access-code-body").innerHTML = code;  
+    }
+    
 
 </script>
 </head>
