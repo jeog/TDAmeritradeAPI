@@ -226,6 +226,7 @@ else except deal with TDAmeritradeAPI. If not you'll to have deal with ALL the l
 1. Be sure to have built/installed the shared library(above)
 2. Be sure the library build(32 vs 64 bit) matches the python build
 3. ```user@host:~/dev/TDAmeritradeAPI/python$ python setup.py install```
+    - if your ```python``` links to ```python2``` run ```python3 setup.py install``` instead
 4. Import the package or module(s):
 	``` 
 	import tdma_api # -or-
@@ -233,7 +234,6 @@ else except deal with TDAmeritradeAPI. If not you'll to have deal with ALL the l
 	from tdma_api import get     # 'getter' objects and utilities
 	from tdma_api import stream  # 'streaming' class and subscriptions
 	```
-
     - the python package will try to load the library automatically
     - if it can't it will output an error message on package import 
         - the most common issue is the library not being installed in the default library search path

@@ -16,6 +16,7 @@
 # 
 
 from distutils.core import setup
+import sys
 
 NAME = 'tdma_api'
 VERSION = '0.1'
@@ -23,6 +24,10 @@ DESCRIPTION = 'Python interface to TDAmeritradeAPI'
 AUTHOR = 'Jonathon Ogden'
 AUTHOR_EMAIL = 'jeog.dev@gmail.com'
 PACKAGES = ['tdma_api']
+
+if sys.version_info.major < 3:
+    sys.stderr.write("fatal: tdma_api requires python3\n")
+    exit(1)
 
 if __name__ == '__main__':
     setup(name=NAME, version=VERSION, description=DESCRIPTION, author=AUTHOR,
