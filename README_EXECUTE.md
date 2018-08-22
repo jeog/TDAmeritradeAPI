@@ -15,7 +15,7 @@ This interface is waiting on a mechanism from Ameritrade to test execution witho
 
 Here's your chance to make suggestions about the design and implentation that you would, and would not, like to see. What do you like and not like about other broker APIs? What feature(s) would be useful?
 
-Feel free to comment via [issues](issues/1) or email: jeog.dev@gmail.com
+Feel free to comment via [issues](https://github.com/jeog/TDAmeritradeAPI/issues/1) or email: jeog.dev@gmail.com
 
 ### Preliminary Design Ideas
 
