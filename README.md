@@ -513,7 +513,7 @@ CloseCredentials(struct Credentials* pcreds );
 
 - ##### *HTTPS Update/Execute* 
 
-    For updating your account and executing trades you'll make HTTPS Put/Post/Delete requests that have yet to be implemented. *As soon as the get calls are determined stable and there's a means to test execution outside of live trading they will be added.*
+    For updating your account and executing trades you'll make HTTPS Put/Post/Delete requests that have yet to be implemented. *As soon as the get calls are determined stable and there's a means to test execution outside of live trading they will be added.* [Please review the preliminary documentation](README_EXECUTE.md).
 
 
 #### LICENSING & WARRANTY
