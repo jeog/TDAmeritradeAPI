@@ -83,11 +83,17 @@ def test_throttling(creds):
     
     print("+ throttling test - BEGIN")
     g = get.QuoteGetter(creds, "SPY")
-    ntests = 3
+    ntests = 5
     start = perf_counter()
     for _ in range(ntests):
-        g.get()  
-        print(" ...") 
+        a = get.wait_remaining()
+        print(str(a) + "...", end='')
+        sleep(W/1000/10)
+        b = get.wait_remaining()
+        print(str(b) + "...", end = '')
+        assert a - b >= (W/1000/10)               
+        g.get()         
+        print(str(get.wait_remaining())) 
     end = perf_counter()
     t = end - start
     tmsec = int(t*1000)
@@ -666,7 +672,7 @@ def test_streaming(creds):
     _pause(1)
     
     assert all(session.add_subscriptions(lofs))
-    _pause(1)
+    _pause(1) 
     
     assert all(session.add_subscriptions(lofxs, lofos))
     assert session.set_qos(stream.QOS_REAL_TIME)
@@ -729,7 +735,7 @@ if __name__ == '__main__':
                                   args.credentials_password, True) as cm:  
         test(test_streaming, cm.credentials)                       
         test(test_quote_getters, cm.credentials)
-        test(test_throttling, cm.credentials)
+        test(test_throttling, cm.credentials)        
         test(test_quotes_getters, cm.credentials)
         test(test_market_hours_getters, cm.credentials)
         test(test_movers_getters, cm.credentials)
@@ -743,7 +749,7 @@ if __name__ == '__main__':
         test(test_subscription_keys_getter, cm.credentials, args.account_id)                       
         test(test_transaction_history_getters, cm.credentials, args.account_id)
         test(test_individual_transaction_history_getters, cm.credentials, 
-        args.account_id)
+             args.account_id)
         test(test_user_principals_getters, cm.credentials)
         test(test_instrument_info_getters, cm.credentials)
         

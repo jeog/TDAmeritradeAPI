@@ -266,6 +266,19 @@ wait and make five ```.get()``` calls in immediate succession the group of calls
     [Python] 
     def get.set_wait_msec(msec)    
 ```
+To check the number of milliseconds before the next ```.get()``` call can be executed(not block):
+```
+    [C++]
+    static chrono::milliseconds
+    APIGetter::wait_remaining();
+
+    [C]
+    inline int
+    APIGetter_WaitRemaining(unsigned long long *msec);
+
+    [Python]
+    def get.wait_remaining()
+```
 
 This interface should not be used for streaming data, i.e. repeatedly making getter calls -  
 use [StreamingSession](README_STREAMING.md) for that.

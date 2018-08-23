@@ -106,6 +106,7 @@ int main(int argc, char* argv[])
 
         cout<< "*** QUOTE DATA ***" << endl;
         quote_getters(cmanager.credentials);
+        cout<< "WaitRemaining: " << APIGetter::wait_remaining().count() << endl;
 
         historical_getters(cmanager.credentials);
         this_thread::sleep_for( seconds(3) );

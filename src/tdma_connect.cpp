@@ -297,11 +297,7 @@ APIGetterImpl::throttled_get(APIGetterImpl& getter)
      * CLASSES.
      */
     lock_guard<mutex> _(get_mtx);
-
-    auto elapsed = util::get_msec_since_epoch<conn::clock_ty>() - last_get_msec;
-    assert( elapsed.count() >= 0 );
-
-    auto remaining = wait_msec - elapsed;
+    auto remaining = throttled_wait_remaining();
     if( remaining.count() > 0 ){
         /*
          * wait_msec and last_get_msec provide a global throttling mechanism
@@ -320,6 +316,20 @@ APIGetterImpl::throttled_get(APIGetterImpl& getter)
     return s;
 }
 
+std::chrono::milliseconds
+APIGetterImpl::throttled_wait_remaining()
+{
+    auto elapsed = util::get_msec_since_epoch<conn::clock_ty>() - last_get_msec;
+    assert( elapsed.count() >= 0 );
+    return wait_msec - elapsed;
+}
+
+std::chrono::milliseconds
+APIGetterImpl::wait_remaining()
+{
+    static const std::chrono::milliseconds ms0(0);
+    return std::max(throttled_wait_remaining(), ms0);
+}
 
 void
 APIGetterImpl::set_wait_msec(milliseconds msec)
@@ -440,4 +450,14 @@ APIGetter_GetDefWaitMSec_ABI(unsigned long long *msec, int allow_exceptions)
     return 0;
 }
 
+int
+APIGetter_WaitRemaining_ABI(unsigned long long *msec, int allow_exceptions)
+{
+    CHECK_PTR(msec, "msec", allow_exceptions);
+
+    *msec = static_cast<unsigned long long>(
+        APIGetterImpl::wait_remaining().count()
+        );
+    return 0;
+}
 

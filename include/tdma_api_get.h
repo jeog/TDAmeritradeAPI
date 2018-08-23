@@ -331,6 +331,9 @@ APIGetter_GetWaitMSec_ABI(unsigned long long *msec, int allow_exceptions);
 EXTERN_C_SPEC_ DLL_SPEC_ int
 APIGetter_GetDefWaitMSec_ABI(unsigned long long *msec, int allow_exceptions);
 
+EXTERN_C_SPEC_ DLL_SPEC_ int
+APIGetter_WaitRemaining_ABI(unsigned long long *msec, int allow_exceptions);
+
 /* QuoteGetter */
 EXTERN_C_SPEC_ DLL_SPEC_ int
 QuoteGetter_Create_ABI( struct Credentials *pcreds,
@@ -1101,6 +1104,10 @@ APIGetter_GetWaitMSec(unsigned long long *msec)
 inline int
 APIGetter_GetDefWaitMSec(unsigned long long *msec)
 { return APIGetter_GetDefWaitMSec_ABI(msec, 0); }
+
+inline int
+APIGetter_WaitRemaining(unsigned long long *msec)
+{ return APIGetter_WaitRemaining_ABI(msec, 0); }
 
 /* declare derived versions of Get, Close, IsClosed for each getter*/
 #define DECL_WRAPPED_API_GETTER_BASE_FUNCS(name) \
@@ -2124,6 +2131,14 @@ public:
         APIGetter_SetWaitMSec_ABI(
             static_cast<unsigned long long>(msec.count()), 1
             );
+    }
+
+    static std::chrono::milliseconds
+    wait_remaining()
+    {
+        unsigned long long w;
+        APIGetter_WaitRemaining_ABI(&w, 1);
+        return std::chrono::milliseconds(w);
     }
 
     json

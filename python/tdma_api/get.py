@@ -169,7 +169,11 @@ def get_wait_msec():
 def set_wait_msec(msec):
     """set current minimum wait milliseconds between .get() calls"""
     clib.set_val('APIGetter_SetWaitMSec_ABI', c_ulonglong, msec)
-        
+
+def wait_remaining():
+    """milliseconds of waiting before .get() can be called without blocking"""
+    return clib.get_val("APIGetter_WaitRemaining_ABI", c_ulonglong)        
+
 
 class _APIGetter:
     """_APIGetter - Base getter class. DO NOT INSTANTIATE!
@@ -190,10 +194,8 @@ class _APIGetter:
                 try:                                  
                     clib.call(self._abi('Destroy'), _REF(self._obj))
                 except clib.CLibException as e:
-                    print("CLibException in", self.__del__, ":", str(e))
-                except clib.LibraryNotLoaded:
-                    pass                      
-            except NameError:
+                    print("CLibException in", self.__del__, ":", str(e))                                 
+            except:
                 pass
                    
     @property

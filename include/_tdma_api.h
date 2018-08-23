@@ -75,6 +75,9 @@ class APIGetterImpl{
     static std::string
     throttled_get(APIGetterImpl& getter);
 
+    static std::chrono::milliseconds
+    throttled_wait_remaining();
+
     api_on_error_cb_ty _on_error_callback;
     std::reference_wrapper<Credentials> _credentials;
     conn::HTTPSGetConnection _connection;
@@ -117,6 +120,9 @@ public:
 
     static void
     set_wait_msec(std::chrono::milliseconds msec);
+
+    static std::chrono::milliseconds
+    wait_remaining();
 
     std::string
     get();

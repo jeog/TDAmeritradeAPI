@@ -183,10 +183,8 @@ class StreamingSession:
                 try:                                  
                     clib.call(self._abi('Destroy'), _REF(self._obj))
                 except clib.CLibException as e:
-                    print("CLibException in", self.__del__, ":", str(e))
-                except clib.LibraryNotLoaded:
-                    pass                      
-            except NameError:
+                    print("CLibException in", self.__del__, ":", str(e))                                  
+            except:
                 pass
                    
     @property
@@ -301,10 +299,8 @@ class _StreamingSubscription:
                 try:                                  
                     clib.call(self._abi('Destroy'), _REF(self._obj))
                 except clib.CLibException as e:
-                    print("CLibException in", self.__del__, ":", str(e))
-                except clib.LibraryNotLoaded:
-                    pass                      
-            except NameError:
+                    print("CLibException in", self.__del__, ":", str(e))                                   
+            except:
                 pass
             
     @classmethod

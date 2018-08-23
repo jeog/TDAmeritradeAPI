@@ -55,10 +55,8 @@ class Credentials(_Structure):
                 try:                                  
                     clib.call("CloseCredentials_ABI", _REF(self))                   
                 except clib.CLibException as e:
-                    print("CLibException in", self.__del__, ":", str(e))
-                except clib.LibraryNotLoaded:
-                    pass                      
-            except NameError:
+                    print("CLibException in", self.__del__, ":", str(e))                                   
+            except:
                 pass
 
     
