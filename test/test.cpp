@@ -349,11 +349,11 @@ streaming(string id, Credentials& c)
     using tsft = TimesaleSubscriptionBase::FieldType;
 
 
-    set<string> symbols1 = {"SPY"};
+    set<string> symbols1 = {"spy"};
     set<ft> fields1 = {ft::symbol, ft::last_price};
     QuotesSubscription q1(symbols1, fields1);
     display_sub(q1);
-    test_sub_fields_symbols(q1, "QuotesSubscription", symbols1, fields1,
+    test_sub_fields_symbols(q1, "QuotesSubscription", {"SPY"}, fields1,
                             StreamerServiceType::QUOTE);
 
     set<string> symbols2 = {"SPY_081718C286", "SPY_081718P286"};
@@ -543,7 +543,9 @@ streaming(string id, Credentials& c)
 void
 transaction_history_getter(string id, Credentials& c)
 {
-    TransactionHistoryGetter o(c, id, TransactionType::trade, "SPY");
+    TransactionHistoryGetter o(c, id, TransactionType::trade, "SPy");
+    if( o.get_symbol() != "SPY")
+        throw std::runtime_error("invalid symbol");
     cout<< o.get_account_id() << ' ' << o.get_transaction_type() << ' '
         << o.get_symbol() << ' ' << o.get_start_date() << ' '
         << o.get_end_date() << endl;
@@ -714,10 +716,12 @@ operator<<(ostream& out, const OptionChainAnalyticalGetter &ocag)
 
 void option_chain_analytical_getter(Credentials& c)
 {
-    OptionChainAnalyticalGetter ocg(c, "KORS", 30.00, 65.00, 3.0, 100,
+    OptionChainAnalyticalGetter ocg(c, "kORS", 30.00, 65.00, 3.0, 100,
                                     OptionStrikes::Single(65.00),
                                     OptionContractType::call, true,
                                     "", "", OptionExpMonth::aug);
+    if( ocg.get_symbol() != "KORS")
+        throw std::runtime_error("invalid symbol");
     cout<<ocg << endl << ocg.get() << endl << endl;
 
     ocg.set_volatility(40.00);
@@ -733,9 +737,11 @@ void option_chain_analytical_getter(Credentials& c)
 
 void option_chain_strategy_getter(Credentials& c)
 {
-    OptionChainStrategyGetter ocg(c, "KORS", OptionStrategy::Vertical(),
+    OptionChainStrategyGetter ocg(c, "KOrS", OptionStrategy::Vertical(),
                                   OptionStrikes::N_ATM(2), OptionContractType::call,
                                   false, "","",OptionExpMonth::aug);
+    if( ocg.get_symbol() != "KORS")
+        throw std::runtime_error("invalid symbol");
     cout<<ocg << endl << ocg.get() << endl << endl;
 
     OptionChainStrategyGetter ocg2(move(ocg));
@@ -756,8 +762,10 @@ void option_chain_strategy_getter(Credentials& c)
 
 void option_chain_getter(Credentials& c)
 {
-    OptionChainGetter ocg(c, "KORS", OptionStrikes::N_ATM(1), OptionContractType::call,
+    OptionChainGetter ocg(c, "kors", OptionStrikes::N_ATM(1), OptionContractType::call,
                           false, "2018-06-24", "2018-08-24");   
+    if( ocg.get_symbol() != "KORS")
+        throw std::runtime_error("invalid symbol");
     cout<<ocg << endl << ocg.get() << endl << endl;
 
     ocg.set_strikes(OptionStrikes::Single(70.00));  
@@ -854,7 +862,9 @@ historical_getters(Credentials& c)
 void
 quote_getters(Credentials& c)
 {
-    QuoteGetter qg(c, "SPY");
+    QuoteGetter qg(c, "spy");
+    if( qg.get_symbol() != "SPY")
+        throw std::runtime_error("invalid symbol");
     cout<< qg.get_symbol() << endl << qg.get() << endl << endl;
 
     QuoteGetter qg2(move(qg));
@@ -862,19 +872,23 @@ quote_getters(Credentials& c)
 
     cout<< qg2.get_symbol() << endl << qg2.get() << endl << endl;
 
-    QuotesGetter qsg(c, {"SPY", "QQQ"});
+    QuotesGetter qsg(c, {"spy", "qqq"});
+    if( qsg.get_symbols() != set<string>{"SPY","QQQ"} )
+        throw std::runtime_error("invalid symbol");
     for( auto s: qsg.get_symbols() ){
         cout<< s << ' ';
     }
     cout<< endl << qsg.get() << endl << endl;
 
-    qsg.set_symbols( {"/ES","SPY_081718C276"} );
+    qsg.set_symbols( {"/es","SPY_081718C276"} );
+    if( qsg.get_symbols() != set<string>{"/ES","SPY_081718C276"}  )
+        throw std::runtime_error("invalid symbol");
     for( auto s: qsg.get_symbols() ){
         cout<< s << ' ';
     }
     cout<< endl << qsg.get() << endl << endl;
 
-    qsg.add_symbol("IWM");
+    qsg.add_symbol("IWm");
     if( qsg.get_symbols() != set<string>{"/ES","SPY_081718C276", "IWM"})
         throw std::runtime_error("invalid symbols in quotes getter");
     for( auto s: qsg.get_symbols() ){
@@ -898,7 +912,7 @@ quote_getters(Credentials& c)
     if( qsg.get() != json() )
         throw std::runtime_error("empty quotes getter did not return {}");
 
-    qsg.add_symbols( {"XLF","XLY", "XLE"} );
+    qsg.add_symbols( {"xlf","XLY", "XLE"} );
     if( qsg.get_symbols() != set<string>{"XLF","XLY", "XLE"} )
         throw std::runtime_error("invalid symbols in quotes getter");
     qsg.add_symbol( "XLK" );

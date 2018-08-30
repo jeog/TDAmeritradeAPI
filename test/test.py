@@ -73,14 +73,14 @@ def init():
       
 def test_option_symbol_builder():
     B = get.build_option_symbol          
-    assert "SPY_010118C300" == B("SPY",1,1,2018,True,300)
+    assert "SPY_010118C300" == B("SpY",1,1,2018,True,300)
     assert "SPY_123199P200" == B("SPY",12,31,2099,False,200)
-    assert "A_021119P1.5" == B( "A",2,11,2019,False,1.5)
+    assert "A_021119P1.5" == B( "a",2,11,2019,False,1.5)
     assert "A_021119P1.5" == B("A",2,11,2019,False,1.500)
     assert "ABCDEF_110121C99.999" == B( "ABCDEF",11,1,2021,True,99.999)
     assert "ABCDEF_110121C99.999" == B( "ABCDEF",11,1,2021,True,99.99900)
     assert "ABCDEF_110121C99" == B( "ABCDEF",11,1,2021,True,99.0)
-    assert "ABCDEF_110121C99.001" == B( "ABCDEF",11,1,2021,True,99.001)
+    assert "ABCDEF_110121C99.001" == B( "abcdef",11,1,2021,True,99.001)
 
     def is_bad(u, m, d, y, c, s):
         try:
@@ -90,7 +90,7 @@ def test_option_symbol_builder():
             return True
             
     assert is_bad("",1,1,2018,True,300)
-    assert is_bad("SPY_",1,1,2018,True,300)
+    assert is_bad("SpY_",1,1,2018,True,300)
     assert is_bad("SPY_",1,1,2018,True,300)
     assert is_bad("_SPY",1,1,2018,True,300)
     assert is_bad("SP_Y",1,1,2018,True,300)
@@ -102,7 +102,7 @@ def test_option_symbol_builder():
     assert is_bad("SPY",1,31,10001,True,300)
     assert is_bad("SPY",1,31,18,True,300)
     assert is_bad("SPY",1,31,2018,True,0.0)
-    assert is_bad("SPY",1,31,2018,True,-100.0)
+    assert is_bad("spy",1,31,2018,True,-100.0)
       
 def test_throttling(creds): 
     dw = get.get_def_wait_msec()  
@@ -134,39 +134,39 @@ def test_throttling(creds):
                     
             
 def test_quote_getters(creds):
-    g = get.QuoteGetter(creds, "SPY")   
+    g = get.QuoteGetter(creds, "SpY")   
     assert g.get_symbol() == "SPY"  
     j = g.get()
     print(str(j))
-    g.set_symbol('QQQ')
+    g.set_symbol('qqq')
     assert g.get_symbol() == 'QQQ'
     j = g.get()
     print(str(j))
  
 
-def test_quotes_getters(creds):
-    g = get.QuotesGetter(creds, "SPY", "QQQ", "IWM") 
+def test_quotes_getters(creds):    
+    g = get.QuotesGetter(creds, "SPY", "qqq", "IwM") 
     assert sorted(g.get_symbols()) == sorted(["SPY", "QQQ", "IWM"])  
     j = g.get()
     for k, v in j.items():
         print(k)
         print(str(v))
-    g.set_symbols('QQQ')  
+    g.set_symbols('QqQ')  
     assert g.get_symbols() == ['QQQ']
     j = g.get()
     for k, v in j.items():
         print(k)
         print(str(v)) 
-    g.add_symbols('SPY')
-    g.add_symbols('IWM','GLD')
+    g.add_symbols('SPy')
+    g.add_symbols('iwm','GLD')
     assert sorted(g.get_symbols()) == sorted(["SPY", "QQQ", "IWM", "GLD"])
-    g.remove_symbols('SPY','IWM')
+    g.remove_symbols('sPY','IWM')
     assert g.get_symbols() == sorted(['QQQ','GLD'])
     j = g.get()
     for k, v in j.items():
         print(k)
         print(str(v))     
-    g.remove_symbols('QQQ','GLD')
+    g.remove_symbols('QQQ','gld')
     assert g.get_symbols() == []
     assert not g.get()
     
@@ -224,7 +224,7 @@ def test_historical_period_getters(creds):
     p = get.VALID_PERIODS_BY_PERIOD_TYPE[p][0]
     ft = get.VALID_FREQUENCY_TYPES_BY_PERIOD_TYPE[pt][1]
     f = get.VALID_FREQUENCY_TYPES_BY_PERIOD_TYPE[ft][0]
-    g.set_symbol("QQQ")
+    g.set_symbol("qqq")
     g.set_period(pt, p)
     g.set_frequency(ft, f)
     g.set_extended_hours(False)
@@ -243,7 +243,7 @@ def test_historical_range_getters(creds):
     f = get.VALID_FREQUENCIES_BY_FREQUENCY_TYPE[ft][-1]
     end = 1528205400000
     start = 1528119000000
-    g = get.HistoricalRangeGetter(creds, "SPY", ft, f, start, end, False)
+    g = get.HistoricalRangeGetter(creds, "SpY", ft, f, start, end, False)
     assert g.get_symbol() == "SPY"
     assert g.get_frequency() == f
     assert g.get_frequency_type() == ft
@@ -254,7 +254,7 @@ def test_historical_range_getters(creds):
     print(str(j))   
 
     f = get.VALID_FREQUENCIES_BY_FREQUENCY_TYPE[ft][1]
-    g.set_symbol("QQQ")
+    g.set_symbol("qqq")
     g.set_frequency(ft, f)
     g.set_extended_hours(True)
     assert g.get_symbol() == "QQQ"
@@ -271,7 +271,7 @@ def test_option_chain_getters(creds):
     strikes = get.OptionStrikes.N_ATM(2)
     from_date = "2018-07-24"
     to_date = "2018-09-24"
-    g = get.OptionChainGetter(creds, "KORS", strikes, 
+    g = get.OptionChainGetter(creds, "kors", strikes, 
                               get.OPTION_CONTRACT_TYPE_CALL, True,
                               from_date, to_date, get.OPTION_EXP_MONTH_AUG,
                               get.OPTION_TYPE_ALL)
@@ -289,7 +289,7 @@ def test_option_chain_getters(creds):
     strikes = get.OptionStrikes.RANGE(get.OPTION_RANGE_TYPE_ITM)
     from_date = "2018-08-21"
     to_date = "2018-09-15"
-    g.set_symbol("SPY")
+    g.set_symbol("SPy")
     g.set_strikes(strikes)
     g.set_contract_type(get.OPTION_CONTRACT_TYPE_ALL)
     g.include_quotes(False)
@@ -315,7 +315,7 @@ def test_option_chain_strategy_getters(creds):
     strategy = get.OptionStrategy.COVERED()
     from_date = "2018-07-24"
     to_date = "2018-09-24"
-    g = get.OptionChainStrategyGetter(creds, "KORS", strategy, strikes, 
+    g = get.OptionChainStrategyGetter(creds, "kORS", strategy, strikes, 
                                       get.OPTION_CONTRACT_TYPE_CALL, True,
                                       from_date, to_date, 
                                       get.OPTION_EXP_MONTH_AUG, 
@@ -336,7 +336,7 @@ def test_option_chain_strategy_getters(creds):
     strategy = get.OptionStrategy.VERTICAL(5.0)
     from_date = "2018-08-21"
     to_date = "2018-09-15"
-    g.set_symbol("SPY")
+    g.set_symbol("sPY")
     g.set_strategy(strategy)
     g.set_strikes(strikes)    
     g.set_contract_type(get.OPTION_CONTRACT_TYPE_ALL)
@@ -363,7 +363,7 @@ def test_option_chain_analytical_getters(creds):
     strikes = get.OptionStrikes.N_ATM(2)    
     from_date = "2018-07-24"
     to_date = "2018-09-24"
-    g = get.OptionChainAnalyticalGetter(creds, "KORS", 20.00, 70.00, 3.00,
+    g = get.OptionChainAnalyticalGetter(creds, "KORs", 20.00, 70.00, 3.00,
                                         100, strikes, 
                                         get.OPTION_CONTRACT_TYPE_CALL, True,
                                         from_date, to_date, 
@@ -387,7 +387,7 @@ def test_option_chain_analytical_getters(creds):
     strikes = get.OptionStrikes.RANGE(get.OPTION_RANGE_TYPE_ITM)    
     from_date = "2018-08-21"
     to_date = "2018-09-15"
-    g.set_symbol("SPY")
+    g.set_symbol("SpY")
     g.set_volatility(100.10)
     g.set_underlying_price(49.99)
     g.set_interest_rate(15.01)
@@ -456,7 +456,7 @@ def test_subscription_keys_getter(creds, account_id):
 def test_transaction_history_getters(creds, account_id):
     g = get.TransactionHistoryGetter(creds, account_id,
                                      get.TRANSACTION_TYPE_TRADE,
-                                     "SPY" ,"2018-01-01", "2019-01-01")
+                                     "spy" ,"2018-01-01", "2019-01-01")
     assert g.get_account_id() == account_id
     assert g.get_transaction_type() == get.TRANSACTION_TYPE_TRADE
     assert g.get_symbol() == "SPY"
@@ -552,28 +552,28 @@ def test_streaming(creds):
         print("+ successfully caught exception: ", str(e)) 
                 
   
-    symbols = ('SPY', 'QQQ')    
+    symbols = ('spy', 'QQQ')    
     fields = (QS.FIELD_SYMBOL, QS.FIELD_BID_PRICE, QS.FIELD_ASK_PRICE)                
     qs = QS(symbols, fields)
     assert qs.get_command() == "SUBS"
     assert qs.get_service() == stream.SERVICE_TYPE_QUOTE
-    assert set(qs.get_symbols()) == set(symbols)
+    assert set(qs.get_symbols()) == {'SPY','QQQ'}
     assert set(qs.get_fields()) == set(fields)
     
     OS = stream.OptionsSubscription
-    symbols = ["SPY_081718P286"]
+    symbols = ["SpY_081718P286"]
     fields = [OS.FIELD_DELTA, OS.FIELD_GAMMA, OS.FIELD_VEGA, OS.FIELD_VOLATILITY]
     os = OS(symbols, fields)
     assert os.get_service() == stream.SERVICE_TYPE_OPTION
-    assert set(os.get_symbols()) == set(symbols)
+    assert set(os.get_symbols()) == set([s.upper() for s in symbols])
     assert set(os.get_fields()) == set(fields)    
     
     LOFS = stream.LevelOneFuturesSubscription
-    symbols = ('/ES', '/GC')
+    symbols = ('/es', '/GC')
     fields = (LOFS.FIELD_ASK_SIZE, LOFS.FIELD_BID_SIZE, LOFS.FIELD_FUTURE_EXPIRATION_DATE)
     lofs = LOFS(symbols, fields)
     assert lofs.get_service() == stream.SERVICE_TYPE_LEVELONE_FUTURES
-    assert set(lofs.get_symbols()) == set(symbols)
+    assert set(lofs.get_symbols()) == set([s.upper() for s in symbols])
     assert set(lofs.get_fields()) == set(fields)  
     
     LOFXS = stream.LevelOneForexSubscription
@@ -781,7 +781,7 @@ if __name__ == '__main__':
         test(test_option_symbol_builder)        
         test(test_quote_getters, cm.credentials)        
         test(test_throttling, cm.credentials)        
-        test(test_quotes_getters, cm.credentials)        
+        test(test_quotes_getters, cm.credentials)             
         test(test_market_hours_getters, cm.credentials)
         test(test_movers_getters, cm.credentials)
         test(test_historical_period_getters, cm.credentials)

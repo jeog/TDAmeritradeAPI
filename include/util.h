@@ -28,6 +28,7 @@ along with this program.  If not, see http://www.gnu.org/licenses.
 #include <mutex>
 #include <thread>
 #include <signal.h>
+#include <algorithm>
 
 #include "_common.h"
 
@@ -103,6 +104,29 @@ get_msec_since_epoch()
     auto now = ClockTy::now();
     return duration_cast<milliseconds>( now.time_since_epoch() );
 }
+
+
+template< template<typename T, typename... V> class C, typename A, typename...B >
+C<A,B...>
+toupper(const C<A, B...>& container)
+{
+    C<A,B...> ret;
+    std::transform(container.begin(), container.end(),
+                   std::inserter(ret, ret.begin()),
+                   [](const A& a){ return toupper(a); });
+    return ret;
+}
+
+template<>
+inline std::string
+toupper(const std::string& string)
+{
+    std::string s(string);
+    std::transform(s.begin(), s.end(), s.begin(), ::toupper);
+    return s;
+}
+
+using std::toupper;
 
 } /* util */
 

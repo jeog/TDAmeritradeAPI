@@ -86,7 +86,7 @@ BuildOptionSymbolImpl( const std::string& underlying,
     if( strike <= 0.0 )
         throw ValueException("strike price <= 0.0");
 
-    ss << underlying << '_'
+    ss << util::toupper(underlying) << '_'
        << std::setw(2) << std::setfill('0') << month
        << std::setw(2) << std::setfill('0') << day
        << std::setw(2) << std::setfill('0') << yy.substr( yy.size() - 2 )

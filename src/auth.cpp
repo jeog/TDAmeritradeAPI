@@ -530,7 +530,7 @@ copy_credentials_file(const string& from_path, const string& to_path)
 
 
 bool
-request_token_has_expired(long long epoch_sec_token_expiration)
+refresh_token_has_expired(long long epoch_sec_token_expiration)
 {
     using namespace chrono;
 
@@ -666,12 +666,12 @@ RefreshAccessTokenImpl(Credentials* creds)
                                         "contains invalid value (" + e + ")" );
     };
 
-    if( request_token_has_expired(creds->epoch_sec_token_expiration) )
+    if( refresh_token_has_expired(creds->epoch_sec_token_expiration) )
     {
         /*
          *  TODO implement mechanism to automatically auth new token
          */
-        throw LocalCredentialException("request token has expired; "
+        throw LocalCredentialException("refresh token has expired; "
                                        "use RequestAccessToken() for new token");
     }
 

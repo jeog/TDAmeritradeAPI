@@ -59,7 +59,7 @@ protected:
                           bool extended_hours )
         :
             APIGetterImpl(creds, data_api_on_error_callback),
-            _symbol(symbol),
+            _symbol( util::toupper(symbol) ),
             _frequency_type(frequency_type),
             _frequency(frequency),
             _extended_hours(extended_hours)
@@ -103,7 +103,7 @@ public:
     {
         if( symbol.empty() )
             throw ValueException("empty symbol");
-        _symbol = symbol;
+        _symbol = util::toupper(symbol);
         build();
     }
 

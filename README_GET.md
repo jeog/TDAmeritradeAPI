@@ -89,6 +89,8 @@ Getter objects are fundamental to accessing the API. Before using you'll need to
 
 Each object sets up an underlying HTTPS/Get connection(via libcurl) using the credentials object and the relevant arguments for that particular request type. The connection sets the Keep-Alive header and will execute a request each time ```get / Get``` is called, until ```close / Close``` is called. C++ and Python getters will call ```close``` on destruction.
 
+**Symbol strings are automatically converted to upper-case, e.g 'spy' -> 'SPY'.**
+
 #### [C++]
 
 1. construct a Getter object 

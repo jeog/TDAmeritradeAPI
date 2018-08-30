@@ -115,7 +115,7 @@ protected:
         :
             StreamingSubscriptionImpl(service, command,
                                       build_paramaters(symbols, fields)),
-            _symbols(symbols)
+            _symbols( util::toupper(symbols) )
         {
         }
 };

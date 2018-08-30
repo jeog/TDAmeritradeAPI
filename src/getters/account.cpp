@@ -231,7 +231,7 @@ public:
         :
             AccountGetterBaseImpl(creds, account_id),
             _transaction_type(transaction_type),
-            _symbol(symbol),
+            _symbol( util::toupper(symbol) ),
             _start_date(start_date),
             _end_date(end_date)
         {
@@ -270,7 +270,7 @@ public:
     void
     set_symbol(const std::string& symbol)
     {
-        _symbol = symbol;
+        _symbol = util::toupper(symbol);
         build();
     }
 

@@ -110,7 +110,7 @@ public:
                                OptionType option_type = OptionType::all )
         :
             APIGetterImpl(creds, data_api_on_error_callback),
-            _symbol(symbol),
+            _symbol( util::toupper(symbol) ),
             _strikes(strikes),
             _contract_type(contract_type),
             _include_quotes(include_quotes),
@@ -168,7 +168,7 @@ public:
     {
         if( symbol.empty() )
             throw ValueException("empty symbol");
-        _symbol = symbol;
+        _symbol = util::toupper(symbol);
         build();
     }
 

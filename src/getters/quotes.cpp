@@ -48,7 +48,7 @@ public:
     QuoteGetterImpl( Credentials& creds, const string& symbol )
         :
             APIGetterImpl(creds, data_api_on_error_callback),
-            _symbol(symbol)
+            _symbol( util::toupper(symbol) )
         {
             if( symbol.empty() )
                 throw ValueException("empty symbol string");
@@ -66,7 +66,7 @@ public:
         if( symbol.empty() )
             throw ValueException("empty symbol");
 
-        _symbol = symbol;
+        _symbol = util::toupper(symbol);
         build();
     }
 };
@@ -114,7 +114,7 @@ public:
     QuotesGetterImpl( Credentials& creds, const set<string>& symbols)
         :
             APIGetterImpl(creds, data_api_on_error_callback),
-            _symbols(symbols)
+            _symbols( util::toupper(symbols) )
         {
             _throw_if_bad_input(symbols);
             _build();
@@ -132,7 +132,7 @@ public:
     set_symbols(const set<string>& symbols)
     {
         _throw_if_bad_input(symbols);
-        _symbols = symbols;
+        _symbols = util::toupper(symbols);
         build();
     }
 
@@ -140,7 +140,7 @@ public:
     add_symbol(const string& symbol)
     {
         _throw_if_bad_input(symbol);
-        _symbols.insert(symbol);
+        _symbols.insert( util::toupper(symbol) );
         build();
     }
 
@@ -148,7 +148,7 @@ public:
     remove_symbol(const string& symbol)
     {
         _throw_if_bad_input(symbol);
-        _symbols.erase(symbol);
+        _symbols.erase( util::toupper(symbol) );
         build();
     }
 
@@ -156,7 +156,8 @@ public:
     add_symbols(const set<string>& symbols)
     {
         _throw_if_bad_input(symbols);
-        _symbols.insert(symbols.begin(), symbols.end());
+        for(auto& s : symbols)
+            _symbols.insert( util::toupper(s) );
         build();
     }
 
@@ -165,7 +166,7 @@ public:
     {
         _throw_if_bad_input(symbols);
         for(auto& s : symbols)
-            _symbols.erase(s);
+            _symbols.erase( util::toupper(s) );
         build();
     }
 };

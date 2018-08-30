@@ -250,6 +250,8 @@ All front-end C++ library code is in namespace ```tdma```. We mostly exclude it 
 ### Conventions
 - - -
 
+- **ONLY** Symbol strings are converted to upper-case by the library, e.g 'spy' -> 'SPY'.
+
 - Enums are defined for both C and C++ code using MACROS. Python mimics these enums by defining constant values. For example:
     ```
     DECL_C_CPP_TDMA_ENUM(AdminCommandType, 0, 2,
