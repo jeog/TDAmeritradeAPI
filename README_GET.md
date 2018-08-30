@@ -8,6 +8,8 @@
     - [C](#c-1)
     - [Python](#python)
 - [Throttling](#throttling)
+- [Utilities](#utilities)
+    - [Option Symbols](#option-symbols)
 - [Example Usage](#example-usage)
     - [C++](#c-2)
     - [C](#c-3)
@@ -73,8 +75,7 @@ SetCertificateBundlePath(const char* path)
     returns -> 0 on success, error code on failure
 
 [Python]
-<tdma_api.auth>
-def set_certificate_bundle_path(path):
+def auth.set_certificate_bundle_path(path):
     ...
 ```
 
@@ -283,6 +284,51 @@ To check the number of milliseconds before the next ```.get()``` call can be exe
 This interface should not be used for streaming data, i.e. repeatedly making getter calls -  
 use [StreamingSession](README_STREAMING.md) for that.
 
+### Utilities
+
+#### Option Symbols
+
+To construct a standard option symbol that can be used with the quote getters:
+
+```
+[C++]
+inline std::string
+BuildOptionSymbol( const std::string& underlying,
+                     unsigned int month,
+                     unsigned int day,
+                     unsigned int year,
+                     bool is_call,
+                     double strike )
+
+[C]
+inline int
+BuildOptionSymbol( const char* underlying,
+                     unsigned int month,
+                     unsigned int day,
+                     unsigned int year,
+                     int is_call,
+                     double strike,
+                     char **buf,
+                     size_t *n )
+
+[Python]
+def get.build_option_symbol(underlying, month, day, year, is_call, strike):
+```
+
+This is not guaranteed to work on all underlying types but generally:
+
+```BuildOptionSymbol("SPY", 1, 17, 2020, true, 300.00) --> "SPY_011720C300"```
+
+For Example:
+```
+string spy_c300 = BuildOptionSymbol("SPY", 1, 17, 2020, true, 300.00);
+string spy_p250 = BuildOptionSymbol("SPY", 1, 17, 2020, false, 250.00);
+
+QuotesGetter qg(creds, {spy_c300, spy_p250});
+qg.get();
+```
+**If using C don't forget to call ```FreeBuffer``` on the populated 'buf' when done.**
+
 ### Example Usage 
 
 #### [C++]
@@ -451,7 +497,7 @@ QuoteGetter::QuoteGetter(Credentials& creds, string symbol);
 
 **methods**
 ```
-json 
+virtual json 
 APIGetter::get();
 ```
 ```
@@ -492,6 +538,10 @@ QuotesGetter::QuotesGetter(Credentials& creds, const set<string>& symbols);
 
 ```
 
+- empty symbol strings and/or symbol sets will throw ValueException
+- if all symbols are removed, calling ```.get()``` will return an empty json object
+
+
 **methods**
 ```
 json 
@@ -513,6 +563,23 @@ QuotesGetter::get_symbols() const;
 void
 QuotesGetter::set_symbols(const set<string>& symbols);
 ```
+```
+void
+QuotesGetter::add_symbol(const string& symbol);
+```
+```
+void
+QuotesGetter::remove_symbol(const string& symbol);
+```
+```
+void
+QuotesGetter::add_symbols(const set<string>& symbols);
+```
+```
+void
+QuotesGetter::remove_symbols(const set<string>& symbols);
+```
+
 
 **convenience function**
 ```
@@ -765,6 +832,11 @@ VALID_FREQUENCIES_BY_FREQUENCY_TYPE = {
 };
 ```
 
+- invalid frequency-to-frequency-type combinations will THROW immediately
+- invalid period-to-period-type combinations will THROW immediately
+- invalid frequency-type-to-period-type combinations will only THROW immediately on construction; if passed to the 'set' methods they WILL NOT THROW UNTIL ```.get()``` is called
+
+
 **methods**
 ```
 json 
@@ -888,7 +960,9 @@ VALID_FREQUENCIES_BY_FREQUENCY_TYPE = {
     {FrequencyType::weekly, set<int>{1}},
     {FrequencyType::monthly, set<int>{1}},
 };
+
 ```
+- invalid frequency-to-frequency-type combinations will THROW immediately
 
 **methods**
 ```

@@ -465,7 +465,9 @@ class HistoricalPeriodGetter(_HistoricalGetterBase):
          VALID_FREQUENCIES_BY_FREQUENCY_TYPE
          
      If invalid combinations are used constructor will THROW CLibException. 
-     Invalid combinations passed to set_[] methods will not throw UNTIL the 
+     Invalid frequency-to-frequency-type and period-to-period-type combinations 
+     passed to set_frequency and set_period, respectively, will throw.
+     Invalid frequency-type-to-period_type combinations WILL NOT THROW UNTIL
      .get() method is called.
     """    
     def __init__(self, creds, symbol, period_type, period, frequency_type,
@@ -512,9 +514,8 @@ class HistoricalRangeGetter(_HistoricalGetterBase):
      can be used. These valid relationships can be found in the following dict:
          VALID_FREQUENCIES_BY_FREQUENCY_TYPE
          
-     If invalid combinations are used constructor will THROW CLibException. 
-     Invalid combinations passed to set_[] methods will not throw UNTIL the 
-     .get() method is called.
+     If invalid combinations are used constructor and set_frequency will 
+     THROW CLibException. 
      
      * milliseconds from epoch = milliseconds since midnight Jan-01-1970
     """      
