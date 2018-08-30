@@ -2,6 +2,7 @@
 #include <tdma_api_streaming.h>
 #include <iostream>
 #include <thread>
+#include <algorithm>
 
 using namespace tdma;
 using namespace std;
@@ -29,6 +30,8 @@ void transaction_history_getter(string id, Credentials& c);
 void individual_transaction_history_getter(string id, Credentials& c);
 
 void streaming(string id, Credentials& c);
+
+void option_symbol_builder();
 
 
 int main(int argc, char* argv[])
@@ -77,9 +80,6 @@ int main(int argc, char* argv[])
         ccc2 = move(ccc);
         Credentials ccc4( move(ccc2 ));
 
-        streaming(account_id, cmanager.credentials);
-
-        //return 0;
         /*
         QuotesSubscription spy_quote_sub({"SPY"}, {ft::symbol, ft::last_price});
         TimesaleFuturesSubscription es_quote_sub( {"/ES"}, {tsft::symbol,
@@ -171,18 +171,76 @@ int main(int argc, char* argv[])
                 << e.status_code() << ")" << endl;
         }
 
+        option_symbol_builder();
+
+        streaming(account_id, cmanager.credentials);
+
         string in;
         cin >> in;
+        return 0;
 
     }catch( tdma::APIException& e ){
         std::cerr<< "APIException: " << e.what() << std::endl;
     }catch( json::exception& e){
         std::cerr<< "json::exception: " << e.what() << std::endl;
     }catch( std::exception& e ){
-        std::cerr<< "Unknown error: " << e.what() << std::endl;
+        std::cerr<< "std::exception: " << e.what() << std::endl;
+    }catch( ... ){
+        std::cerr<< "unknown exception!" << std::endl;
     }
 
-    return 0;
+    return -1;
+}
+
+void option_symbol_builder()
+{
+    auto is_good = [](std::string sym, std::string underlying, unsigned int month,
+                      unsigned int day, unsigned int year, bool is_call,
+                      double strike){
+        std::string o = tdma::BuildOptionSymbol(underlying, month, day, year,
+                                                is_call, strike);
+        if( o != sym )
+            throw std::runtime_error(
+                "option strings don't match(" + o + "," + sym + ")"
+                );
+    };
+
+    auto is_bad= [](std::string underlying, unsigned int month, unsigned int day,
+                    unsigned int year, bool is_call, double strike){
+        string o;
+        try{
+            o = tdma::BuildOptionSymbol(underlying, month, day, year,
+                                                    is_call, strike);
+        }catch(std::exception& e ){
+            cout<< "successfully caught exception: " << e.what() << endl;
+            return;
+        }
+        throw std::runtime_error("failed to catch exception for: " + o);
+    };
+
+    is_good("SPY_010118C300", "SPY",1,1,2018,true,300);
+    is_good("SPY_123199P200", "SPY",12,31,2099,false,200);
+    is_good("A_021119P1.5", "A",2,11,2019,false,1.5);
+    is_good("A_021119P1.5", "A",2,11,2019,false,1.500);
+    is_good("ABCDEF_110121C99.999", "ABCDEF",11,1,2021,true,99.999);
+    is_good("ABCDEF_110121C99.999", "ABCDEF",11,1,2021,true,99.99900);
+    is_good("ABCDEF_110121C99", "ABCDEF",11,1,2021,true,99.0);
+    is_good("ABCDEF_110121C99.001", "ABCDEF",11,1,2021,true,99.001);
+
+    is_bad("",1,1,2018,true,300);
+    is_bad("SPY_",1,1,2018,true,300);
+    is_bad("SPY_",1,1,2018,true,300);
+    is_bad("_SPY",1,1,2018,true,300);
+    is_bad("SP_Y",1,1,2018,true,300);
+    is_bad("SPY",0,1,2018,true,300);
+    is_bad("SPY",13,1,2018,true,300);
+    is_bad("SPY",1,0,2018,true,300);
+    is_bad("SPY",1,32,2018,true,300);
+    is_bad("SPY",1,31,999,true,300);
+    is_bad("SPY",1,31,10001,true,300);
+    is_bad("SPY",1,31,18,true,300);
+    is_bad("SPY",1,31,2018,true,0.0);
+    is_bad("SPY",1,31,2018,true,-100.0);
 }
 
 
@@ -750,8 +808,27 @@ historical_getters(Credentials& c)
     hpg.set_symbol("QQQ");
     hpg.set_period(PeriodType::day, 3);
     hpg.set_frequency(FrequencyType::minute, 30);
+    if( hpg.get_frequency_type() != FrequencyType::minute ||
+        hpg.get_frequency() != 30){
+        throw std::runtime_error("failed to set frequency/type");
+    }
     hpg.set_extended_hours(false);
     cout<< hpg << hpg.get() << endl << endl;
+
+    hpg.set_frequency(FrequencyType::monthly, 1); // bad but cant throw here
+    try{
+        hpg.get(); // but can throw here
+        throw std::runtime_error("failed to catch exception for bad frequency type");
+    }catch(ValueException& e){
+        cout<< "succesfully caught: " << e.what() << endl;
+    }
+
+    try{
+        hpg.set_period(PeriodType::month, 99);
+        throw std::runtime_error("failed to catch exception for bad period");
+    }catch(ValueException& e){
+        cout<< "succesfully caught: " << e.what() << endl;
+    }
 
     unsigned long long end = 1528205400000;
     unsigned long long start = 1528119000000;
@@ -759,6 +836,19 @@ historical_getters(Credentials& c)
     HistoricalRangeGetter hrg(c, "SPY", FrequencyType::minute, 30,
                                start, end, true);
     cout<< hrg << hrg.get() << endl << endl;
+
+    try{
+        hrg.set_frequency(FrequencyType::minute, 31);
+        throw std::runtime_error("failed to catch exception for bad frequency");
+    }catch(ValueException& e){
+        cout<< "succesfully caught: " << e.what() << endl;
+    }
+
+    hrg.set_frequency(FrequencyType::monthly, 1);
+    if( hrg.get_frequency_type() != FrequencyType::monthly ||
+        hrg.get_frequency() != 1){
+        throw std::runtime_error("failed to set frequency/type");
+    }
 }
 
 void
@@ -784,6 +874,64 @@ quote_getters(Credentials& c)
     }
     cout<< endl << qsg.get() << endl << endl;
 
+    qsg.add_symbol("IWM");
+    if( qsg.get_symbols() != set<string>{"/ES","SPY_081718C276", "IWM"})
+        throw std::runtime_error("invalid symbols in quotes getter");
+    for( auto s: qsg.get_symbols() ){
+        cout<< s << ' ';
+    }
+    cout<< endl << qsg.get() << endl << endl;
+
+    qsg.remove_symbol("/ES");
+    qsg.remove_symbol("SPY_081718C276");
+    if( qsg.get_symbols() != set<string>{"IWM"})
+        throw std::runtime_error("invalid symbols in quotes getter");
+    for( auto s: qsg.get_symbols() ){
+        cout<< s << ' ';
+    }
+    cout<< endl << qsg.get() << endl << endl;
+
+    qsg.remove_symbol("IWM");
+    qsg.remove_symbol("BAD_SYMBOL");
+    if( !qsg.get_symbols().empty() )
+        throw std::runtime_error("invalid symbols in quotes getter");
+    if( qsg.get() != json() )
+        throw std::runtime_error("empty quotes getter did not return {}");
+
+    qsg.add_symbols( {"XLF","XLY", "XLE"} );
+    if( qsg.get_symbols() != set<string>{"XLF","XLY", "XLE"} )
+        throw std::runtime_error("invalid symbols in quotes getter");
+    qsg.add_symbol( "XLK" );
+    qsg.remove_symbols( {"XLF","XLY", "XLK"} );
+    if( qsg.get_symbols() != set<string>{"XLE"} )
+        throw std::runtime_error("invalid symbols in quotes getter");
+    qsg.remove_symbols( {"A","B", "XLE"});
+    if( !qsg.get_symbols().empty() )
+        throw std::runtime_error("invalid symbols in quotes getter");
+    try{
+        qsg.add_symbols( {"","SPY"} );
+        throw std::runtime_error("failed to catch exception, add_symbols");
+    }catch( ValueException& e){
+        cout<< "successfully caught exception: " << e.what() << endl;
+    }
+    try{
+        qsg.add_symbols( {} );
+        throw std::runtime_error("failed to catch exception, add_symbols");
+    }catch( ValueException& e){
+        cout<< "successfully caught exception: " << e.what() << endl;
+    }
+    try{
+        qsg.add_symbol( {""} );
+        throw std::runtime_error("failed to catch exception, add_symbol");
+    }catch( ValueException& e){
+        cout<< "successfully caught exception: " << e.what() << endl;
+    }
+
+    qsg.add_symbols( {"XLF","XLY", "XLE"} );
+    for( auto s: qsg.get_symbols() ){
+        cout<< s << ' ';
+    }
+    cout<< endl << qsg.get() << endl << endl;
 }
 
 long long

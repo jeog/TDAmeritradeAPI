@@ -694,7 +694,9 @@ RefreshAccessTokenImpl(Credentials* creds)
     auto r_json = api_auth_execute(connection, "RefreshAccessTokenImpl");
     string r_str = r_json["access_token"];
 
-    creds->access_token = (char*)realloc(creds->access_token, r_str.size() + 1);
+    if( creds->access_token )
+        delete[] creds->access_token;
+    creds->access_token = new char[r_str.size() + 1];
     creds->access_token[r_str.size()] = 0;
     strcpy(creds->access_token, r_str.c_str());
 

@@ -378,6 +378,27 @@ QuotesGetter_SetSymbols_ABI( QuotesGetter_C *pgetter,
                                  size_t nymbols,
                                  int allow_exceptions );
 
+EXTERN_C_SPEC_ DLL_SPEC_ int
+QuotesGetter_AddSymbol_ABI( QuotesGetter_C *pgetter,
+                               const char *symbol,
+                               int allow_exceptions );
+
+EXTERN_C_SPEC_ DLL_SPEC_ int
+QuotesGetter_RemoveSymbol_ABI( QuotesGetter_C *pgetter,
+                                  const char *symbol,
+                                  int allow_exceptions );
+
+EXTERN_C_SPEC_ DLL_SPEC_ int
+QuotesGetter_AddSymbols_ABI( QuotesGetter_C *pgetter,
+                                 const char** symbols,
+                                 size_t nymbols,
+                                 int allow_exceptions );
+
+EXTERN_C_SPEC_ DLL_SPEC_ int
+QuotesGetter_RemoveSymbols_ABI( QuotesGetter_C *pgetter,
+                                   const char** symbols,
+                                   size_t nymbols,
+                                   int allow_exceptions );
 
 /* MarketHoursGetter */
 EXTERN_C_SPEC_ DLL_SPEC_ int
@@ -487,6 +508,12 @@ HistoricalGetterBase_SetExtendedHours_ABI( Getter_C *pgetter,
                                                int is_extended_hours,
                                                int allow_exceptions );
 
+EXTERN_C_SPEC_ DLL_SPEC_ int
+HistoricalGetterBase_SetFrequency_ABI( Getter_C *pgetter,
+                                             int frequency_type,
+                                             unsigned int frequency,
+                                             int allow_exceptions );
+
 /* HistoricalPeriodGetter */
 EXTERN_C_SPEC_ DLL_SPEC_ int
 HistoricalPeriodGetter_Create_ABI( struct Credentials *pcreds,
@@ -519,12 +546,6 @@ HistoricalPeriodGetter_SetPeriod_ABI( HistoricalPeriodGetter_C *pgetter,
                                            int period_type,
                                            unsigned int period,
                                            int allow_exceptions );
-
-EXTERN_C_SPEC_ DLL_SPEC_ int
-HistoricalPeriodGetter_SetFrequency_ABI( HistoricalPeriodGetter_C *pgetter,
-                                             int frequency_type,
-                                             unsigned int frequency,
-                                             int allow_exceptions );
 
 /* HistoricalRangeGetter */
 EXTERN_C_SPEC_ DLL_SPEC_ int
@@ -566,11 +587,6 @@ HistoricalRangeGetter_SetStartMSecSinceEpoch_ABI(
     unsigned long long start_msec,
     int allow_exceptions );
 
-EXTERN_C_SPEC_ DLL_SPEC_ int
-HistoricalRangeGetter_SetFrequency_ABI( HistoricalRangeGetter_C *pgetter,
-                                             int frequency_type,
-                                             unsigned int frequency,
-                                             int allow_exceptions );
 
 /* OptionChainGetter */
 EXTERN_C_SPEC_ DLL_SPEC_ int
@@ -1169,6 +1185,23 @@ QuotesGetter_SetSymbols(QuotesGetter_C *getter, const char **symbols,
                         size_t nsymbols)
 { return QuotesGetter_SetSymbols_ABI(getter, symbols, nsymbols, 0); }
 
+inline int
+QuotesGetter_AddSymbol( QuotesGetter_C *pgetter,  const char *symbol)
+{ return QuotesGetter_AddSymbol_ABI(pgetter, symbol, 0); }
+
+inline int
+QuotesGetter_RemoveSymbol( QuotesGetter_C *pgetter, const char *symbol)
+{ return QuotesGetter_RemoveSymbol_ABI(pgetter, symbol, 0); }
+
+inline int
+QuotesGetter_AddSymbols(QuotesGetter_C *getter, const char **symbols,
+                        size_t nsymbols)
+{ return QuotesGetter_AddSymbols_ABI(getter, symbols, nsymbols, 0); }
+
+inline int
+QuotesGetter_RemoveSymbols(QuotesGetter_C *getter, const char **symbols,
+                           size_t nsymbols)
+{ return QuotesGetter_RemoveSymbols_ABI(getter, symbols, nsymbols, 0); }
 
 /* MarketHoursGetter */
 inline int
@@ -1319,17 +1352,19 @@ inline int
 HistoricalPeriodGetter_SetPeriod( HistoricalPeriodGetter_C *pgetter,
                                    PeriodType period_type,
                                    unsigned int period )
-{ return HistoricalPeriodGetter_SetPeriod_ABI( pgetter, (int)period_type, period, 0); }
+{ return HistoricalPeriodGetter_SetPeriod_ABI( pgetter, (int)period_type,
+                                               period, 0); }
 
 inline int
 HistoricalPeriodGetter_SetFrequency( HistoricalPeriodGetter_C *pgetter,
                                      FrequencyType frequency_type,
                                      unsigned int frequency )
-{ return HistoricalPeriodGetter_SetFrequency_ABI( pgetter, (int)frequency_type,
-                                                  frequency, 0); }
+{ return HistoricalGetterBase_SetFrequency_ABI( (Getter_C*)pgetter,
+                                                (int)frequency_type,
+                                                frequency, 0); }
 
 /* HistoricalRangeGetter */
-EXTERN_C_SPEC_ DLL_SPEC_ int
+inline int
 HistoricalRangeGetter_Create( struct Credentials *pcreds,
                                    const char* symbol,
                                    FrequencyType frequency_type,
@@ -1345,7 +1380,7 @@ HistoricalRangeGetter_Create( struct Credentials *pcreds,
                                           pgetter, 0);
 }
 
-EXTERN_C_SPEC_ DLL_SPEC_ int
+inline int
 HistoricalRangeGetter_Destroy( HistoricalRangeGetter_C *pgetter )
 { return HistoricalRangeGetter_Destroy_ABI( pgetter, 0); }
 
@@ -1414,7 +1449,8 @@ inline int
 HistoricalRangeGetter_SetFrequency( HistoricalRangeGetter_C *pgetter,
                                      FrequencyType frequency_type,
                                      unsigned int frequency)
-{ return HistoricalRangeGetter_SetFrequency_ABI(pgetter, (int)frequency_type,
+{ return HistoricalGetterBase_SetFrequency_ABI( (Getter_C*)pgetter,
+                                                (int)frequency_type,
                                                 frequency, 0); }
 
 /* OptionChainGetter */
@@ -2220,6 +2256,28 @@ class QuotesGetter
             tmp[cnt++] = s.c_str();
         return tmp;
     }
+
+    template<typename F, typename... Args>
+    void
+    _strs_to_abi(F abicall, const char**strs, Args... args ) const
+    {
+        try{
+            abicall(args..., 1);
+        }catch(...){
+            if( strs ) delete[] strs;
+            throw;
+        }
+        if( strs ) delete[] strs;
+    }
+
+    void
+    _strs_to_abi( int(*abicall)(QuotesGetter_C*, const char**, size_t, int),
+                    const std::set<std::string>& symbols ) const
+    {
+        const char** tmp = set_to_cstrs(symbols);
+        _strs_to_abi(abicall, tmp, cgetter<QuotesGetter_C>(), tmp, symbols.size());
+    }
+
 public:
     typedef QuotesGetter_C CType;
 
@@ -2227,6 +2285,10 @@ public:
         :
             APIGetter( QuotesGetter_C{} )
         {
+            const char** tmp = set_to_cstrs(symbols);
+            _strs_to_abi(QuotesGetter_Create_ABI, tmp, CPP_to_C(creds), tmp,
+                         symbols.size(), cgetter<QuotesGetter_C>());
+        /*
             const char** s = nullptr;
             try{
                 s = set_to_cstrs(symbols);
@@ -2237,6 +2299,7 @@ public:
                 throw;
             }
             if( s ) delete[] s;
+            */
         }
 
     ~QuotesGetter()
@@ -2271,6 +2334,8 @@ public:
     void
     set_symbols(const std::set<std::string>& symbols)
     {
+        _strs_to_abi(QuotesGetter_SetSymbols_ABI, symbols);
+        /*
         const char** tmp = set_to_cstrs(symbols);
         try{
             QuotesGetter_SetSymbols_ABI(cgetter<QuotesGetter_C>(), tmp,
@@ -2280,7 +2345,24 @@ public:
             throw;
         }
         if( tmp ) delete[] tmp;
+        */
     }
+
+    void
+    add_symbol(const std::string& symbol)
+    { QuotesGetter_AddSymbol_ABI(cgetter<QuotesGetter_C>(), symbol.c_str(), 1); }
+
+    void
+    remove_symbol(const std::string& symbol)
+    { QuotesGetter_RemoveSymbol_ABI(cgetter<QuotesGetter_C>(), symbol.c_str(), 1); }
+
+    void
+    add_symbols(const std::set<std::string>& symbols)
+    { _strs_to_abi(QuotesGetter_AddSymbols_ABI, symbols);}
+
+    void
+    remove_symbols(const std::set<std::string>& symbols)
+    { _strs_to_abi(QuotesGetter_RemoveSymbols_ABI, symbols); }
 };
 
 inline json
@@ -2453,7 +2535,12 @@ protected:
                              const std::string& symbol,
                              Args... args )
         :
-            APIGetter( _, func, nullptr, CPP_to_C(creds), CPP_to_C(symbol), args... )
+            APIGetter( _,
+                       func,
+                       nullptr,
+                       CPP_to_C(creds),
+                       CPP_to_C(symbol),
+                       args... )
         {
         }
 
@@ -2503,6 +2590,14 @@ public:
         HistoricalGetterBase_SetExtendedHours_ABI(
             cgetter<>(), static_cast<int>(extended_hours), 1
             );
+    }
+
+    void
+    set_frequency(FrequencyType frequency_type, unsigned int frequency)
+    {
+        HistoricalGetterBase_SetFrequency_ABI(
+           cgetter<>(), static_cast<int>(frequency_type), frequency, 1
+           );
     }
 
 };
@@ -2555,7 +2650,8 @@ public:
         return static_cast<PeriodType>(pt);
     }
 
-    unsigned int get_period() const
+    unsigned int
+    get_period() const
     {
         unsigned int p;
         HistoricalPeriodGetter_GetPeriod_ABI(
@@ -2570,15 +2666,6 @@ public:
         HistoricalPeriodGetter_SetPeriod_ABI(
            cgetter<HistoricalPeriodGetter_C>(), static_cast<int>(period_type),
            period, 1
-           );
-    }
-
-    void
-    set_frequency(FrequencyType frequency_type, unsigned int frequency)
-    {
-        HistoricalPeriodGetter_SetFrequency_ABI(
-           cgetter<HistoricalPeriodGetter_C>(), static_cast<int>(frequency_type),
-           frequency, 1
            );
     }
 };
@@ -2652,15 +2739,6 @@ public:
                cgetter<HistoricalRangeGetter_C>(), &ms, 1
               );
        return ms;
-    }
-
-    void
-    set_frequency(FrequencyType frequency_type, unsigned int frequency)
-    {
-       HistoricalRangeGetter_SetFrequency_ABI(
-          cgetter<HistoricalRangeGetter_C>(), static_cast<int>(frequency_type),
-          frequency, 1
-          );
     }
 
     void

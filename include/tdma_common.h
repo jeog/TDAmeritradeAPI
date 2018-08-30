@@ -170,7 +170,16 @@ LastErrorCode_ABI( int *code, int allow_exceptions );
 EXTERN_C_SPEC_ DLL_SPEC_ int
 LastErrorMsg_ABI( char** buf, size_t *n, int allow_exceptions );
 
-
+EXTERN_C_SPEC_ DLL_SPEC_ int
+BuildOptionSymbol_ABI( const char* underlying,
+                         unsigned int month,
+                         unsigned int day,
+                         unsigned int year,
+                         int is_call,
+                         double strike,
+                         char **buf,
+                         size_t *n,
+                         int allow_exceptions );
 
 /* C interface */
 
@@ -251,6 +260,17 @@ inline int
 LastErrorMsg( char** buf, size_t *n)
 { return LastErrorMsg_ABI(buf, n, 0); }
 
+inline int
+BuildOptionSymbol( const char* underlying,
+                     unsigned int month,
+                     unsigned int day,
+                     unsigned int year,
+                     int is_call,
+                     double strike,
+                     char **buf,
+                     size_t *n )
+{ return BuildOptionSymbol_ABI(underlying, month, day, year, is_call, strike,
+                               buf, n, 0); }
 
 /*
  * if C, client has to call CloseCredentials and CopyCredentials directly
@@ -471,6 +491,23 @@ GetDefaultCertificateBundlePath()
     return s;
 }
 
+inline std::string
+BuildOptionSymbol( const std::string& underlying,
+                     unsigned int month,
+                     unsigned int day,
+                     unsigned int year,
+                     bool is_call,
+                     double strike )
+{
+    char* path;
+    size_t n;
+    BuildOptionSymbol_ABI(underlying.c_str(), month, day, year,
+                          static_cast<int>(is_call), strike, &path, &n, 1);
+    std::string s(path, n-1);
+    if(path) free(path);
+    return s;
+}
+
 class APIException
         : public std::exception{
     std::string _what;
@@ -677,6 +714,7 @@ public:
     error_code() const noexcept
     { return ERROR_CODE; }
 };
+
 
 // TODO move to utils
 inline const char*

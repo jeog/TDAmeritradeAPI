@@ -124,7 +124,7 @@ public:
     static std::chrono::milliseconds
     wait_remaining();
 
-    std::string
+    virtual std::string
     get();
 
     void

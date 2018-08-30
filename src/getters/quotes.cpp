@@ -27,7 +27,7 @@ namespace tdma {
 
 class QuoteGetterImpl
         : public APIGetterImpl {
-    std::string _symbol;
+    string _symbol;
 
     void
     _build()
@@ -56,7 +56,7 @@ public:
             _build();
         }
 
-    std::string
+    string
     get_symbol() const
     { return _symbol; }
 
@@ -74,7 +74,7 @@ public:
 
 class QuotesGetterImpl
         : public APIGetterImpl {
-    std::set<std::string> _symbols;
+    set<string> _symbols;
 
     void
     _build()
@@ -90,6 +90,22 @@ class QuotesGetterImpl
     build()
     { _build(); }
 
+    void
+    _throw_if_bad_input(const string& symbol)
+    {
+        if( symbol.empty() )
+            throw ValueException("empty symbol");
+    }
+
+    void
+    _throw_if_bad_input(const set<string>& symbols)
+    {
+        if( symbols.empty() )
+            throw ValueException("no symbols");
+        for(auto& s : symbols)
+            _throw_if_bad_input(s);
+    }
+
 public:
     typedef QuotesGetter ProxyType;
     static const int TYPE_ID_LOW = TYPE_ID_GETTER_QUOTES;
@@ -100,23 +116,56 @@ public:
             APIGetterImpl(creds, data_api_on_error_callback),
             _symbols(symbols)
         {
-            if( symbols.empty() )
-                throw ValueException("no symbols");
-
+            _throw_if_bad_input(symbols);
             _build();
         }
 
-    std::set<std::string>
+    string
+    get()
+    { return _symbols.empty() ? string() : APIGetterImpl::get(); }
+
+    set<string>
     get_symbols() const
     { return _symbols; }
 
     void
-    set_symbols(const std::set<std::string>& symbols)
+    set_symbols(const set<string>& symbols)
     {
-        if( symbols.empty() )
-            throw ValueException("empty symbols");
-
+        _throw_if_bad_input(symbols);
         _symbols = symbols;
+        build();
+    }
+
+    void
+    add_symbol(const string& symbol)
+    {
+        _throw_if_bad_input(symbol);
+        _symbols.insert(symbol);
+        build();
+    }
+
+    void
+    remove_symbol(const string& symbol)
+    {
+        _throw_if_bad_input(symbol);
+        _symbols.erase(symbol);
+        build();
+    }
+
+    void
+    add_symbols(const set<string>& symbols)
+    {
+        _throw_if_bad_input(symbols);
+        _symbols.insert(symbols.begin(), symbols.end());
+        build();
+    }
+
+    void
+    remove_symbols(const set<string>& symbols)
+    {
+        _throw_if_bad_input(symbols);
+        for(auto& s : symbols)
+            _symbols.erase(s);
         build();
     }
 };
@@ -204,7 +253,7 @@ QuotesGetter_Create_ABI( Credentials *pcreds,
     CHECK_PTR_KILL_PROXY(symbols, "symbols", allow_exceptions, pgetter);
 
     static auto meth = +[](Credentials *c, const char** s, size_t n){
-        std::set<std::string> strs;
+        set<string> strs;
         while( n-- )
             strs.insert(s[n]);
         return new ImplTy(*c, strs);
@@ -252,6 +301,51 @@ QuotesGetter_SetSymbols_ABI( QuotesGetter_C *pgetter,
 {
     return GetterImplAccessor<char***>::template set<QuotesGetterImpl>(
         pgetter, &QuotesGetterImpl::set_symbols, symbols, nsymbols,
+        allow_exceptions
+        );
+}
+
+
+int
+QuotesGetter_AddSymbol_ABI( QuotesGetter_C *pgetter,
+                              const char *symbol,
+                              int allow_exceptions )
+{
+    return GetterImplAccessor<char**>::template set<QuotesGetterImpl>(
+        pgetter, &QuotesGetterImpl::add_symbol, symbol, allow_exceptions
+        );
+}
+
+int
+QuotesGetter_RemoveSymbol_ABI( QuotesGetter_C *pgetter,
+                                   const char *symbol,
+                                   int allow_exceptions )
+{
+    return GetterImplAccessor<char**>::template set<QuotesGetterImpl>(
+        pgetter, &QuotesGetterImpl::remove_symbol, symbol, allow_exceptions
+        );
+}
+
+int
+QuotesGetter_AddSymbols_ABI( QuotesGetter_C *pgetter,
+                                const char **symbols,
+                                size_t nsymbols,
+                                int allow_exceptions )
+{
+    return GetterImplAccessor<char***>::template set<QuotesGetterImpl>(
+        pgetter, &QuotesGetterImpl::add_symbols, symbols, nsymbols,
+        allow_exceptions
+        );
+}
+
+int
+QuotesGetter_RemoveSymbols_ABI( QuotesGetter_C *pgetter,
+                                   const char **symbols,
+                                   size_t nsymbols,
+                                  int allow_exceptions )
+{
+    return GetterImplAccessor<char***>::template set<QuotesGetterImpl>(
+        pgetter, &QuotesGetterImpl::remove_symbols, symbols, nsymbols,
         allow_exceptions
         );
 }

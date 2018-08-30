@@ -16,11 +16,8 @@ along with this program.  If not, see http://www.gnu.org/licenses.
 */
 
 #include <iostream>
-#include <assert.h>
 
 #include "../include/websocket_connect.h"
-
-
 
 namespace conn{
 

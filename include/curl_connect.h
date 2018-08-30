@@ -23,7 +23,6 @@ along with this program.  If not, see http://www.gnu.org/licenses.
 #include <map>
 #include <sstream>
 #include <vector>
-#include <assert.h>
 #include <mutex>
 #include <tuple>
 #include <memory>

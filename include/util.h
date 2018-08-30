@@ -60,7 +60,7 @@ debug_out( std::string tag,
 #ifdef DEBUG_VERBOSE_1_
     static mutex mtx;
     lock_guard<mutex> _(mtx);
-    out<< setw(20) << left << tag << ' '
+    out<< setw(40) << left << tag << ' '
        << setw(20) << left << hex << reinterpret_cast<size_t>(obj) << dec << ' '
        << setw(20) << left << this_thread::get_id() << ' '
        << message << endl;

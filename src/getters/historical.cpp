@@ -39,13 +39,15 @@ class HistoricalGetterBaseImpl
     build() = 0;
 
     void
-    _throw_if_invalid_frequency() const
+    _throw_if_invalid_frequency(FrequencyType fty, int f) const
     {
-        auto valid_frequencies =
-                VALID_FREQUENCIES_BY_FREQUENCY_TYPE.find(_frequency_type);
-        assert( valid_frequencies != end(VALID_FREQUENCIES_BY_FREQUENCY_TYPE) );
-        if( valid_frequencies->second.count(_frequency) == 0 ){
-            throw ValueException("invalid frequency");
+        auto valid = VALID_FREQUENCIES_BY_FREQUENCY_TYPE.find(fty);
+        assert( valid != end(VALID_FREQUENCIES_BY_FREQUENCY_TYPE) );
+        if( valid->second.count(f) == 0 ){
+            throw ValueException(
+                "invalid frequency(" + std::to_string(f)
+                + ") for frequency type(" + to_string(fty) + ")"
+                );
         }
     }
 
@@ -64,7 +66,7 @@ protected:
         {
             if( symbol.empty() )
                 throw ValueException("empty symbol");
-            _throw_if_invalid_frequency();
+            _throw_if_invalid_frequency(frequency_type, frequency);
         }
 
     std::vector<std::pair<std::string, std::string>>
@@ -74,17 +76,6 @@ protected:
                  {"frequency", to_string(_frequency)},
                  {"needExtendedHoursData", _extended_hours ? "true" : "false"} };
     }
-
-    void
-    set_frequency(unsigned int frequency)
-    {
-        _frequency = frequency;
-        _throw_if_invalid_frequency();
-    }
-
-    void
-    set_frequency_type(FrequencyType frequency_type)
-    { _frequency_type = frequency_type; }
 
 public:
     typedef HistoricalGetterBase ProxyType;
@@ -123,18 +114,18 @@ public:
         build();
     }
 
-    string
-    get()
+    void
+    set_frequency(FrequencyType frequency_type, unsigned int frequency)
     {
-        _throw_if_invalid_frequency();
-        return APIGetterImpl::get();
+        _throw_if_invalid_frequency(frequency_type, frequency);
+        _frequency_type = frequency_type;
+        _frequency = frequency;
+        build();
     }
 
 };
 
 
-// TODO MAKE CLEAR IN DOCS THE ORDER WE NEED TO CHANGE PERIODS/FREQUENCIES
-//      BECUASE OF THE INTERNAL CHECKS/CONTINGENCIES
 class HistoricalPeriodGetterImpl
         : public HistoricalGetterBaseImpl {
     PeriodType _period_type;
@@ -158,23 +149,28 @@ class HistoricalPeriodGetterImpl
     { _build(); }
 
     void
-    _throw_if_invalid_frequency_type() const
+    _throw_if_invalid_frequency_type(PeriodType pty, FrequencyType fty) const
     {
-        auto valid_freq_types =
-                VALID_FREQUENCY_TYPES_BY_PERIOD_TYPE.find(_period_type);
-        assert( valid_freq_types != end(VALID_FREQUENCY_TYPES_BY_PERIOD_TYPE) );
-        if( valid_freq_types->second.count(get_frequency_type()) == 0 ){
-            throw ValueException("invalid frequency type");
+        auto valid = VALID_FREQUENCY_TYPES_BY_PERIOD_TYPE.find(pty);
+        assert( valid != end(VALID_FREQUENCY_TYPES_BY_PERIOD_TYPE) );
+        if( valid->second.count(fty) == 0 ){
+            throw ValueException(
+                "invalid frequency type(" + to_string(fty)
+                + ") for period type(" + to_string(pty) + ")"
+                );
         }
     }
 
     void
-    _throw_if_invalid_period() const
+    _throw_if_invalid_period(PeriodType pty, int p) const
     {
-        auto valid_periods = VALID_PERIODS_BY_PERIOD_TYPE.find(_period_type);
-        assert( valid_periods != end(VALID_PERIODS_BY_PERIOD_TYPE) );
-        if( valid_periods->second.count(_period) == 0 ){
-            throw ValueException("invalid period (" + to_string(_period) + ")");
+        auto valid = VALID_PERIODS_BY_PERIOD_TYPE.find(pty);
+        assert( valid != end(VALID_PERIODS_BY_PERIOD_TYPE) );
+        if( valid->second.count(p) == 0 ){
+            throw ValueException(
+                "invalid period(" + std::to_string(p)
+                + ") for period type(" + to_string(pty) + ")"
+                );
         }
     }
 
@@ -196,8 +192,8 @@ public:
         _period_type(period_type),
         _period(period)
     {
-        _throw_if_invalid_frequency_type();
-        _throw_if_invalid_period();
+        _throw_if_invalid_frequency_type(period_type, frequency_type);
+        _throw_if_invalid_period(period_type, period);
         _build();
     }
 
@@ -205,36 +201,30 @@ public:
     get_period_type() const
     { return _period_type; }
 
-    unsigned int get_period() const
+    unsigned int
+    get_period() const
     { return _period; }
 
     void
     set_period(PeriodType period_type, unsigned int period)
     {
+        _throw_if_invalid_period(period_type, period);
         _period_type = period_type;
         _period = period;
-        build();
-    }
-
-    void
-    set_frequency(FrequencyType frequency_type, unsigned int frequency)
-    {
-        // frequency_type first so we can check frequency
-        HistoricalGetterBaseImpl::set_frequency_type(frequency_type);
-        HistoricalGetterBaseImpl::set_frequency(frequency);
         build();
     }
 
     string
     get()
     {
-        _throw_if_invalid_frequency_type();
-        _throw_if_invalid_period();
-        return HistoricalPeriodGetterImpl::get();
+        _throw_if_invalid_frequency_type(_period_type, get_frequency_type());
+        /* NOTE - we have to wait to check frequency type against period_type
+         *        until here to allow the client to make both set calls without
+         *        the first triggering an exception from the stale values
+         *        to be changed by the second call */
+        return HistoricalGetterBaseImpl::get();
     }
-
 };
-
 
 
 class HistoricalRangeGetterImpl
@@ -287,15 +277,6 @@ public:
    unsigned long long
    get_start_msec_since_epoch() const
    { return _start_msec_since_epoch; }
-
-   void
-   set_frequency(FrequencyType frequency_type, unsigned int frequency)
-   {
-       // frequency_type first so we can check frequency
-       HistoricalGetterBaseImpl::set_frequency_type(frequency_type);
-       HistoricalGetterBaseImpl::set_frequency(frequency);
-       build();
-   }
 
    void
    set_end_msec_since_epoch(unsigned long long end_msec_since_epoch)
@@ -383,6 +364,21 @@ HistoricalGetterBase_SetExtendedHours_ABI( Getter_C *pgetter,
             pgetter, &HistoricalGetterBaseImpl::set_extended_hours,
             is_extended_hours, allow_exceptions
         );
+}
+
+int
+HistoricalGetterBase_SetFrequency_ABI( Getter_C *pgetter,
+                                             int frequency_type,
+                                             unsigned int frequency,
+                                             int allow_exceptions )
+{
+    CHECK_ENUM(FrequencyType, frequency_type, allow_exceptions);
+
+    return GetterImplAccessor<int>::template
+        set<HistoricalGetterBaseImpl, FrequencyType>(
+            pgetter, &HistoricalGetterBaseImpl::set_frequency, frequency_type,
+            frequency, allow_exceptions
+            );
 }
 
 /* HistoricalPeriodGetter */
@@ -476,20 +472,6 @@ HistoricalPeriodGetter_SetPeriod_ABI( HistoricalPeriodGetter_C *pgetter,
             );
 }
 
-int
-HistoricalPeriodGetter_SetFrequency_ABI( HistoricalPeriodGetter_C *pgetter,
-                                             int frequency_type,
-                                             unsigned int frequency,
-                                             int allow_exceptions )
-{
-    CHECK_ENUM(FrequencyType, frequency_type, allow_exceptions);
-
-    return GetterImplAccessor<int>::template
-        set<HistoricalPeriodGetterImpl, FrequencyType>(
-            pgetter, &HistoricalPeriodGetterImpl::set_frequency, frequency_type,
-            frequency, allow_exceptions
-            );
-}
 
 /* HistoricalRangeGetter */
 int
@@ -594,24 +576,4 @@ HistoricalRangeGetter_SetStartMSecSinceEpoch_ABI(
             start_msec, allow_exceptions
             );
 }
-
-
-int
-HistoricalRangeGetter_SetFrequency_ABI( HistoricalRangeGetter_C *pgetter,
-                                             int frequency_type,
-                                             unsigned int frequency,
-                                             int allow_exceptions )
-{
-    CHECK_ENUM(FrequencyType, frequency_type, allow_exceptions);
-
-    return GetterImplAccessor<int>::template
-        set<HistoricalRangeGetterImpl, FrequencyType>(
-            pgetter, &HistoricalRangeGetterImpl::set_frequency, frequency_type,
-            frequency, allow_exceptions
-            );
-}
-
-
-
-
 

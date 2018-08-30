@@ -53,7 +53,8 @@ OptionStrategy static methods for the Option Getters).
 """
 
 from ctypes import byref as _REF, Structure as _Structure, c_int, c_void_p, \
-                    c_ulonglong, c_double, Union as _Union, c_uint                 
+                    c_ulonglong, c_double, Union as _Union, c_uint, c_char_p, \
+                    c_size_t                 
 import json
 
 from . import clib
@@ -174,6 +175,16 @@ def wait_remaining():
     """milliseconds of waiting before .get() can be called without blocking"""
     return clib.get_val("APIGetter_WaitRemaining_ABI", c_ulonglong)        
 
+def build_option_symbol(underlying, month, day, year, is_call, strike):
+    c = c_char_p()
+    n = c_size_t()
+    clib.call("BuildOptionSymbol_ABI", PCHAR(underlying), c_uint(month),
+              c_uint(day), c_uint(year), c_int(1 if is_call else 0), 
+              c_double(strike), _REF(c), _REF(n)) 
+    s = c.value.decode() 
+    clib.free_buffer(c)
+    return s
+
 
 class _APIGetter:
     """_APIGetter - Base getter class. DO NOT INSTANTIATE!
@@ -271,6 +282,14 @@ class QuotesGetter(_APIGetter):
     def set_symbols(self, *symbols):
         """Sets/changes symbols to use."""
         clib.set_strs(self._abi('SetSymbols'), symbols, self._obj)
+
+    def add_symbols(self, *symbols):
+        """Add symbols."""
+        clib.set_strs(self._abi('AddSymbols'), symbols, self._obj)
+        
+    def remove_symbols(self, *symbols):
+        """Remove symbols."""
+        clib.set_strs(self._abi('RemoveSymbols'), symbols, self._obj)
 
 
 class MarketHoursGetter(_APIGetter):
@@ -404,7 +423,7 @@ class _HistoricalGetterBase(_APIGetter):
         
     def set_frequency(self, frequency_type, frequency):
         """Sets/changes FREQUENCY_TYPE_[] constant AND frequency size to use."""
-        clib.call(self._abi('SetFrequency'), _REF(self._obj), 
+        clib.call('HistoricalGetterBase_SetFrequency_ABI', _REF(self._obj), 
                   c_int(frequency_type), c_int(frequency))
     
     def is_extended_hours(self):

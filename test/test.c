@@ -19,6 +19,9 @@ do{ \
 }while(0);
 
 int
+Test_BuildOptionSymbol(void);
+
+int
 Test_QuoteGetter(struct Credentials *creds);
 
 int
@@ -101,6 +104,10 @@ int main(int argc, char* argv[])
 
     if( (err = LoadCredentials( argv[2], argv[3], &creds )) )
         CHECK_AND_RETURN_ON_ERROR(err, "LoadCredentials");
+
+    err = Test_BuildOptionSymbol();
+    if( err )
+        return err;
 
     err = Test_Streaming(&creds, argv[1]);
     if( err )
@@ -191,6 +198,7 @@ int main(int argc, char* argv[])
 
     return 0;
 }
+
 
 void
 streaming_callback( int cb_type, int ss_type, unsigned long long ts, const char* msg)
@@ -732,6 +740,108 @@ Test_Streaming(struct Credentials* c, const char* account_id)
 
 }
 
+int cmp_option_symbol(const char* sym, const char* u, unsigned int m,
+                        unsigned int d, unsigned int y, int c, double s)
+{
+    int err = 0;
+    char* buf = NULL;
+    size_t n;
+    if( (err = BuildOptionSymbol(u,m,d,y,c,s, &buf, &n)) ){
+        fprintf(stderr, "BuildOptionSymbol failed for '%s' with error %i \n",
+                sym, err);
+        return -1;
+    }
+
+    if( !buf ){
+        fprintf(stderr, "BuildOptionSymbol failed for %s, null buffer \n", sym);
+        return -1;
+    }
+
+    if( strcmp(sym, buf) ){
+        fprintf(stderr, "BuildOptionSymbol failed for %s, no match \n", sym);
+        free(buf);
+        return -1;
+    }
+
+    free(buf);
+    return 0;
+
+}
+
+int
+Test_BuildOptionSymbol(void)
+{
+    cmp_option_symbol("SPY_010118C300", "SPY",1,1,2018,1,300);
+    cmp_option_symbol("SPY_123199P200", "SPY",12,31,2099,0,200);
+    cmp_option_symbol("A_021119P1.5", "A",2,11,2019,0,1.5);
+    cmp_option_symbol("A_021119P1.5", "A",2,11,2019,0,1.500);
+    cmp_option_symbol("ABCDEF_110121C99.999", "ABCDEF",11,1,2021, 1,99.999);
+    cmp_option_symbol("ABCDEF_110121C99.999", "ABCDEF",11,1,2021, 1,99.99900);
+    cmp_option_symbol("ABCDEF_110121C99", "ABCDEF",11,1,2021,1, 99.0);
+    cmp_option_symbol("ABCDEF_110121C99.001", "ABCDEF",11,1,2021, 1,99.001);
+
+    int t = 1;
+    char* buf;
+    size_t n;
+    if( BuildOptionSymbol("",1,1,2018,1,300,&buf,&n) == 0){
+        fprintf(stderr, "BuildOptionSymbol did not fail for test # %i \n", t++);
+        return -1;
+    }
+    if( BuildOptionSymbol("SPY_",1,1,2018,1,300,&buf,&n) == 0){
+        fprintf(stderr, "BuildOptionSymbol did not fail for test # %i \n", t++);
+        return -1;
+    }
+    if( BuildOptionSymbol("SPY_",1,1,2018,1,300,&buf,&n) == 0){
+        fprintf(stderr, "BuildOptionSymbol did not fail for test # %i \n", t++);
+        return -1;
+    }
+    if( BuildOptionSymbol("_SPY",1,1,2018,1,300,&buf,&n) == 0){
+        fprintf(stderr, "BuildOptionSymbol did not fail for test # %i \n", t++);
+        return -1;
+    }
+    if( BuildOptionSymbol("SP_Y",1,1,2018,1,300,&buf,&n) == 0){
+        fprintf(stderr, "BuildOptionSymbol did not fail for test # %i \n", t++);
+        return -1;
+    }
+    if( BuildOptionSymbol("SPY",0,1,2018,1,300,&buf,&n) == 0){
+        fprintf(stderr, "BuildOptionSymbol did not fail for test # %i \n", t++);
+        return -1;
+    }
+    if( BuildOptionSymbol("SPY",13,1,2018,1,300,&buf,&n) == 0){
+        fprintf(stderr, "BuildOptionSymbol did not fail for test # %i \n", t++);
+        return -1;
+    }
+    if( BuildOptionSymbol("SPY",1,0,2018,1,300,&buf,&n) == 0){
+        fprintf(stderr, "BuildOptionSymbol did not fail for test # %i \n", t++);
+        return -1;
+    }
+    if( BuildOptionSymbol("SPY",1,32,2018,1,300,&buf,&n) == 0){
+        fprintf(stderr, "BuildOptionSymbol did not fail for test # %i \n", t++);
+        return -1;
+    }
+    if( BuildOptionSymbol("SPY",1,31,999,1,300,&buf,&n) == 0){
+        fprintf(stderr, "BuildOptionSymbol did not fail for test # %i \n", t++);
+        return -1;
+    }
+    if( BuildOptionSymbol("SPY",1,31,10001,1,300,&buf,&n) == 0){
+        fprintf(stderr, "BuildOptionSymbol did not fail for test # %i \n", t++);
+        return -1;
+    }
+    if( BuildOptionSymbol("SPY",1,31,18,1,300,&buf,&n) == 0){
+        fprintf(stderr, "BuildOptionSymbol did not fail for test # %i \n", t++);
+        return -1;
+    }
+    if( BuildOptionSymbol("SPY",1,31,2018,1,0.0,&buf,&n)  == 0){
+        fprintf(stderr, "BuildOptionSymbol did not fail for test # %i \n", t++);
+        return -1;
+    }
+    if( BuildOptionSymbol("SPY",1,31,2018,1,-100.0,&buf,&n)  == 0){
+        fprintf(stderr, "BuildOptionSymbol did not fail for test # %i \n", t++);
+        return -1;
+    };
+
+    return 0;
+}
 
 int
 Test_QuoteGetter(struct Credentials* creds)
@@ -876,6 +986,39 @@ Test_QuotesGetter(struct Credentials* creds)
         free(buf);
         buf = NULL;
     }
+
+    if( (err = QuotesGetter_RemoveSymbols(&qsg, symbols_in2, 3)) )
+        CHECK_AND_RETURN_ON_ERROR(err, "QuotesGetter_RemoveSymbols");
+
+    if( (err = QuotesGetter_AddSymbols(&qsg, symbols_in, 2)) )
+        CHECK_AND_RETURN_ON_ERROR(err, "QuotesGetter_AddSymbols");
+
+    if( (err = QuotesGetter_GetSymbols(&qsg, &symbols_out, &nsymbols)) )
+        CHECK_AND_RETURN_ON_ERROR(err, "QuotesGetter_GetSymbols");
+
+    if( symbols_out ){
+        printf("Symbols: ");
+        int i;
+        for(i = 0; i < nsymbols; ++ i){
+            if(symbols_out[i]){
+                printf("%s ", symbols_out[i]);
+                free(symbols_out[i]);
+            }
+        }
+        printf("\n");
+        free(symbols_out);
+        symbols_out = NULL;
+    }
+
+    if( (err = QuotesGetter_Get(&qsg, &buf, &ndata)) )
+        CHECK_AND_RETURN_ON_ERROR(err, "QuotesGetter_Get");
+
+    if( buf) {
+        printf("Get: %s \n", buf);
+        free(buf);
+        buf = NULL;
+    }
+
     return 0;
 }
 
@@ -1181,6 +1324,13 @@ Test_HistoricalPeriodGetter(struct Credentials *creds)
     if( (err = HistoricalPeriodGetter_SetFrequency(&hpg, ft, freq)) ) //
         CHECK_AND_RETURN_ON_ERROR(err, "HistoricalPeriodGetter_SetFrequency");
 
+    // test for error on SET
+    if( HistoricalPeriodGetter_SetFrequency(&hpg, ft, 99) == 0){
+        fprintf(stderr, "HistoricalPeriodGetter_SetFrequency did not fail (%i, %i) \n",
+                ft, 99);
+        return -1;
+    }
+
     if( (err = HistoricalPeriodGetter_SetPeriod(&hpg, pt, period)) )
         CHECK_AND_RETURN_ON_ERROR(err, "HistoricalPeriodGetter_SetPeriod");
 
@@ -1241,6 +1391,23 @@ Test_HistoricalPeriodGetter(struct Credentials *creds)
         free(buf);
         buf = NULL;
     }
+
+    // sets error state but shouldn't fail until GET
+    if( (err = HistoricalPeriodGetter_SetFrequency(&hpg, FrequencyType_minute, 1))){
+        fprintf(stderr, "HistoricalPeriodGetter_SetFrequency should not have "
+                 "failed until GET (%i) \n", err);
+        return -1;
+    }
+
+    if( HistoricalPeriodGetter_Get(&hpg, &buf, &ndata) != TDMA_API_VALUE_ERROR ){
+        fprintf(stderr, "HistoricalPeriodGetter_Get did not return value error. \n");
+        if( buf ){
+            free(buf);
+            buf = NULL;
+        }
+        return -1;
+    }
+
 
     return 0;
 }
@@ -1337,6 +1504,13 @@ Test_HistoricalRangeGetter(struct Credentials *creds)
 
     if( (err = HistoricalRangeGetter_SetFrequency(&hpg, ft, freq)) ) //
         CHECK_AND_RETURN_ON_ERROR(err, "HistoricalRangeGetter_SetFrequency");
+
+    // test for error on SET
+    if( HistoricalRangeGetter_SetFrequency(&hpg, ft, 99) == 0){
+        fprintf(stderr, "SetFrequency did not fail as expected (%i, %i) \n",
+                ft, 99);
+        return -1;
+    }
 
     if( (err = HistoricalRangeGetter_SetExtendedHours(&hpg, 0)) )
         CHECK_AND_RETURN_ON_ERROR(err, "HistoricalRangeGetter_SetExtendedHours");

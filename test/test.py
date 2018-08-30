@@ -71,6 +71,38 @@ def init():
         if not clib.init(LIBRARY_PATH):        
             raise clib.LibraryNotLoaded()   
       
+def test_option_symbol_builder():
+    B = get.build_option_symbol          
+    assert "SPY_010118C300" == B("SPY",1,1,2018,True,300)
+    assert "SPY_123199P200" == B("SPY",12,31,2099,False,200)
+    assert "A_021119P1.5" == B( "A",2,11,2019,False,1.5)
+    assert "A_021119P1.5" == B("A",2,11,2019,False,1.500)
+    assert "ABCDEF_110121C99.999" == B( "ABCDEF",11,1,2021,True,99.999)
+    assert "ABCDEF_110121C99.999" == B( "ABCDEF",11,1,2021,True,99.99900)
+    assert "ABCDEF_110121C99" == B( "ABCDEF",11,1,2021,True,99.0)
+    assert "ABCDEF_110121C99.001" == B( "ABCDEF",11,1,2021,True,99.001)
+
+    def is_bad(u, m, d, y, c, s):
+        try:
+            B(u,m,d,y,c,s)
+            return False
+        except clib.CLibException:
+            return True
+            
+    assert is_bad("",1,1,2018,True,300)
+    assert is_bad("SPY_",1,1,2018,True,300)
+    assert is_bad("SPY_",1,1,2018,True,300)
+    assert is_bad("_SPY",1,1,2018,True,300)
+    assert is_bad("SP_Y",1,1,2018,True,300)
+    assert is_bad("SPY",0,1,2018,True,300)
+    assert is_bad("SPY",13,1,2018,True,300)
+    assert is_bad("SPY",1,0,2018,True,300)
+    assert is_bad("SPY",1,32,2018,True,300)
+    assert is_bad("SPY",1,31,999,True,300)
+    assert is_bad("SPY",1,31,10001,True,300)
+    assert is_bad("SPY",1,31,18,True,300)
+    assert is_bad("SPY",1,31,2018,True,0.0)
+    assert is_bad("SPY",1,31,2018,True,-100.0)
       
 def test_throttling(creds): 
     dw = get.get_def_wait_msec()  
@@ -125,6 +157,19 @@ def test_quotes_getters(creds):
     for k, v in j.items():
         print(k)
         print(str(v)) 
+    g.add_symbols('SPY')
+    g.add_symbols('IWM','GLD')
+    assert sorted(g.get_symbols()) == sorted(["SPY", "QQQ", "IWM", "GLD"])
+    g.remove_symbols('SPY','IWM')
+    assert g.get_symbols() == sorted(['QQQ','GLD'])
+    j = g.get()
+    for k, v in j.items():
+        print(k)
+        print(str(v))     
+    g.remove_symbols('QQQ','GLD')
+    assert g.get_symbols() == []
+    assert not g.get()
+    
 
 
 def test_market_hours_getters(creds): 
@@ -732,11 +777,11 @@ if __name__ == '__main__':
     test(init)
     print_title("load credentials") 
     with auth.CredentialsManager(args.credentials_path, \
-                                  args.credentials_password, True) as cm:  
-        test(test_streaming, cm.credentials)                       
-        test(test_quote_getters, cm.credentials)
+                                  args.credentials_password, True) as cm:    
+        test(test_option_symbol_builder)        
+        test(test_quote_getters, cm.credentials)        
         test(test_throttling, cm.credentials)        
-        test(test_quotes_getters, cm.credentials)
+        test(test_quotes_getters, cm.credentials)        
         test(test_market_hours_getters, cm.credentials)
         test(test_movers_getters, cm.credentials)
         test(test_historical_period_getters, cm.credentials)
@@ -752,5 +797,5 @@ if __name__ == '__main__':
              args.account_id)
         test(test_user_principals_getters, cm.credentials)
         test(test_instrument_info_getters, cm.credentials)
-        
+        test(test_streaming, cm.credentials)
         

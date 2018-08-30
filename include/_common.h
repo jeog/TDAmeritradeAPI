@@ -33,8 +33,14 @@ along with this program.  If not, see http://www.gnu.org/licenses.
 #endif /* _WIN32 */
 
 #ifdef DEBUG
-#define DEBUG_VERBOSE_1_
+#undef NDEBUG
 #endif /* DEBUG */
+
+#ifndef NDEBUG
+#define DEBUG_VERBOSE_1_
+#endif /* NDEBUG */
+
+#include <assert.h>
 
 #ifdef __cplusplus
 #include <string>

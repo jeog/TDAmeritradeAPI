@@ -57,12 +57,90 @@ VALID_FREQUENCIES_BY_FREQUENCY_TYPE = {
     {FrequencyType::monthly, set<int>{1}},
 };
 
+std::string
+BuildOptionSymbolImpl( const std::string& underlying,
+                         unsigned int month,
+                         unsigned int day,
+                         unsigned int year,
+                         bool is_call,
+                         double strike )
+{
+    std::stringstream ss;
+
+    if( month < 1 || month > 12 )
+        throw ValueException("invalid month (1-12)");
+
+    if( day < 1 || day > 31 )
+        throw ValueException("invalid day (1-31)");
+
+    if( underlying.empty() )
+        throw ValueException("underlying is empty");
+
+    if( underlying.find('_') != std::string::npos )
+        throw ValueException("invalid character in underlying: '_'" );
+
+    std::string yy = std::to_string(year);
+    if( yy.size() != 4 )
+        throw ValueException("invalid number of digits in year");
+
+    if( strike <= 0.0 )
+        throw ValueException("strike price <= 0.0");
+
+    ss << underlying << '_'
+       << std::setw(2) << std::setfill('0') << month
+       << std::setw(2) << std::setfill('0') << day
+       << std::setw(2) << std::setfill('0') << yy.substr( yy.size() - 2 )
+       << (is_call ? 'C' : 'P');
+
+    std::string s(std::to_string(strike));
+    if( s.find('.') != std::string::npos ){
+        s.erase( s.find_last_not_of('0') + 1, std::string::npos);
+        s.erase( s.find_last_not_of('.') + 1, std::string::npos);
+    }
+    return ss.str() + s;
+}
+
 } /* tdma */
 
 
 #endif /* __cplusplus */
 
 using namespace tdma;
+
+int
+BuildOptionSymbol_ABI( const char* underlying,
+                         unsigned int month,
+                         unsigned int day,
+                         unsigned int year,
+                         int is_call,
+                         double strike,
+                         char **buf,
+                         size_t *n,
+                         int allow_exceptions )
+{
+    CHECK_PTR(underlying, "underlying", allow_exceptions);
+    CHECK_PTR(buf, "buf", allow_exceptions);
+    CHECK_PTR(n, "n", allow_exceptions);
+
+    int err;
+    std::string r;
+    std::tie(r,err) = CallImplFromABI(allow_exceptions, BuildOptionSymbolImpl,
+                                      underlying, month, day, year, is_call,
+                                      strike);
+    if( err )
+        return err;
+
+    *n = r.size() + 1; // NULL TERM
+    *buf = reinterpret_cast<char*>(malloc(*n));
+    if( !*buf ){
+        return handle_error<tdma::MemoryError>(
+            "failed to allocate buffer memory", allow_exceptions
+            );
+    }
+    (*buf)[(*n)-1] = 0;
+    strncpy(*buf, r.c_str(), (*n)-1);
+    return 0;
+}
 
 int
 FreeBuffer_ABI( char* buf, int allow_exceptions )
