@@ -1077,6 +1077,7 @@ InstrumentInfoGetter_SetQuery_ABI( InstrumentInfoGetter_C *pgetter,
                                        const char* query_string,
                                        int allow_exceptions );
 
+
 #ifndef __cplusplus
 /*
  * C interface
@@ -2078,7 +2079,7 @@ public:
     typedef Getter_C CType;
 
 private:
-    std::unique_ptr<CType> _cgetter;
+    std::unique_ptr<CType, CProxyDestroyer<CType>> _cgetter;
 
 protected:
     template<typename CTy=CType>
@@ -2086,65 +2087,47 @@ protected:
     cgetter() const
     { return reinterpret_cast<CTy*>( const_cast<CType*>(_cgetter.get()) ); }
 
-    template<typename CTy>
-    void
-    destroy_cgetter( int(*destroy)(CTy*, int) )
-    {
-        if( _cgetter && _cgetter->obj ){
-            destroy(cgetter<CTy>(), 1);
-        }
-        _cgetter.reset();
-    }
-
-    template<typename CTy>
-    std::string
-    str_from_abi( int(*abicall)(CTy*, char**, size_t*, int) ) const
-    {
-        char *buf;
-        size_t n;
-        abicall(cgetter<CTy>(), &buf, &n, 1);
-        std::string s(buf, n-1);
-        if(buf)
-            free(buf);
-        return s;
-    }
-
-    // TODO deduce CTy from F
-    template<typename CTy, typename F, typename... Args>
+    template<typename CTy, typename F, typename F2, typename... Args>
     APIGetter(
             CTy _,
             F create_func,
+            F2 destroy_func,
             typename std::enable_if<IsValidCProxy<CTy, CType>::value>::type *v,
             Args... args
             )
         :
-            _cgetter(new CType{0,0})
+            _cgetter(new CType{0,0}, CProxyDestroyer<CType>(destroy_func))
         {
             /* IF WE THROW BEFORE HERE WE MAY LEAK IN DERIVED */
             if( create_func )
                 create_func(args..., cgetter<CTy>(), 1);
         }
 
-    template<typename CTy>
+    template<typename CTy, typename F>
     APIGetter(
             CTy _,
+            F destroy_func,
             typename std::enable_if<IsValidCProxy<CTy, CType>::value>::type *v
                  = nullptr )
         :
-            _cgetter(new CType{0,0})
+            _cgetter(new CType{0,0}, CProxyDestroyer<CType>(destroy_func))
         {
         }
 
-    APIGetter( APIGetter&& getter ) = default;
-
-    APIGetter&
-    operator=( APIGetter&& getter ) = default;
-
-    // NEED TO BE SURE destroy is called in derived so _cgetter still exists
     virtual
     ~APIGetter(){}
 
 public:
+    APIGetter( APIGetter&& ) = default;
+
+    APIGetter&
+    operator=( APIGetter&& ) = default;
+
+    APIGetter( const APIGetter& ) = delete;
+
+    APIGetter&
+    operator=( const APIGetter& ) = delete;
+
     static std::chrono::milliseconds
     get_def_wait_msec()
     {
@@ -2212,25 +2195,16 @@ public:
         :
             APIGetter( QuoteGetter_C{},
                        QuoteGetter_Create_ABI,
+                       QuoteGetter_Destroy_ABI,
                        nullptr,
-                       CPP_to_C(creds),
-                       CPP_to_C(symbol) )
+                       &creds,
+                       symbol.c_str() )
         {
         }
-
-    ~QuoteGetter()
-        {
-            destroy_cgetter(QuoteGetter_Destroy_ABI);
-        }
-
-    QuoteGetter( QuoteGetter&& ) = default;
-
-    QuoteGetter&
-    operator=( QuoteGetter&& getter ) = default;
 
     std::string
     get_symbol() const
-    { return str_from_abi<QuoteGetter_C>(QuoteGetter_GetSymbol_ABI); }
+    { return str_from_abi(QuoteGetter_GetSymbol_ABI, cgetter<CType>()); }
 
     void
     set_symbol(const std::string& symbol)
@@ -2244,38 +2218,15 @@ GetQuote(Credentials& creds, const std::string& symbol)
 
 class QuotesGetter
         : public APIGetter {
-
-    static const char**
-    set_to_cstrs(const std::set<std::string>& symbols )
-    {
-        if( symbols.empty() )
-            throw ValueException("empty symbols set");
-        const char **tmp = new const char*[symbols.size()];
-        int cnt = 0;
-        for(auto& s: symbols)
-            tmp[cnt++] = s.c_str();
-        return tmp;
-    }
-
-    template<typename F, typename... Args>
     void
-    _strs_to_abi(F abicall, const char**strs, Args... args ) const
+    _str_set_to_abi(
+        int(*abicall)(QuotesGetter_C*, const char**, size_t, int),
+        const std::set<std::string>& symbols
+        ) const
     {
-        try{
-            abicall(args..., 1);
-        }catch(...){
-            if( strs ) delete[] strs;
-            throw;
-        }
-        if( strs ) delete[] strs;
-    }
-
-    void
-    _strs_to_abi( int(*abicall)(QuotesGetter_C*, const char**, size_t, int),
-                    const std::set<std::string>& symbols ) const
-    {
-        const char** tmp = set_to_cstrs(symbols);
-        _strs_to_abi(abicall, tmp, cgetter<QuotesGetter_C>(), tmp, symbols.size());
+        const char** tmp = set_to_new_cstrs(symbols);
+        new_array_to_abi( abicall, tmp, cgetter<QuotesGetter_C>(), tmp,
+                          symbols.size() );
     }
 
 public:
@@ -2283,70 +2234,21 @@ public:
 
     QuotesGetter(Credentials& creds, const std::set<std::string>& symbols)
         :
-            APIGetter( QuotesGetter_C{} )
+            APIGetter( QuotesGetter_C{}, QuotesGetter_Destroy_ABI )
         {
-            const char** tmp = set_to_cstrs(symbols);
-            _strs_to_abi(QuotesGetter_Create_ABI, tmp, CPP_to_C(creds), tmp,
-                         symbols.size(), cgetter<QuotesGetter_C>());
-        /*
-            const char** s = nullptr;
-            try{
-                s = set_to_cstrs(symbols);
-                QuotesGetter_Create_ABI(CPP_to_C(creds), s, symbols.size(),
-                                        cgetter<QuotesGetter_C>(), 1);
-            }catch(...){
-                if( s ) delete[] s;
-                throw;
-            }
-            if( s ) delete[] s;
-            */
+            const char** tmp = set_to_new_cstrs(symbols);
+            new_array_to_abi( QuotesGetter_Create_ABI, tmp, &creds, tmp,
+                              symbols.size(), cgetter<QuotesGetter_C>() );
         }
-
-    ~QuotesGetter()
-        {
-            destroy_cgetter(QuotesGetter_Destroy_ABI);
-        }
-
-    QuotesGetter( QuotesGetter&& ) = default;
-
-    QuotesGetter&
-    operator=( QuotesGetter&& getter ) = default;
 
     std::set<std::string>
     get_symbols() const
-    {
-        char **buf;
-        size_t n;
-        std::set<std::string> strs;
-        QuotesGetter_GetSymbols_ABI(cgetter<QuotesGetter_C>(), &buf, &n, 1);
-        if( buf ){
-            while(n--){
-                char *c = buf[n];
-                assert(c);
-                strs.insert(c);
-                free(c);
-            }
-            free(buf);
-        }
-        return strs;
-    }
+    { return set_of_strs_from_abi( QuotesGetter_GetSymbols_ABI,
+                                   cgetter<QuotesGetter_C>() ); }
 
     void
     set_symbols(const std::set<std::string>& symbols)
-    {
-        _strs_to_abi(QuotesGetter_SetSymbols_ABI, symbols);
-        /*
-        const char** tmp = set_to_cstrs(symbols);
-        try{
-            QuotesGetter_SetSymbols_ABI(cgetter<QuotesGetter_C>(), tmp,
-                                        symbols.size(), 1);
-        }catch(...){
-            if( tmp ) delete[] tmp;
-            throw;
-        }
-        if( tmp ) delete[] tmp;
-        */
-    }
+    { _str_set_to_abi(QuotesGetter_SetSymbols_ABI, symbols); }
 
     void
     add_symbol(const std::string& symbol)
@@ -2358,11 +2260,11 @@ public:
 
     void
     add_symbols(const std::set<std::string>& symbols)
-    { _strs_to_abi(QuotesGetter_AddSymbols_ABI, symbols);}
+    { _str_set_to_abi(QuotesGetter_AddSymbols_ABI, symbols);}
 
     void
     remove_symbols(const std::set<std::string>& symbols)
-    { _strs_to_abi(QuotesGetter_RemoveSymbols_ABI, symbols); }
+    { _str_set_to_abi(QuotesGetter_RemoveSymbols_ABI, symbols); }
 };
 
 inline json
@@ -2382,26 +2284,17 @@ public:
         :
             APIGetter( MarketHoursGetter_C{},
                        MarketHoursGetter_Create_ABI,
+                       MarketHoursGetter_Destroy_ABI,
                        nullptr,
-                       CPP_to_C(creds),
+                       &creds,
                        static_cast<int>(market_type),
-                       CPP_to_C(date) )
+                       date.c_str() )
         {
         }
-
-    ~MarketHoursGetter()
-        {
-            destroy_cgetter(MarketHoursGetter_Destroy_ABI);
-        }
-
-    MarketHoursGetter( MarketHoursGetter&& ) = default;
-
-    MarketHoursGetter&
-    operator=( MarketHoursGetter&& getter ) = default;
 
     std::string
     get_date() const
-    { return str_from_abi<MarketHoursGetter_C>(MarketHoursGetter_GetDate_ABI); }
+    { return str_from_abi(MarketHoursGetter_GetDate_ABI, cgetter<CType>()); }
 
     void
     set_date(const std::string& date)
@@ -2450,22 +2343,14 @@ public:
         :
             APIGetter( MoversGetter_C{},
                        MoversGetter_Create_ABI,
+                       MoversGetter_Destroy_ABI,
                        nullptr,
-                       CPP_to_C(creds),
+                       &creds,
                        static_cast<int>(index),
                        static_cast<int>(direction_type),
                        static_cast<int>(change_type) )
-        {}
-
-    ~MoversGetter()
         {
-            destroy_cgetter(MoversGetter_Destroy_ABI);
         }
-
-    MoversGetter( MoversGetter&& ) = default;
-
-    MoversGetter&
-    operator=( MoversGetter&& getter ) = default;
 
     MoversIndex
     get_index() const
@@ -2528,31 +2413,28 @@ GetMovers( Credentials& creds,
 class HistoricalGetterBase
         : public APIGetter {
 protected:
-    template<typename CTy, typename F, typename... Args>
+    template<typename CTy, typename F, typename F2, typename... Args>
     HistoricalGetterBase( CTy _,
-                             F func,
+                             F create_func,
+                             F2 destroy_func,
                              Credentials& creds,
                              const std::string& symbol,
                              Args... args )
         :
             APIGetter( _,
-                       func,
+                       create_func,
+                       destroy_func,
                        nullptr,
-                       CPP_to_C(creds),
-                       CPP_to_C(symbol),
+                       &creds,
+                       symbol.c_str(),
                        args... )
         {
         }
 
-    HistoricalGetterBase( HistoricalGetterBase&& ) = default;
-
-    HistoricalGetterBase&
-    operator=( HistoricalGetterBase&& getter ) = default;
-
 public:
     std::string
     get_symbol() const
-    { return str_from_abi<>(HistoricalGetterBase_GetSymbol_ABI); }
+    { return str_from_abi(HistoricalGetterBase_GetSymbol_ABI, cgetter<>()); }
 
     unsigned int
     get_frequency() const
@@ -2603,8 +2485,6 @@ public:
 };
 
 
-// TODO MAKE CLEAR IN DOCS THE ORDER WE NEED TO CHANGE PERIODS/FREQUENCIES
-//      BECUASE OF THE INTERNAL CHECKS/CONTINGENCIES
 class HistoricalPeriodGetter
         : public HistoricalGetterBase {
 public:
@@ -2620,6 +2500,7 @@ public:
         :
             HistoricalGetterBase( HistoricalPeriodGetter_C{},
                                   HistoricalPeriodGetter_Create_ABI,
+                                  HistoricalPeriodGetter_Destroy_ABI,
                                   creds,
                                   symbol,
                                   static_cast<int>(period_type),
@@ -2629,16 +2510,6 @@ public:
                                   static_cast<int>(extended_hours) )
         {
         }
-
-    ~HistoricalPeriodGetter()
-        {
-            destroy_cgetter(HistoricalPeriodGetter_Destroy_ABI);
-        }
-
-    HistoricalPeriodGetter( HistoricalPeriodGetter&& ) = default;
-
-    HistoricalPeriodGetter&
-    operator=( HistoricalPeriodGetter&& getter ) = default;
 
     PeriodType
     get_period_type() const
@@ -2701,6 +2572,7 @@ public:
         :
             HistoricalGetterBase( HistoricalRangeGetter_C{},
                                   HistoricalRangeGetter_Create_ABI,
+                                  HistoricalRangeGetter_Destroy_ABI,
                                   creds,
                                   symbol,
                                   static_cast<int>(frequency_type),
@@ -2710,16 +2582,6 @@ public:
                                   static_cast<int>(extended_hours) )
         {
         }
-
-    ~HistoricalRangeGetter()
-        {
-            destroy_cgetter(HistoricalRangeGetter_Destroy_ABI);
-        }
-
-    HistoricalRangeGetter( HistoricalRangeGetter&& ) = default;
-
-    HistoricalRangeGetter&
-    operator=( HistoricalRangeGetter&& getter ) = default;
 
     unsigned long long
     get_end_msec_since_epoch() const
@@ -2772,7 +2634,6 @@ GetHistoricalRange( Credentials& creds,
                                   extended_hours ).get();
 }
 
-// TODO move inline OptionStrikes / OptionStrategy defs out of header
 
 class OptionStrikes {
 public:
@@ -2852,22 +2713,9 @@ public:
     }
 };
 
-inline std::string // TODO move out of header
+inline std::string
 to_string(const OptionStrikes& strikes)
-{
-    switch (strikes.get_type()) {
-    case OptionStrikes::Type::n_atm:
-        return "n_atm(" + std::to_string(strikes.get_n_atm()) + ")";
-    case OptionStrikes::Type::single:
-        return "single(" + std::to_string(strikes.get_single()) + ")";
-    case OptionStrikes::Type::range:
-        return "range(" + to_string(strikes.get_range()) + ")";
-    case OptionStrikes::Type::none:
-        return "none()";
-    default:
-        throw std::runtime_error("invalid OptionStrikes::Type");
-    }
-}
+{ return to_string(strikes.get_type()); }
 
 inline std::ostream&
 operator<<(std::ostream& out, const OptionStrikes& strikes)
@@ -2954,12 +2802,12 @@ public:
     { return {OptionStrategyType::roll, spread_interval}; }
 };
 
-inline std::string // TODO move out of header
+inline std::string
 to_string(const OptionStrategy& strategy)
 {
     double d = strategy.get_spread_interval();
-    std::string s = to_string(strategy.get_strategy());
-    return d ? (s + "(" + std::to_string(d) + ")") : s;
+    return to_string(strategy.get_strategy())
+        + (d ? "(" + std::to_string(d) + ")" : "");
 }
 
 inline std::ostream&
@@ -2973,14 +2821,21 @@ operator<<(std::ostream& out, const OptionStrategy& strategy)
 class OptionChainGetter
         : public APIGetter {
 protected:
-    template<typename CTy, typename F, typename... Args>
+    template<typename CTy, typename F, typename F2, typename... Args>
     OptionChainGetter( CTy _,
-                         F func,
+                         F create_func,
+                         F2 destroy_func,
                          Credentials& creds,
                          const std::string& symbol,
                          Args... args )
         :
-            APIGetter( _, func, nullptr, CPP_to_C(creds), CPP_to_C(symbol), args... )
+            APIGetter( _,
+                       create_func,
+                       destroy_func,
+                       nullptr,
+                       &creds,
+                       symbol.c_str(),
+                       args... )
         {
         }
 
@@ -2999,31 +2854,23 @@ public:
         :
             OptionChainGetter( OptionChainGetter_C{},
                                OptionChainGetter_Create_ABI,
+                               OptionChainGetter_Destroy_ABI,
                                creds,
                                symbol,
                                static_cast<int>( strikes.get_type() ),
                                strikes.get_value(),
                                static_cast<int>( contract_type ),
                                static_cast<int>(include_quotes),
-                               CPP_to_C(from_date),
-                               CPP_to_C(to_date),
+                               from_date.c_str(),
+                               to_date.c_str(),
                                static_cast<int>(exp_month),
                                static_cast<int>(option_type) )
-        {}
-
-    ~OptionChainGetter()
         {
-            destroy_cgetter(OptionChainGetter_Destroy_ABI);
         }
-
-    OptionChainGetter( OptionChainGetter&& ) = default;
-
-    OptionChainGetter&
-    operator=( OptionChainGetter&& getter ) = default;
 
     std::string
     get_symbol() const
-    { return str_from_abi<OptionChainGetter_C>(OptionChainGetter_GetSymbol_ABI); }
+    { return str_from_abi(OptionChainGetter_GetSymbol_ABI, cgetter<CType>()); }
 
     OptionStrikes
     get_strikes() const
@@ -3054,11 +2901,11 @@ public:
 
     std::string
     get_from_date() const
-    { return str_from_abi<OptionChainGetter_C>(OptionChainGetter_GetFromDate_ABI); }
+    { return str_from_abi(OptionChainGetter_GetFromDate_ABI, cgetter<CType>()); }
 
     std::string
     get_to_date() const
-    { return str_from_abi<OptionChainGetter_C>(OptionChainGetter_GetToDate_ABI); }
+    { return str_from_abi(OptionChainGetter_GetToDate_ABI, cgetter<CType>()); }
 
     OptionExpMonth
     get_exp_month() const
@@ -3178,30 +3025,21 @@ public:
         :
             OptionChainGetter( OptionChainStrategyGetter_C{},
                                OptionChainStrategyGetter_Create_ABI,
+                               OptionChainStrategyGetter_Destroy_ABI,
                                creds,
-                               CPP_to_C(symbol),
+                               symbol.c_str(),
                                static_cast<int>( strategy.get_strategy() ),
                                strategy.get_spread_interval(),
                                static_cast<int>( strikes.get_type() ),
                                strikes.get_value(),
                                static_cast<int>( contract_type ),
                                static_cast<int>( include_quotes ),
-                               CPP_to_C(from_date),
-                               CPP_to_C(to_date),
+                               from_date.c_str(),
+                               to_date.c_str(),
                                static_cast<int>( exp_month ),
                                static_cast<int>( option_type ) )
         {
         }
-
-    ~OptionChainStrategyGetter()
-        {
-            destroy_cgetter(OptionChainStrategyGetter_Destroy_ABI);
-        }
-
-    OptionChainStrategyGetter( OptionChainStrategyGetter&& ) = default;
-
-    OptionChainStrategyGetter&
-    operator=( OptionChainStrategyGetter&& getter ) = default;
 
     OptionStrategy 
     get_strategy() const
@@ -3266,8 +3104,9 @@ public:
         :
             OptionChainGetter( OptionChainAnalyticalGetter_C{},
                                OptionChainAnalyticalGetter_Create_ABI,
+                               OptionChainAnalyticalGetter_Destroy_ABI,
                                creds,
-                               CPP_to_C(symbol),
+                               symbol.c_str(),
                                volatility,
                                underlying_price,
                                interest_rate,
@@ -3276,22 +3115,12 @@ public:
                                strikes.get_value(),
                                static_cast<int>( contract_type ),
                                static_cast<int>( include_quotes ),
-                               CPP_to_C(from_date),
-                               CPP_to_C(to_date),
+                               from_date.c_str(),
+                               to_date.c_str(),
                                static_cast<int>( exp_month ),
                                static_cast<int>( option_type ) )
         {
         }
-
-    ~OptionChainAnalyticalGetter()
-        {
-            destroy_cgetter(OptionChainAnalyticalGetter_Destroy_ABI);
-        }
-
-    OptionChainAnalyticalGetter( OptionChainAnalyticalGetter&& ) = default;
-
-    OptionChainAnalyticalGetter&
-    operator=( OptionChainAnalyticalGetter&& getter ) = default;
 
     double
     get_volatility() const
@@ -3393,26 +3222,28 @@ GetOptionChainAnalytical( Credentials& creds,
 class AccountGetterBase
         : public APIGetter{
 protected:
-    template< typename CTy, typename F, typename... Args>
+    template< typename CTy, typename F, typename F2, typename... Args>
     AccountGetterBase( CTy _,
-                         F func,
+                         F create_func,
+                         F2 destroy_func,
                          Credentials& creds,
                          const std::string& account_id,
                          Args... args )
         :
-            APIGetter( _, func, nullptr, CPP_to_C(creds), CPP_to_C(account_id), args... )
+            APIGetter( _,
+                       create_func,
+                       destroy_func,
+                       nullptr,
+                       &creds,
+                       account_id.c_str(),
+                       args... )
         {
         }
-
-    AccountGetterBase( AccountGetterBase&& ) = default;
-
-    AccountGetterBase&
-    operator=( AccountGetterBase&& getter ) = default;
 
 public:
     std::string
     get_account_id() const
-    { return str_from_abi<>(AccountGetterBase_GetAccountId_ABI); }
+    { return str_from_abi(AccountGetterBase_GetAccountId_ABI, cgetter<>()); }
 
     void
     set_account_id(const std::string& account_id)
@@ -3432,22 +3263,13 @@ public:
         :
             AccountGetterBase( AccountInfoGetter_C{},
                                AccountInfoGetter_Create_ABI,
+                               AccountInfoGetter_Destroy_ABI,
                                creds,
                                account_id,
                                static_cast<int>(positions),
                                static_cast<int>(orders) )
         {
         }
-
-    ~AccountInfoGetter()
-        {
-            destroy_cgetter(AccountInfoGetter_Destroy_ABI);
-        }
-
-    AccountInfoGetter( AccountInfoGetter&& ) = default;
-
-    AccountInfoGetter&
-    operator=( AccountInfoGetter&& getter ) = default;
 
     bool
     returns_positions() const
@@ -3503,20 +3325,11 @@ public:
         :
             AccountGetterBase( PreferencesGetter_C{},
                                PreferencesGetter_Create_ABI,
+                               PreferencesGetter_Destroy_ABI,
                                creds,
                                account_id )
         {
         }
-
-    ~PreferencesGetter()
-        {
-            destroy_cgetter(PreferencesGetter_Destroy_ABI);
-        }
-
-    PreferencesGetter( PreferencesGetter&& ) = default;
-
-    PreferencesGetter&
-    operator=( PreferencesGetter&& getter ) = default;
 };
 
 inline json
@@ -3534,21 +3347,11 @@ public:
         :
             AccountGetterBase( StreamerSubscriptionKeysGetter_C{},
                                StreamerSubscriptionKeysGetter_Create_ABI,
+                               StreamerSubscriptionKeysGetter_Destroy_ABI,
                                creds,
                                account_id )
         {
         }
-
-    ~StreamerSubscriptionKeysGetter()
-        {
-            destroy_cgetter(StreamerSubscriptionKeysGetter_Destroy_ABI);
-        }
-
-    StreamerSubscriptionKeysGetter(StreamerSubscriptionKeysGetter&&)
-        = default;
-
-    StreamerSubscriptionKeysGetter&
-    operator=( StreamerSubscriptionKeysGetter&& getter ) = default;
 };
 
 inline json
@@ -3570,24 +3373,15 @@ public:
         :
             AccountGetterBase( TransactionHistoryGetter_C{},
                                TransactionHistoryGetter_Create_ABI,
+                               TransactionHistoryGetter_Destroy_ABI,
                                creds,
                                account_id,
                                static_cast<int>(transaction_type),
-                               CPP_to_C(symbol),
-                               CPP_to_C(start_date),
-                               CPP_to_C(end_date) )
+                               symbol.c_str(),
+                               start_date.c_str(),
+                               end_date.c_str() )
         {
         }
-
-    ~TransactionHistoryGetter()
-        {
-            destroy_cgetter(TransactionHistoryGetter_Destroy_ABI);
-        }
-
-    TransactionHistoryGetter(TransactionHistoryGetter&&) = default;
-
-    TransactionHistoryGetter&
-    operator=( TransactionHistoryGetter&& getter ) = default;
 
     TransactionType
     get_transaction_type() const
@@ -3602,24 +3396,24 @@ public:
     std::string
     get_symbol() const
     {
-        return str_from_abi<TransactionHistoryGetter_C>(
-            TransactionHistoryGetter_GetSymbol_ABI
+        return str_from_abi(
+            TransactionHistoryGetter_GetSymbol_ABI, cgetter<CType>()
             );
     }
 
     std::string
     get_start_date() const
     {
-        return str_from_abi<TransactionHistoryGetter_C>(
-            TransactionHistoryGetter_GetStartDate_ABI
+        return str_from_abi(
+            TransactionHistoryGetter_GetStartDate_ABI, cgetter<CType>()
             );
     }
 
     std::string
     get_end_date() const
     {
-        return str_from_abi<TransactionHistoryGetter_C>(
-            TransactionHistoryGetter_GetEndDate_ABI
+        return str_from_abi(
+            TransactionHistoryGetter_GetEndDate_ABI, cgetter<CType>()
             );
     }
 
@@ -3684,28 +3478,19 @@ public:
          :
              AccountGetterBase( IndividualTransactionHistoryGetter_C{},
                                 IndividualTransactionHistoryGetter_Create_ABI,
+                                IndividualTransactionHistoryGetter_Destroy_ABI,
                                 creds,
                                 account_id,
-                                CPP_to_C(transaction_id) )
+                                transaction_id.c_str() )
          {
          }
-
-    ~IndividualTransactionHistoryGetter()
-        {
-            destroy_cgetter(IndividualTransactionHistoryGetter_Destroy_ABI);
-        }
-
-    IndividualTransactionHistoryGetter(IndividualTransactionHistoryGetter&&)
-        = default;
-
-    IndividualTransactionHistoryGetter&
-    operator=( IndividualTransactionHistoryGetter&& getter ) = default;
 
     std::string
     get_transaction_id() const
     {
-        return str_from_abi<IndividualTransactionHistoryGetter_C>(
-            IndividualTransactionHistoryGetter_GetTransactionId_ABI
+        return str_from_abi(
+            IndividualTransactionHistoryGetter_GetTransactionId_ABI,
+            cgetter<CType>()
             );
     }
 
@@ -3743,24 +3528,15 @@ public:
         :
             APIGetter( UserPrincipalsGetter_C{},
                        UserPrincipalsGetter_Create_ABI,
+                       UserPrincipalsGetter_Destroy_ABI,
                        nullptr,
-                       CPP_to_C(creds),
+                       &creds,
                        static_cast<int>(streamer_subscription_keys),
                        static_cast<int>(streamer_connection_info),
                        static_cast<int>(preferences),
                        static_cast<int>(surrogate_ids) )
         {
         }
-
-    ~UserPrincipalsGetter()
-        {
-            destroy_cgetter(UserPrincipalsGetter_Destroy_ABI);
-        }
-
-    UserPrincipalsGetter( UserPrincipalsGetter&& ) = default;
-
-    UserPrincipalsGetter&
-    operator=( UserPrincipalsGetter&& getter ) = default;
 
     bool
     returns_streamer_subscription_keys() const
@@ -3861,28 +3637,19 @@ public:
                             const std::string& query_string )
         : APIGetter( InstrumentInfoGetter_C{},
                      InstrumentInfoGetter_Create_ABI,
+                     InstrumentInfoGetter_Destroy_ABI,
                      nullptr,
-                     CPP_to_C(creds),
+                     &creds,
                      static_cast<int>(search_type),
-                     CPP_to_C(query_string) )
+                     query_string.c_str() )
         {
         }
-
-    ~InstrumentInfoGetter()
-        {
-            destroy_cgetter(InstrumentInfoGetter_Destroy_ABI);
-        }
-
-    InstrumentInfoGetter( InstrumentInfoGetter&& ) = default;
-
-    InstrumentInfoGetter&
-    operator=( InstrumentInfoGetter&& getter ) = default;
 
     std::string
     get_query_string() const
     {
-        return str_from_abi<InstrumentInfoGetter_C>(
-            InstrumentInfoGetter_GetQueryString_ABI
+        return str_from_abi(
+            InstrumentInfoGetter_GetQueryString_ABI, cgetter<CType>()
             );
     }
 

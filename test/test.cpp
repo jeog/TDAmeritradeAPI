@@ -175,8 +175,6 @@ int main(int argc, char* argv[])
 
         streaming(account_id, cmanager.credentials);
 
-        string in;
-        cin >> in;
         return 0;
 
     }catch( tdma::APIException& e ){

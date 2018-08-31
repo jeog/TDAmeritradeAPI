@@ -394,18 +394,24 @@ struct IsCProxyBase{
 };
 
 
-template<typename T>
+template<typename T> /* T - type of base proxy */
 class CProxyDestroyer{
-    std::function<int(T*, int)> _abicall;
+    std::function<int(T*, int)> _wrapper;
+    static_assert(IsCProxyBase<T>::value, "T not a CProxyBase");
 public:
-    CProxyDestroyer( std::function<int(T*, int)> abicall)
-        : _abicall(abicall) {}
+    template<typename T2> /* T2 - type of proxy ABI destroy call needs */
+    CProxyDestroyer( int(*abicall)(T2*, int) )
+        :
+            _wrapper( [=](T* obj, int e){
+                          return abicall( reinterpret_cast<T2*>(obj), e);
+                      } )
+        { static_assert(IsValidCProxy<T2>::value, "T2 not valid CProxy"); }
 
     void operator()(T* ss){
         if( !ss )
             return;
         if( ss->obj ){
-            int err = _abicall(ss, 0);
+            int err = _wrapper(ss, 0);
             if( err ){
                 char *buf;
                 size_t n;
@@ -716,16 +722,97 @@ public:
 };
 
 
-// TODO move to utils
-inline const char*
-CPP_to_C(const std::string& in)
-{ return in.c_str(); }
 
-inline Credentials*
-CPP_to_C(Credentials& in)
-{ return &in; }
+template<typename FromTy, typename ToTy>
+ToTy*
+set_to_new_array( const std::set<FromTy>& from, ToTy(*trans)(const FromTy&) )
+{
+    ToTy *tmp = new ToTy[from.size()];
+    std::transform( from.begin(), from.end(), tmp, trans );
+    return tmp;
+}
 
+// NOTE - NOT COPYING STRINGS - DONT EDIT UNDERLYING STRINGS
+inline const char**
+set_to_new_cstrs(const std::set<std::string>& symbols )
+{
+    if( symbols.empty() )
+        throw ValueException("empty symbols set");
+    return set_to_new_array(
+        symbols, +[](const std::string& s){ return s.c_str(); }
+    );
+}
 
+template<typename FTy>
+int*
+set_to_new_int_array(const std::set<FTy>& fields)
+{
+    if( fields.empty() )
+        throw ValueException("empty fields set");
+    return set_to_new_array(
+        fields, +[](const FTy& f){ return static_cast<int>(f); }
+    );
+}
+
+template<typename F, typename A, typename... Args>
+void
+new_array_to_abi(F abicall, A *a, Args... args )
+{
+    try{
+        abicall(args..., 1);
+    }catch(...){
+        if(a) delete[] a;
+        throw;
+    }
+    if(a) delete[] a;
+}
+
+template<typename CTy>
+std::string
+str_from_abi( int(*abicall)(CTy*, char**, size_t*, int), CTy *cty )
+{
+    char *buf;
+    size_t n;
+    abicall(cty, &buf, &n, 1);
+    assert(buf);
+    std::string s(buf, n-1);
+    free(buf);
+    return s;
+}
+
+template<typename CTy>
+std::set<std::string>
+set_of_strs_from_abi( int(*abicall)(CTy*, char***, size_t*, int), CTy *cty )
+{
+    char **buf;
+    size_t n;
+    std::set<std::string> strs;
+    abicall(cty, &buf, &n, 1);
+    if( buf ){
+        while(n--){
+            char *c = buf[n];
+            assert(c);
+            strs.insert(c);
+            free(c);
+        }
+        free(buf);
+    }
+    return strs;
+}
+
+template<typename FTy, typename CTy>
+std::set<FTy>
+enums_from_abi( int(*abicall)(CTy*, int**, size_t*,int), CTy *cty )
+{
+    int *f;
+    size_t n;
+    abicall(cty, &f, &n, 1);
+    std::set<FTy> ret;
+    while( n-- )
+        ret.insert( static_cast<FTy>(f[n]) );
+    FreeFieldsBuffer_ABI(f, 1);
+    return ret;
+}
 
 } /* tdma */
 

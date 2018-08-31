@@ -887,7 +887,7 @@ HistoricalPeriodGetter::set_period( PeriodType period_type,
 ```
 ```
 void
-HistoricalPeriodGetter::set_frequency( FrequencyType frequency_type,
+HistoricalGetterBase::set_frequency( FrequencyType frequency_type,
                                        unsigned int frequency );
 ```
 ```
@@ -1009,7 +1009,7 @@ HistoricalGetterBase::set_symbol(const string& symbol);
 ```
 ```
 void
-HistoricalRangeGetter::set_frequency( FrequencyType frequency_type,
+HistoricalGetterBase::set_frequency( FrequencyType frequency_type,
                                        unsigned int frequency );
 ```
 ```

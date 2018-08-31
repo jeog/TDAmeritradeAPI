@@ -503,7 +503,7 @@ OptionStrikesType_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptio
     case OptionStrikesType::none:
         return alloc_C_str("none", buf, n, allow_exceptions);
     default:
-        throw std::runtime_error("invalid MoversChangeType");
+        throw std::runtime_error("invalid OptionStrikesType");
     }
 }
 
@@ -697,9 +697,7 @@ DEF_TEMP_FIELD_TO_STRING(TimesaleSubscriptionField)
 #undef DEF_TEMP_FIELD_TO_STRING
 
 
-/*
- * NOTE FieldType enums are not defined!
- */
+
 
 
 

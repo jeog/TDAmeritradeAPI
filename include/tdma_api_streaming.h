@@ -839,7 +839,6 @@ protected:
     csub() const
     { return reinterpret_cast<CTy*>( const_cast<CType*>(_csub.get()) ); }
 
-    // TODO deduce CTy from F
     template<typename CTy, typename F, typename... Args>
     StreamingSubscription(
             CTy _,
@@ -879,107 +878,45 @@ public:
 
     std::string
     get_command() const
-    {
-        char *buf;
-        size_t n;
-        StreamingSubscription_GetCommand_ABI(_csub.get(), &buf, &n, 1);
-        std::string s(buf, n-1);
-        if(buf)
-            free(buf);
-        return s;
-    }
+    { return str_from_abi(StreamingSubscription_GetCommand_ABI, _csub.get()); }
 };
 
 
-// TODO fix how we allocate the tmp buffers in the constructor
 class SubscriptionBySymbolBase
         : public StreamingSubscription {
-
-    static const char**
-    set_to_cstrs(const std::set<std::string>& symbols )
-    {
-        if( symbols.empty() )
-            throw ValueException("empty symbols set");
-        const char **tmp = new const char*[symbols.size()];
-        int cnt = 0;
-        for(auto& s: symbols)
-            tmp[cnt++] = s.c_str();
-        return tmp;
-    }
-
-    template<typename FTy>
-    static int*
-    set_to_int_array(const std::set<FTy>& fields)
-    {
-        if( fields.empty() )
-            throw ValueException("empty fields set");
-        int *tmp = new int[fields.size()];
-        int cnt = 0;
-        for(auto& f: fields)
-            tmp[cnt++] = static_cast<int>(f);
-        return tmp;
-    }
-
 protected:
-    template<typename FieldTy, typename SubTy>
+    template<typename FieldTy, typename CTy>
     std::set<FieldTy>
-    fields_from_abi( int(*abicall)(SubTy*, int**, size_t*,int) ) const
-    {
-        int *f;
-        size_t n;
-        abicall(csub<SubTy>(), &f, &n, 1);
-        std::set<FieldTy> ret;
-        for(size_t i = 0; i < n; ++i){
-            ret.insert( static_cast<FieldTy>(f[i]) );
-        }
-        FreeFieldsBuffer_ABI(f, 1);
-        return ret;
-    }
+    fields_from_abi( int(*abicall)(CTy*, int**, size_t*,int) ) const
+    { return enums_from_abi<FieldTy>(abicall, csub<CTy>()); }
 
     template<typename CTy, typename F, typename FTy>
     SubscriptionBySymbolBase( CTy _,
-                              F create_func,
-                              const std::set<std::string>& symbols,
-                              const std::set<FTy>& fields )
+                                 F create_func,
+                                 const std::set<std::string>& symbols,
+                                 const std::set<FTy>& fields )
         :
             StreamingSubscription(_)
         {
             const char** s = nullptr;
             int *i = nullptr;
             try{
-                s = set_to_cstrs(symbols);
-                i = set_to_int_array(fields);
+                s = set_to_new_cstrs(symbols);
+                i = set_to_new_int_array(fields);
                 create_func(s, symbols.size(), i, fields.size(), csub<CTy>(), 1);
+                delete[] s;
+                delete[] i;
             }catch(...){
                 if( s ) delete[] s;
                 if( i ) delete[] i;
                 throw;
             }
-            if( s ) delete[] s;
-            if( i ) delete[] i;
         }
-
 
 public:
     std::set<std::string>
     get_symbols() const
-    {
-        char **buf;
-        size_t n;
-        std::set<std::string> strs;
-        SubscriptionBySymbolBase_GetSymbols_ABI(csub(), &buf, &n, 1);
-        if( buf ){
-            while(n--){
-                char *c = buf[n];
-                assert(c);
-                strs.insert(c);
-                free(c);
-            }
-            free(buf);
-        }
-        return strs;
-    }
-
+    { return set_of_strs_from_abi(SubscriptionBySymbolBase_GetSymbols_ABI, csub()); }
 };
 
 
@@ -1631,26 +1568,27 @@ private:
         const std::vector<StreamingSubscription>& subscriptions
         )
     {
-        size_t sz = subscriptions.size();
-        StreamingSubscription_C **buffer = new StreamingSubscription_C*[sz];
-        int *results = new int[sz];
         std::deque<bool> cpp_results;
+        StreamingSubscription_C **buffer = nullptr;
+        int *results = nullptr;
+        size_t sz = subscriptions.size();
         try{
-            int i = 0;
-            for(auto& s : subscriptions){
-                buffer[i++] = s.csub();
-            }
+            buffer = new StreamingSubscription_C*[sz];
+            std::transform(subscriptions.begin(), subscriptions.end(), buffer,
+                           [](const StreamingSubscription& s){ return s.csub(); });
+
+            results = new int[sz];
             abicall(_obj.get(), buffer, sz, results, 1);
             while( sz-- ){
                 cpp_results.push_front(static_cast<bool>(results[sz]));
             }
-        }catch(...){
             delete[] buffer;
             delete[] results;
+        }catch(...){
+            if( buffer ) delete[] buffer;
+            if( results ) delete[] results;
             throw;
         }
-        delete[] buffer;
-        delete[] results;
         return cpp_results;
     }
 
@@ -1663,17 +1601,17 @@ public:
              std::chrono::milliseconds subscribe_timeout=DEF_SUBSCRIBE_TIMEOUT
              )
     {
-        auto ss = new StreamingSession;
+        StreamingSession *ss = nullptr;
         try{
-            StreamingSession_Create_ABI(&creds, callback,
-                                        connect_timeout.count(),
-                                        listening_timeout.count(),
-                                        subscribe_timeout.count(),
-                                        ss->_obj.get(),
-                                        1);
+            ss = new StreamingSession;
+            StreamingSession_Create_ABI( &creds, callback,
+                                         connect_timeout.count(),
+                                         listening_timeout.count(),
+                                         subscribe_timeout.count(),
+                                         ss->_obj.get(), 1 );
             assert( ss->_obj.get()->type_id == TYPE_ID_STREAMING_SESSION );
         }catch(...){
-            delete ss;
+            if( ss ) delete ss;
             throw;
         }
         return std::shared_ptr<StreamingSession>(ss);

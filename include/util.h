@@ -129,6 +129,29 @@ toupper(const std::string& string)
 
 using std::toupper;
 
+template<typename ToTy, typename FromTy>
+std::set<ToTy> // not safe
+buffers_to_set(FromTy *buffers, size_t n)
+{
+    std::set<ToTy> s;
+    while( n-- )
+        s.emplace(static_cast<ToTy>(buffers[n]));
+    return s;
+}
+
+template<>
+inline std::set<std::string> // not safe
+buffers_to_set(const char **buffers, size_t n)
+{
+    std::set<std::string> s;
+    while( n-- ){
+        const char* c = buffers[n];
+        assert(c);
+        s.emplace(c);
+    }
+    return s;
+}
+
 } /* util */
 
 #endif /* UTIL_H */
