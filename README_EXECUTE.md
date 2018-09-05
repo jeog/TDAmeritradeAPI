@@ -4,6 +4,9 @@
 - [Preliminary Design Ideas](#preliminary-design-ideas)
    - [Raw Orders](#raw-orders)
    - [Managed Orders](#managed-orders)
+      - [Equity](#equity)
+      - [Option Spreads](#option-spreads)
+      - [Higher Level Features](#higher-level-features)
    - [Order Hub](#order-hub)
 - - -
 
@@ -34,15 +37,17 @@ order1.add_leg(leg1).set_type(OrderType::LIMIT).set_price(9.99);
 
 If a specific order type is allowed by TDMA it *should* be possible for a motivated user to build it this way.
 
+*Conceptually, an ```Order``` instance should probably represent the entire order(type, timestamps, execution state etc.) The current ```Order``` object may be better named ```OrderTicket``` and passed to a more encompassing 'Order' object. This object would then be used to view/manage execution state directly or as part of a more complex OO design patter.*
+
 #### Managed Orders
 
-Most users will probably only need certain basic orders most of the time e.g market/limit/stop equity, vanilla spreads. To help (safely) build they would use nested static builders that would handle all the order details, allowing for something like:
-```
-// long 100 SPY @ 285.05 or better
-Order order1 = SimpleOrderBuilder::Equity::Limit::Buy("SPY", 100, 285.05);
+Most users will probably only need certain basic orders, most of the time. To help (safely) build they would use nested static builders/factories that would handle many of the details, allowing for something like:
 
-// buy/open 3 Jan-20 300/350 vertical SPY call spreads @ a 10.10 debit or better
-Order order2 = SpreadOrderBuilder::Vertical::Open("SPY_011720C300", "SPY_011720C350", 3, 10.10);
+##### Equity 
+```
+/* long 100 SPY @ 285.05 or better */
+
+Order order1 = SimpleOrderBuilder::Equity::Limit::Buy("SPY", 100, 285.05);
 ```
 
 Once the user has the order they can add to it as necessary e.g:
@@ -50,6 +55,40 @@ Once the user has the order they can add to it as necessary e.g:
 // defaults to OrderSession::DAY so...
 order1.set_sesion(OrderSession::GOOD_TILL_CANCEL).set_cancel_time("2019-01-01");
 ```
+
+##### Option Spreads
+```
+/* buy/open 3 Jan-20 300/350 vertical SPY call spreads @ a 10.10 debit or better */
+
+// the builder/factory
+using VB = SpreadOrderBuilder::Vertical;
+
+// add the exact options 
+// (may check the option string is well-formed, not necessarily valid)
+Order order2 = VB::Open("SPY_011720C300", "SPY_011720C350", 3, 10.10);
+
+// OR have the builder construct the options(s) 
+// (safer, but still assumes valid date, strikes etc.)
+order2 = VB::Open("SPY", 1, 17, 2020, true, 300, 350, 3, 10.10);
+```
+```
+/* sell/close 3 Jan-20 300/350 vertical SPY call spreads @ a 9.91 credit or better */
+
+// with the exact options
+Order order3 = VB::Close("SPY_011720C350", "SPY_011720C300", 3, -9.91);
+
+// OR
+order3 = VB::Close("SPY", 1, 17, 2020, true, 350, 300, 3, -9.91);
+```
+
+##### Higher Level Features
+
+- Automatic checking for valid symbols via the 'Get' interface
+- Automatic strike combination and credit/debit value checks/warnings vis-a-vis spread type
+- ```Instrument``` objects that represent tradable instruments(w/ real-time bid/ask/last data) that can be passed to the builders
+- Build related close, roll and leg-adjust orders from ```Order``` instances
+
+...
 
 #### Order Hub
 

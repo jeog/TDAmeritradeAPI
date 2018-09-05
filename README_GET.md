@@ -211,7 +211,7 @@ QuoteGetter_Destroy(QuoteGetter_C *getter)
 To check the state(before ```Destroy``` is called), e.g:
 ```
 inline int
-QuoteGetter_IsClosed(QuoteGetter_C *getter)
+QuoteGetter_IsClosed(QuoteGetter_C *getter, int *b)
 ```
 
 #### [Python]
