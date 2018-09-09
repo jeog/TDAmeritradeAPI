@@ -64,3 +64,4 @@ TODO.txt
 !/vsbuild/deps/libs/x64/Release/**
 !/vsbuild/deps/libs/Win32/Release/**
 !/vsbuild/deps/includes**
+!/bin/**

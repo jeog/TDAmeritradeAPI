@@ -1,0 +1,134 @@
+compilation date: 09-07-2018
+commit: adea677
+
+sha256 checksums:
+
+222405209d4c9090a18dcb36329f1759f4295c5f6d01c6a5686901a9f7b0281c *debian-3.16--i386--gcc/libTDAmeritradeAPI.so
+b1d7d82f801065e6a0badb6f5ada381995085d90d8d673fdc5eaa886ef6138cf *debian-3.20--x86_64--gcc/libTDAmeritradeAPI.so
+c40e7ddf30829dac8b69682258db88a2c7aa1b9c9963191de1adf8820b888877 *windows-msvc/x64/TDAmeritradeAPI.dll
+ceceb260dea39e1bfe80e10c7e761f8beabf849ac223c812c5c604749bb47b56 *windows-msvc/x64/TDAmeritradeAPI.exp
+4c026c588119c4a8a6fd210fa69a4b134fce03a489d5ffb536982ab23547e08c *windows-msvc/x64/TDAmeritradeAPI.lib
+7d54572f1ae354e2a530cc64199eb3d34f890f931be14957a4fabb448b102f8b *windows-msvc/x64/TDAmeritradeAPI.pdb
+a82bbcb167009de5f836abe2dee76b488ef92b5cf1ca09fcfa4d524bd33fa4f3 *windows-msvc/Win32/TDAmeritradeAPI.dll
+9018abf580de3a7428e9437d32654f5154a610d033b4277a2ce9d62554410867 *windows-msvc/Win32/TDAmeritradeAPI.exp
+1daabdbc565fe77231e0100d316b0b7cfe7e6be104e22758e5c48cad675e22d4 *windows-msvc/Win32/TDAmeritradeAPI.lib
+1f80caa51e1295e8d7fad20405bc50724acbc591863d75e88f46e192d2e1633f *windows-msvc/Win32/TDAmeritradeAPI.pdb
+
+Dependency Info:
+
+debian-3.16--i386--gcc/libTDAmeritradeAPI.so
+
+  Dynamic Section:
+    NEEDED               libssl.so.1.0.0
+    NEEDED               libz.so.1
+    NEEDED               libcurl.so.4
+    NEEDED               libpthread.so.0
+    NEEDED               libutil.so.1
+    NEEDED               libdl.so.2
+    NEEDED               libstdc++.so.6
+    NEEDED               libm.so.6
+    NEEDED               libgcc_s.so.1
+    NEEDED               libc.so.6
+    NEEDED               ld-linux.so.2
+
+  VersionReferences:
+    required from libm.so.6:
+      0x0d696910 0x00 28 GLIBC_2.0
+    required from ld-linux.so.2:
+      0x0d696913 0x00 17 GLIBC_2.3
+    required from libcurl.so.4:
+      0x044a42e3 0x00 12 CURL_OPENSSL_3
+    required from libgcc_s.so.1:
+      0x0b792650 0x00 27 GCC_3.0
+      0x0d696910 0x00 10 GLIBC_2.0
+    required from libssl.so.1.0.0:
+      0x066a2b20 0x00 05 OPENSSL_1.0.0
+    required from libc.so.6:
+      0x0d696911 0x00 26 GLIBC_2.1
+      0x06969190 0x00 23 GLIBC_2.10
+      0x09691972 0x00 19 GLIBC_2.3.2
+      0x0d696919 0x00 18 GLIBC_2.9
+      0x0d696917 0x00 16 GLIBC_2.7
+      0x09691f73 0x00 07 GLIBC_2.1.3
+      0x0d696912 0x00 06 GLIBC_2.2
+      0x0d696910 0x00 04 GLIBC_2.0
+    required from libstdc++.so.6:
+      0x0297f864 0x00 24 GLIBCXX_3.4.14
+      0x0297f868 0x00 22 GLIBCXX_3.4.18
+      0x0297f865 0x00 21 GLIBCXX_3.4.15
+      0x0297f863 0x00 20 GLIBCXX_3.4.13
+      0x0297f869 0x00 14 GLIBCXX_3.4.19
+      0x0297f861 0x00 13 GLIBCXX_3.4.11
+      0x056bafd3 0x00 11 CXXABI_1.3
+      0x0297f870 0x00 09 GLIBCXX_3.4.20
+      0x02297f89 0x00 08 GLIBCXX_3.4.9
+      0x08922974 0x00 03 GLIBCXX_3.4
+    required from libpthread.so.0:
+      0x0d696911 0x00 25 GLIBC_2.1
+      0x09691972 0x00 15 GLIBC_2.3.2
+      0x0d696910 0x00 02 GLIBC_2.0
+
+
+debian-3.20--x86_64--gcc/libTDAmeritradeAPI.so
+
+  Dynamic Section:
+    NEEDED               libssl.so.1.0.0
+    NEEDED               libz.so.1
+    NEEDED               libcurl.so.4
+    NEEDED               libpthread.so.0
+    NEEDED               libutil.so.1
+    NEEDED               libdl.so.2
+    NEEDED               libstdc++.so.6
+    NEEDED               libm.so.6
+    NEEDED               libgcc_s.so.1
+    NEEDED               libc.so.6
+    NEEDED               ld-linux-x86-64.so.2
+
+  Version References:	
+    required from libgcc_s.so.1:
+      0x0b792650 0x00 23 GCC_3.0
+    required from ld-linux-x86-64.so.2:
+      0x0d696913 0x00 15 GLIBC_2.3
+    required from libcurl.so.4:
+      0x044a42e3 0x00 10 CURL_OPENSSL_3
+    required from libm.so.6:
+      0x09691a75 0x00 08 GLIBC_2.2.5
+    required from libpthread.so.0:
+      0x09691972 0x00 13 GLIBC_2.3.2
+      0x09691a75 0x00 07 GLIBC_2.2.5
+    required from libc.so.6:
+      0x06969194 0x00 24 GLIBC_2.14
+      0x06969190 0x00 21 GLIBC_2.10
+      0x09691972 0x00 17 GLIBC_2.3.2
+      0x0d696919 0x00 16 GLIBC_2.9
+      0x0d696917 0x00 14 GLIBC_2.7
+      0x09691a75 0x00 04 GLIBC_2.2.5
+    required from libssl.so.1.0.0:
+      0x066a2b20 0x00 03 OPENSSL_1.0.0
+    required from libstdc++.so.6:
+      0x0297f864 0x00 22 GLIBCXX_3.4.14
+      0x0297f868 0x00 20 GLIBCXX_3.4.18
+      0x0297f865 0x00 19 GLIBCXX_3.4.15
+      0x0297f863 0x00 18 GLIBCXX_3.4.13
+      0x0297f869 0x00 12 GLIBCXX_3.4.19
+      0x0297f861 0x00 11 GLIBCXX_3.4.11
+      0x056bafd3 0x00 09 CXXABI_1.3
+      0x0297f870 0x00 06 GLIBCXX_3.4.20
+      0x02297f89 0x00 05 GLIBCXX_3.4.9
+      0x08922974 0x00 02 GLIBCXX_3.4
+
+
+windows-msvc/Win32/TDAmeritradeAPI.dll
+windows-msvc/x64/TDAmeritradeAPI.dll
+
+  dumpin /dependents:
+
+    libcurl.dll
+    libuv.dll
+    libssl-1_1.dll
+    libcrypto-1_1.dll
+    zlibwapi.dll
+    KERNEL32.dll  
+    WS2_32.dll
+
+

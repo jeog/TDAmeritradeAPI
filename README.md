@@ -34,18 +34,18 @@ and then uses the library to request an access token, which is refreshed automat
 - [Status](#status)
 - [Structure](#structure)
 - [Getting Started](#getting-started)
-    - [Unix-Like Systems](#unix-like)
-    - [Windows](#windows)
-    - [Managing the Libraries](#managing-the-libraries)
-    - [Using the TDAmeritradeAPI Library ](#using-the-tdameritradeapi-library)
-    - [Python3](#python3)
-- [Namespaces](#namespaces)
+    - [Build Dependencies](#build-dependencies)
+    - [Build Library](#build-library)
+    	- [Precompiled](#precompiled)
+    - [Install](#install)
+    - [Use - C/C++](#use---cc)
+    - [Use - Python3](#use---python3)
 - [Conventions](#conventions)
 - [Errors & Exceptions](#errors--exceptions)
 - [Authentication](#authentication)
     - [Access Code](#access-code)
         - [Simple Approach for Personal Use](#simple-approach-for-personal-use)
-        - [Other Options](#other-options)
+        - [Other Approaches](#other-approaches)
     - [Credentials](#credentials)
 - [Access](#access)
     - [HTTPS Get](#https-get)
@@ -103,6 +103,46 @@ This project would not be possible without some of the great open-source project
 ### Getting Started
 - - -
 
+To get up and running you'll need to:
+1. build the necessary dependencies
+2. build the TDAmeritradeAPI shared library(or use a precompiled version).
+3. install the dependencies and TDAmeritradeAPI library in a place the linker can find
+4. 
+    - (**C/C++**) include the necessary headers in your code and link to the library
+    - (**Python**) install the tdma_api package
+
+It's recommend you build from source. This is especially true for the C++ interface, because of the ABI issues mentioned above. If you're not comfortable with this or just want to use the Python interface it may be easier to use a [precompiled linux/windows library](#precompiled). 
+
+#### Build Dependencies 
+
+##### unix-like
+
+If using a package manager like apt install the libcurl and libssl dev packages (this should take care of the other dependencies): 
+
+        user@host:~$ sudo apt-get install libcurl4-openssl-dev libssl-dev
+
+Alternatively, you can download them manually via github:
+
+    user@host:~$ git clone https://github.com/openssl/openssl.git
+    user@host:~$ git clone https://github.com/curl/curl.git   
+    user@host:~$ git clone https://github.com/madler/zlib.git
+
+...or the individual project sites:
+- [openssl](https://www.openssl.org/source)
+- [libcurl](https://curl.haxx.se/download.html)
+- [zlib](https://zlib.net) 
+
+Then follow the build/install instructions in each project's README/INSTALL files.
+
+*[libuv](https://github/com/libuv/libuv) is not necessary if epoll is available.*
+
+##### windows
+
+Compiled dependencies - 32 and 64 bit release builds of openssl, curl, zlib, and uv - are included in the *vsbuild/deps/libs* directory. If you'd still like to download and build them yourselves visit the links from the section above.
+
+
+#### Build Library
+
 The current build setup is a bit messy. Hopefully things will get a little simpler in the future.
 You can currently build on Unix-like systems and Windows. For Mac OS/X you'll have to download/install the necessary libraries and adjust the makefiles. (If you build sucessfully on Mac feel free to share and we can 
 include it in the docs.)
@@ -137,93 +177,95 @@ include it in the docs.)
 
 - Define ```DEBUG_VERBOSE_1_``` to send verbose logging/debug info to stdout. (Debug builds do this automatically.)
 
-#### Unix-Like
-
-##### Install Dependencies
-
-If using a package manager like apt installing libcurl should install libssl and libz*:  
-
-        user@host:~$ sudo apt-get install libcurl4-openssl-dev
-
-*...or* you can clone the github projects **  
-
-        user@host:~$ git clone https://github.com/openssl/openssl.git
-        user@host:~$ git clone https://github.com/curl/curl.git   
-        user@host:~$ git clone https://github.com/madler/zlib.git
-
-*...or* download them directly: [openssl](https://www.openssl.org/source), [libcurl](https://curl.haxx.se/download.html), [zlib](https://zlib.net) ** 
-
-\* *[libuv](https://github/com/libuv/libuv.git) is not necessary if epoll is available (linux)*  
-\*\* *you'll need to follow the build/install instructions in the README/INSTALL files*
-
-##### Build
+##### unix-like
 
 The Eclipse/CDT generated makefiles are in the  'Debug' and 'Release' subdirectories. *(The makefiles may need some tweaks for non-linux systems.)*
 
     user@host:~/dev/TDAmeritradeAPI/Release$ make
 
-\* *Tested on GNU/Linux Debian-8 using 'libcurl4-openssl-dev' package via apt and stock packages.*
 
-#### Windows
+##### windows
 
-##### Install Dependencies
+The build solution provided was created in ***VisualStudio2017*** using toolset ***v141***. (*If it doesn't work in your version of VS you'll need to tweak the project settings and/or source.*)
 
-Dealing with dependencies on Windows can be more complicated. Pre-built binaries(x86 and x64 release builds of openssl, curl, zlib, and uv) are included in the *vsbuild/deps/libs* directory to make things easier. 
-
-If you'd still like to download and build them yourselves visit the links from the unix-like build 
-section above.
-
-##### Build
-The solution provided was created in VisualStudio2017 using toolset v141. If it doesn't work in 
-your version of VS you'll need to tweak the project settings and/or source.
-
-1. Open vsbuild/vsbuild.sln
-2. Select an x64 or Win32 Release build configuration. *(If you want a debug configuration 
-you'll have to edit the 'Additional Library Directories' in Properties->Linker->General for
-the TDAmeritradeAPI project so it looks for Release builds of the dependencies. In the path strings change '$(Configuration)' to 'Release\\' .)*
+1. Open vsbuild/vsbuild.sln in VisualStudio
+2. Select an x64 or Win32 Release build configuration. 
+    - ***(optional)*** *If you want a debug configuration you'll have to edit the 'Additional Library Directories' in Properties->Linker->General for the TDAmeritradeAPI project so it looks for Release builds of the dependencies. In the path strings change '$(Configuration)' to 'Release\\'.*
 3. Build->Build Solution. 
  
-If sucessful the TDAmeritradeAPI library files AND the pre-built 
-dependencies will be in vsbuild\\x64 or vsbuild\\Win32. (If you built/installed your own dependencies you can ignore these.)
+If sucessful, the library and dependencies will be in *vsbuild\\x64* or *vsbuild\\Win32*. 
 
-\* *The 'test' project is just a hodge-podge for checking basic functionality and linking. 
-The executable it produces takes three args: account id, path to credentials file, and a password to decrypt credentials. It requires a valid credentials file which you would need to create via
-the instructions in the Authorization section below BEFORE using.*
+Files you should have:
+- TDAmeritradeAPI.dll
+- libcurl.dll
+- libssl-[version-arch].dll
+- libcrypto-[version-arch].dll
+- libuv.dll
+- zlibwapi.dll
 
-\*\* *Tested on 32 and 64 bit Windows7 using pre-built dependencies.*
 
-#### Managing the Libraries
+#### Precompiled
 
-Once you've built all the dependencies *AND* TDAmeritradeAPI you'll need to make sure they
- are in a location the linker can find, or tell the linker where to look.
+Some precompiled versions of the library are provided for convenience. You'll still need to [build](#build-dependencies) and/or [install](#install) the dependencies. *For practical reasons these binaries will not be re-compiled with each commit so you may be using a stale library.*
 
-If you've installed the dependencies to the default location you shouldn't need to do anything 
-else except deal with TDAmeritradeAPI. If not you'll to have deal with ALL the libraries.
+##### linux
 
-- move them to a folder where the linker will automatically look
-	- e.g. if moving a 32bit(Win32) DLL to C:\Windows\SysWow64\, copy there and run:  
-	```(Admin) C:Windows\SysWow64\regsvr32.exe <dll name>```
-	- e.g. if moving a 64bit(x64) DLL to C:\Windows\System32, copy there and run:  
-	```(Admin) C:Windows\System32\regsvr32.exe <dll name>```
-- *-or-* indicate to the linker where they can be found 
-    - e.g. for GCC '-L/path/to/lib -Wl,-rpath,/path/to/lib'    
-- *-or-* keep them in the same folder as your executable 
-- *-or-* add their folder to your PATH(windows) or LD_LIBRARY_PATH(linux).
+bin/[distro]-[kernel version]--[architecture]--[toolchain]
 
-#### Using the TDAmeritradeAPI Library
+- bin/debian-3.16--i386--gcc/  
+- bin/debian-3.20--x86_64--gcc/  
+
+The Linux/ELF binaries in the directories above may or may not work on your particular system/distro BUT [building the library from source](#unix-like-1) is pretty straight forward. 
+ 
+##### windows
+
+- bin/windows-msvc/Win32
+- bin/windows-msvc/x64
+
+The Windows/PE binaries are built using VisualStudio2017 and statically linked against the runtime libraries to limit dependency issues.
+
+#### Install
+
+Once built, make sure the TDAmeritradeAPI library and dependencies are in a location the linker can find, or you'll need to tell the linker where to look.
+
+##### unix-like
+
+If dependencies were built/installed using a package manager they should be in the correct location already.
+
+To make *libTDAmeritradeAPI.so* available to your program:
+- move it to the a directory in the search path e.g ```/usr/local/lib```
+- *-or-* link your code with the appropriate flags ```'-L/path/to/lib -Wl,-rpath,/path/to/lib'```
+- *-or-* add its path to the LD_LIBRARY_PATH environment variable
+- *-or-* move the file to the location of the binary that will link to it  
+
+##### windows
+
+Since all the dependencies are included(or built manually) you'll need to manage them AND *TDAmeritradeAPI.dll*.
+
+- move them to a systems folder
+    - e.g. if moving a 32bit(Win32) DLL to C:\Windows\SysWow64\, copy there and run:  
+    ```(Admin) C:Windows\SysWow64\regsvr32.exe <dll name>```
+    - e.g. if moving a 64bit(x64) DLL to C:\Windows\System32, copy there and run:  
+    ```(Admin) C:Windows\System32\regsvr32.exe <dll name>```
+- *-or-* link your code with the appropriate flags (use link settings in VisualStudio)   
+- *-or-* add their folder(s) to your PATH variable.
+- *-or-* move the files to the location of the binary that will link to it  
+
+#### Use - C/C++
 
 1. include headers:
     - "tdma_api_get.h" for the 'HTTPS Get' interface 
     - "tdma_api_streaming.h" for the 'Streaming' interface  
+    - "tdma_api_execute.h" for the 'Execute' interface ***(not available yet)***
     - *(headers/source use relative include links, don't change the directory structure)*
 2. add Library/API calls to your code
 3. compile *(read the message above on binary compatibility)*
-4. link your code with libTDAmeritradeAPI *(be sure the linker can find it)*
+4. link your code with the TDAmeritradeAPI library *(be sure the linker can find it)*
 5. run 
 
-#### Python3
+#### Use - Python3
 
-1. Be sure to have built/installed the shared library(above)
+1. Be sure to have built/installed the dependencies and shared library(above)
 2. Be sure the library build(32 vs 64 bit) matches the python build
 3. ```user@host:~/dev/TDAmeritradeAPI/python$ python setup.py install```
     - if your ```python``` links to ```python2``` run ```python3 setup.py install``` instead
@@ -235,20 +277,17 @@ else except deal with TDAmeritradeAPI. If not you'll to have deal with ALL the l
 	from tdma_api import stream  # 'streaming' class and subscriptions
 	```
     - the python package will try to load the library automatically
-    - if it can't it will output an error message on package import 
+    - if it can't, it will output an error message on package import 
         - the most common issue is the library not being installed in the default library search path
-        - to load it manually: ```>>> tdma_api.clib.init("path/to/lib.so")```
+        - move the lib(see [Install](#install)) or load it manually:   
+            ```>>> tdma_api.clib.init("path/to/lib.so")```
     - if you get an error message concerning the dependencies you'll need to
-      move them to a location the dynamic linker can find.
-
-
-### Namespaces
-- - -
-
-All front-end C++ library code is in namespace ```tdma```. We mostly exclude it in the docs.
+      move them to a location the dynamic linker can find. (see [Install](#install))
 
 ### Conventions
 - - -
+
+- All front-end C++ library code is in namespace ```tdma```. 
 
 - **ONLY** Symbol strings are converted to upper-case by the library, e.g 'spy' -> 'SPY'.
 
@@ -260,7 +299,7 @@ All front-end C++ library code is in namespace ```tdma```. We mostly exclude it 
         BUILD_C_CPP_TDMA_ENUM_NAME(AdminCommandType, QOS)
         );
     ```
-    ... indicates values from index 0(LOGIN) to 2(QOS) are valid to pass to theAPI. The macros expand to:
+    ... indicates values from index 0(LOGIN) to 2(QOS) are valid to pass to the API. The macros expand to:
     ```
     [C++]
     enum class AdminCommandType : int {
@@ -335,28 +374,32 @@ for the derived classes)
 - ```LastErrorMsg``` and ```LastErrorCode``` can be used to get the last error message and code, respectively.
 ### Authentication
 - - -
-Authentication is done through OAuth2 using your account login information.
+Authentication is done through OAuth2 using your account login information. 
+
+1. Get an access code. (***once***)
+2. Use the access code to get a `Credentials` object containing access and refresh tokens. (***once***)
+3. Pass the `Credentials` object to the various library calls to get data, access your account etc. - the library will refresh the access token for you when it expires.
+4. Use the library to encrypt and store your `Credentials` object when done 
+5. Use the library to load and decrypt your `Credentials` object for future use
 
 #### Access Code
-
-First, you need to get an access code.
 
 ##### Simple Approach For Personal Use
 
 1. [Set up a developer account.](https://developer.tdameritrade.com/user/register)
-    - Set the 'redirect_uri' field to the localhost: https://127.0.0.1
-    - Set a 'client_id' and remember the full name (e.g MY_ID@AMER.OAUTHAP)
-2. Open the ```tools/get-access-code.html``` file with your web broswer and follow instructions.
+    - Set the 'redirect_uri' field to the localhost: `https://127.0.0.1`
+    - Set a 'client_id' e.g `MY_ID@AMER.OAUTHAP`
+2. Open the ```tools/get-access-code.html``` file with your web browser and follow instructions.
     - Temporarily disable any browser add-ons that block pop-ups/redirects/JavaScript
     - If this doesn't work [follow these instructions](https://developer.tdameritrade.com/content/simple-auth-local-apps).
 3. **Securely** record the access code it gives you. You'll only need to pass this to the API **once**. Once you use this code to create and successfully store a Credentials object(see below) you can dispose of it.
 
-##### Other Options
+##### Other Approaches
   
-These options provide for more robust authentication e.g writing an app for 3rd party users. You'll need to [set up a developer account.](https://developer.tdameritrade.com/user/register) (The 'redirect_uri' field to use depends on what you want to do.)
+For more robust authentication e.g writing an app for 3rd party users. You'll need to [set up a developer account.](https://developer.tdameritrade.com/user/register) (The 'redirect_uri' field to use depends on what you want to do.)
   
-1. [Set up your own server](https://developer.tdameritrade.com/content/web-server-authentication-python-3)
-2. Use a 3rd party solution e.g [auth0](https://auth0.com)
+- [Set up your own server](https://developer.tdameritrade.com/content/web-server-authentication-python-3)
+- Use a 3rd party solution e.g [auth0](https://auth0.com)
 
 #### Credentials
 
@@ -492,9 +535,7 @@ to automatically load and store on construction and destruction.
             ...
 ```   
   
-You can, for instance, create a static or global ```CredentialsManager``` instance that will exist over the lifetime of the program, storing the credentials on exit. Just use the 
-```.credentials``` member as an argument for the following API calls, where required. Keep in mind, with this approach the password will be stored in memory, in plain-text, for 
-the life of the ```CredentialsManager``` object.
+You can, for instance, create a static or global ```CredentialsManager``` instance that will exist over the lifetime of the program, storing the credentials on exit. Just use the ```.credentials``` member as an argument for the API calls, where required. Keep in mind, with this approach the password will be stored in memory, in plain-text, for the life of the ```CredentialsManager``` object.
     
 **C code should explicitly close the Credentials object to deallocate the underlying resources.** (C++ and Python define destructors that do this for you.)
 ```

@@ -238,14 +238,16 @@ certain values to native types.
     [C++]
     enum class StreamerServiceType : int{
         NONE,
-        ADMIN,
-        ...
+        QUOTE,
+        OPTION,
+        ...        
     }
 
     [C]
     enum StreamerServiceType {
         StreamerServiceType_NONE,
-        StreamerServiceType_ADMIN,
+        StreamerServiceType_QUOTE,
+        StreamerServiceType_OPTION,
         ...
     }
     ```
