@@ -37,6 +37,8 @@ const std::string URL_MARKETDATA = URL_BASE + "marketdata/";
 const std::string URL_ACCOUNT_INFO = URL_BASE + "accounts/";
 const std::string URL_INSTRUMENTS = URL_BASE + "instruments";
 
+typedef std::function<void(long, const std::string&)> api_on_error_cb_ty;
+
 json
 get_user_principals_for_streaming(Credentials& creds);
 

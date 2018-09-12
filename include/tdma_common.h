@@ -85,7 +85,7 @@ typedef enum { __VA_ARGS__ } type; \
 EXTERN_C_SPEC_ DLL_SPEC_ int \
 type##_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions); \
 \
-inline int \
+static inline int \
 type##_to_string(int v, char** buf, size_t* n) \
 { return type##_to_string_ABI(v, buf, n, 0); }
 
@@ -183,58 +183,58 @@ BuildOptionSymbol_ABI( const char* underlying,
 
 /* C interface */
 
-inline int
+static inline int
 LoadCredentials( const char* path,
                    const char* password,
                    struct Credentials* pcreds )
 { return LoadCredentials_ABI(path, password, pcreds,0); }
 
-inline int
+static inline int
 StoreCredentials( const char* path,
                     const char* password,
                     const struct Credentials* pcreds )
 { return StoreCredentials_ABI(path, password, pcreds, 0); }
 
-inline int
+static inline int
 RequestAccessToken( const char* code,
                       const char* client_id,
                       const char* redirect_uri,
                       struct Credentials* pcreds )
 { return RequestAccessToken_ABI(code, client_id, redirect_uri, pcreds, 0); }
 
-inline int
+static inline int
 RefreshAccessToken(struct Credentials* creds )
 { return RefreshAccessToken_ABI(creds, 0); }
 
-inline int
+static inline int
 SetCertificateBundlePath(const char* path)
 { return SetCertificateBundlePath_ABI(path, 0); }
 
-inline int
+static inline int
 GetCertificateBundlePath(char **path, size_t *n)
 { return GetCertificateBundlePath_ABI(path, n, 0); }
 
-inline int
+static inline int
 GetDefaultCertificateBundlePath(char **path, size_t *n )
 { return GetDefaultCertificateBundlePath_ABI(path, n, 0); }
 
-inline int
+static inline int
 CloseCredentials(struct Credentials* pcreds )
 { return CloseCredentials_ABI(pcreds, 0); }
 
-inline int
+static inline int
 CopyCredentials(const struct Credentials* from, struct Credentials *to)
 { return CopyCredentials_ABI(from, to, 0); }
 
-inline int
+static inline int
 FreeBuffer( char* buf )
 { return FreeBuffer_ABI(buf, 0); }
 
-inline int
+static inline int
 FreeBuffers( char** bufs, size_t n)
 { return FreeBuffers_ABI(bufs, n, 0); }
 
-inline int
+static inline int
 FreeFieldsBuffer( int* fields )
 { return FreeFieldsBuffer_ABI(fields, 0); }
 
@@ -252,15 +252,15 @@ FreeFieldsBuffer( int* fields )
 
 #define TDMA_API_STREAM_ERROR 201
 
-inline int
+static inline int
 LastErrorCode( int *code )
 { return LastErrorCode_ABI(code, 0); }
 
-inline int
+static inline int
 LastErrorMsg( char** buf, size_t *n)
 { return LastErrorMsg_ABI(buf, n, 0); }
 
-inline int
+static inline int
 BuildOptionSymbol( const char* underlying,
                      unsigned int month,
                      unsigned int day,

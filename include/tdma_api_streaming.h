@@ -404,27 +404,27 @@ DECL_C_CPP_TDMA_ENUM(StreamingCallbackType, 0, 6,
     );
 
 
-const int SUBSCRIPTION_MAX_FIELDS = 100;
-const int SUBSCRIPTION_MAX_SYMBOLS = 5000;
+static const int SUBSCRIPTION_MAX_FIELDS = 100;
+static const int SUBSCRIPTION_MAX_SYMBOLS = 5000;
 
-const int TYPE_ID_SUB_QUOTES = 1;
-const int TYPE_ID_SUB_OPTIONS = 2;
-const int TYPE_ID_SUB_LEVEL_ONE_FUTURES = 3;
-const int TYPE_ID_SUB_LEVEL_ONE_FOREX = 4;
-const int TYPE_ID_SUB_LEVEL_ONE_FUTURES_OPTIONS = 5;
-const int TYPE_ID_SUB_NEWS_HEADLINE = 6;
-const int TYPE_ID_SUB_CHART_EQUITY = 7;
-const int TYPE_ID_SUB_CHART_FOREX = 8; // not working
-const int TYPE_ID_SUB_CHART_FUTURES = 9;
-const int TYPE_ID_SUB_CHART_OPTIONS = 10;
-const int TYPE_ID_SUB_TIMESALE_EQUITY = 11;
-const int TYPE_ID_SUB_TIMESALE_FOREX = 12; // not working
-const int TYPE_ID_SUB_TIMESALE_FUTURES = 13;
-const int TYPE_ID_SUB_TIMESALE_OPTIONS = 14;
-const int TYPE_ID_SUB_ACTIVES_NASDAQ = 15;
-const int TYPE_ID_SUB_ACTIVES_NYSE = 16;
-const int TYPE_ID_SUB_ACTIVES_OTCBB = 17;
-const int TYPE_ID_SUB_ACTIVES_OPTION = 18;
+static const int TYPE_ID_SUB_QUOTES = 1;
+static const int TYPE_ID_SUB_OPTIONS = 2;
+static const int TYPE_ID_SUB_LEVEL_ONE_FUTURES = 3;
+static const int TYPE_ID_SUB_LEVEL_ONE_FOREX = 4;
+static const int TYPE_ID_SUB_LEVEL_ONE_FUTURES_OPTIONS = 5;
+static const int TYPE_ID_SUB_NEWS_HEADLINE = 6;
+static const int TYPE_ID_SUB_CHART_EQUITY = 7;
+static const int TYPE_ID_SUB_CHART_FOREX = 8; // not working
+static const int TYPE_ID_SUB_CHART_FUTURES = 9;
+static const int TYPE_ID_SUB_CHART_OPTIONS = 10;
+static const int TYPE_ID_SUB_TIMESALE_EQUITY = 11;
+static const int TYPE_ID_SUB_TIMESALE_FOREX = 12; // not working
+static const int TYPE_ID_SUB_TIMESALE_FUTURES = 13;
+static const int TYPE_ID_SUB_TIMESALE_OPTIONS = 14;
+static const int TYPE_ID_SUB_ACTIVES_NASDAQ = 15;
+static const int TYPE_ID_SUB_ACTIVES_NYSE = 16;
+static const int TYPE_ID_SUB_ACTIVES_OTCBB = 17;
+static const int TYPE_ID_SUB_ACTIVES_OPTION = 18;
 
 
 #define DECL_CSUB_STRUCT(name) typedef struct{ void *obj; int type_id; } name
@@ -582,13 +582,13 @@ OptionActivesSubscription_GetVenue_ABI(OptionActivesSubscription_C *psub,
 /* SUBSCRIPTION CREATE METHODS */
 
 #define DECL_CSUB_FIELD_SYM_CREATE_FUNC(name, fname) \
-inline int \
+static inline int \
 name##_Create( const char **symbols, size_t nsymbols, fname *fields, \
                size_t nfields, name##_C *psub ) \
 { return name##_Create_ABI(symbols, nsymbols, (int*)fields, nfields, psub, 0); }
 
 #define DECL_CSUB_DURATION_CREATE_FUNC(name) \
-inline int \
+static inline int \
 name##_Create( DurationType duration_type, name##_C *psub) \
 { return name##_Create_ABI((int)duration_type, psub, 0); }
 
@@ -625,7 +625,7 @@ DECL_CSUB_DURATION_CREATE_FUNC(NYSEActivesSubscription);
 DECL_CSUB_DURATION_CREATE_FUNC(OTCBBActivesSubscription);
 #undef DECL_CSUB_DURATION_CREATE_FUNC
 
-inline int
+static inline int
 OptionActivesSubscription_Create( VenueType venue,
                                   DurationType duration_type,
                                   OptionActivesSubscription_C *psub)
@@ -636,7 +636,7 @@ OptionActivesSubscription_Create( VenueType venue,
 /* SUBSCRIPTION DESTROY METHODS */
 
 #define DECL_CSUB_DESTROY_FUNC(name) \
-inline int \
+static inline int \
 name##_Destroy(name##_C *psub) \
 { return name##_Destroy_ABI(psub, 0); }
 
@@ -660,7 +660,7 @@ DECL_CSUB_DESTROY_FUNC(OptionActivesSubscription);
 #undef DECL_CSUB_DESTROY_FUNC
 
 /* Generic destroy (cast to StreamingSubscription_C*) */
-inline int
+static inline int
 StreamingSubscription_Destroy(StreamingSubscription_C* psub)
 { return StreamingSubscription_Destroy_ABI(psub, 0); }
 
@@ -668,7 +668,7 @@ StreamingSubscription_Destroy(StreamingSubscription_C* psub)
 /* SUBSCRIPTION GET METHODS */
 
 #define DECL_CSUB_GET_SERVICE_FUNC(name) \
-inline int \
+static inline int \
 name##_GetService( name##_C *psub, StreamerServiceType *service ) \
 { return StreamingSubscription_GetService_ABI( (StreamingSubscription_C*)psub, \
                                                (int*)service, 0); }
@@ -696,7 +696,7 @@ DECL_CSUB_GET_SERVICE_FUNC(StreamingSubscription);
 
 
 #define DECL_CSUB_GET_COMMAND_FUNC(name) \
-inline int \
+static inline int \
 name##_GetCommand( name##_C *psub, char **buf, size_t *n ) \
 { return StreamingSubscription_GetCommand_ABI( (StreamingSubscription_C*)psub, \
                                                buf, n, 0); }
@@ -724,7 +724,7 @@ DECL_CSUB_GET_COMMAND_FUNC(StreamingSubscription);
 
 
 #define DECL_CSUB_GET_SYMBOLS_FUNC(name) \
-inline int \
+static inline int \
 name##_GetSymbols( name##_C *psub, char***buffers, size_t *n) \
 { return SubscriptionBySymbolBase_GetSymbols_ABI( \
     (StreamingSubscription_C*)psub, buffers, n, 0 ); }
@@ -746,12 +746,12 @@ DECL_CSUB_GET_SYMBOLS_FUNC(TimesaleOptionsSubscription);
 
 
 #define DECL_CSUB_GET_FIELDS_FUNC(name) \
-inline int \
+static inline int \
 name##_GetFields(name##_C *psub, name##Field **fields, size_t *n) \
 { return name##_GetFields_ABI(psub, (int**)fields, n, 0); }
 
 #define DECL_CSUB_GET_FIELDS_BASE_FUNC(name, base) \
-inline int \
+static inline int \
 name##_GetFields(name##_C *psub, base##Field **fields, size_t *n) \
 { return base##Base_GetFields_ABI((StreamingSubscription_C*)psub, \
                                    (int**)fields, n, 0); }
@@ -775,7 +775,7 @@ DECL_CSUB_GET_FIELDS_BASE_FUNC(TimesaleOptionsSubscription, TimesaleSubscription
 #undef DECL_CSUB_GET_FIELDS_BASE_FUNC
 
 #define DECL_CSUB_GET_DURATION(name, base) \
-inline int \
+static inline int \
 name##_GetDuration(name##_C *psub, DurationType *duration) \
 { return base##Base_GetDuration_ABI( \
     (StreamingSubscription_C*)psub, (int*)duration, 0); }
@@ -788,7 +788,7 @@ DECL_CSUB_GET_DURATION(OptionActivesSubscription, ActivesSubscription)
 #undef DECL_CSUB_GET_DURATION
 
 /* GetVenue */
-inline int
+static inline int
 OptionActivesSubscription_GetVenue(OptionActivesSubscription_C *psub,
                                    VenueType *venue)
 { return OptionActivesSubscription_GetVenue_ABI(psub, (int*)venue, 0); }
@@ -1413,7 +1413,7 @@ public:
 #define STREAMING_DEF_SUBSCRIBE_TIMEOUT 1500
 #define STREAMING_MAX_SUBSCRIPTIONS 50
 
-const int TYPE_ID_STREAMING_SESSION = 100;
+static const int TYPE_ID_STREAMING_SESSION = 100;
 
 
 typedef void(*streaming_cb_ty)(int, int, unsigned long long, const char*);
@@ -1471,7 +1471,7 @@ StreamingSession_GetQOS_ABI( StreamingSession_C *psession,
 
 /* C Interface */
 
-inline int
+static inline int
 StreamingSession_Create( struct Credentials *pcreds,
                         streaming_cb_ty callback,
                         StreamingSession_C *psession )
@@ -1483,7 +1483,7 @@ StreamingSession_Create( struct Credentials *pcreds,
                                        psession, 0);
 }
 
-inline int
+static inline int
 StreamingSession_CreateEx( struct Credentials *pcreds,
                             streaming_cb_ty callback,
                             unsigned long connect_timeout,
@@ -1496,12 +1496,12 @@ StreamingSession_CreateEx( struct Credentials *pcreds,
                                        subscribe_timeout, psession, 0);
 }
 
-inline int
+static inline int
 StreamingSession_Destroy( StreamingSession_C *psession )
 { return StreamingSession_Destroy_ABI(psession, 0); }
 
 
-inline int
+static inline int
 StreamingSession_Start( StreamingSession_C *psession,
                         StreamingSubscription_C **subs,
                         size_t nsubs,
@@ -1509,7 +1509,7 @@ StreamingSession_Start( StreamingSession_C *psession,
 { return StreamingSession_Start_ABI(psession, subs, nsubs, results_buffer, 0); }
 
 
-inline int
+static inline int
 StreamingSession_AddSubscriptions( StreamingSession_C *psession,
                                    StreamingSubscription_C **subs,
                                    size_t nsubs,
@@ -1517,19 +1517,19 @@ StreamingSession_AddSubscriptions( StreamingSession_C *psession,
 { return StreamingSession_AddSubscriptions_ABI(psession, subs, nsubs,
                                                results_buffer, 0); }
 
-inline int
+static inline int
 StreamingSession_Stop( StreamingSession_C *psession )
 { return StreamingSession_Stop_ABI(psession, 0); }
 
-inline int
+static inline int
 StreamingSession_IsActive( StreamingSession_C *psession, int *is_active )
 { return StreamingSession_IsActive_ABI( psession, is_active, 0 ); }
 
-inline int
+static inline int
 StreamingSession_SetQOS(StreamingSession_C *psession, QOSType qos, int *result)
 { return StreamingSession_SetQOS_ABI(psession, (int)qos, result, 0); }
 
-inline int
+static inline int
 StreamingSession_GetQOS( StreamingSession_C *psession, QOSType *qos)
 { return StreamingSession_GetQOS_ABI(psession, (int*)qos, 0); }
 

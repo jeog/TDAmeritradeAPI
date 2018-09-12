@@ -187,27 +187,42 @@ struct EnumCompare : public EnumTypeAssert<E> {
     }
 };
 
-extern const
-std::unordered_map<PeriodType, std::set<int>, EnumHash<PeriodType>>
-VALID_PERIODS_BY_PERIOD_TYPE;
+static const
+std::unordered_map< PeriodType, std::set<int>, EnumHash<PeriodType> >
+VALID_PERIODS_BY_PERIOD_TYPE = {
+    {PeriodType::day, std::set<int>{1,2,3,4,5,10}},
+    {PeriodType::month, std::set<int>{1,2,3,6}},
+    {PeriodType::year, std::set<int>{1,2,3,5,10,15,20}},
+    {PeriodType::ytd, std::set<int>{1}},
+};
 
-extern const
-std::unordered_map<PeriodType, std::set<FrequencyType, EnumCompare<FrequencyType>>,
-                   EnumHash<PeriodType> >
-VALID_FREQUENCY_TYPES_BY_PERIOD_TYPE;
+static const
+std::unordered_map< PeriodType,
+                    std::set<FrequencyType, EnumCompare<FrequencyType>>,
+                    EnumHash<PeriodType> >
+VALID_FREQUENCY_TYPES_BY_PERIOD_TYPE = {
+    {PeriodType::day, {FrequencyType::minute} },
+    {PeriodType::month, {FrequencyType::daily, FrequencyType::weekly} },
+    {PeriodType::year, {FrequencyType::daily, FrequencyType::weekly,
+                        FrequencyType::monthly} },
+    {PeriodType::ytd, { FrequencyType::weekly} },
+};
 
-extern const
-std::unordered_map<FrequencyType, std::set<int>, EnumHash<FrequencyType>>
-VALID_FREQUENCIES_BY_FREQUENCY_TYPE;
 
-
-typedef std::function<void(long, const std::string&)> api_on_error_cb_ty;
+static const
+std::unordered_map< FrequencyType, std::set<int>, EnumHash<FrequencyType> >
+VALID_FREQUENCIES_BY_FREQUENCY_TYPE = {
+    {FrequencyType::minute, std::set<int>{1,5,10,30}},
+    {FrequencyType::daily, std::set<int>{1}},
+    {FrequencyType::weekly, std::set<int>{1}},
+    {FrequencyType::monthly, std::set<int>{1}},
+};
 
 } /* tdma */
 
 #else
 
-const int
+static const int
 VALID_PERIODS_BY_PERIOD_TYPE[PeriodType_ytd + 1][8] = {
     {1,2,3,4,5,10,-1,-1},
     {1,2,3,6,-1,-1,-1,-1},
@@ -215,7 +230,7 @@ VALID_PERIODS_BY_PERIOD_TYPE[PeriodType_ytd + 1][8] = {
     {1,-1,-1,-1,-1,-1,-1,-1},
 };
 
-const FrequencyType
+static const FrequencyType
 VALID_FREQUENCY_TYPES_BY_PERIOD_TYPE[PeriodType_ytd + 1][4] = {
     {FrequencyType_minute, -1, -1, -1},
     {FrequencyType_daily, FrequencyType_weekly, -1, -1},
@@ -223,7 +238,7 @@ VALID_FREQUENCY_TYPES_BY_PERIOD_TYPE[PeriodType_ytd + 1][4] = {
     {FrequencyType_weekly, -1,-1, -1}
 };
 
-const int
+static const int
 VALID_FREQUENCIES_BY_FREQUENCY_TYPE[FrequencyType_monthly + 1][5] = {
     {1, 5, 10, 30, -1},
     {1, -1, -1, -1 ,-1},
@@ -248,22 +263,22 @@ VALID_FREQUENCIES_BY_FREQUENCY_TYPE[FrequencyType_monthly + 1][5] = {
  *        using new) and SHOULD NOT be dealloced by the client
  */
 
-const int TYPE_ID_GETTER_QUOTE = 1;
-const int TYPE_ID_GETTER_QUOTES = 2;
-const int TYPE_ID_GETTER_MARKET_HOURS = 3;
-const int TYPE_ID_GETTER_MOVERS = 4;
-const int TYPE_ID_GETTER_HISTORICAL_PERIOD = 5;
-const int TYPE_ID_GETTER_HISTORICAL_RANGE = 6;
-const int TYPE_ID_GETTER_OPTION_CHAIN = 7;
-const int TYPE_ID_GETTER_OPTION_CHAIN_STRATEGY = 8;
-const int TYPE_ID_GETTER_OPTION_CHAIN_ANALYTICAL = 9;
-const int TYPE_ID_GETTER_ACCOUNT_INFO = 10;
-const int TYPE_ID_GETTER_PREFERENCES = 11;
-const int TYPE_ID_GETTER_SUBSCRIPTION_KEYS = 12;
-const int TYPE_ID_GETTER_TRANSACTION_HISTORY = 13;
-const int TYPE_ID_GETTER_IND_TRANSACTION_HISTORY = 14;
-const int TYPE_ID_GETTER_USER_PRINCIPALS = 15;
-const int TYPE_ID_GETTER_INSTRUMENT_INFO = 16;
+static const int TYPE_ID_GETTER_QUOTE = 1;
+static const int TYPE_ID_GETTER_QUOTES = 2;
+static const int TYPE_ID_GETTER_MARKET_HOURS = 3;
+static const int TYPE_ID_GETTER_MOVERS = 4;
+static const int TYPE_ID_GETTER_HISTORICAL_PERIOD = 5;
+static const int TYPE_ID_GETTER_HISTORICAL_RANGE = 6;
+static const int TYPE_ID_GETTER_OPTION_CHAIN = 7;
+static const int TYPE_ID_GETTER_OPTION_CHAIN_STRATEGY = 8;
+static const int TYPE_ID_GETTER_OPTION_CHAIN_ANALYTICAL = 9;
+static const int TYPE_ID_GETTER_ACCOUNT_INFO = 10;
+static const int TYPE_ID_GETTER_PREFERENCES = 11;
+static const int TYPE_ID_GETTER_SUBSCRIPTION_KEYS = 12;
+static const int TYPE_ID_GETTER_TRANSACTION_HISTORY = 13;
+static const int TYPE_ID_GETTER_IND_TRANSACTION_HISTORY = 14;
+static const int TYPE_ID_GETTER_USER_PRINCIPALS = 15;
+static const int TYPE_ID_GETTER_INSTRUMENT_INFO = 16;
 
 
 
@@ -1098,146 +1113,146 @@ InstrumentInfoGetter_SetQuery_ABI( InstrumentInfoGetter_C *pgetter,
  */
 
 /* APIGetter -> APIGetterImpl */
-inline int
+static inline int
 APIGetter_Get(Getter_C *pgetter, char** buf, size_t *n)
 { return APIGetter_Get_ABI(pgetter, buf, n, 0); }
 
-inline int
+static inline int
 APIGetter_Close(Getter_C *pgetter)
 { return APIGetter_Close_ABI(pgetter, 0); }
 
-inline int
+static inline int
 APIGetter_IsClosed(Getter_C *pgetter, int*b)
 { return APIGetter_IsClosed_ABI(pgetter,b, 0); }
 
-inline int
+static inline int
 APIGetter_SetWaitMSec(unsigned long long msec)
 { return APIGetter_SetWaitMSec_ABI(msec, 0); }
 
-inline int
+static inline int
 APIGetter_GetWaitMSec(unsigned long long *msec)
 { return APIGetter_GetWaitMSec_ABI(msec, 0); }
 
-inline int
+static inline int
 APIGetter_GetDefWaitMSec(unsigned long long *msec)
 { return APIGetter_GetDefWaitMSec_ABI(msec, 0); }
 
-inline int
+static inline int
 APIGetter_WaitRemaining(unsigned long long *msec)
 { return APIGetter_WaitRemaining_ABI(msec, 0); }
 
 /* declare derived versions of Get, Close, IsClosed for each getter*/
 #define DECL_WRAPPED_API_GETTER_BASE_FUNCS(name) \
-inline int \
+static inline int \
 name##_Get(name##_C *pgetter, char** buf, size_t *n) \
 { return APIGetter_Get_ABI( (Getter_C*)pgetter, buf, n, 0); } \
 \
-inline int \
+static inline int \
 name##_Close(name##_C *pgetter) \
 { return APIGetter_Close_ABI( (Getter_C*)pgetter, 0); } \
 \
-inline int \
+static inline int \
 name##_IsClosed(name##_C *pgetter, int *b) \
 { return APIGetter_IsClosed_ABI( (Getter_C*)pgetter, b, 0); }
 
 
 /* QuoteGetter -> QuoteGetterImpl */
-inline int
+static inline int
 QuoteGetter_Create( struct Credentials *pcreds,
                       const char* symbol,
                       QuoteGetter_C *pgetter )
 { return QuoteGetter_Create_ABI(pcreds, symbol, pgetter, 0); }
 
-inline int
+static inline int
 QuoteGetter_Destroy(QuoteGetter_C *getter)
 { return QuoteGetter_Destroy_ABI(getter, 0); }
 
 DECL_WRAPPED_API_GETTER_BASE_FUNCS(QuoteGetter)
 
-inline int
+static inline int
 QuoteGetter_GetSymbol(QuoteGetter_C *getter, char **buf, size_t *n)
 { return QuoteGetter_GetSymbol_ABI(getter, buf, n, 0); }
 
-inline int
+static inline int
 QuoteGetter_SetSymbol(QuoteGetter_C *getter, const char *symbol)
 { return QuoteGetter_SetSymbol_ABI(getter, symbol, 0); }
 
 
 /* QuotesGetter -> QuotesGetterImpl */
-inline int
+static inline int
 QuotesGetter_Create( struct Credentials *pcreds,
                       const char** symbols,
                       size_t nsymbols,
                       QuotesGetter_C *pgetter )
 { return QuotesGetter_Create_ABI(pcreds, symbols, nsymbols, pgetter, 0); }
 
-inline int
+static inline int
 QuotesGetter_Destroy(QuotesGetter_C *getter)
 { return QuotesGetter_Destroy_ABI(getter, 0); }
 
 DECL_WRAPPED_API_GETTER_BASE_FUNCS(QuotesGetter)
 
-inline int
+static inline int
 QuotesGetter_GetSymbols(QuotesGetter_C *getter, char ***buf, size_t *n)
 { return QuotesGetter_GetSymbols_ABI(getter, buf, n, 0); }
 
-inline int
+static inline int
 QuotesGetter_SetSymbols(QuotesGetter_C *getter, const char **symbols,
                         size_t nsymbols)
 { return QuotesGetter_SetSymbols_ABI(getter, symbols, nsymbols, 0); }
 
-inline int
+static inline int
 QuotesGetter_AddSymbol( QuotesGetter_C *pgetter,  const char *symbol)
 { return QuotesGetter_AddSymbol_ABI(pgetter, symbol, 0); }
 
-inline int
+static inline int
 QuotesGetter_RemoveSymbol( QuotesGetter_C *pgetter, const char *symbol)
 { return QuotesGetter_RemoveSymbol_ABI(pgetter, symbol, 0); }
 
-inline int
+static inline int
 QuotesGetter_AddSymbols(QuotesGetter_C *getter, const char **symbols,
                         size_t nsymbols)
 { return QuotesGetter_AddSymbols_ABI(getter, symbols, nsymbols, 0); }
 
-inline int
+static inline int
 QuotesGetter_RemoveSymbols(QuotesGetter_C *getter, const char **symbols,
                            size_t nsymbols)
 { return QuotesGetter_RemoveSymbols_ABI(getter, symbols, nsymbols, 0); }
 
 /* MarketHoursGetter */
-inline int
+static inline int
 MarketHoursGetter_Create( struct Credentials *pcreds,
                              MarketType market_type,
                              const char* date,
                              MarketHoursGetter_C *pgetter )
 { return MarketHoursGetter_Create_ABI(pcreds, (int)market_type, date, pgetter, 0); }
 
-inline int
+static inline int
 MarketHoursGetter_Destroy(MarketHoursGetter_C *pgetter, int allow_exceptions)
 { return MarketHoursGetter_Destroy_ABI(pgetter, 0); }
 
 DECL_WRAPPED_API_GETTER_BASE_FUNCS(MarketHoursGetter)
 
-inline int
+static inline int
 MarketHoursGetter_GetMarketType( MarketHoursGetter_C *pgetter,
                                      MarketType *market_type )
 { return MarketHoursGetter_GetMarketType_ABI(pgetter, (int*)market_type, 0); }
 
-inline int
+static inline int
 MarketHoursGetter_SetMarketType( MarketHoursGetter_C *pgetter,
                                      MarketType market_type )
 { return MarketHoursGetter_SetMarketType_ABI(pgetter, (int)market_type, 0); }
 
-inline int
+static inline int
 MarketHoursGetter_GetDate(MarketHoursGetter_C *pgetter, char **buf, size_t *n)
 { return MarketHoursGetter_GetDate_ABI(pgetter, buf, n, 0); }
 
-inline int
+static inline int
 MarketHoursGetter_SetDate( MarketHoursGetter_C *pgetter, const char* date )
 { return MarketHoursGetter_SetDate_ABI(pgetter, date, 0); }
 
 /* MoversGetter */
-inline int
+static inline int
 MoversGetter_Create( struct Credentials *pcreds,
                        MoversIndex index,
                        MoversDirectionType direction_type,
@@ -1246,43 +1261,43 @@ MoversGetter_Create( struct Credentials *pcreds,
 { return MoversGetter_Create_ABI(pcreds, (int)index, (int)direction_type,
                                  (int)change_type, pgetter, 0);}
 
-inline int
+static inline int
 MoversGetter_Destroy( MoversGetter_C *pgetter)
 { return MoversGetter_Destroy_ABI(pgetter, 0); }
 
 DECL_WRAPPED_API_GETTER_BASE_FUNCS(MoversGetter)
 
-inline int
+static inline int
 MoversGetter_GetIndex( MoversGetter_C *pgetter, MoversIndex *index)
 { return MoversGetter_GetIndex_ABI(pgetter, (int*)index, 0); }
 
-inline int
+static inline int
 MoversGetter_SetIndex( MoversGetter_C *pgetter,  MoversIndex index)
 { return MoversGetter_SetIndex_ABI(pgetter, (int)index, 0); }
 
-inline int
+static inline int
 MoversGetter_GetDirectionType( MoversGetter_C *pgetter,
                                   MoversDirectionType *direction_type )
 { return MoversGetter_GetDirectionType_ABI(pgetter, (int*)direction_type, 0); }
 
-inline int
+static inline int
 MoversGetter_SetDirectionType( MoversGetter_C *pgetter,
                                   MoversDirectionType direction_type)
 { return MoversGetter_SetDirectionType_ABI(pgetter, (int)direction_type, 0); }
 
-inline int
+static inline int
 MoversGetter_GetChangeType( MoversGetter_C *pgetter,
                                MoversChangeType *change_type )
 { return MoversGetter_GetChangeType_ABI(pgetter, (int*)change_type, 0); }
 
-inline int
+static inline int
 MoversGetter_SetChangeType( MoversGetter_C *pgetter,
                                MoversChangeType change_type)
 { return MoversGetter_SetChangeType_ABI(pgetter, (int)change_type, 0); }
 
 
 /* HistoricalPeriodGetter */
-inline int
+static inline int
 HistoricalPeriodGetter_Create( struct Credentials *pcreds,
                                const char* symbol,
                                int period_type,
@@ -1297,66 +1312,66 @@ HistoricalPeriodGetter_Create( struct Credentials *pcreds,
                                              extended_hours, pgetter, 0);
 }
 
-inline int
+static inline int
 HistoricalPeriodGetter_Destroy( HistoricalPeriodGetter_C *pgetter )
 { return HistoricalPeriodGetter_Destroy_ABI(pgetter, 0); }
 
 DECL_WRAPPED_API_GETTER_BASE_FUNCS(HistoricalPeriodGetter)
 
-inline int
+static inline int
 HistoricalPeriodGetter_GetSymbol( HistoricalPeriodGetter_C *pgetter,
                                   char **buf,
                                   size_t *n )
 { return HistoricalGetterBase_GetSymbol_ABI( (Getter_C*)pgetter, buf, n, 0); }
 
-inline int
+static inline int
 HistoricalPeriodGetter_SetSymbol( HistoricalPeriodGetter_C *pgetter,
                                   const char *symbol )
 { return HistoricalGetterBase_SetSymbol_ABI( (Getter_C*)pgetter, symbol, 0); }
 
-inline int
+static inline int
 HistoricalPeriodGetter_GetFrequency( HistoricalPeriodGetter_C *pgetter,
                                      unsigned int *frequency )
 { return HistoricalGetterBase_GetFrequency_ABI( (Getter_C*)pgetter,
                                                  frequency, 0); }
 
-inline int
+static inline int
 HistoricalPeriodGetter_GetFrequencyType( HistoricalPeriodGetter_C *pgetter,
                                          FrequencyType *frequency_type )
 { return HistoricalGetterBase_GetFrequencyType_ABI( (Getter_C*)pgetter,
                                                     (int*)frequency_type, 0); }
 
-inline int
+static inline int
 HistoricalPeriodGetter_IsExtendedHours( HistoricalPeriodGetter_C *pgetter,
                                                int *is_extended_hours )
 { return HistoricalGetterBase_IsExtendedHours_ABI( (Getter_C*)pgetter,
                                                    is_extended_hours, 0); }
 
-inline int
+static inline int
 HistoricalPeriodGetter_SetExtendedHours( HistoricalPeriodGetter_C *pgetter,
                                                int is_extended_hours )
 { return HistoricalGetterBase_SetExtendedHours_ABI( (Getter_C*)pgetter,
                                                     is_extended_hours, 0); }
 
-inline int
+static inline int
 HistoricalPeriodGetter_GetPeriodType( HistoricalPeriodGetter_C *pgetter,
                                       PeriodType *period_type )
 { return HistoricalPeriodGetter_GetPeriodType_ABI( pgetter, (int*)period_type, 0); }
 
 
-inline int
+static inline int
 HistoricalPeriodGetter_GetPeriod(HistoricalPeriodGetter_C *pgetter,
                                  unsigned int *period)
 { return HistoricalPeriodGetter_GetPeriod_ABI( pgetter, period, 0); }
 
-inline int
+static inline int
 HistoricalPeriodGetter_SetPeriod( HistoricalPeriodGetter_C *pgetter,
                                    PeriodType period_type,
                                    unsigned int period )
 { return HistoricalPeriodGetter_SetPeriod_ABI( pgetter, (int)period_type,
                                                period, 0); }
 
-inline int
+static inline int
 HistoricalPeriodGetter_SetFrequency( HistoricalPeriodGetter_C *pgetter,
                                      FrequencyType frequency_type,
                                      unsigned int frequency )
@@ -1365,7 +1380,7 @@ HistoricalPeriodGetter_SetFrequency( HistoricalPeriodGetter_C *pgetter,
                                                 frequency, 0); }
 
 /* HistoricalRangeGetter */
-inline int
+static inline int
 HistoricalRangeGetter_Create( struct Credentials *pcreds,
                                    const char* symbol,
                                    FrequencyType frequency_type,
@@ -1381,72 +1396,72 @@ HistoricalRangeGetter_Create( struct Credentials *pcreds,
                                           pgetter, 0);
 }
 
-inline int
+static inline int
 HistoricalRangeGetter_Destroy( HistoricalRangeGetter_C *pgetter )
 { return HistoricalRangeGetter_Destroy_ABI( pgetter, 0); }
 
 DECL_WRAPPED_API_GETTER_BASE_FUNCS(HistoricalRangeGetter)
 
-inline int
+static inline int
 HistoricalRangeGetter_GetSymbol( HistoricalRangeGetter_C *pgetter,
                                   char **buf,
                                   size_t *n )
 { return HistoricalGetterBase_GetSymbol_ABI( (Getter_C*)pgetter, buf, n, 0); }
 
-inline int
+static inline int
 HistoricalRangeGetter_SetSymbol( HistoricalRangeGetter_C *pgetter,
                                   const char *symbol )
 { return HistoricalGetterBase_SetSymbol_ABI( (Getter_C*)pgetter, symbol, 0); }
 
-inline int
+static inline int
 HistoricalRangeGetter_GetFrequency( HistoricalRangeGetter_C *pgetter,
                                     unsigned int *frequency )
 { return HistoricalGetterBase_GetFrequency_ABI( (Getter_C*)pgetter,
                                                  frequency, 0); }
 
-inline int
+static inline int
 HistoricalRangeGetter_GetFrequencyType( HistoricalRangeGetter_C *pgetter,
                                         FrequencyType *frequency_type )
 { return HistoricalGetterBase_GetFrequencyType_ABI( (Getter_C*)pgetter,
                                                     (int*)frequency_type, 0); }
 
-inline int
+static inline int
 HistoricalRangeGetter_IsExtendedHours( HistoricalRangeGetter_C *pgetter,
                                                int *is_extended_hours )
 { return HistoricalGetterBase_IsExtendedHours_ABI( (Getter_C*)pgetter,
                                                    is_extended_hours, 0); }
 
-inline int
+static inline int
 HistoricalRangeGetter_SetExtendedHours( HistoricalRangeGetter_C *pgetter,
                                                int is_extended_hours )
 { return HistoricalGetterBase_SetExtendedHours_ABI( (Getter_C*)pgetter,
                                                     is_extended_hours, 0); }
 
-inline int
+static inline int
 HistoricalRangeGetter_GetEndMSecSinceEpoch(
     HistoricalRangeGetter_C *pgetter,
     unsigned long long *end_msec )
 { return HistoricalRangeGetter_GetEndMSecSinceEpoch_ABI(pgetter, end_msec, 0); }
 
-inline int
+static inline int
 HistoricalRangeGetter_SetEndMSecSinceEpoch(
     HistoricalRangeGetter_C *pgetter,
     unsigned long long end_msec )
 { return HistoricalRangeGetter_SetEndMSecSinceEpoch_ABI(pgetter, end_msec, 0); }
 
-inline int
+static inline int
 HistoricalRangeGetter_GetStartMSecSinceEpoch(
     HistoricalRangeGetter_C *pgetter,
     unsigned long long *start_msec )
 { return HistoricalRangeGetter_GetStartMSecSinceEpoch_ABI(pgetter, start_msec, 0); }
 
-inline int
+static inline int
 HistoricalRangeGetter_SetStartMSecSinceEpoch(
     HistoricalRangeGetter_C *pgetter,
     unsigned long long start_msec )
 { return HistoricalRangeGetter_SetStartMSecSinceEpoch_ABI(pgetter, start_msec, 0); }
 
-inline int
+static inline int
 HistoricalRangeGetter_SetFrequency( HistoricalRangeGetter_C *pgetter,
                                      FrequencyType frequency_type,
                                      unsigned int frequency)
@@ -1455,7 +1470,7 @@ HistoricalRangeGetter_SetFrequency( HistoricalRangeGetter_C *pgetter,
                                                 frequency, 0); }
 
 /* OptionChainGetter */
-inline int
+static inline int
 OptionChainGetter_Create( struct Credentials *pcreds,
                           const char* symbol,
                           OptionStrikesType strikes_type,
@@ -1475,23 +1490,23 @@ OptionChainGetter_Create( struct Credentials *pcreds,
                                          pgetter, 0 );
 }
 
-inline int
+static inline int
 OptionChainGetter_Destroy(OptionChainGetter_C *pgetter )
 { return OptionChainGetter_Destroy_ABI(pgetter, 0); }
 
 /* declare derived(and base) versions of OptionChain methods for derived getters*/
 #define DECL_WRAPPED_OPTION_GETTER_BASE_FUNCS(name) \
-inline int \
+static inline int \
 name##_GetSymbol(name##_C *pgetter, char **buf, size_t *n) \
 { return OptionChainGetter_GetSymbol_ABI( (OptionChainGetter_C*)pgetter, \
                                           buf, n, 0); } \
 \
-inline int \
+static inline int \
 name##_SetSymbol(name##_C *pgetter, const char *symbol) \
 { return OptionChainGetter_SetSymbol_ABI( (OptionChainGetter_C*)pgetter, \
                                            symbol, 0); } \
 \
-inline int \
+static inline int \
 name##_GetStrikes( name##_C *pgetter, \
                    OptionStrikesType *strikes_type, \
                    OptionStrikesValue *strikes_value ) \
@@ -1499,7 +1514,7 @@ name##_GetStrikes( name##_C *pgetter, \
                                            (int*)strikes_type, \
                                            strikes_value, 0); } \
 \
-inline int \
+static inline int \
 name##_SetStrikes( name##_C *pgetter, \
                    OptionStrikesType strikes_type, \
                    OptionStrikesValue strikes_value ) \
@@ -1507,62 +1522,62 @@ name##_SetStrikes( name##_C *pgetter, \
                                             (int)strikes_type, \
                                             strikes_value, 0); } \
 \
-inline int \
+static inline int \
 name##_GetContractType( name##_C *pgetter, OptionContractType *contract_type ) \
 { return OptionChainGetter_GetContractType_ABI( (OptionChainGetter_C*)pgetter, \
                                                 (int*)contract_type, 0); } \
 \
-inline int \
+static inline int \
 name##_SetContractType( name##_C *pgetter, OptionContractType contract_type ) \
 { return OptionChainGetter_SetContractType_ABI( (OptionChainGetter_C*)pgetter, \
                                                 (int)contract_type, 0); } \
 \
-inline int \
+static inline int \
 name##_IncludesQuotes( name##_C *pgetter, int *includes_quotes ) \
 { return OptionChainGetter_IncludesQuotes_ABI( (OptionChainGetter_C*)pgetter, \
                                                 includes_quotes, 0); } \
 \
-inline int \
+static inline int \
 name##_IncludeQuotes( name##_C *pgetter, int include_quotes ) \
 { return OptionChainGetter_IncludeQuotes_ABI( (OptionChainGetter_C*)pgetter, \
                                               include_quotes, 0); } \
 \
-inline int \
+static inline int \
 name##_GetFromDate(name##_C *pgetter, char **buf, size_t *n) \
 { return OptionChainGetter_GetFromDate_ABI( (OptionChainGetter_C*)pgetter, \
                                              buf, n, 0); } \
 \
-inline int \
+static inline int \
 name##_SetFromDate(name##_C *pgetter, const char *date) \
 { return OptionChainGetter_SetFromDate_ABI( (OptionChainGetter_C*)pgetter, \
                                              date, 0); } \
 \
-inline int \
+static inline int \
 name##_GetToDate(name##_C *pgetter, char **buf, size_t *n) \
 { return OptionChainGetter_GetToDate_ABI( (OptionChainGetter_C*)pgetter, \
                                           buf, n, 0); } \
 \
-inline int \
+static inline int \
 name##_SetToDate(name##_C *pgetter, const char *date) \
 { return OptionChainGetter_SetToDate_ABI( (OptionChainGetter_C*)pgetter, \
                                           date, 0); } \
 \
-inline int \
+static inline int \
 name##_GetExpMonth(name##_C *pgetter, OptionExpMonth *exp_month) \
 { return OptionChainGetter_GetExpMonth_ABI( (OptionChainGetter_C*)pgetter, \
                                             (int*)exp_month, 0); } \
 \
-inline int \
+static inline int \
 name##_SetExpMonth(name##_C *pgetter, OptionExpMonth exp_month) \
 { return OptionChainGetter_SetExpMonth_ABI( (OptionChainGetter_C*)pgetter, \
                                             (int)exp_month, 0); } \
 \
-inline int \
+static inline int \
 name##_GetOptionType(name##_C *pgetter, OptionType *option_type) \
 { return OptionChainGetter_GetOptionType_ABI( (OptionChainGetter_C*)pgetter, \
                                                (int*)option_type, 0); } \
 \
-inline int \
+static inline int \
 name##_SetOptionType(name##_C *pgetter, OptionType option_type) \
 { return OptionChainGetter_SetOptionType_ABI( (OptionChainGetter_C*)pgetter, \
                                                (int)option_type, 0); }
@@ -1571,7 +1586,7 @@ DECL_WRAPPED_API_GETTER_BASE_FUNCS(OptionChainGetter)
 DECL_WRAPPED_OPTION_GETTER_BASE_FUNCS(OptionChainGetter)
 
 /* OptionChainStrategyGetter */
-inline int
+static inline int
 OptionChainStrategyGetter_Create( struct Credentials *pcreds,
                                   const char* symbol,
                                   OptionStrategyType strategy_type,
@@ -1598,11 +1613,11 @@ DECL_WRAPPED_API_GETTER_BASE_FUNCS(OptionChainStrategyGetter)
 
 DECL_WRAPPED_OPTION_GETTER_BASE_FUNCS(OptionChainStrategyGetter)
 
-inline int
+static inline int
 OptionChainStrategyGetter_Destroy( OptionChainStrategyGetter_C *pgetter )
 { return OptionChainStrategyGetter_Destroy_ABI( pgetter, 0); }
 
-inline int
+static inline int
 OptionChainStrategyGetter_GetStrategy( OptionChainStrategyGetter_C *pgetter,
                                        OptionStrategyType *strategy_type,
                                        double *spread_interval )
@@ -1611,7 +1626,7 @@ OptionChainStrategyGetter_GetStrategy( OptionChainStrategyGetter_C *pgetter,
                                                      spread_interval, 0);
 }
 
-inline int
+static inline int
 OptionChainStrategyGetter_SetStrategy( OptionChainStrategyGetter_C *pgetter,
                                         OptionStrategyType strategy_type,
                                         double spread_interval )
@@ -1621,7 +1636,7 @@ OptionChainStrategyGetter_SetStrategy( OptionChainStrategyGetter_C *pgetter,
 }
 
 /* OptionChainAnalyticalGetter */
-inline int
+static inline int
 OptionChainAnalyticalGetter_Create( struct Credentials *pcreds,
                                       const char* symbol,
                                       double volatility,
@@ -1647,7 +1662,7 @@ OptionChainAnalyticalGetter_Create( struct Credentials *pcreds,
                                                    (int)option_type, pgetter, 0);
 }
 
-inline int
+static inline int
 OptionChainAnalyticalGetter_Destroy( OptionChainAnalyticalGetter_C *pgetter )
 { return OptionChainAnalyticalGetter_Destroy_ABI(pgetter, 0); }
 
@@ -1655,21 +1670,21 @@ DECL_WRAPPED_API_GETTER_BASE_FUNCS(OptionChainAnalyticalGetter)
 
 DECL_WRAPPED_OPTION_GETTER_BASE_FUNCS(OptionChainAnalyticalGetter)
 
-inline int
+static inline int
 OptionChainAnalyticalGetter_GetVolatility(
     OptionChainAnalyticalGetter_C *pgetter,
     double *volatility
     )
 { return OptionChainAnalyticalGetter_GetVolatility_ABI(pgetter, volatility, 0); }
 
-inline int
+static inline int
 OptionChainAnalyticalGetter_SetVolatility(
     OptionChainAnalyticalGetter_C *pgetter,
     double volatility
     )
 { return OptionChainAnalyticalGetter_SetVolatility_ABI(pgetter, volatility, 0); }
 
-inline int
+static inline int
 OptionChainAnalyticalGetter_GetUnderlyingPrice(
     OptionChainAnalyticalGetter_C *pgetter,
     double *underlying_price
@@ -1680,7 +1695,7 @@ OptionChainAnalyticalGetter_GetUnderlyingPrice(
         );
 }
 
-inline int
+static inline int
 OptionChainAnalyticalGetter_SetUnderlyingPrice(
     OptionChainAnalyticalGetter_C *pgetter,
     double underlying_price
@@ -1691,7 +1706,7 @@ OptionChainAnalyticalGetter_SetUnderlyingPrice(
         );
 }
 
-inline int
+static inline int
 OptionChainAnalyticalGetter_GetInterestRate(
     OptionChainAnalyticalGetter_C *pgetter,
     double *interest_rate
@@ -1702,7 +1717,7 @@ OptionChainAnalyticalGetter_GetInterestRate(
         );
 }
 
-inline int
+static inline int
 OptionChainAnalyticalGetter_SetInterestRate(
     OptionChainAnalyticalGetter_C *pgetter,
     double interest_rate
@@ -1713,14 +1728,14 @@ OptionChainAnalyticalGetter_SetInterestRate(
         );
 }
 
-inline int
+static inline int
 OptionChainAnalyticalGetter_GetDaysToExp(
     OptionChainAnalyticalGetter_C *pgetter,
     unsigned int *days_to_exp
     )
 { return OptionChainAnalyticalGetter_GetDaysToExp_ABI(pgetter, days_to_exp, 0); }
 
-inline int
+static inline int
 OptionChainAnalyticalGetter_SetDaysToExp(
     OptionChainAnalyticalGetter_C *pgetter,
     unsigned int days_to_exp
@@ -1729,16 +1744,16 @@ OptionChainAnalyticalGetter_SetDaysToExp(
 
 /* AccountGetterBase */
 #define DECL_WRAPPED_ACCOUNT_GETTER_BASE_FUNCS(name) \
-inline int \
+static inline int \
 name##_GetAccountId( name##_C *pgetter, char **buf, size_t *n) \
 { return AccountGetterBase_GetAccountId_ABI( (Getter_C*)pgetter, buf, n, 0); } \
 \
-inline int \
+static inline int \
 name##_SetAccountId( name##_C *pgetter, const char *symbol ) \
 { return AccountGetterBase_SetAccountId_ABI( (Getter_C*)pgetter, symbol, 0); }
 
 /* AccountInfoGetter */
-inline int
+static inline int
 AccountInfoGetter_Create( struct Credentials *pcreds,
                                  const char* account_id,
                                  int positions,
@@ -1747,7 +1762,7 @@ AccountInfoGetter_Create( struct Credentials *pcreds,
 { return AccountInfoGetter_Create_ABI(pcreds, account_id, positions, orders,
                                       pgetter, 0); }
 
-inline int
+static inline int
 AccountInfoGetter_Destroy( AccountInfoGetter_C *pgetter)
 { return AccountInfoGetter_Destroy_ABI(pgetter, 0); }
 
@@ -1755,34 +1770,34 @@ DECL_WRAPPED_API_GETTER_BASE_FUNCS(AccountInfoGetter)
 
 DECL_WRAPPED_ACCOUNT_GETTER_BASE_FUNCS(AccountInfoGetter)
 
-inline int
+static inline int
 AccountInfoGetter_ReturnsPositions( AccountInfoGetter_C *pgetter,
                                             int *returns_positions)
 { return AccountInfoGetter_ReturnsPositions_ABI(pgetter, returns_positions, 0); }
 
-inline int
+static inline int
 AccountInfoGetter_ReturnPositions( AccountInfoGetter_C *pgetter,
                                             int return_positions )
 { return AccountInfoGetter_ReturnPositions_ABI(pgetter, return_positions, 0); }
 
-inline int
+static inline int
 AccountInfoGetter_ReturnsOrders( AccountInfoGetter_C *pgetter,
                                  int *returns_orders)
 { return AccountInfoGetter_ReturnsOrders_ABI(pgetter, returns_orders, 0); }
 
-inline int
+static inline int
 AccountInfoGetter_ReturnOrders( AccountInfoGetter_C *pgetter,
                                             int return_orders )
 { return AccountInfoGetter_ReturnOrders_ABI(pgetter, return_orders, 0); }
 
 /* PreferencesGetter */
-inline int
+static inline int
 PreferencesGetter_Create( struct Credentials *pcreds,
                                  const char* account_id,
                                  PreferencesGetter_C *pgetter )
 { return PreferencesGetter_Create_ABI(pcreds, account_id, pgetter, 0); }
 
-inline int
+static inline int
 PreferencesGetter_Destroy( PreferencesGetter_C *pgetter)
 { return PreferencesGetter_Destroy_ABI(pgetter, 0); }
 
@@ -1791,14 +1806,14 @@ DECL_WRAPPED_API_GETTER_BASE_FUNCS(PreferencesGetter)
 DECL_WRAPPED_ACCOUNT_GETTER_BASE_FUNCS(PreferencesGetter)
 
 /* StreamerSubscriptionKeysGetter */
-inline int
+static inline int
 StreamerSubscriptionKeysGetter_Create(
     struct Credentials *pcreds,
      const char* account_id,
      StreamerSubscriptionKeysGetter_C *pgetter )
 { return StreamerSubscriptionKeysGetter_Create_ABI(pcreds, account_id, pgetter, 0); }
 
-inline int
+static inline int
 StreamerSubscriptionKeysGetter_Destroy(StreamerSubscriptionKeysGetter_C *pgetter)
 { return StreamerSubscriptionKeysGetter_Destroy_ABI(pgetter, 0); }
 
@@ -1807,7 +1822,7 @@ DECL_WRAPPED_API_GETTER_BASE_FUNCS(StreamerSubscriptionKeysGetter)
 DECL_WRAPPED_ACCOUNT_GETTER_BASE_FUNCS(StreamerSubscriptionKeysGetter)
 
 /* TransactionHistoryGetter */
-inline int
+static inline int
 TransactionHistoryGetter_Create( struct Credentials *pcreds,
                                  const char* account_id,
                                  TransactionType transaction_type,
@@ -1821,7 +1836,7 @@ TransactionHistoryGetter_Create( struct Credentials *pcreds,
                                                start_date, end_date, pgetter, 0);
 }
 
-inline int
+static inline int
 TransactionHistoryGetter_Destroy( TransactionHistoryGetter_C *pgetter )
 { return TransactionHistoryGetter_Destroy_ABI(pgetter, 0); }
 
@@ -1829,7 +1844,7 @@ DECL_WRAPPED_API_GETTER_BASE_FUNCS(TransactionHistoryGetter)
 
 DECL_WRAPPED_ACCOUNT_GETTER_BASE_FUNCS(TransactionHistoryGetter)
 
-inline int
+static inline int
 TransactionHistoryGetter_GetTransactionType( TransactionHistoryGetter_C *pgetter,
                                              TransactionType *transaction_type )
 {
@@ -1838,7 +1853,7 @@ TransactionHistoryGetter_GetTransactionType( TransactionHistoryGetter_C *pgetter
     );
 }
 
-inline int
+static inline int
 TransactionHistoryGetter_SetTransactionType( TransactionHistoryGetter_C *pgetter,
                                              TransactionType transaction_type )
 {
@@ -1847,41 +1862,41 @@ TransactionHistoryGetter_SetTransactionType( TransactionHistoryGetter_C *pgetter
     );
 }
 
-inline int
+static inline int
 TransactionHistoryGetter_GetSymbol( TransactionHistoryGetter_C *pgetter,
                                     char **buf,
                                     size_t *n )
 { return TransactionHistoryGetter_GetSymbol_ABI(pgetter, buf, n, 0); }
 
-inline int
+static inline int
 TransactionHistoryGetter_SetSymbol( TransactionHistoryGetter_C *pgetter,
                                     const char* symbol )
 { return TransactionHistoryGetter_SetSymbol_ABI(pgetter, symbol, 0); }
 
-inline int
+static inline int
 TransactionHistoryGetter_GetStartDate( TransactionHistoryGetter_C *pgetter,
                                        char **buf,
                                        size_t *n )
 { return TransactionHistoryGetter_GetStartDate_ABI(pgetter, buf, n, 0); }
 
-inline int
+static inline int
 TransactionHistoryGetter_SetStartDate( TransactionHistoryGetter_C *pgetter,
                                        const char* start_date )
 { return TransactionHistoryGetter_SetStartDate_ABI(pgetter, start_date, 0); }
 
-inline int
+static inline int
 TransactionHistoryGetter_GetEndDate( TransactionHistoryGetter_C *pgetter,
                                      char **buf,
                                      size_t *n )
 { return TransactionHistoryGetter_GetEndDate_ABI(pgetter, buf, n, 0); }
 
-inline int
+static inline int
 TransactionHistoryGetter_SetEndDate( TransactionHistoryGetter_C *pgetter,
                                      const char* end_date )
 { return TransactionHistoryGetter_SetEndDate_ABI(pgetter, end_date, 0); }
 
 /* IndividualTransactionHistoryGetter */
-inline int
+static inline int
 IndividualTransactionHistoryGetter_Create(
     struct Credentials *pcreds,
     const char* account_id,
@@ -1893,7 +1908,7 @@ IndividualTransactionHistoryGetter_Create(
         );
 }
 
-inline int
+static inline int
 IndividualTransactionHistoryGetter_Destroy(
     IndividualTransactionHistoryGetter_C *pgetter )
 { return IndividualTransactionHistoryGetter_Destroy_ABI(pgetter, 0); }
@@ -1902,7 +1917,7 @@ DECL_WRAPPED_API_GETTER_BASE_FUNCS(IndividualTransactionHistoryGetter)
 
 DECL_WRAPPED_ACCOUNT_GETTER_BASE_FUNCS(IndividualTransactionHistoryGetter)
 
-inline int
+static inline int
 IndividualTransactionHistoryGetter_GetTransactionId(
     IndividualTransactionHistoryGetter_C *pgetter,
     char **buf,
@@ -1913,7 +1928,7 @@ IndividualTransactionHistoryGetter_GetTransactionId(
         );
 }
 
-inline int
+static inline int
 IndividualTransactionHistoryGetter_SetTransactionId(
     IndividualTransactionHistoryGetter_C *pgetter,
     const char* transaction_id )
@@ -1924,7 +1939,7 @@ IndividualTransactionHistoryGetter_SetTransactionId(
 }
 
 /* UserPrincipalsGetter */
-inline int
+static inline int
 UserPrincipalsGetter_Create( struct Credentials *pcreds,
                                      int streamer_subscription_keys,
                                      int streamer_connection_info,
@@ -1938,13 +1953,13 @@ UserPrincipalsGetter_Create( struct Credentials *pcreds,
         );
 }
 
-inline int
+static inline int
 UserPrincipalsGetter_Destroy( UserPrincipalsGetter_C *pgetter)
 { return UserPrincipalsGetter_Destroy_ABI(pgetter, 0); }
 
 DECL_WRAPPED_API_GETTER_BASE_FUNCS(UserPrincipalsGetter)
 
-inline int
+static inline int
 UserPrincipalsGetter_ReturnsSubscriptionKeys( UserPrincipalsGetter_C *pgetter,
                                               int *returns_subscription_keys )
 {
@@ -1954,7 +1969,7 @@ UserPrincipalsGetter_ReturnsSubscriptionKeys( UserPrincipalsGetter_C *pgetter,
 }
 
 
-inline int
+static inline int
 UserPrincipalsGetter_ReturnSubscriptionKeys( UserPrincipalsGetter_C *pgetter,
                                              int return_subscription_keys)
 {
@@ -1963,7 +1978,7 @@ UserPrincipalsGetter_ReturnSubscriptionKeys( UserPrincipalsGetter_C *pgetter,
         );
 }
 
-inline int
+static inline int
 UserPrincipalsGetter_ReturnsConnectionInfo( UserPrincipalsGetter_C *pgetter,
                                             int *returns_connection_info )
 {
@@ -1973,7 +1988,7 @@ UserPrincipalsGetter_ReturnsConnectionInfo( UserPrincipalsGetter_C *pgetter,
 }
 
 
-inline int
+static inline int
 UserPrincipalsGetter_ReturnConnectionInfo( UserPrincipalsGetter_C *pgetter,
                                            int return_connection_info )
 {
@@ -1982,7 +1997,7 @@ UserPrincipalsGetter_ReturnConnectionInfo( UserPrincipalsGetter_C *pgetter,
             );
 }
 
-inline int
+static inline int
 UserPrincipalsGetter_ReturnsPreferences( UserPrincipalsGetter_C *pgetter,
                                          int *returns_preferences)
 {
@@ -1991,7 +2006,7 @@ UserPrincipalsGetter_ReturnsPreferences( UserPrincipalsGetter_C *pgetter,
             );
 }
 
-inline int
+static inline int
 UserPrincipalsGetter_ReturnPreferences( UserPrincipalsGetter_C *pgetter,
                                         int return_preferences )
 {
@@ -2000,7 +2015,7 @@ UserPrincipalsGetter_ReturnPreferences( UserPrincipalsGetter_C *pgetter,
             );
 }
 
-inline int
+static inline int
 UserPrincipalsGetter_ReturnsSurrogateIds( UserPrincipalsGetter_C *pgetter,
                                           int *returns_surrogate_ids )
 {
@@ -2009,7 +2024,7 @@ UserPrincipalsGetter_ReturnsSurrogateIds( UserPrincipalsGetter_C *pgetter,
             );
 }
 
-inline int
+static inline int
 UserPrincipalsGetter_ReturnSurrogateIds(  UserPrincipalsGetter_C *pgetter,
                                           int return_surrogate_ids )
 {
@@ -2019,7 +2034,7 @@ UserPrincipalsGetter_ReturnSurrogateIds(  UserPrincipalsGetter_C *pgetter,
 }
 
 /* InstrumentInfoGetter */
-inline int
+static inline int
 InstrumentInfoGetter_Create( struct Credentials *pcreds,
                                      InstrumentSearchType search_type,
                                      const char* query_string,
@@ -2030,24 +2045,24 @@ InstrumentInfoGetter_Create( struct Credentials *pcreds,
 }
 
 
-inline int
+static inline int
 InstrumentInfoGetter_Destroy( InstrumentInfoGetter_C *pgetter )
 { return InstrumentInfoGetter_Destroy_ABI(pgetter, 0); }
 
 DECL_WRAPPED_API_GETTER_BASE_FUNCS(InstrumentInfoGetter)
 
-inline int
+static inline int
 InstrumentInfoGetter_GetSearchType( InstrumentInfoGetter_C *pgetter,
                                     InstrumentSearchType *search_type )
 { return InstrumentInfoGetter_GetSearchType_ABI(pgetter, (int*)search_type, 0); }
 
-inline int
+static inline int
 InstrumentInfoGetter_GetQueryString( InstrumentInfoGetter_C *pgetter,
                                      char **buf,
                                      size_t *n )
 { return InstrumentInfoGetter_GetQueryString_ABI(pgetter, buf, n, 0); }
 
-inline int
+static inline int
 InstrumentInfoGetter_SetQuery( InstrumentInfoGetter_C *pgetter,
                                InstrumentSearchType search_type,
                                const char* query_string )

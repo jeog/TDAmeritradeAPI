@@ -29,34 +29,6 @@ namespace tdma{
 
 using namespace std;
 
-const unordered_map<PeriodType, set<int>, EnumHash<PeriodType>>
-VALID_PERIODS_BY_PERIOD_TYPE = {
-    {PeriodType::day, set<int>{1,2,3,4,5,10}},
-    {PeriodType::month, set<int>{1,2,3,6}},
-    {PeriodType::year, set<int>{1,2,3,5,10,15,20}},
-    {PeriodType::ytd, set<int>{1}},
-};
-
-
-const unordered_map<PeriodType, set<FrequencyType, EnumCompare<FrequencyType>>,
-                    EnumHash<PeriodType>>
-VALID_FREQUENCY_TYPES_BY_PERIOD_TYPE ={
-    {PeriodType::day, {FrequencyType::minute} },
-    {PeriodType::month, {FrequencyType::daily, FrequencyType::weekly} },
-    {PeriodType::year, {FrequencyType::daily, FrequencyType::weekly,
-                        FrequencyType::monthly} },
-    {PeriodType::ytd, { FrequencyType::weekly} },
-};
-
-
-const unordered_map<FrequencyType, set<int>, EnumHash<FrequencyType>>
-VALID_FREQUENCIES_BY_FREQUENCY_TYPE = {
-    {FrequencyType::minute, set<int>{1,5,10,30}},
-    {FrequencyType::daily, set<int>{1}},
-    {FrequencyType::weekly, set<int>{1}},
-    {FrequencyType::monthly, set<int>{1}},
-};
-
 std::string
 BuildOptionSymbolImpl( const std::string& underlying,
                          unsigned int month,
