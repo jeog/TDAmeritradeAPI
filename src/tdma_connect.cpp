@@ -368,7 +368,6 @@ unescape_returned_post_data(const string& s)
     return ss.str();
 }
 
-
 } /* tdma */
 
 using namespace tdma;
@@ -379,7 +378,7 @@ APIGetter_Get_ABI( Getter_C *pgetter,
                      size_t *n,
                      int allow_exceptions )
 {
-    return GetterImplAccessor<char**>::template
+    return ImplAccessor<char**>::template
         get<APIGetterImpl>(
             pgetter, &APIGetterImpl::get, buf, n, allow_exceptions
         );
@@ -413,7 +412,7 @@ APIGetter_IsClosed_ABI(Getter_C *pgetter, int*b, int allow_exceptions)
     };
 
     tie(*b, err) = CallImplFromABI(allow_exceptions, meth, pgetter->obj);
-    return err ? err : 0;
+    return err;
 }
 
 int

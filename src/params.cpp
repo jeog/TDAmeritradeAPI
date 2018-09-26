@@ -19,6 +19,7 @@ along with this program.  If not, see http://www.gnu.org/licenses.
 #include <unordered_map>
 #include <unordered_set>
 #include <set>
+#include <regex>
 
 #include "../include/_tdma_api.h"
 
@@ -72,6 +73,55 @@ BuildOptionSymbolImpl( const std::string& underlying,
     return ss.str() + s;
 }
 
+void
+OptionSymbolCheckImpl(const std::string& option) // ABC_MMDDYY[C|P]{STRIKE}
+{
+    size_t sz = option.size();
+    if( sz == 0 )
+        throw ValueException("option string is empty");
+
+    size_t uspos = option.find('_');
+    if( uspos == std::string::npos )
+        throw ValueException("option string is missing underscore");
+    if( uspos == 0)
+        throw ValueException("option string is missing underlying");
+
+    size_t cppos = option.find_first_of("CP",uspos+1);
+    if( cppos == std::string::npos )
+        throw ValueException("option string is missing strike type(C/P)");
+
+    if( (cppos - uspos - 1) != 6 )
+        throw ValueException("option string contains invalid date substr size");
+
+    static const std::regex DATE_RE("[0-9]{6}");
+    if( !std::regex_match(option.substr(uspos+1, 6), DATE_RE) )
+        throw ValueException("option string contains date substr with non-digits");
+
+    int month = std::stoi(option.substr(uspos+1, 2));
+    if( month < 1 || month > 12 )
+        throw ValueException("invalid month");
+
+    int day = std::stoi(option.substr(uspos+3,2));
+    if( day < 1 || day > 31 ) // TODO
+        throw ValueException("invalid day");
+
+    int year = std::stoi(option.substr(uspos+5,2));
+    if( year < 0 || year > 99 )
+        throw ValueException("invalid year");
+
+    assert( cppos == uspos + 5 + 2);
+    if( cppos + 1 == sz )
+        throw ValueException("option string is missing strike");
+
+    std::string strk(option.substr(uspos+8, std::string::npos));
+
+    // TODO careful w/ non-standard strikes i.e split-adjusted
+    static const std::regex STRK_RE(
+        "^([1-9][0-9]*(\\.[0-9]*[1-9])?)|(\\.[0-9]*[1-9])$");
+    if( !std::regex_match(strk, STRK_RE) )
+        throw ValueException("option string contains invalid strike");
+}
+
 } /* tdma */
 
 
@@ -112,6 +162,13 @@ BuildOptionSymbol_ABI( const char* underlying,
     (*buf)[(*n)-1] = 0;
     strncpy(*buf, r.c_str(), (*n)-1);
     return 0;
+}
+
+int
+OptionSymbolCheck_ABI(const char* symbol, int allow_exceptions)
+{
+    CHECK_PTR(symbol, "symbol", allow_exceptions);
+    return CallImplFromABI(allow_exceptions, OptionSymbolCheckImpl, symbol);
 }
 
 int
@@ -668,9 +725,202 @@ DEF_TEMP_FIELD_TO_STRING(TimesaleSubscriptionField)
 
 #undef DEF_TEMP_FIELD_TO_STRING
 
+int
+OrderSession_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
+{
+    CHECK_ENUM(OrderSession, v, allow_exceptions);
+
+    switch(static_cast<OrderSession>(v)){
+    case OrderSession::NORMAL:
+        return alloc_C_str("NORMAL", buf, n, allow_exceptions);
+    case OrderSession::AM:
+        return alloc_C_str("AM", buf, n, allow_exceptions);
+    case OrderSession::PM:
+        return alloc_C_str("PM", buf, n, allow_exceptions);
+    case OrderSession::SEAMLESS:
+        return alloc_C_str("SEAMLESS", buf, n, allow_exceptions);
+    default:
+        throw std::runtime_error("Invalid OrderSession");
+    }
+}
+
+int
+OrderDuration_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
+{
+    CHECK_ENUM(OrderDuration, v, allow_exceptions);
+
+    switch(static_cast<OrderDuration>(v)){
+    case OrderDuration::DAY:
+        return alloc_C_str("DAY", buf, n, allow_exceptions);
+    case OrderDuration::GOOD_TILL_CANCEL:
+        return alloc_C_str("GOOD_TILL_CANCEL", buf, n, allow_exceptions);
+    case OrderDuration::FILL_OR_KILL:
+        return alloc_C_str("FILL_OR_KILL", buf, n, allow_exceptions);
+    default:
+        throw std::runtime_error("Invalid OrderDuration");
+    }
+}
 
 
+int
+OrderAssetType_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
+{
+    CHECK_ENUM(OrderAssetType, v, allow_exceptions);
 
+    switch(static_cast<OrderAssetType>(v)){
+    case OrderAssetType::EQUITY:
+        return alloc_C_str("EQUITY", buf, n, allow_exceptions);
+    case OrderAssetType::OPTION:
+        return alloc_C_str("OPTION", buf, n, allow_exceptions);
+    case OrderAssetType::INDEX:
+        return alloc_C_str("INDEX", buf, n, allow_exceptions);
+    case OrderAssetType::MUTUAL_FUND:
+        return alloc_C_str("MUTUAL_FUND", buf, n, allow_exceptions);
+    case OrderAssetType::CASH_EQUIVALENT:
+        return alloc_C_str("CASH_EQUIVALENT", buf, n, allow_exceptions);
+    case OrderAssetType::FIXED_INCOME:
+        return alloc_C_str("FIXED_INCOME", buf, n, allow_exceptions);
+    case OrderAssetType::CURRENCY:
+        return alloc_C_str("CURRENCY", buf, n, allow_exceptions);
+    default:
+        throw std::runtime_error("Invalid OrderAssetType");
+    }
+}
+
+
+int
+OrderInstruction_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
+{
+    CHECK_ENUM(OrderInstruction, v, allow_exceptions);
+
+    switch(static_cast<OrderInstruction>(v)){
+    case OrderInstruction::BUY:
+        return alloc_C_str("BUY", buf, n, allow_exceptions);
+    case OrderInstruction::SELL:
+        return alloc_C_str("SELL", buf, n, allow_exceptions);
+    case OrderInstruction::BUY_TO_COVER:
+        return alloc_C_str("BUY_TO_COVER", buf, n, allow_exceptions);
+    case OrderInstruction::SELL_SHORT:
+        return alloc_C_str("SELL_SHORT", buf, n, allow_exceptions);
+    case OrderInstruction::BUY_TO_OPEN:
+        return alloc_C_str("BUY_TO_OPEN", buf, n, allow_exceptions);
+    case OrderInstruction::BUY_TO_CLOSE:
+        return alloc_C_str("BUY_TO_CLOSE", buf, n, allow_exceptions);
+    case OrderInstruction::SELL_TO_OPEN:
+        return alloc_C_str("SELL_TO_OPEN", buf, n, allow_exceptions);
+    case OrderInstruction::SELL_TO_CLOSE:
+        return alloc_C_str("SELL_TO_CLOSE", buf, n, allow_exceptions);
+    case OrderInstruction::EXCHANGE:
+        return alloc_C_str("EXCHANGE", buf, n, allow_exceptions);
+    default:
+        throw std::runtime_error("Invalid OrderInstruction");
+    }
+}
+
+
+int
+OrderType_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
+{
+    CHECK_ENUM(OrderType, v, allow_exceptions);
+
+    switch(static_cast<OrderType>(v)){
+    case OrderType::MARKET:
+        return alloc_C_str("MARKET", buf, n, allow_exceptions);
+    case OrderType::LIMIT:
+        return alloc_C_str("LIMIT", buf, n, allow_exceptions);
+    case OrderType::STOP:
+        return alloc_C_str("STOP", buf, n, allow_exceptions);
+    case OrderType::STOP_LIMIT:
+        return alloc_C_str("STOP_LIMIT", buf, n, allow_exceptions);
+    case OrderType::TRAILING_STOP:
+        return alloc_C_str("TRAILING_STOP", buf, n, allow_exceptions);
+    case OrderType::MARKET_ON_CLOSE:
+        return alloc_C_str("MARKET_ON_CLOSE", buf, n, allow_exceptions);
+    case OrderType::EXERCISE:
+        return alloc_C_str("EXERCISE", buf, n, allow_exceptions);
+    case OrderType::TRAILING_STOP_LIMIT:
+        return alloc_C_str("TRAILING_STOP_LIMIT", buf, n, allow_exceptions);
+    case OrderType::NET_DEBIT:
+        return alloc_C_str("NET_DEBIT", buf, n, allow_exceptions);
+    case OrderType::NET_CREDIT:
+        return alloc_C_str("NET_CREDIT", buf, n, allow_exceptions);
+    case OrderType::NET_ZERO:
+        return alloc_C_str("NET_ZERO", buf, n, allow_exceptions);
+    default:
+        throw std::runtime_error("Invalid OrderType");
+    }
+}
+
+
+int
+ComplexOrderStrategyType_to_string_ABI(
+    int v, char** buf, size_t* n, int allow_exceptions)
+{
+    CHECK_ENUM(ComplexOrderStrategyType, v, allow_exceptions);
+
+    switch(static_cast<ComplexOrderStrategyType>(v)){
+    case ComplexOrderStrategyType::NONE:
+        return alloc_C_str("NONE", buf, n, allow_exceptions);
+    case ComplexOrderStrategyType::COVERED:
+        return alloc_C_str("COVERED", buf, n, allow_exceptions);
+    case ComplexOrderStrategyType::VERTICAL:
+        return alloc_C_str("VERTICAL", buf, n, allow_exceptions);
+    case ComplexOrderStrategyType::BACK_RATIO:
+        return alloc_C_str("BACK_RATIO", buf, n, allow_exceptions);
+    case ComplexOrderStrategyType::CALENDAR:
+        return alloc_C_str("CALENDAR", buf, n, allow_exceptions);
+    case ComplexOrderStrategyType::DIAGONAL:
+        return alloc_C_str("DIAGONAL", buf, n, allow_exceptions);
+    case ComplexOrderStrategyType::STRADDLE:
+        return alloc_C_str("STRADDLE", buf, n, allow_exceptions);
+    case ComplexOrderStrategyType::STRANGLE:
+        return alloc_C_str("STRANGLE", buf, n, allow_exceptions);
+    case ComplexOrderStrategyType::COLLAR_SYNTHETIC:
+        return alloc_C_str("COLLAR_SYNTHETIC", buf, n, allow_exceptions);
+    case ComplexOrderStrategyType::BUTTERFLY:
+        return alloc_C_str("BUTTERFLY", buf, n, allow_exceptions);
+    case ComplexOrderStrategyType::CONDOR:
+        return alloc_C_str("CONDOR", buf, n, allow_exceptions);
+    case ComplexOrderStrategyType::IRON_CONDOR:
+        return alloc_C_str("IRON_CONDOR", buf, n, allow_exceptions);
+    case ComplexOrderStrategyType::VERTICAL_ROLL:
+        return alloc_C_str("VERTICAL_ROLL", buf, n, allow_exceptions);
+    case ComplexOrderStrategyType::COLLAR_WITH_STOCK:
+        return alloc_C_str("COLLAR_WITH_STOCK", buf, n, allow_exceptions);
+    case ComplexOrderStrategyType::DOUBLE_DIAGONAL:
+        return alloc_C_str("DOUBLE_DIAGONAL", buf, n, allow_exceptions);
+    case ComplexOrderStrategyType::UNBALANCED_BUTTERFLY:
+        return alloc_C_str("UNBALANCED_BUTTERFLY", buf, n, allow_exceptions);
+    case ComplexOrderStrategyType::UNBALANCED_CONDOR:
+        return alloc_C_str("UNBALANCED_CONDOR", buf, n, allow_exceptions);
+    case ComplexOrderStrategyType::UNBALANCED_IRON_CONDOR:
+        return alloc_C_str("UNBALANCED_IRON_CONDOR", buf, n, allow_exceptions);
+    case ComplexOrderStrategyType::UNBALANCED_VERTICAL_ROLL:
+        return alloc_C_str("UNBALANCED_VERTICAL_ROLL", buf, n, allow_exceptions);
+    case ComplexOrderStrategyType::CUSTOM:
+        return alloc_C_str("CUSTOM", buf, n, allow_exceptions);
+    default:
+        throw std::runtime_error("Invalid ComplexOrderStrategyType");
+    }
+}
+
+
+int
+OrderStrategyType_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
+{
+    CHECK_ENUM(OrderStrategyType, v, allow_exceptions);
+
+    switch(static_cast<OrderStrategyType>(v)){
+    case OrderStrategyType::SINGLE:
+        return alloc_C_str("SINGLE", buf, n, allow_exceptions);
+    case OrderStrategyType::OCO:
+        return alloc_C_str("OCO", buf, n, allow_exceptions);
+    case OrderStrategyType::TRIGGER:
+        return alloc_C_str("TRIGGER", buf, n, allow_exceptions);
+    default:
+        throw std::runtime_error("Invalid OrderStrategyType");
+    }
+}
 
 
 

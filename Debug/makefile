@@ -11,6 +11,7 @@ RM := rm -rf
 -include uWebSockets/subdir.mk
 -include src/streaming/subdir.mk
 -include src/getters/subdir.mk
+-include src/execute/subdir.mk
 -include src/subdir.mk
 -include subdir.mk
 -include objects.mk

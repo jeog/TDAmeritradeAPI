@@ -160,7 +160,7 @@ MoversGetter_GetIndex_ABI( MoversGetter_C *pgetter,
                               int *index,
                               int allow_exceptions)
 {
-    return GetterImplAccessor<int>::template get<MoversGetterImpl, MoversIndex>(
+    return ImplAccessor<int>::template get<MoversGetterImpl, MoversIndex>(
         pgetter, &MoversGetterImpl::get_index, index, "index", allow_exceptions
         );
 }
@@ -172,7 +172,7 @@ MoversGetter_SetIndex_ABI( MoversGetter_C *pgetter,
 {
     CHECK_ENUM(MoversIndex, index, allow_exceptions);
 
-    return GetterImplAccessor<int>::template set<MoversGetterImpl, MoversIndex>(
+    return ImplAccessor<int>::template set<MoversGetterImpl, MoversIndex>(
         pgetter, &MoversGetterImpl::set_index, index, allow_exceptions
         );
 }
@@ -182,7 +182,7 @@ MoversGetter_GetDirectionType_ABI( MoversGetter_C *pgetter,
                                        int *direction_type,
                                        int allow_exceptions)
 {
-    return GetterImplAccessor<int>::template
+    return ImplAccessor<int>::template
         get<MoversGetterImpl, MoversDirectionType>(
             pgetter, &MoversGetterImpl::get_direction_type, direction_type,
             "direction_type", allow_exceptions
@@ -196,7 +196,7 @@ MoversGetter_SetDirectionType_ABI( MoversGetter_C *pgetter,
 {
     CHECK_ENUM( MoversDirectionType, direction_type, allow_exceptions );
 
-    return GetterImplAccessor<int>::template
+    return ImplAccessor<int>::template
         set<MoversGetterImpl, MoversDirectionType>(
             pgetter, &MoversGetterImpl::set_direction_type, direction_type,
             allow_exceptions
@@ -208,7 +208,7 @@ MoversGetter_GetChangeType_ABI( MoversGetter_C *pgetter,
                                    int *change_type,
                                    int allow_exceptions)
 {
-    return GetterImplAccessor<int>::template
+    return ImplAccessor<int>::template
         get<MoversGetterImpl, MoversChangeType>(
             pgetter, &MoversGetterImpl::get_change_type, change_type,
             "change_type", allow_exceptions
@@ -222,7 +222,7 @@ MoversGetter_SetChangeType_ABI( MoversGetter_C *pgetter,
 {
     CHECK_ENUM( MoversChangeType, change_type, allow_exceptions );
 
-    return GetterImplAccessor<int>::template
+    return ImplAccessor<int>::template
         set<MoversGetterImpl, MoversChangeType>(
             pgetter, &MoversGetterImpl::set_change_type, change_type,
             allow_exceptions

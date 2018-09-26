@@ -303,7 +303,7 @@ HistoricalGetterBase_GetSymbol_ABI( Getter_C *pgetter,
                                         size_t *n,
                                         int allow_exceptions )
 {
-    return GetterImplAccessor<char**>::template get<HistoricalGetterBaseImpl>(
+    return ImplAccessor<char**>::template get<HistoricalGetterBaseImpl>(
         pgetter, &HistoricalGetterBaseImpl::get_symbol, buf, n, allow_exceptions
         );
 }
@@ -313,7 +313,7 @@ HistoricalGetterBase_SetSymbol_ABI( Getter_C *pgetter,
                                         const char *symbol,
                                         int allow_exceptions )
 {
-    return GetterImplAccessor<char**>::template set<HistoricalGetterBaseImpl>(
+    return ImplAccessor<char**>::template set<HistoricalGetterBaseImpl>(
         pgetter, &HistoricalGetterBaseImpl::set_symbol, symbol, allow_exceptions
         );
 }
@@ -323,7 +323,7 @@ HistoricalGetterBase_GetFrequency_ABI( Getter_C *pgetter,
                                            unsigned int *frequency,
                                            int allow_exceptions )
 {
-    return GetterImplAccessor<unsigned int>::template
+    return ImplAccessor<unsigned int>::template
         get<HistoricalGetterBaseImpl>(
             pgetter, &HistoricalGetterBaseImpl::get_frequency, frequency,
             "frequency", allow_exceptions
@@ -335,7 +335,7 @@ HistoricalGetterBase_GetFrequencyType_ABI( Getter_C *pgetter,
                                                 int *frequency_type,
                                                 int allow_exceptions )
 {
-    return GetterImplAccessor<int>::template
+    return ImplAccessor<int>::template
         get<HistoricalGetterBaseImpl, FrequencyType>(
             pgetter, &HistoricalGetterBaseImpl::get_frequency_type,
             frequency_type, "frequency_type", allow_exceptions
@@ -347,7 +347,7 @@ HistoricalGetterBase_IsExtendedHours_ABI( Getter_C *pgetter,
                                                int *is_extended_hours,
                                                int allow_exceptions )
 {
-    return GetterImplAccessor<int>::template
+    return ImplAccessor<int>::template
         get<HistoricalGetterBaseImpl, bool>(
             pgetter, &HistoricalGetterBaseImpl::is_extended_hours,
             is_extended_hours, "is_extended_hours", allow_exceptions
@@ -359,7 +359,7 @@ HistoricalGetterBase_SetExtendedHours_ABI( Getter_C *pgetter,
                                                int is_extended_hours,
                                                int allow_exceptions )
 {
-    return GetterImplAccessor<int>::template
+    return ImplAccessor<int>::template
         set<HistoricalGetterBaseImpl, bool>(
             pgetter, &HistoricalGetterBaseImpl::set_extended_hours,
             is_extended_hours, allow_exceptions
@@ -374,7 +374,7 @@ HistoricalGetterBase_SetFrequency_ABI( Getter_C *pgetter,
 {
     CHECK_ENUM(FrequencyType, frequency_type, allow_exceptions);
 
-    return GetterImplAccessor<int>::template
+    return ImplAccessor<int>::template
         set<HistoricalGetterBaseImpl, FrequencyType>(
             pgetter, &HistoricalGetterBaseImpl::set_frequency, frequency_type,
             frequency, allow_exceptions
@@ -437,7 +437,7 @@ HistoricalPeriodGetter_GetPeriodType_ABI( HistoricalPeriodGetter_C *pgetter,
                                                int *period_type,
                                                int allow_exceptions )
 {
-    return GetterImplAccessor<int>::template
+    return ImplAccessor<int>::template
         get<HistoricalPeriodGetterImpl, PeriodType>(
             pgetter, &HistoricalPeriodGetterImpl::get_period_type,
             period_type, "period_type", allow_exceptions
@@ -450,7 +450,7 @@ HistoricalPeriodGetter_GetPeriod_ABI( HistoricalPeriodGetter_C *pgetter,
                                            unsigned int *period,
                                            int allow_exceptions )
 {
-    return GetterImplAccessor<unsigned int>::template
+    return ImplAccessor<unsigned int>::template
         get<HistoricalPeriodGetterImpl>(
             pgetter, &HistoricalPeriodGetterImpl::get_period,
             period, "period", allow_exceptions
@@ -465,7 +465,7 @@ HistoricalPeriodGetter_SetPeriod_ABI( HistoricalPeriodGetter_C *pgetter,
 {
     CHECK_ENUM(PeriodType, period_type, allow_exceptions);
 
-    return GetterImplAccessor<int>::template
+    return ImplAccessor<int>::template
         set<HistoricalPeriodGetterImpl, PeriodType>(
             pgetter, &HistoricalPeriodGetterImpl::set_period, period_type,
             period, allow_exceptions
@@ -530,7 +530,7 @@ HistoricalRangeGetter_GetEndMSecSinceEpoch_ABI(
     unsigned long long *end_msec,
     int allow_exceptions )
 {
-    return GetterImplAccessor<unsigned long long>::template
+    return ImplAccessor<unsigned long long>::template
         get<HistoricalRangeGetterImpl>(
             pgetter, &HistoricalRangeGetterImpl::get_end_msec_since_epoch,
             end_msec, "end_msec", allow_exceptions
@@ -543,7 +543,7 @@ HistoricalRangeGetter_SetEndMSecSinceEpoch_ABI(
     unsigned long long end_msec,
     int allow_exceptions )
 {
-    return GetterImplAccessor<unsigned long long>::template
+    return ImplAccessor<unsigned long long>::template
         set<HistoricalRangeGetterImpl>(
             pgetter, &HistoricalRangeGetterImpl::set_end_msec_since_epoch,
             end_msec, allow_exceptions
@@ -557,7 +557,7 @@ HistoricalRangeGetter_GetStartMSecSinceEpoch_ABI(
     unsigned long long *start_msec,
     int allow_exceptions )
 {
-    return GetterImplAccessor<unsigned long long>::template
+    return ImplAccessor<unsigned long long>::template
         get<HistoricalRangeGetterImpl>(
             pgetter, &HistoricalRangeGetterImpl::get_start_msec_since_epoch,
             start_msec, "start_msec", allow_exceptions
@@ -570,7 +570,7 @@ HistoricalRangeGetter_SetStartMSecSinceEpoch_ABI(
     unsigned long long start_msec,
     int allow_exceptions )
 {
-    return GetterImplAccessor<unsigned long long>::template
+    return ImplAccessor<unsigned long long>::template
         set<HistoricalRangeGetterImpl>(
             pgetter, &HistoricalRangeGetterImpl::set_start_msec_since_epoch,
             start_msec, allow_exceptions

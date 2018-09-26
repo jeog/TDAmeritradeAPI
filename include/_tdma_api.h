@@ -28,6 +28,7 @@ along with this program.  If not, see http://www.gnu.org/licenses.
 #include "util.h"
 #include "tdma_api_get.h"
 #include "tdma_api_streaming.h"
+#include "tdma_api_execute.h"
 #include "curl_connect.h"
 
 namespace tdma{
@@ -214,7 +215,9 @@ void
 kill_proxy( ProxyTy *proxy,
              typename std::enable_if<
                  IsValidCProxy<ProxyTy, Getter_C>::value ||
-                 IsValidCProxy<ProxyTy, StreamingSubscription_C>::value
+                 IsValidCProxy<ProxyTy, StreamingSubscription_C>::value ||
+                 IsValidCProxy<ProxyTy, OrderLeg_C>::value ||
+                 IsValidCProxy<ProxyTy, OrderTicket_C>::value
                  >::type* _ = nullptr )
 {
     proxy->obj = nullptr;
@@ -345,13 +348,21 @@ destroy_proxy(typename ImplTy::ProxyType::CType *proxy, int allow_exceptions)
 }
 
 
+template<typename T2>
+inline int
+return_error(std::pair<T2, int>&& r){ return r.second; }
+
+inline int
+return_error(int r){ return r; }
+
+
 template<typename T> /* FOR BASIC TYPES i.e. enum <--> int */
-struct GetterImplAccessor{
+struct ImplAccessor{
     // set single statically castable value
-    template<typename ImplTy, typename CastToTy=T>
+    template<typename ImplTy, typename CastToTy=T, typename R=void>
     static int
     set( typename ImplTy::ProxyType::CType* pgetter,
-         void(ImplTy::*method)(CastToTy),
+         R(ImplTy::*method)(CastToTy),
          T val,
          int allow_exceptions)
     {
@@ -359,20 +370,23 @@ struct GetterImplAccessor{
         if( err )
             return err;
 
-        static auto mwrap = +[](void* obj, void(ImplTy::*meth)(CastToTy), T m){
+        static auto mwrap = +[](void* obj, R(ImplTy::*meth)(CastToTy), T m){
             return (reinterpret_cast<ImplTy*>(obj)
                 ->*meth)(static_cast<CastToTy>(m));
         };
 
-        return CallImplFromABI(allow_exceptions, mwrap, pgetter->obj, method, val);
+        return return_error(
+            CallImplFromABI(allow_exceptions, mwrap, pgetter->obj, method, val)
+        );
     }
+
 
     // set two statically castable values
     template< typename ImplTy, typename CastToTy=T,
-              typename T2=T, typename CastToTy2=T2 >
+              typename T2=T, typename CastToTy2=T2, typename R=void >
     static int
     set( typename ImplTy::ProxyType::CType* pgetter,
-         void(ImplTy::*method)(CastToTy, CastToTy2),
+         R(ImplTy::*method)(CastToTy, CastToTy2),
          T val,
          T2 val2,
          int allow_exceptions)
@@ -382,14 +396,16 @@ struct GetterImplAccessor{
             return err;
 
         static auto mwrap =
-            +[](void* obj, void(ImplTy::*meth)(CastToTy, CastToTy2), T a, T2 b){
+            +[](void* obj, R(ImplTy::*meth)(CastToTy, CastToTy2), T a, T2 b){
                 return (reinterpret_cast<ImplTy*>(obj)
                         ->*meth)(static_cast<CastToTy>(a),
                                  static_cast<CastToTy2>(b));
         };
 
-        return CallImplFromABI(allow_exceptions, mwrap, pgetter->obj, method,
-                               val, val2);
+        return return_error(
+            CallImplFromABI(allow_exceptions, mwrap, pgetter->obj, method,
+                            val, val2)
+                            );
     }
 
     // get single statically castable value
@@ -429,11 +445,11 @@ struct GetterImplAccessor{
 
 
 template<> /* FOR C STR TYPES */
-struct GetterImplAccessor<char**>{
-    template<typename ImplTy>
+struct ImplAccessor<char**>{
+    template<typename ImplTy, typename R=void>
     static int
     set( typename ImplTy::ProxyType::CType* pgetter,
-         void(ImplTy::*method)(const std::string&),
+         R(ImplTy::*method)(const std::string&),
          const char* val,
          int allow_exceptions)
     {
@@ -442,11 +458,13 @@ struct GetterImplAccessor<char**>{
             return err;
 
         static auto mwrap =
-            +[](void* obj, void(ImplTy::*meth)(const std::string&), const char* v){
+            +[](void* obj, R(ImplTy::*meth)(const std::string&), const char* v){
             return (reinterpret_cast<ImplTy*>(obj)->*meth)(v ? v : "");
         };
 
-        return CallImplFromABI(allow_exceptions, mwrap, pgetter->obj, method, val);
+        return return_error(
+            CallImplFromABI(allow_exceptions, mwrap, pgetter->obj, method, val)
+            );
     }
 
     template<typename ImplTy>
@@ -501,11 +519,11 @@ struct GetterImplAccessor<char**>{
 
 
 template<> /* FOR ARRAY OF C STR TYPES */
-struct GetterImplAccessor<char***>{
-    template<typename ImplTy>
+struct ImplAccessor<char***>{
+    template<typename ImplTy, typename R=void>
     static int
     set( typename ImplTy::ProxyType::CType* pgetter,
-         void(ImplTy::*method)(const std::set<std::string>&),
+         R(ImplTy::*method)(const std::set<std::string>&),
          const char** val,
          size_t n,
          int allow_exceptions)
@@ -515,7 +533,7 @@ struct GetterImplAccessor<char***>{
             return err;
 
         static auto mwrap =
-            +[]( void* obj, void(ImplTy::*meth)(const std::set<std::string>&),
+            +[]( void* obj, R(ImplTy::*meth)(const std::set<std::string>&),
                  const char** s, size_t n ){
                     std::set<std::string> strs;
                     while( n-- )
@@ -523,8 +541,10 @@ struct GetterImplAccessor<char***>{
                     return (reinterpret_cast<ImplTy*>(obj)->*meth)(strs);
                 };
 
-        return CallImplFromABI(allow_exceptions, mwrap, pgetter->obj, method,
-                               val, n);
+        return return_error(
+            CallImplFromABI(allow_exceptions, mwrap, pgetter->obj, method,
+                            val, n)
+                            );
     }
 
     template<typename ImplTy>

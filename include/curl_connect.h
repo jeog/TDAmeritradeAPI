@@ -150,6 +150,9 @@ public:
 
     void
     SET_fields(const std::vector<std::pair<std::string,std::string>>& fields);
+
+    void
+    SET_fields(const std::string& fields);
 };
 
 

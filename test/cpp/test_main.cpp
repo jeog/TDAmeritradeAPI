@@ -12,12 +12,12 @@ using namespace std;
 void test_option_symbol_builder();
 
 
+
 int main(int argc, char* argv[])
 {
     using namespace chrono;
-    using json = nlohmann::json;
 
-    if (argc < 4 ) {
+   if (argc < 4 ) {
         cerr << "invalid # of args" << endl;
         cerr << "  args: [account id] [path to credentials filed] [password]" << endl;
         return 1;
@@ -34,9 +34,7 @@ int main(int argc, char* argv[])
         return 1;        
     }
 
-
-    try {
-
+    {
         CredentialsManager cmanager(creds_path, password);
 
         Credentials ccc;
@@ -50,6 +48,10 @@ int main(int argc, char* argv[])
         test_option_symbol_builder();
         cout<< "*** [END] TEST OPTION SYMBOL BUILDER [END] ***" << endl << endl;
 
+        cout<< "*** [BEGIN] TEST EXECUTION ORDER OBJECTS [BEGIN] ***" << endl;
+        test_execution_order_objects();
+        cout<< "*** [END] TEST EXECUTION ORDER OBJECTS [END] ***" << endl << endl;
+
         cout<< "*** [BEGIN] TEST GETTERS [BEGIN] ***" << endl;
         test_getters(account_id, cmanager.credentials);
         cout<< "*** [END] TEST GETTERS [END] ***" << endl << endl;
@@ -57,20 +59,10 @@ int main(int argc, char* argv[])
         cout<< "*** [BEGIN] TEST STREAMING [BEGIN] ***" << endl;
         test_streaming(account_id, cmanager.credentials);
         cout<< "*** [END] TEST STREAMING [END] ***" << endl << endl;
-
-        return 0;
-
-    }catch( tdma::APIException& e ){
-        std::cerr<< "APIException: " << e.what() << std::endl;
-    }catch( json::exception& e){
-        std::cerr<< "json::exception: " << e.what() << std::endl;
-    }catch( std::exception& e ){
-        std::cerr<< "std::exception: " << e.what() << std::endl;
-    }catch( ... ){
-        std::cerr<< "unknown exception!" << std::endl;
     }
 
-    return -1;
+    cout<< endl << "*** SUCCESS ***" << endl;
+    return 0;
 }
 
 void test_option_symbol_builder()

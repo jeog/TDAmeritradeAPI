@@ -291,6 +291,18 @@ public:
             set_option(CURLOPT_COPYPOSTFIELDS, s.c_str());
         }
     }
+
+    void
+    SET_fields(const std::string& fields)
+    {
+        if (is_closed())
+            throw CurlException("connection/handle has been closed");
+
+        /* CURLOPT_POST FIELDS DOES NOT COPY STRING */
+        if (!fields.empty()) {
+            set_option(CURLOPT_COPYPOSTFIELDS, fields.c_str());
+        }
+    }
     
     void
     RESET_options()
@@ -499,7 +511,9 @@ void
 HTTPSPostConnection::SET_fields(const vector<pair<string,string>>& fields)
 { _pimpl->SET_fields(fields); }
 
-
+void
+HTTPSPostConnection::SET_fields(const string& fields)
+{ _pimpl->SET_fields(fields); }
 
 CurlException::CurlException(string what)
     : _what(what)

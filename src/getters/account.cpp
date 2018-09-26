@@ -466,7 +466,7 @@ AccountGetterBase_GetAccountId_ABI( Getter_C *pgetter,
                                     size_t *n,
                                     int allow_exceptions )
 {
-    return GetterImplAccessor<char**>::template get<AccountGetterBaseImpl>(
+    return ImplAccessor<char**>::template get<AccountGetterBaseImpl>(
         pgetter, &AccountGetterBaseImpl::get_account_id, buf, n, allow_exceptions
         );
 }
@@ -476,7 +476,7 @@ AccountGetterBase_SetAccountId_ABI( Getter_C *pgetter,
                                     const char *account_id,
                                     int allow_exceptions )
 {
-    return GetterImplAccessor<char**>::template set<AccountGetterBaseImpl>(
+    return ImplAccessor<char**>::template set<AccountGetterBaseImpl>(
         pgetter, &AccountGetterBaseImpl::set_account_id, account_id,
         allow_exceptions
         );
@@ -529,7 +529,7 @@ AccountInfoGetter_ReturnsPositions_ABI( AccountInfoGetter_C *pgetter,
                                             int *returns_positions,
                                             int allow_exceptions )
 {
-    return GetterImplAccessor<int>::template
+    return ImplAccessor<int>::template
         get<AccountInfoGetterImpl, bool>(
             pgetter, &AccountInfoGetterImpl::returns_positions,
             returns_positions, "returns_positions", allow_exceptions
@@ -541,7 +541,7 @@ AccountInfoGetter_ReturnPositions_ABI( AccountInfoGetter_C *pgetter,
                                             int return_positions,
                                             int allow_exceptions )
 {
-    return GetterImplAccessor<int>::template
+    return ImplAccessor<int>::template
         set<AccountInfoGetterImpl, bool>(
             pgetter, &AccountInfoGetterImpl::return_positions,
             return_positions, allow_exceptions
@@ -553,7 +553,7 @@ AccountInfoGetter_ReturnsOrders_ABI( AccountInfoGetter_C *pgetter,
                                             int *returns_orders,
                                             int allow_exceptions )
 {
-    return GetterImplAccessor<int>::template
+    return ImplAccessor<int>::template
         get<AccountInfoGetterImpl, bool>(
             pgetter, &AccountInfoGetterImpl::returns_orders,
             returns_orders, "returns_orders", allow_exceptions
@@ -565,7 +565,7 @@ AccountInfoGetter_ReturnOrders_ABI( AccountInfoGetter_C *pgetter,
                                             int return_orders,
                                             int allow_exceptions )
 {
-    return GetterImplAccessor<int>::template
+    return ImplAccessor<int>::template
         set<AccountInfoGetterImpl, bool>(
             pgetter, &AccountInfoGetterImpl::return_orders,
             return_orders, allow_exceptions
@@ -709,7 +709,7 @@ TransactionHistoryGetter_GetTransactionType_ABI(
     int *transaction_type,
     int allow_exceptions )
 {
-    return GetterImplAccessor<int>::template
+    return ImplAccessor<int>::template
         get<TransactionHistoryGetterImpl, TransactionType>(
             pgetter, &TransactionHistoryGetterImpl::get_transaction_type,
             transaction_type, "transaction_type", allow_exceptions
@@ -724,7 +724,7 @@ TransactionHistoryGetter_SetTransactionType_ABI(
 {
     CHECK_ENUM(TransactionType, transaction_type, allow_exceptions);
 
-    return GetterImplAccessor<int>::template
+    return ImplAccessor<int>::template
         set<TransactionHistoryGetterImpl, TransactionType>(
             pgetter, &TransactionHistoryGetterImpl::set_transaction_type,
             transaction_type, allow_exceptions
@@ -738,7 +738,7 @@ TransactionHistoryGetter_GetSymbol_ABI(
     size_t *n,
     int allow_exceptions )
 {
-    return GetterImplAccessor<char**>::template
+    return ImplAccessor<char**>::template
         get<TransactionHistoryGetterImpl>(
             pgetter, &TransactionHistoryGetterImpl::get_symbol,
             buf, n, allow_exceptions
@@ -751,7 +751,7 @@ TransactionHistoryGetter_SetSymbol_ABI(
     const char* symbol,
     int allow_exceptions )
 {
-    return GetterImplAccessor<char**>::template
+    return ImplAccessor<char**>::template
         set<TransactionHistoryGetterImpl>(
             pgetter, &TransactionHistoryGetterImpl::set_symbol,
             symbol, allow_exceptions
@@ -766,7 +766,7 @@ TransactionHistoryGetter_GetStartDate_ABI(
     size_t *n,
     int allow_exceptions )
 {
-    return GetterImplAccessor<char**>::template
+    return ImplAccessor<char**>::template
         get<TransactionHistoryGetterImpl>(
             pgetter, &TransactionHistoryGetterImpl::get_start_date,
             buf, n, allow_exceptions
@@ -779,7 +779,7 @@ TransactionHistoryGetter_SetStartDate_ABI(
     const char* start_date,
     int allow_exceptions )
 {
-    return GetterImplAccessor<char**>::template
+    return ImplAccessor<char**>::template
         set<TransactionHistoryGetterImpl>(
             pgetter, &TransactionHistoryGetterImpl::set_start_date,
             start_date, allow_exceptions
@@ -794,7 +794,7 @@ TransactionHistoryGetter_GetEndDate_ABI(
     size_t *n,
     int allow_exceptions )
 {
-    return GetterImplAccessor<char**>::template
+    return ImplAccessor<char**>::template
         get<TransactionHistoryGetterImpl>(
             pgetter, &TransactionHistoryGetterImpl::get_end_date,
             buf, n, allow_exceptions
@@ -807,7 +807,7 @@ TransactionHistoryGetter_SetEndDate_ABI(
     const char* end_date,
     int allow_exceptions )
 {
-    return GetterImplAccessor<char**>::template
+    return ImplAccessor<char**>::template
         set<TransactionHistoryGetterImpl>(
             pgetter, &TransactionHistoryGetterImpl::set_end_date,
             end_date, allow_exceptions
@@ -871,7 +871,7 @@ IndividualTransactionHistoryGetter_GetTransactionId_ABI(
     int allow_exceptions
     )
 {
-    return GetterImplAccessor<char**>::template
+    return ImplAccessor<char**>::template
         get<IndividualTransactionHistoryGetterImpl>(
             pgetter, &IndividualTransactionHistoryGetterImpl::get_transaction_id,
             buf, n, allow_exceptions
@@ -885,7 +885,7 @@ IndividualTransactionHistoryGetter_SetTransactionId_ABI(
     int allow_exceptions
     )
 {
-    return GetterImplAccessor<char**>::template
+    return ImplAccessor<char**>::template
         set<IndividualTransactionHistoryGetterImpl>(
             pgetter, &IndividualTransactionHistoryGetterImpl::set_transaction_id,
             transaction_id, allow_exceptions
@@ -940,7 +940,7 @@ UserPrincipalsGetter_ReturnsSubscriptionKeys_ABI(
     int allow_exceptions
     )
 {
-    return GetterImplAccessor<int>::template
+    return ImplAccessor<int>::template
         get<UserPrincipalsGetterImpl, bool>(
             pgetter, &UserPrincipalsGetterImpl::returns_streamer_subscription_keys,
             returns_subscription_keys, "returns_subscription_keys",
@@ -955,7 +955,7 @@ UserPrincipalsGetter_ReturnSubscriptionKeys_ABI(
     int allow_exceptions
     )
 {
-    return GetterImplAccessor<int>::template
+    return ImplAccessor<int>::template
         set<UserPrincipalsGetterImpl, bool>(
             pgetter, &UserPrincipalsGetterImpl::return_streamer_subscription_keys,
             return_subscription_keys, allow_exceptions
@@ -969,7 +969,7 @@ UserPrincipalsGetter_ReturnsConnectionInfo_ABI(
     int allow_exceptions
     )
 {
-    return GetterImplAccessor<int>::template
+    return ImplAccessor<int>::template
         get<UserPrincipalsGetterImpl, bool>(
             pgetter, &UserPrincipalsGetterImpl::returns_streamer_connection_info,
             returns_connection_info, "returns_connection_info", allow_exceptions
@@ -983,7 +983,7 @@ UserPrincipalsGetter_ReturnConnectionInfo_ABI(
     int allow_exceptions
     )
 {
-    return GetterImplAccessor<int>::template
+    return ImplAccessor<int>::template
         set<UserPrincipalsGetterImpl, bool>(
             pgetter, &UserPrincipalsGetterImpl::return_streamer_connection_info,
             return_connection_info, allow_exceptions
@@ -997,7 +997,7 @@ UserPrincipalsGetter_ReturnsPreferences_ABI(
     int allow_exceptions
     )
 {
-    return GetterImplAccessor<int>::template
+    return ImplAccessor<int>::template
         get<UserPrincipalsGetterImpl, bool>(
             pgetter, &UserPrincipalsGetterImpl::returns_preferences,
             returns_preferences, "returns_preferences", allow_exceptions
@@ -1011,7 +1011,7 @@ UserPrincipalsGetter_ReturnPreferences_ABI(
     int allow_exceptions
     )
 {
-    return GetterImplAccessor<int>::template
+    return ImplAccessor<int>::template
         set<UserPrincipalsGetterImpl, bool>(
             pgetter, &UserPrincipalsGetterImpl::return_preferences,
             return_preferences, allow_exceptions
@@ -1025,7 +1025,7 @@ UserPrincipalsGetter_ReturnsSurrogateIds_ABI(
     int allow_exceptions
     )
 {
-    return GetterImplAccessor<int>::template
+    return ImplAccessor<int>::template
         get<UserPrincipalsGetterImpl, bool>(
             pgetter, &UserPrincipalsGetterImpl::returns_surrogate_ids,
             returns_surrogate_ids, "returns_surrogate_ids", allow_exceptions
@@ -1039,7 +1039,7 @@ UserPrincipalsGetter_ReturnSurrogateIds_ABI(
     int allow_exceptions
     )
 {
-    return GetterImplAccessor<int>::template
+    return ImplAccessor<int>::template
         set<UserPrincipalsGetterImpl, bool>(
             pgetter, &UserPrincipalsGetterImpl::return_surrogate_ids,
             return_surrogate_ids, allow_exceptions

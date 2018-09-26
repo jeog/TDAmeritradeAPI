@@ -92,6 +92,40 @@ type##_to_string(int v, char** buf, size_t* n) \
 #define BUILD_C_CPP_TDMA_ENUM_NAME(type,name) type##_##name
 #endif /* __cplusplus */
 
+
+/* C PROXY BASES */
+#define DECL_CPROXY_BASE_STRUCT(name) \
+    typedef struct {void *obj; int type_id; } name
+
+DECL_CPROXY_BASE_STRUCT(Getter_C);
+DECL_CPROXY_BASE_STRUCT(StreamingSubscription_C);
+DECL_CPROXY_BASE_STRUCT(OrderLeg_C);
+DECL_CPROXY_BASE_STRUCT(OrderTicket_C);
+
+#undef DECL_CPROXY_BASE_STRUCT
+
+typedef struct{
+    void *obj;
+    int type_id;
+    void *ctx; // reserved
+} StreamingSession_C;
+
+
+/* C ERROR CODES */
+#define TDMA_API_ERROR 1
+#define TDMA_API_CRED_ERROR 2
+#define TDMA_API_VALUE_ERROR 3
+#define TDMA_API_TYPE_ERROR 4
+#define TDMA_API_MEMORY_ERROR 5
+
+#define TDMA_API_EXEC_ERROR 101
+#define TDMA_API_AUTH_ERROR 102
+#define TDMA_API_REQUEST_ERROR 103
+#define TDMA_API_SERVER_ERROR 104
+
+#define TDMA_API_STREAM_ERROR 201
+
+
 struct Credentials;
 
 /*
@@ -164,6 +198,14 @@ FreeBuffers_ABI( char** bufs, size_t n, int allow_exceptions);
 EXTERN_C_SPEC_ DLL_SPEC_ int
 FreeFieldsBuffer_ABI( int* fields, int allow_exceptions );
 
+// NOTE - DOES NOT DESTROY THE UNDERLYING OBJECTS
+EXTERN_C_SPEC_ DLL_SPEC_ int
+FreeOrderLegBuffer_ABI( OrderLeg_C *legs, int allow_exceptions );
+
+// NOTE - DOES NOT DESTROY THE UNDERLYING OBJECTS
+EXTERN_C_SPEC_ DLL_SPEC_ int
+FreeOrderTicketBuffer_ABI( OrderTicket_C *orders, int allow_exceptions );
+
 EXTERN_C_SPEC_ DLL_SPEC_ int
 LastErrorCode_ABI( int *code, int allow_exceptions );
 
@@ -181,6 +223,11 @@ BuildOptionSymbol_ABI( const char* underlying,
                          size_t *n,
                          int allow_exceptions );
 
+EXTERN_C_SPEC_ DLL_SPEC_ int
+OptionSymbolCheck_ABI(const char* symbol, int allow_exceptions);
+
+
+#ifndef __cplusplus
 /* C interface */
 
 static inline int
@@ -238,19 +285,13 @@ static inline int
 FreeFieldsBuffer( int* fields )
 { return FreeFieldsBuffer_ABI(fields, 0); }
 
+static inline int
+FreeOrderLegBuffer( OrderLeg_C *legs )
+{ return FreeOrderLegBuffer_ABI(legs, 0); }
 
-#define TDMA_API_ERROR 1
-#define TDMA_API_CRED_ERROR 2
-#define TDMA_API_VALUE_ERROR 3
-#define TDMA_API_TYPE_ERROR 4
-#define TDMA_API_MEMORY_ERROR 5
-
-#define TDMA_API_EXEC_ERROR 101
-#define TDMA_API_AUTH_ERROR 102
-#define TDMA_API_REQUEST_ERROR 103
-#define TDMA_API_SERVER_ERROR 104
-
-#define TDMA_API_STREAM_ERROR 201
+static inline int
+FreeOrderTicketBuffer( OrderTicket_C *orders )
+{ return FreeOrderTicketBuffer_ABI(orders, 0); }
 
 static inline int
 LastErrorCode( int *code )
@@ -271,6 +312,13 @@ BuildOptionSymbol( const char* underlying,
                      size_t *n )
 { return BuildOptionSymbol_ABI(underlying, month, day, year, is_call, strike,
                                buf, n, 0); }
+
+static inline int
+OptionSymbolCheck(const char* symbol)
+{ return OptionSymbolCheck_ABI(symbol, 0); }
+
+#endif /* __cplusplus */
+
 
 /*
  * if C, client has to call CloseCredentials and CopyCredentials directly
@@ -344,23 +392,6 @@ public:
     { CloseCredentials_ABI(this, true); }
 
 };
-#endif /* __cplusplus */
-
-// C proxy bases
-typedef struct {
-    void *obj;
-    int type_id;
-} Getter_C, StreamingSubscription_C;
-
-typedef struct{
-    void *obj;
-    int type_id;
-    void *ctx; // reserved
-} StreamingSession_C;
-
-/* C++ interface */
-
-#ifdef __cplusplus
 
 #include <string>
 #include "util.h"
@@ -382,7 +413,9 @@ struct IsValidCProxy<ProxyTy, void>{
     static constexpr bool value =
         IsValidCProxy<ProxyTy, Getter_C>::value
         || IsValidCProxy<ProxyTy, StreamingSubscription_C>::value
-        || IsValidCProxy<ProxyTy, StreamingSession_C>::value;
+        || IsValidCProxy<ProxyTy, StreamingSession_C>::value
+        || IsValidCProxy<ProxyTy, OrderLeg_C>::value
+        || IsValidCProxy<ProxyTy, OrderTicket_C>::value;
 };
 
 template<typename ProxyTy>
@@ -390,9 +423,27 @@ struct IsCProxyBase{
     static constexpr bool value =
         std::is_same<ProxyTy, Getter_C>::value
         || std::is_same<ProxyTy, StreamingSubscription_C>::value
-        || std::is_same<ProxyTy, StreamingSession_C>::value;
+        || std::is_same<ProxyTy, StreamingSession_C>::value
+        || std::is_same<ProxyTy, OrderLeg_C>::value
+        || std::is_same<ProxyTy, OrderTicket_C>::value;
 };
 
+
+template<typename F, typename... Args>
+std::string
+str_from_abi_vargs( F abicall, bool allow_exception, Args... args )
+{
+    char *buf = nullptr;
+    size_t n;
+    abicall(args..., &buf, &n, allow_exception);
+    if( !allow_exception && !buf ){
+        return {};
+    }
+    assert(buf);
+    std::string s(buf, n-1);
+    FreeBuffer_ABI(buf, allow_exception);
+    return s;
+}
 
 template<typename T> /* T - type of base proxy */
 class CProxyDestroyer{
@@ -413,17 +464,17 @@ public:
         if( ss->obj ){
             int err = _wrapper(ss, 0);
             if( err ){
-                char *buf;
-                size_t n;
-                LastErrorMsg_ABI(&buf, &n, 0);
                 std::cerr<< "Error destroying C proxy(" << err <<"): "
-                         << buf << std::endl;
-                FreeBuffer_ABI(buf, 0);
+                         << str_from_abi_vargs(LastErrorMsg_ABI, false)
+                         << std::endl;
             }
         }
         delete ss;
     }
 };
+
+
+/* C++ interface */
 
 inline Credentials
 LoadCredentials(std::string path, std::string password)
@@ -477,25 +528,23 @@ SetCertificateBundlePath(const std::string& path)
 
 inline std::string
 GetCertificateBundlePath()
-{
-    char* path;
-    size_t n;
-    GetCertificateBundlePath_ABI( &path, &n, true );
-    std::string s(path, n-1);
-    if(path) free(path);
-    return s;
-}
+{ return str_from_abi_vargs(GetCertificateBundlePath_ABI, true); }
 
 inline std::string
 GetDefaultCertificateBundlePath()
+{ return str_from_abi_vargs(GetDefaultCertificateBundlePath_ABI, true); }
+
+inline int
+LastErrorCode()
 {
-    char* path;
-    size_t n;
-    GetDefaultCertificateBundlePath_ABI( &path, &n, true );
-    std::string s(path, n-1);
-    if(path) free(path);
-    return s;
+    int code;
+    LastErrorCode_ABI(&code, 1);
+    return code;
 }
+
+inline std::string
+LastErrorMsg()
+{ return str_from_abi_vargs(LastErrorMsg_ABI, true); }
 
 inline std::string
 BuildOptionSymbol( const std::string& underlying,
@@ -504,15 +553,14 @@ BuildOptionSymbol( const std::string& underlying,
                      unsigned int year,
                      bool is_call,
                      double strike )
-{
-    char* path;
-    size_t n;
-    BuildOptionSymbol_ABI(underlying.c_str(), month, day, year,
-                          static_cast<int>(is_call), strike, &path, &n, 1);
-    std::string s(path, n-1);
-    if(path) free(path);
-    return s;
-}
+{ return str_from_abi_vargs( BuildOptionSymbol_ABI, true, underlying.c_str(),
+                             month, day, year, static_cast<int>(is_call),
+                             strike ); }
+
+inline void
+OptionSymbolCheck(const std::string& symbol)
+{ OptionSymbolCheck_ABI(symbol.c_str(), 1); }
+
 
 class APIException
         : public std::exception{
@@ -770,15 +818,7 @@ new_array_to_abi(F abicall, A *a, Args... args )
 template<typename CTy>
 std::string
 str_from_abi( int(*abicall)(CTy*, char**, size_t*, int), CTy *cty )
-{
-    char *buf;
-    size_t n;
-    abicall(cty, &buf, &n, 1);
-    assert(buf);
-    std::string s(buf, n-1);
-    free(buf);
-    return s;
-}
+{ return str_from_abi_vargs(abicall, true, cty); }
 
 template<typename CTy>
 std::set<std::string>

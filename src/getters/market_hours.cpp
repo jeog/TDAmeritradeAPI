@@ -145,7 +145,7 @@ MarketHoursGetter_GetMarketType_ABI( MarketHoursGetter_C *pgetter,
                                           int *market_type,
                                           int allow_exceptions)
 {
-    return GetterImplAccessor<int>::template
+    return ImplAccessor<int>::template
         get<MarketHoursGetterImpl, MarketType>(
             pgetter, &MarketHoursGetterImpl::get_market_type, market_type,
             "market_type", allow_exceptions
@@ -160,7 +160,7 @@ MarketHoursGetter_SetMarketType_ABI( MarketHoursGetter_C *pgetter,
 {
     CHECK_ENUM(MarketType, market_type, allow_exceptions);
 
-    return GetterImplAccessor<int>::template
+    return ImplAccessor<int>::template
         set<MarketHoursGetterImpl, MarketType>(
             pgetter, &MarketHoursGetterImpl::set_market_type, market_type,
             allow_exceptions
@@ -174,7 +174,7 @@ MarketHoursGetter_GetDate_ABI( MarketHoursGetter_C *pgetter,
                                    size_t *n,
                                    int allow_exceptions)
 {
-    return GetterImplAccessor<char**>::template get<MarketHoursGetterImpl>(
+    return ImplAccessor<char**>::template get<MarketHoursGetterImpl>(
         pgetter, &MarketHoursGetterImpl::get_date, buf, n, allow_exceptions
         );
 }
@@ -185,7 +185,7 @@ MarketHoursGetter_SetDate_ABI( MarketHoursGetter_C *pgetter,
                                   const char* date,
                                   int allow_exceptions )
 {
-    return GetterImplAccessor<char**>::template set<MarketHoursGetterImpl>(
+    return ImplAccessor<char**>::template set<MarketHoursGetterImpl>(
         pgetter, &MarketHoursGetterImpl::set_date, date, allow_exceptions
         );
 }

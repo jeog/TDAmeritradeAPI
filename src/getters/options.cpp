@@ -485,7 +485,7 @@ OptionChainGetter_GetSymbol_ABI( OptionChainGetter_C *pgetter,
                                       size_t *n,
                                       int allow_exceptions)
 {
-    return GetterImplAccessor<char**>::template
+    return ImplAccessor<char**>::template
         get<OptionChainGetterImpl>(
             pgetter, &OptionChainGetterImpl::get_symbol, buf, n, allow_exceptions
         );
@@ -496,7 +496,7 @@ OptionChainGetter_SetSymbol_ABI( OptionChainGetter_C *pgetter,
                                       const char *symbol,
                                       int allow_exceptions )
 {
-    return GetterImplAccessor<char**>::template
+    return ImplAccessor<char**>::template
         set<OptionChainGetterImpl>(
             pgetter, &OptionChainGetterImpl::set_symbol, symbol, allow_exceptions
         );
@@ -559,7 +559,7 @@ OptionChainGetter_GetContractType_ABI( OptionChainGetter_C *pgetter,
                                            int *contract_type,
                                            int allow_exceptions)
 {
-    return GetterImplAccessor<int>::template
+    return ImplAccessor<int>::template
         get<OptionChainGetterImpl, OptionContractType>(
             pgetter, &OptionChainGetterImpl::get_contract_type,
             contract_type, "contract_type", allow_exceptions
@@ -573,7 +573,7 @@ OptionChainGetter_SetContractType_ABI( OptionChainGetter_C *pgetter,
 {
     CHECK_ENUM(OptionContractType, contract_type, allow_exceptions);
 
-    return GetterImplAccessor<int>::template
+    return ImplAccessor<int>::template
         set<OptionChainGetterImpl, OptionContractType>(
             pgetter, &OptionChainGetterImpl::set_contract_type,
             contract_type, allow_exceptions
@@ -585,7 +585,7 @@ OptionChainGetter_IncludesQuotes_ABI( OptionChainGetter_C *pgetter,
                                            int *includes_quotes,
                                            int allow_exceptions)
 {
-    return GetterImplAccessor<int>::template
+    return ImplAccessor<int>::template
         get<OptionChainGetterImpl, bool>(
             pgetter, &OptionChainGetterImpl::includes_quotes,
             includes_quotes, "includes_quotes", allow_exceptions
@@ -597,7 +597,7 @@ OptionChainGetter_IncludeQuotes_ABI( OptionChainGetter_C *pgetter,
                                           int include_quotes,
                                           int allow_exceptions)
 {
-    return GetterImplAccessor<int>::template
+    return ImplAccessor<int>::template
         set<OptionChainGetterImpl, bool>(
             pgetter, &OptionChainGetterImpl::include_quotes,
             include_quotes, allow_exceptions
@@ -610,7 +610,7 @@ OptionChainGetter_GetFromDate_ABI( OptionChainGetter_C *pgetter,
                                       size_t *n,
                                       int allow_exceptions)
 {
-    return GetterImplAccessor<char**>::template
+    return ImplAccessor<char**>::template
         get<OptionChainGetterImpl>(
             pgetter, &OptionChainGetterImpl::get_from_date, buf, n,
             allow_exceptions
@@ -622,7 +622,7 @@ OptionChainGetter_SetFromDate_ABI( OptionChainGetter_C *pgetter,
                                       const char *date,
                                       int allow_exceptions )
 {
-    return GetterImplAccessor<char**>::template
+    return ImplAccessor<char**>::template
         set<OptionChainGetterImpl>(
             pgetter, &OptionChainGetterImpl::set_from_date,
             date, allow_exceptions
@@ -635,7 +635,7 @@ OptionChainGetter_GetToDate_ABI( OptionChainGetter_C *pgetter,
                                       size_t *n,
                                       int allow_exceptions)
 {
-    return GetterImplAccessor<char**>::template
+    return ImplAccessor<char**>::template
         get<OptionChainGetterImpl>(
             pgetter, &OptionChainGetterImpl::get_to_date, buf, n,
             allow_exceptions
@@ -648,7 +648,7 @@ OptionChainGetter_SetToDate_ABI( OptionChainGetter_C *pgetter,
                                       const char *date,
                                       int allow_exceptions )
 {
-    return GetterImplAccessor<char**>::template
+    return ImplAccessor<char**>::template
         set<OptionChainGetterImpl>(
             pgetter, &OptionChainGetterImpl::set_to_date,
             date, allow_exceptions
@@ -660,7 +660,7 @@ OptionChainGetter_GetExpMonth_ABI( OptionChainGetter_C *pgetter,
                                            int *exp_month,
                                            int allow_exceptions)
 {
-    return GetterImplAccessor<int>::template
+    return ImplAccessor<int>::template
         get<OptionChainGetterImpl, OptionExpMonth>(
             pgetter, &OptionChainGetterImpl::get_exp_month,
             exp_month, "exp_month", allow_exceptions
@@ -674,7 +674,7 @@ OptionChainGetter_SetExpMonth_ABI( OptionChainGetter_C *pgetter,
 {
     CHECK_ENUM(OptionExpMonth, exp_month, allow_exceptions);
 
-    return GetterImplAccessor<int>::template
+    return ImplAccessor<int>::template
         set<OptionChainGetterImpl, OptionExpMonth>(
             pgetter, &OptionChainGetterImpl::set_exp_month,
             exp_month, allow_exceptions
@@ -686,7 +686,7 @@ OptionChainGetter_GetOptionType_ABI( OptionChainGetter_C *pgetter,
                                            int *option_type,
                                            int allow_exceptions)
 {
-    return GetterImplAccessor<int>::template
+    return ImplAccessor<int>::template
         get<OptionChainGetterImpl, OptionType>(
             pgetter, &OptionChainGetterImpl::get_option_type,
             option_type, "option_type", allow_exceptions
@@ -700,7 +700,7 @@ OptionChainGetter_SetOptionType_ABI( OptionChainGetter_C *pgetter,
 {
     CHECK_ENUM(OptionType, option_type, allow_exceptions);
 
-    return GetterImplAccessor<int>::template
+    return ImplAccessor<int>::template
         set<OptionChainGetterImpl, OptionType>(
             pgetter, &OptionChainGetterImpl::set_option_type,
             option_type, allow_exceptions
@@ -920,7 +920,7 @@ OptionChainAnalyticalGetter_GetVolatility_ABI(
     int allow_exceptions
     )
 {
-    return GetterImplAccessor<double>::template
+    return ImplAccessor<double>::template
         get<OptionChainAnalyticalGetterImpl>(
             pgetter, &OptionChainAnalyticalGetterImpl::get_volatility,
             volatility, "volatility", allow_exceptions
@@ -934,7 +934,7 @@ OptionChainAnalyticalGetter_SetVolatility_ABI(
     int allow_exceptions
     )
 {
-    return GetterImplAccessor<double>::template
+    return ImplAccessor<double>::template
         set<OptionChainAnalyticalGetterImpl>(
             pgetter, &OptionChainAnalyticalGetterImpl::set_volatility,
             volatility, allow_exceptions
@@ -948,7 +948,7 @@ OptionChainAnalyticalGetter_GetUnderlyingPrice_ABI(
     int allow_exceptions
     )
 {
-    return GetterImplAccessor<double>::template
+    return ImplAccessor<double>::template
         get<OptionChainAnalyticalGetterImpl>(
             pgetter, &OptionChainAnalyticalGetterImpl::get_underlying_price,
             underlying_price, "underlying_price", allow_exceptions
@@ -962,7 +962,7 @@ OptionChainAnalyticalGetter_SetUnderlyingPrice_ABI(
     int allow_exceptions
     )
 {
-    return GetterImplAccessor<double>::template
+    return ImplAccessor<double>::template
         set<OptionChainAnalyticalGetterImpl>(
             pgetter, &OptionChainAnalyticalGetterImpl::set_underlying_price,
             underlying_price, allow_exceptions
@@ -976,7 +976,7 @@ OptionChainAnalyticalGetter_GetInterestRate_ABI(
     int allow_exceptions
     )
 {
-    return GetterImplAccessor<double>::template
+    return ImplAccessor<double>::template
         get<OptionChainAnalyticalGetterImpl>(
             pgetter, &OptionChainAnalyticalGetterImpl::get_interest_rate,
             interest_rate, "interest_rate", allow_exceptions
@@ -990,7 +990,7 @@ OptionChainAnalyticalGetter_SetInterestRate_ABI(
     int allow_exceptions
     )
 {
-    return GetterImplAccessor<double>::template
+    return ImplAccessor<double>::template
         set<OptionChainAnalyticalGetterImpl>(
             pgetter, &OptionChainAnalyticalGetterImpl::set_interest_rate,
             interest_rate, allow_exceptions
@@ -1004,7 +1004,7 @@ OptionChainAnalyticalGetter_GetDaysToExp_ABI(
     int allow_exceptions
     )
 {
-    return GetterImplAccessor<unsigned int>::template
+    return ImplAccessor<unsigned int>::template
         get<OptionChainAnalyticalGetterImpl>(
             pgetter, &OptionChainAnalyticalGetterImpl::get_days_to_exp,
             days_to_exp, "days_to_exp", allow_exceptions
@@ -1018,7 +1018,7 @@ OptionChainAnalyticalGetter_SetDaysToExp_ABI(
     int allow_exceptions
     )
 {
-    return GetterImplAccessor<double>::template
+    return ImplAccessor<double>::template
         set<OptionChainAnalyticalGetterImpl>(
             pgetter, &OptionChainAnalyticalGetterImpl::set_days_to_exp,
             days_to_exp, allow_exceptions

@@ -22,38 +22,45 @@ int main(int argc, char* argv[])
         return 1;
     }
 
+    printf("*** [BEGIN] TEST EXECUTION ORDER OBJECTS [BEGIN] ***\n");
+    err = Test_Execution_Order_Objects();
+    if( err ){
+        printf("\n *** [ERROR] TEST EXECUTION ORDER OBJECTS [ERROR] ***\n");
+        return err;
+    }
+    printf("\n *** [END] TEST EXECUTION ORDER OBJECTS [END] ***\n\n");
+
     if( (err = LoadCredentials( argv[2], argv[3], &creds )) )
         CHECK_AND_RETURN_ON_ERROR(err, "LoadCredentials");
-
 
     printf("*** [BEGIN] TEST OPTION SYMBOL BUILDER [BEGIN] ***\n");
     err = Test_BuildOptionSymbol();
     if( err ){
-        printf("*** [ERROR] TEST OPTION SYMBOL BUILDER [ERROR] ***\n");
+        printf("\n *** [ERROR] TEST OPTION SYMBOL BUILDER [ERROR] ***\n");
         StoreCredentials( argv[2], argv[3], &creds);
         return err;
     }
-    printf("*** [END] TEST OPTION SYMBOL BUILDER [END] ***\n\n");
+    printf("\n *** [END] TEST OPTION SYMBOL BUILDER [END] ***\n\n");
 
 
     printf("*** [BEGIN] TEST GETTERS [BEGIN] ***\n");
     err = Test_Getters(&creds, argv[1], 1500);
     if( err ){
-        printf("*** [ERROR] TEST GETTERS [ERROR] ***\n");
+        printf("\n *** [ERROR] TEST GETTERS [ERROR] ***\n");
         StoreCredentials( argv[2], argv[3], &creds);
         return err;
     };
-    printf("*** [END] TEST GETTERS[END] ***\n\n");
+    printf("\n *** [END] TEST GETTERS[END] ***\n\n");
 
 
     printf("*** [BEGIN] TEST STREAMING [BEGIN] ***\n");
     err = Test_Streaming(&creds, argv[1]);
     if( err ){
-        printf("*** [ERROR] TEST STREAMING [ERROR] ***\n");
+        printf("\n *** [ERROR] TEST STREAMING [ERROR] ***\n");
         StoreCredentials( argv[2], argv[3], &creds);
         return err;
     }
-    printf("*** [END] TEST STREAMING [END] ***\n\n");
+    printf("\n *** [END] TEST STREAMING [END] ***\n\n");
 
 
     if( (err = StoreCredentials( argv[2], argv[3], &creds)) )

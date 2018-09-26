@@ -138,7 +138,7 @@ InstrumentInfoGetter_GetSearchType_ABI( InstrumentInfoGetter_C *pgetter,
                                               int *search_type,
                                               int allow_exceptions )
 {
-    return GetterImplAccessor<int>::template
+    return ImplAccessor<int>::template
         get<InstrumentInfoGetterImpl, InstrumentSearchType>(
             pgetter, &InstrumentInfoGetterImpl::get_search_type,
             search_type, "search_type", allow_exceptions
@@ -151,7 +151,7 @@ InstrumentInfoGetter_GetQueryString_ABI( InstrumentInfoGetter_C *pgetter,
                                               size_t *n,
                                               int allow_exceptions )
 {
-    return GetterImplAccessor<char**>::template
+    return ImplAccessor<char**>::template
         get<InstrumentInfoGetterImpl>(
             pgetter, &InstrumentInfoGetterImpl::get_query_string,
             buf, n, allow_exceptions
@@ -166,7 +166,7 @@ InstrumentInfoGetter_SetQuery_ABI( InstrumentInfoGetter_C *pgetter,
 {
     CHECK_ENUM(InstrumentSearchType, search_type,allow_exceptions);
 
-    return GetterImplAccessor<int>::template
+    return ImplAccessor<int>::template
         set<InstrumentInfoGetterImpl, InstrumentSearchType>(
             pgetter, &InstrumentInfoGetterImpl::set_query, search_type,
             query_string, allow_exceptions

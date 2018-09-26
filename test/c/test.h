@@ -22,4 +22,6 @@ int Test_Getters(struct Credentials *creds, const char* acct, long wait);
 
 int Test_Streaming(struct Credentials *creds, const char* acct);
 
+int Test_Execution_Order_Objects();
+
 #endif /* TEST_H_ */
