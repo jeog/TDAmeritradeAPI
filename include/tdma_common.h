@@ -564,20 +564,25 @@ OptionSymbolCheck(const std::string& symbol)
 
 class APIException
         : public std::exception{
-    std::string _what;
+    char* _what;
 public:
     static const int ERROR_CODE = TDMA_API_ERROR;
 
     APIException()
-    {}
+        : _what( new char[1]() )
+        {}
 
-    APIException(std::string what)
-        : _what(what)
-    {}
+    APIException(const std::string& what)
+        : _what( new char[what.size()+1] )
+        { strcpy( _what, what.c_str() ); }
+
+    virtual
+    ~APIException()
+    { if(_what) delete[] _what; }
 
     virtual const char*
     what() const noexcept
-    { return _what.c_str(); }
+    { return _what; }
 
     virtual const char*
     name() const noexcept

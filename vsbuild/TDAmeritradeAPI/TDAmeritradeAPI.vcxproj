@@ -94,6 +94,7 @@
       <SDLCheck>false</SDLCheck>
       <AdditionalIncludeDirectories>$(SolutionDir)deps\includes\curl;$(SolutionDir)deps\includes\z;$(SolutionDir)deps\includes\ssl;$(SolutionDir)deps\includes\uv;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>THIS_EXPORTS_INTERFACE;TDMA_API_ROOT_DIR=(R"($(SolutionDir)..)");DEBUG;ZLIB_WINAPI;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ExceptionHandling>SyncCThrow</ExceptionHandling>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -113,6 +114,7 @@
       <LanguageStandard>stdcpp14</LanguageStandard>
       <CompileAs>CompileAsCpp</CompileAs>
       <PreprocessorDefinitions>THIS_EXPORTS_INTERFACE;TDMA_API_ROOT_DIR=(R"($(SolutionDir)..)");DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ExceptionHandling>SyncCThrow</ExceptionHandling>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -133,6 +135,7 @@
       <SDLCheck>false</SDLCheck>
       <AdditionalIncludeDirectories>$(SolutionDir)deps\includes\curl;$(SolutionDir)deps\includes\z;$(SolutionDir)deps\includes\ssl;$(SolutionDir)deps\includes\uv;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>THIS_EXPORTS_INTERFACE;TDMA_API_ROOT_DIR=(R"($(SolutionDir)..)");NDEBUG;ZLIB_WINAPI;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ExceptionHandling>SyncCThrow</ExceptionHandling>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -154,6 +157,7 @@
       <SDLCheck>false</SDLCheck>
       <AdditionalIncludeDirectories>$(SolutionDir)deps\includes\curl;$(SolutionDir)deps\includes\z;$(SolutionDir)deps\includes\ssl;$(SolutionDir)deps\includes\uv;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>THIS_EXPORTS_INTERFACE;TDMA_API_ROOT_DIR=(R"($(SolutionDir)..)");NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ExceptionHandling>SyncCThrow</ExceptionHandling>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -169,6 +173,7 @@
   <ItemGroup>
     <ClInclude Include="..\..\include\curl_connect.h" />
     <ClInclude Include="..\..\include\json.hpp" />
+    <ClInclude Include="..\..\include\tdma_api_execute.h" />
     <ClInclude Include="..\..\include\tdma_api_get.h" />
     <ClInclude Include="..\..\include\tdma_api_streaming.h" />
     <ClInclude Include="..\..\include\tdma_common.h" />
@@ -177,6 +182,7 @@
     <ClInclude Include="..\..\include\util.h" />
     <ClInclude Include="..\..\include\websocket_connect.h" />
     <ClInclude Include="..\..\include\_common.h" />
+    <ClInclude Include="..\..\include\_execute.h" />
     <ClInclude Include="..\..\include\_streaming.h" />
     <ClInclude Include="..\..\include\_tdma_api.h" />
     <ClInclude Include="..\..\uWebSockets\Asio.h" />
@@ -199,6 +205,9 @@
     <ClCompile Include="..\..\src\auth.cpp" />
     <ClCompile Include="..\..\src\curl_connect.cpp" />
     <ClCompile Include="..\..\src\error.cpp" />
+    <ClCompile Include="..\..\src\execute\order_hub.cpp" />
+    <ClCompile Include="..\..\src\execute\order_leg.cpp" />
+    <ClCompile Include="..\..\src\execute\order_ticket.cpp" />
     <ClCompile Include="..\..\src\getters\account.cpp" />
     <ClCompile Include="..\..\src\getters\historical.cpp" />
     <ClCompile Include="..\..\src\getters\instrument_info.cpp" />

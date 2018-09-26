@@ -43,7 +43,7 @@ int main(int argc, char* argv[])
 
         ccc2 = move(ccc);
         Credentials ccc4( move(ccc2 ));
-
+        
         cout<< "*** [BEGIN] TEST OPTION SYMBOL BUILDER [BEGIN] ***" << endl;
         test_option_symbol_builder();
         cout<< "*** [END] TEST OPTION SYMBOL BUILDER [END] ***" << endl << endl;
@@ -51,14 +51,14 @@ int main(int argc, char* argv[])
         cout<< "*** [BEGIN] TEST EXECUTION ORDER OBJECTS [BEGIN] ***" << endl;
         test_execution_order_objects();
         cout<< "*** [END] TEST EXECUTION ORDER OBJECTS [END] ***" << endl << endl;
-
+      
         cout<< "*** [BEGIN] TEST GETTERS [BEGIN] ***" << endl;
         test_getters(account_id, cmanager.credentials);
         cout<< "*** [END] TEST GETTERS [END] ***" << endl << endl;
-
+        
         cout<< "*** [BEGIN] TEST STREAMING [BEGIN] ***" << endl;
         test_streaming(account_id, cmanager.credentials);
-        cout<< "*** [END] TEST STREAMING [END] ***" << endl << endl;
+        cout<< "*** [END] TEST STREAMING [END] ***" << endl << endl;       
     }
 
     cout<< endl << "*** SUCCESS ***" << endl;

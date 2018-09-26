@@ -24,6 +24,9 @@
     <ClCompile Include="..\..\test\cpp\test_streaming.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\test\cpp\test_exec.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\test\cpp\test.h">

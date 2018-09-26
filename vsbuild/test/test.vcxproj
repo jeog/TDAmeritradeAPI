@@ -19,6 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\test\cpp\test_exec.cpp" />
     <ClCompile Include="..\..\test\cpp\test_get.cpp" />
     <ClCompile Include="..\..\test\cpp\test_main.cpp" />
     <ClCompile Include="..\..\test\cpp\test_streaming.cpp" />
@@ -100,6 +101,7 @@
       <SDLCheck>false</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>$(SolutionDir)..\include;$(SolutionDir)deps\includes\curl;$(SolutionDir)deps\includes\z;$(SolutionDir)deps\includes\ssl;$(SolutionDir)deps\includes\uv;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <ExceptionHandling>SyncCThrow</ExceptionHandling>
     </ClCompile>
     <Link>
       <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
@@ -114,6 +116,7 @@
       <SDLCheck>false</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>$(SolutionDir)..\include;$(SolutionDir)deps\includes\curl;$(SolutionDir)deps\includes\z;$(SolutionDir)deps\includes\ssl;$(SolutionDir)deps\includes\uv;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <ExceptionHandling>SyncCThrow</ExceptionHandling>
     </ClCompile>
     <Link>
       <AdditionalDependencies>TDAmeritradeAPI.lib;libssl.lib;zlibwapi.lib;libuv.lib;%(AdditionalDependencies)</AdditionalDependencies>
@@ -129,6 +132,7 @@
       <SDLCheck>false</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>$(SolutionDir)..\include;$(SolutionDir)deps\includes\curl;$(SolutionDir)deps\includes\z;$(SolutionDir)deps\includes\ssl;$(SolutionDir)deps\includes\uv;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <ExceptionHandling>SyncCThrow</ExceptionHandling>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
@@ -146,6 +150,7 @@
       <SDLCheck>false</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>$(SolutionDir)..\include;$(SolutionDir)deps\includes\curl;$(SolutionDir)deps\includes\z;$(SolutionDir)deps\includes\ssl;$(SolutionDir)deps\includes\uv;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <ExceptionHandling>SyncCThrow</ExceptionHandling>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>

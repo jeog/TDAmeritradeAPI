@@ -173,6 +173,8 @@ include it in the docs.)
 
 - As mentioned above the C++ interfaces still have binary compatibility issues so you'll need to compile/link your C++ code the same way you compile/link this library.
 
+- On windows you should compile your code with the /EHs switch to allow exceptions from 'extern C' functions.
+
 - If you have a build issue file an issue or send an email.
 
 - Define ```DEBUG_VERBOSE_1_``` to send verbose logging/debug info to stdout. (Debug builds do this automatically.)
@@ -260,6 +262,7 @@ Since all the dependencies are included(or built manually) you'll need to manage
     - *(headers/source use relative include links, don't change the directory structure)*
 2. add Library/API calls to your code
 3. compile *(read the message above on binary compatibility)*
+    - (C++) use the /EHs switch (properties -> C/C++ -> Code Generation -> Enable C++ Exceptions -> Yes with Extern C functions (/EHs))
 4. link your code with the TDAmeritradeAPI library *(be sure the linker can find it)*
 5. run 
 

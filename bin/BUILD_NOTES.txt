@@ -1,18 +1,19 @@
-compilation date: 09-07-2018
-commit: adea677
+compilation date: 09-26-2018
+commit: f75555a
 
 sha256 checksums:
 
-222405209d4c9090a18dcb36329f1759f4295c5f6d01c6a5686901a9f7b0281c *debian-3.16--i386--gcc/libTDAmeritradeAPI.so
-b1d7d82f801065e6a0badb6f5ada381995085d90d8d673fdc5eaa886ef6138cf *debian-3.20--x86_64--gcc/libTDAmeritradeAPI.so
-c40e7ddf30829dac8b69682258db88a2c7aa1b9c9963191de1adf8820b888877 *windows-msvc/x64/TDAmeritradeAPI.dll
-ceceb260dea39e1bfe80e10c7e761f8beabf849ac223c812c5c604749bb47b56 *windows-msvc/x64/TDAmeritradeAPI.exp
-4c026c588119c4a8a6fd210fa69a4b134fce03a489d5ffb536982ab23547e08c *windows-msvc/x64/TDAmeritradeAPI.lib
-7d54572f1ae354e2a530cc64199eb3d34f890f931be14957a4fabb448b102f8b *windows-msvc/x64/TDAmeritradeAPI.pdb
-a82bbcb167009de5f836abe2dee76b488ef92b5cf1ca09fcfa4d524bd33fa4f3 *windows-msvc/Win32/TDAmeritradeAPI.dll
-9018abf580de3a7428e9437d32654f5154a610d033b4277a2ce9d62554410867 *windows-msvc/Win32/TDAmeritradeAPI.exp
-1daabdbc565fe77231e0100d316b0b7cfe7e6be104e22758e5c48cad675e22d4 *windows-msvc/Win32/TDAmeritradeAPI.lib
-1f80caa51e1295e8d7fad20405bc50724acbc591863d75e88f46e192d2e1633f *windows-msvc/Win32/TDAmeritradeAPI.pdb
+86770bc53f6f70d50816fecb077f604546ba10122b8324920104fe04e8674dd1 *debian-3.16--i386--gcc/libTDAmeritradeAPI.so
+8e38e4dc42b0709681ddedb9b810f3413b97d57fba93117ff1470b1582eae907 *debian-3.20--x86_64--gcc/libTDAmeritradeAPI.so
+80d3d838373e87746519f344f4ba1952a11448ebc8aca62b390032fb32030f0c *windows-msvc/Win32/TDAmeritradeAPI.dll
+de6e3f1ea41e54fb2de01d54b3644befc67ae0ba26a0e5c69c7e7b5d5597f44a *windows-msvc/Win32/TDAmeritradeAPI.exp
+52c4ea8092a8254406749280b6f259b3a560ed9787a7ad0877ecfa303a6ae305 *windows-msvc/Win32/TDAmeritradeAPI.lib
+df3dc75383a963fa24bb0e8965d812cf59c9db2bd72dbad3fc0f930cacaa3a65 *windows-msvc/Win32/TDAmeritradeAPI.pdb
+cc306665b7a30cf3f7eedd5512dc0e9b711e3c6c8befc292fc0a55eeff957271 *windows-msvc/x64/TDAmeritradeAPI.dll
+561341f8ecd1450d063e5c415a0936b4349ddab838698e560f0e2d174505d2c5 *windows-msvc/x64/TDAmeritradeAPI.exp
+82f8008839f5966027dbf759bc5e818266a787277e3778d98b5cebae0c49a846 *windows-msvc/x64/TDAmeritradeAPI.lib
+9dbdd1ec86e5084dbbc590add9c645f2c2fc0caebcbdb01394a8894cad248091 *windows-msvc/x64/TDAmeritradeAPI.pdb
+
 
 Dependency Info:
 
@@ -121,7 +122,7 @@ debian-3.20--x86_64--gcc/libTDAmeritradeAPI.so
 windows-msvc/Win32/TDAmeritradeAPI.dll
 windows-msvc/x64/TDAmeritradeAPI.dll
 
-  dumpin /dependents:
+  dumpbin /dependents:
 
     libcurl.dll
     libuv.dll
