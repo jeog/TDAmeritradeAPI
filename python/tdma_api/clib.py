@@ -21,16 +21,20 @@ from ctypes import CDLL, c_int, c_char_p, c_size_t, byref as REF, POINTER
 _lib = None
 
 ERRORS = {
+    0 : 'NONE',
     1 : 'TDMA_API_ERROR',
     2 : 'TDMA_API_CRED_ERROR',
     3 : 'TDMA_API_VALUE_ERROR',
     4 : 'TDMA_API_TYPE_ERROR',
     5 : 'TDMA_API_MEMORY_ERROR',
-    101 : 'TDMA_API_EXEC_ERROR',
+    101 : 'TDMA_API_CONNECT_ERROR',
     102 : 'TDMA_API_AUTH_ERROR',
     103 : 'TDMA_API_REQUEST_ERROR',
     104 : 'TDMA_API_SERVER_ERROR',
-    201 : 'TDMA_API_STREAM_ERROR'
+    201 : 'TDMA_API_STREAM_ERROR',
+    301 : 'TDMA_API_EXECUTE_ERROR',
+    501 : 'TDMA_API_STD_EXCEPTION',
+    1001 : 'TDMA_API_UNKNOWN_EXCEPTION'
     }
 
 class CLibException(Exception):
@@ -38,7 +42,11 @@ class CLibException(Exception):
         self.error_code = error_code
         msg = get_last_error_msg()
         assert error_code == get_last_error_code()
-        super().__init__(ERRORS.get(error_code) + ": " + msg)
+        lineno = get_last_error_lineno()
+        fname = get_last_error_filename()
+        info = " [error code: " + str(error_code) + ", line: " \
+             + str(lineno) + ", file: " + fname + ']'
+        super().__init__(ERRORS.get(error_code) + ": " + msg + info)
         
 class LibraryNotLoaded(Exception):
     pass
@@ -163,3 +171,9 @@ def get_last_error_msg():
 
 def get_last_error_code():
     return get_val('LastErrorCode_ABI', c_int)
+
+def get_last_error_lineno():
+    return get_val('LastErrorLineNumber_ABI', c_int)
+
+def get_last_error_filename():
+    return get_str('LastErrorFilename_ABI')

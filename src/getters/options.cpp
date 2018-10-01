@@ -70,7 +70,7 @@ protected:
             params.emplace_back("range", to_string(_strikes.get_range()));
             break;
         case OptionStrikes::Type::none:
-            throw ValueException("invalid OptionStrikesType: 'none'");
+            TDMA_API_THROW(ValueException,"invalid OptionStrikesType: 'none'");
         }
 
         if( _contract_type != OptionContractType::all )
@@ -120,13 +120,13 @@ public:
             _option_type(option_type)
         {
             if( symbol.empty() )
-                throw ValueException( "empty symbol" );
+                TDMA_API_THROW(ValueException, "empty symbol" );
 
             if( !from_date.empty() && !util::is_valid_iso8601_datetime(from_date) )
-               throw ValueException("invalid ISO-8601 date string: " + from_date);
+               TDMA_API_THROW(ValueException,"invalid ISO-8601 date string: " + from_date);
 
             if( !to_date.empty() && !util::is_valid_iso8601_datetime(to_date) )
-               throw ValueException("invalid ISO-8601 date string: " + to_date);
+               TDMA_API_THROW(ValueException,"invalid ISO-8601 date string: " + to_date);
 
             _build();
         }
@@ -167,7 +167,7 @@ public:
     set_symbol(const std::string& symbol)
     {
         if( symbol.empty() )
-            throw ValueException("empty symbol");
+            TDMA_API_THROW(ValueException,"empty symbol");
         _symbol = util::toupper(symbol);
         build();
     }
@@ -197,7 +197,7 @@ public:
     set_from_date(const std::string& from_date)
     {
         if( !from_date.empty() && !util::is_valid_iso8601_datetime(from_date) )
-           throw ValueException("invalid ISO-8601 date string: " + from_date);
+           TDMA_API_THROW(ValueException,"invalid ISO-8601 date string: " + from_date);
 
         _from_date = from_date;
         build();
@@ -207,7 +207,7 @@ public:
     set_to_date(const std::string& to_date)
     {
         if( !to_date.empty() && !util::is_valid_iso8601_datetime(to_date) )
-           throw ValueException("invalid ISO-8601 date string: " + to_date);
+           TDMA_API_THROW(ValueException,"invalid ISO-8601 date string: " + to_date);
 
         _to_date = to_date;
         build();

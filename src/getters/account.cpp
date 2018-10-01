@@ -38,7 +38,7 @@ protected:
            _account_id(account_id)
         {
            if( account_id.empty() )
-               throw ValueException("account_id is empty");
+               TDMA_API_THROW(ValueException,"account_id is empty");
         }
 
 public:
@@ -54,7 +54,7 @@ public:
     set_account_id(const std::string& account_id)
     {
         if( account_id.empty() )
-            throw ValueException("account_id is empty");
+            TDMA_API_THROW(ValueException,"account_id is empty");
         _account_id = account_id;
         build();
     }
@@ -236,10 +236,10 @@ public:
             _end_date(end_date)
         {
             if( !start_date.empty() && !util::is_valid_iso8601_datetime(start_date) )
-                throw ValueException("invalid ISO-8601 date: " + start_date);
+                TDMA_API_THROW(ValueException,"invalid ISO-8601 date: " + start_date);
 
             if( !end_date.empty() && !util::is_valid_iso8601_datetime(end_date) )
-                throw ValueException("invalid ISO-8601 date: " + end_date);
+                TDMA_API_THROW(ValueException,"invalid ISO-8601 date: " + end_date);
 
             _build();
         }
@@ -278,7 +278,7 @@ public:
     set_start_date(const std::string& start_date)
     {
         if( !start_date.empty() && !util::is_valid_iso8601_datetime(start_date) ){
-            throw ValueException("invalid ISO-8601 date: " + start_date);
+            TDMA_API_THROW(ValueException,"invalid ISO-8601 date: " + start_date);
         }
         _start_date = start_date;
         build();
@@ -288,7 +288,7 @@ public:
     set_end_date(const std::string& end_date)
     {
         if( !end_date.empty() && !util::is_valid_iso8601_datetime(end_date) ){
-            throw ValueException("invalid ISO-8601 date: " + end_date);
+            TDMA_API_THROW(ValueException,"invalid ISO-8601 date: " + end_date);
         }
         _end_date = end_date;
         build();
@@ -328,7 +328,7 @@ public:
             _transaction_id(transaction_id)
         {
             if( transaction_id.empty() )
-                throw ValueException("transaction id is empty");
+                TDMA_API_THROW(ValueException,"transaction id is empty");
 
             _build();
         }
@@ -341,7 +341,7 @@ public:
     set_transaction_id(const std::string& transaction_id)
     {
          if( transaction_id.empty() )
-             throw ValueException("transaction id is empty");
+             TDMA_API_THROW(ValueException,"transaction id is empty");
 
          _transaction_id = transaction_id;
          build();
@@ -1051,7 +1051,7 @@ UserPrincipalsGetter_ReturnSurrogateIds_ABI(
     UpdatePreferences( Credentials& creds, string account_id)
     {
         if( account_id.empty() ){
-            throw ValueException("account_id is empty");
+            TDMA_API_THROW(ValueException,"account_id is empty");
         }
 
         string url = URL_ACCOUNT_INFO + account_id + "/preferences";

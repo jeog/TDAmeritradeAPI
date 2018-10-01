@@ -51,7 +51,7 @@ public:
             _symbol( util::toupper(symbol) )
         {
             if( symbol.empty() )
-                throw ValueException("empty symbol string");
+                TDMA_API_THROW(ValueException,"empty symbol string");
 
             _build();
         }
@@ -64,7 +64,7 @@ public:
     set_symbol(const string& symbol)
     {
         if( symbol.empty() )
-            throw ValueException("empty symbol");
+            TDMA_API_THROW(ValueException,"empty symbol");
 
         _symbol = util::toupper(symbol);
         build();
@@ -94,14 +94,14 @@ class QuotesGetterImpl
     _throw_if_bad_input(const string& symbol)
     {
         if( symbol.empty() )
-            throw ValueException("empty symbol");
+            TDMA_API_THROW(ValueException,"empty symbol");
     }
 
     void
     _throw_if_bad_input(const set<string>& symbols)
     {
         if( symbols.empty() )
-            throw ValueException("no symbols");
+            TDMA_API_THROW(ValueException,"no symbols");
         for(auto& s : symbols)
             _throw_if_bad_input(s);
     }

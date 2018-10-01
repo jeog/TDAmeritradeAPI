@@ -18,6 +18,8 @@ along with this program.  If not, see http://www.gnu.org/licenses.
 #ifndef COMMON_H_
 #define COMMON_H_
 
+/* HEADER COMMON TO ALL OTHER HEADERS/SOURCE */
+
 #ifdef _WIN32
 #ifdef THIS_EXPORTS_INTERFACE
 #define DLL_SPEC_ __declspec(dllexport)
@@ -40,17 +42,17 @@ along with this program.  If not, see http://www.gnu.org/licenses.
 #define DEBUG_VERBOSE_1_
 #endif /* NDEBUG */
 
+#ifdef ALLOW_EXCEPTIONS_ACROSS_ABI
+#define ALLOW_EXCEPTIONS 1
+#else
+#define ALLOW_EXCEPTIONS 0
+#endif /* ALLOW_EXCEPTIONS_ACROSS_ABI */
+
 #include <assert.h>
 
 #ifdef __cplusplus
 #include <string>
 extern std::string certificate_bundle_path;
-
-void
-set_error_state(int code, const std::string&  msg);
-
-std::pair<int, std::string>
-get_error_state();
 
 #define EXTERN_C_SPEC_ extern "C"
 #else

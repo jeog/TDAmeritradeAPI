@@ -41,23 +41,23 @@ BuildOptionSymbolImpl( const std::string& underlying,
     std::stringstream ss;
 
     if( month < 1 || month > 12 )
-        throw ValueException("invalid month (1-12)");
+        TDMA_API_THROW(ValueException,"invalid month (1-12)");
 
     if( day < 1 || day > 31 )
-        throw ValueException("invalid day (1-31)");
+        TDMA_API_THROW(ValueException,"invalid day (1-31)");
 
     if( underlying.empty() )
-        throw ValueException("underlying is empty");
+        TDMA_API_THROW(ValueException,"underlying is empty");
 
     if( underlying.find('_') != std::string::npos )
-        throw ValueException("invalid character in underlying: '_'" );
+        TDMA_API_THROW(ValueException,"invalid character in underlying: '_'" );
 
     std::string yy = std::to_string(year);
     if( yy.size() != 4 )
-        throw ValueException("invalid number of digits in year");
+        TDMA_API_THROW(ValueException,"invalid number of digits in year");
 
     if( strike <= 0.0 )
-        throw ValueException("strike price <= 0.0");
+        TDMA_API_THROW(ValueException,"strike price <= 0.0");
 
     ss << util::toupper(underlying) << '_'
        << std::setw(2) << std::setfill('0') << month
@@ -78,40 +78,40 @@ OptionSymbolCheckImpl(const std::string& option) // ABC_MMDDYY[C|P]{STRIKE}
 {
     size_t sz = option.size();
     if( sz == 0 )
-        throw ValueException("option string is empty");
+        TDMA_API_THROW(ValueException,"option string is empty");
 
     size_t uspos = option.find('_');
     if( uspos == std::string::npos )
-        throw ValueException("option string is missing underscore");
+        TDMA_API_THROW(ValueException,"option string is missing underscore");
     if( uspos == 0)
-        throw ValueException("option string is missing underlying");
+        TDMA_API_THROW(ValueException,"option string is missing underlying");
 
     size_t cppos = option.find_first_of("CP",uspos+1);
     if( cppos == std::string::npos )
-        throw ValueException("option string is missing strike type(C/P)");
+        TDMA_API_THROW(ValueException,"option string is missing strike type(C/P)");
 
     if( (cppos - uspos - 1) != 6 )
-        throw ValueException("option string contains invalid date substr size");
+        TDMA_API_THROW(ValueException,"option string contains invalid date substr size");
 
     static const std::regex DATE_RE("[0-9]{6}");
     if( !std::regex_match(option.substr(uspos+1, 6), DATE_RE) )
-        throw ValueException("option string contains date substr with non-digits");
+        TDMA_API_THROW(ValueException,"option string contains date substr with non-digits");
 
     int month = std::stoi(option.substr(uspos+1, 2));
     if( month < 1 || month > 12 )
-        throw ValueException("invalid month");
+        TDMA_API_THROW(ValueException,"invalid month");
 
     int day = std::stoi(option.substr(uspos+3,2));
     if( day < 1 || day > 31 ) // TODO
-        throw ValueException("invalid day");
+        TDMA_API_THROW(ValueException,"invalid day");
 
     int year = std::stoi(option.substr(uspos+5,2));
     if( year < 0 || year > 99 )
-        throw ValueException("invalid year");
+        TDMA_API_THROW(ValueException,"invalid year");
 
     assert( cppos == uspos + 5 + 2);
     if( cppos + 1 == sz )
-        throw ValueException("option string is missing strike");
+        TDMA_API_THROW(ValueException,"option string is missing strike");
 
     std::string strk(option.substr(uspos+8, std::string::npos));
 
@@ -119,7 +119,7 @@ OptionSymbolCheckImpl(const std::string& option) // ABC_MMDDYY[C|P]{STRIKE}
     static const std::regex STRK_RE(
         "^([1-9][0-9]*(\\.[0-9]*[1-9])?)|(\\.[0-9]*[1-9])$");
     if( !std::regex_match(strk, STRK_RE) )
-        throw ValueException("option string contains invalid strike");
+        TDMA_API_THROW(ValueException,"option string contains invalid strike");
 }
 
 } /* tdma */
@@ -155,7 +155,7 @@ BuildOptionSymbol_ABI( const char* underlying,
     *n = r.size() + 1; // NULL TERM
     *buf = reinterpret_cast<char*>(malloc(*n));
     if( !*buf ){
-        return handle_error<tdma::MemoryError>(
+        return HANDLE_ERROR(tdma::MemoryError,
             "failed to allocate buffer memory", allow_exceptions
             );
     }
@@ -209,10 +209,8 @@ alloc_C_str(const std::string& s, char** buf, size_t* n, bool raise_exception)
     *n = s.size() + 1;
     *buf = reinterpret_cast<char*>(malloc(*n));
     if( !*(buf) ){
-        if( raise_exception ){
-            throw MemoryError("not enough memory to allocate enum string");
-        }
-        return TDMA_API_MEMORY_ERROR;
+        HANDLE_ERROR( MemoryError, "not enough memory to allocate enum string",
+                      raise_exception );
     }
     strncpy(*buf, s.c_str(), (*n)-1);
     (*buf)[(*n)-1] = 0;

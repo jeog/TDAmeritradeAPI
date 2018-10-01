@@ -107,7 +107,7 @@ DECL_C_CPP_TDMA_ENUM(ComplexOrderStrategyType, 0, 19,
     BUILD_C_CPP_TDMA_ENUM_NAME(ComplexOrderStrategyType, UNBALANCED_CONDOR),
     BUILD_C_CPP_TDMA_ENUM_NAME(ComplexOrderStrategyType, UNBALANCED_IRON_CONDOR),
     BUILD_C_CPP_TDMA_ENUM_NAME(ComplexOrderStrategyType, UNBALANCED_VERTICAL_ROLL),
-    BUILD_C_CPP_TDMA_ENUM_NAME(ComplexOrderStrategyType, CUSTOM),
+    BUILD_C_CPP_TDMA_ENUM_NAME(ComplexOrderStrategyType, CUSTOM)
     );
 
 DECL_C_CPP_TDMA_ENUM(OrderStrategyType, 0, 2,
@@ -116,7 +116,7 @@ DECL_C_CPP_TDMA_ENUM(OrderStrategyType, 0, 2,
     BUILD_C_CPP_TDMA_ENUM_NAME(OrderStrategyType, TRIGGER)
     );
 
-
+#define THROW_VALUE_EXCEPTION(m) throw ValueException(m, __LINE__, __FILE__)
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 OrderLeg_Create_ABI(  int asset_type,
@@ -134,36 +134,36 @@ OrderLeg_Copy_ABI( OrderLeg_C *from, OrderLeg_C *to, int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 OrderLeg_IsSame_ABI( OrderLeg_C* pl,
-                       OrderLeg_C* pr,
-                       int *is_same,
-                       int allow_exceptions );
+                     OrderLeg_C* pr,
+                     int *is_same,
+                     int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 OrderLeg_GetAssetType_ABI( OrderLeg_C* instrument,
-                                      int *asset_type,
-                                      int allow_exceptions );
+                           int *asset_type,
+                           int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 OrderLeg_GetSymbol_ABI( OrderLeg_C* instrument,
-                                  char **buf,
-                                  size_t *n,
-                                  int allow_exceptions );
+                        char **buf,
+                        size_t *n,
+                        int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 OrderLeg_GetInstruction_ABI( OrderLeg_C* pleg,
-                                int *instruction,
-                               int allow_exceptions );
+                             int *instruction,
+                             int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 OrderLeg_GetQuantity_ABI( OrderLeg_C* pleg,
-                                size_t *quantity,
-                               int allow_exceptions );
+                          size_t *quantity,
+                          int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 OrderLeg_AsJsonString_ABI( OrderLeg_C* pleg,
-                            char **buf,
-                            size_t *n,
-                            int allow_exceptions );
+                           char **buf,
+                           size_t *n,
+                           int allow_exceptions );
 
 #ifndef __cplusplus
 /* C interface */
@@ -230,7 +230,7 @@ public:
         :
             _cproxy( {new CTy{0,0}, destroy_func} )
         {
-            copy_func( ob.get_cproxy(), get_cproxy(), 1 );
+            call_abi( copy_func, ob.get_cproxy(), get_cproxy() );
         }
 
     OrderObjectProxy( OrderObjectProxy&& ob)
@@ -241,7 +241,7 @@ public:
         :
             _cproxy( {new CTy{0,0}, destroy_func} )
         {
-            copy_func( &ob, get_cproxy() , 1);
+            call_abi( copy_func, &ob, get_cproxy() );
         }
 
     OrderObjectProxy( CType&& ob )
@@ -257,7 +257,7 @@ public:
     {
         if( *this != ob ){
             _cproxy.reset( new CType{0,0} );
-            copy_func( ob.get_cproxy(), get_cproxy(), 1 );
+            call_abi( copy_func, ob.get_cproxy(), get_cproxy() );
         }
         return *this;
     }
@@ -274,7 +274,7 @@ public:
     operator==(const OrderObjectProxy& other) const
     {
         int b;
-        cmp_func( get_cproxy(), other.get_cproxy(), &b, 1 );
+        call_abi( cmp_func, get_cproxy(), other.get_cproxy(), &b );
         return static_cast<bool>(b);
     }
 
@@ -318,16 +318,16 @@ public:
         :
             OrderObjectProxy()
         {
-            OrderLeg_Create_ABI( static_cast<int>(asset_type), symbol.c_str(),
-                                 static_cast<int>(instruction), quantity,
-                                 get_cproxy(), 1 );
+            call_abi( OrderLeg_Create_ABI, static_cast<int>(asset_type),
+                      symbol.c_str(), static_cast<int>(instruction), quantity,
+                      get_cproxy() );
         }
 
     OrderAssetType
     get_asset_type() const
     {
         int a;
-        OrderLeg_GetAssetType_ABI( get_cproxy(), &a, 1);
+        call_abi( OrderLeg_GetAssetType_ABI, get_cproxy(), &a );
         return static_cast<OrderAssetType>(a);
     }
 
@@ -339,7 +339,7 @@ public:
     get_instruction() const
     {
         int oi;
-        OrderLeg_GetInstruction_ABI( get_cproxy(), &oi, 1 );
+        call_abi( OrderLeg_GetInstruction_ABI, get_cproxy(), &oi );
         return static_cast<OrderInstruction>(oi);
     }
 
@@ -347,7 +347,7 @@ public:
     get_quantity() const
     {
         size_t q;
-        OrderLeg_GetQuantity_ABI( get_cproxy(), &q, 1 );
+        call_abi( OrderLeg_GetQuantity_ABI, get_cproxy(), &q );
         return q;
     }
 };
@@ -363,101 +363,148 @@ EXTERN_C_SPEC_ DLL_SPEC_ int
 OrderTicket_Destroy_ABI( OrderTicket_C *porder, int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
-OrderTicket_Copy_ABI( OrderTicket_C *from, OrderTicket_C *to, int allow_exceptions );
+OrderTicket_Copy_ABI( OrderTicket_C *from,
+                      OrderTicket_C *to,
+                      int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
-OrderTicket_IsSame_ABI( OrderTicket_C* pl, OrderTicket_C* pr, int *is_same, int allow_exceptions );
+OrderTicket_IsSame_ABI( OrderTicket_C* pl,
+                        OrderTicket_C* pr,
+                        int *is_same,
+                        int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
-OrderTicket_GetSession_ABI( OrderTicket_C *porder, int *session, int allow_exceptions );
+OrderTicket_GetSession_ABI( OrderTicket_C *porder,
+                            int *session,
+                            int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
-OrderTicket_SetSession_ABI( OrderTicket_C *porder, int session, int allow_exceptions );
+OrderTicket_SetSession_ABI( OrderTicket_C *porder,
+                            int session,
+                            int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
-OrderTicket_GetDuration_ABI( OrderTicket_C *porder, int *duration, int allow_exceptions );
+OrderTicket_GetDuration_ABI( OrderTicket_C *porder,
+                             int *duration,
+                             int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
-OrderTicket_SetDuration_ABI( OrderTicket_C *porder, int duration, int allow_exceptions );
+OrderTicket_SetDuration_ABI( OrderTicket_C *porder,
+                             int duration,
+                             int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
-OrderTicket_GetCancelTime_ABI( OrderTicket_C *porder, char **buf, size_t* n, int allow_exceptions );
+OrderTicket_GetCancelTime_ABI( OrderTicket_C *porder,
+                               char **buf,
+                               size_t* n,
+                               int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
-OrderTicket_SetCancelTime_ABI( OrderTicket_C *porder, const char* cancel_time, int allow_exceptions );
+OrderTicket_SetCancelTime_ABI( OrderTicket_C *porder,
+                               const char* cancel_time,
+                               int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
-OrderTicket_GetType_ABI( OrderTicket_C *porder, int *order_type, int allow_exceptions );
+OrderTicket_GetType_ABI( OrderTicket_C *porder,
+                         int *order_type,
+                         int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
-OrderTicket_SetType_ABI( OrderTicket_C *porder, int order_type, int allow_exceptions );
+OrderTicket_SetType_ABI( OrderTicket_C *porder,
+                         int order_type,
+                         int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 OrderTicket_GetComplexStrategyType_ABI( OrderTicket_C *porder,
-                                      int *complex_strategy_type,
-                                      int allow_exceptions );
+                                        int *complex_strategy_type,
+                                        int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 OrderTicket_SetComplexStrategyType_ABI( OrderTicket_C *porder,
-                                      int complex_strategy_type,
-                                      int allow_exceptions );
+                                        int complex_strategy_type,
+                                        int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 OrderTicket_GetStrategyType_ABI( OrderTicket_C *porder,
-                                      int *strategy_type,
-                                      int allow_exceptions );
+                                 int *strategy_type,
+                                 int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 OrderTicket_SetStrategyType_ABI( OrderTicket_C *porder,
-                                      int strategy_type,
-                                      int allow_exceptions );
+                                 int strategy_type,
+                                 int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
-OrderTicket_GetPrice_ABI( OrderTicket_C *porder, double *price, int allow_exceptions );
+OrderTicket_GetPrice_ABI( OrderTicket_C *porder,
+                          double *price,
+                          int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
-OrderTicket_SetPrice_ABI( OrderTicket_C *porder, double price, int allow_exceptions );
+OrderTicket_SetPrice_ABI( OrderTicket_C *porder,
+                          double price,
+                          int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
-OrderTicket_GetStopPrice_ABI( OrderTicket_C *porder, double *stop_price, int allow_exceptions );
+OrderTicket_GetStopPrice_ABI( OrderTicket_C *porder,
+                              double *stop_price,
+                              int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
-OrderTicket_SetStopPrice_ABI( OrderTicket_C *porder, double stop_price, int allow_exceptions );
+OrderTicket_SetStopPrice_ABI( OrderTicket_C *porder,
+                              double stop_price,
+                              int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
-OrderTicket_GetLegs_ABI( OrderTicket_C *porder, OrderLeg_C** plegs, size_t* n,
-                                      int allow_exceptions );
+OrderTicket_GetLegs_ABI( OrderTicket_C *porder,
+                         OrderLeg_C** plegs,
+                         size_t* n,
+                         int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
-OrderTicket_GetLeg_ABI( OrderTicket_C *porder, size_t pos, OrderLeg_C* pleg,
-                                      int allow_exceptions );
+OrderTicket_GetLeg_ABI( OrderTicket_C *porder,
+                        size_t pos,
+                        OrderLeg_C* pleg,
+                        int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
-OrderTicket_AddLegs_ABI( OrderTicket_C *porder, OrderLeg_C* plegs, size_t n,
-                                       int allow_exceptions );
+OrderTicket_AddLegs_ABI( OrderTicket_C *porder,
+                         OrderLeg_C* plegs,
+                         size_t n,
+                         int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
-OrderTicket_RemoveLeg_ABI( OrderTicket_C *porder, size_t pos, int allow_exceptions );
+OrderTicket_RemoveLeg_ABI( OrderTicket_C *porder,
+                           size_t pos,
+                           int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
-OrderTicket_ReplaceLeg_ABI( OrderTicket_C *porder, size_t pos,  OrderLeg_C* pleg,
-                                       int allow_exceptions );
+OrderTicket_ReplaceLeg_ABI( OrderTicket_C *porder,
+                            size_t pos,
+                            OrderLeg_C* pleg,
+                            int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 OrderTicket_ClearLegs_ABI( OrderTicket_C *porder, int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
-OrderTicket_GetChildren_ABI( OrderTicket_C *porder, OrderTicket_C** pchildren, size_t* n,
-                                      int allow_exceptions );
+OrderTicket_GetChildren_ABI( OrderTicket_C *porder,
+                             OrderTicket_C** pchildren,
+                             size_t* n,
+                             int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
-OrderTicket_AddChild_ABI( OrderTicket_C *porder, OrderTicket_C* pchild, int allow_exceptions );
+OrderTicket_AddChild_ABI( OrderTicket_C *porder,
+                          OrderTicket_C* pchild,
+                          int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 OrderTicket_ClearChildren_ABI( OrderTicket_C *porder, int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
-OrderTicket_AsJsonString_ABI( OrderTicket_C* porder, char **buf, size_t *n, int allow_exceptions );
+OrderTicket_AsJsonString_ABI( OrderTicket_C* porder,
+                              char **buf,
+                              size_t *n,
+                              int allow_exceptions );
 
 #ifndef __cplusplus
 /* C interface */
@@ -511,23 +558,35 @@ OrderTicket_SetType( OrderTicket_C *porder, OrderType order_type)
 { return OrderTicket_SetType_ABI( porder, (int)order_type, 0 ); }
 
 static inline int
-OrderTicket_GetComplexStrategyType( OrderTicket_C *porder,
-                              ComplexOrderStrategyType *complex_strategy_type )
-{ return OrderTicket_GetComplexStrategyType_ABI( porder,
-                                           (int*)complex_strategy_type, 0 ); }
+OrderTicket_GetComplexStrategyType(
+    OrderTicket_C *porder,
+    ComplexOrderStrategyType *complex_strategy_type
+    )
+{
+    return OrderTicket_GetComplexStrategyType_ABI(
+        porder, (int*)complex_strategy_type, 0
+        );
+}
 
 static inline int
-OrderTicket_SetComplexStrategyType( OrderTicket_C *porder,
-                              ComplexOrderStrategyType complex_strategy_type )
-{ return OrderTicket_SetComplexStrategyType_ABI( porder,
-                                           (int)complex_strategy_type, 0 ); }
+OrderTicket_SetComplexStrategyType(
+    OrderTicket_C *porder,
+    ComplexOrderStrategyType complex_strategy_type
+    )
+{
+    return OrderTicket_SetComplexStrategyType_ABI(
+        porder, (int)complex_strategy_type, 0
+        );
+}
 
 static inline int
-OrderTicket_GetStrategyType( OrderTicket_C *porder, OrderStrategyType *strategy_type )
+OrderTicket_GetStrategyType( OrderTicket_C *porder,
+                             OrderStrategyType *strategy_type )
 { return OrderTicket_GetStrategyType_ABI( porder, (int*)strategy_type, 0 ); }
 
 static inline int
-OrderTicket_SetStrategyType( OrderTicket_C *porder, OrderStrategyType strategy_type )
+OrderTicket_SetStrategyType( OrderTicket_C *porder,
+                             OrderStrategyType strategy_type )
 { return OrderTicket_SetStrategyType_ABI( porder, (int)strategy_type, 0 ); }
 
 static inline int
@@ -571,7 +630,9 @@ OrderTicket_ClearLegs( OrderTicket_C *porder)
 { return OrderTicket_ClearLegs_ABI( porder, 0 ); }
 
 static inline int
-OrderTicket_GetChildren( OrderTicket_C *porder, OrderTicket_C** pchildren, size_t* n  )
+OrderTicket_GetChildren( OrderTicket_C *porder,
+                         OrderTicket_C** pchildren,
+                         size_t* n  )
 { return OrderTicket_GetChildren_ABI( porder, pchildren, n, 0 ); }
 
 static inline int
@@ -609,21 +670,22 @@ public:
         :
             OrderObjectProxy()
         {
-            OrderTicket_Create_ABI( get_cproxy(), 1 );
+            call_abi( OrderTicket_Create_ABI, get_cproxy() );
         }
 
     OrderSession
     get_session() const
     {
         int v;
-        OrderTicket_GetSession_ABI( get_cproxy(), &v, 1 );
+        call_abi( OrderTicket_GetSession_ABI, get_cproxy(), &v );
         return static_cast<OrderSession>(v);
     }
 
     OrderTicket&
     set_session(OrderSession session)
     {
-        OrderTicket_SetSession_ABI( get_cproxy(), static_cast<int>(session), 1 );
+        call_abi( OrderTicket_SetSession_ABI, get_cproxy(),
+                  static_cast<int>(session) );
         return *this;
     }
 
@@ -631,14 +693,15 @@ public:
     get_duration() const
     {
         int v;
-        OrderTicket_GetDuration_ABI( get_cproxy(), &v, 1 );
+        call_abi( OrderTicket_GetDuration_ABI, get_cproxy(), &v );
         return static_cast<OrderDuration>(v);
     }
 
     OrderTicket&
     set_duration(OrderDuration duration)
     {
-        OrderTicket_SetDuration_ABI( get_cproxy(), static_cast<int>(duration), 1 );
+        call_abi( OrderTicket_SetDuration_ABI, get_cproxy(),
+                  static_cast<int>(duration) );
         return *this;
     }
 
@@ -649,7 +712,8 @@ public:
     OrderTicket&
     set_cancel_time(const std::string& cancel_time)
     {
-        OrderTicket_SetCancelTime_ABI( get_cproxy(), cancel_time.c_str(), 1 );
+        call_abi( OrderTicket_SetCancelTime_ABI, get_cproxy(),
+                  cancel_time.c_str() );
         return *this;
     }
 
@@ -657,14 +721,15 @@ public:
     get_type() const
     {
         int v;
-        OrderTicket_GetType_ABI( get_cproxy(), &v, 1 );
+        call_abi( OrderTicket_GetType_ABI, get_cproxy(), &v );
         return static_cast<OrderType>(v);
     }
 
     OrderTicket&
     set_type(OrderType order_type)
     {
-        OrderTicket_SetType_ABI( get_cproxy(), static_cast<int>(order_type), 1);
+        call_abi( OrderTicket_SetType_ABI, get_cproxy(),
+                   static_cast<int>(order_type) );
         return *this;
     }
 
@@ -672,15 +737,15 @@ public:
     get_complex_strategy_type() const
     {
         int v;
-        OrderTicket_GetComplexStrategyType_ABI( get_cproxy(), &v, 1 );
+        call_abi( OrderTicket_GetComplexStrategyType_ABI, get_cproxy(), &v );
         return static_cast<ComplexOrderStrategyType>(v);
     }
 
     OrderTicket&
     set_complex_strategy_type(ComplexOrderStrategyType complex_strategy_type)
     {
-        OrderTicket_SetComplexStrategyType_ABI( get_cproxy(),
-            static_cast<int>(complex_strategy_type), 1);
+        call_abi( OrderTicket_SetComplexStrategyType_ABI, get_cproxy(),
+                  static_cast<int>(complex_strategy_type) );
         return *this;
     }
 
@@ -688,14 +753,15 @@ public:
     get_strategy_type() const
     {
         int v;
-        OrderTicket_GetStrategyType_ABI( get_cproxy(), &v, 1 );
+        call_abi( OrderTicket_GetStrategyType_ABI, get_cproxy(), &v );
         return static_cast<OrderStrategyType>(v);
     }
 
     OrderTicket&
     set_strategy_type(OrderStrategyType strategy_type)
     {
-        OrderTicket_SetStrategyType_ABI( get_cproxy(), static_cast<int>(strategy_type), 1);
+        call_abi( OrderTicket_SetStrategyType_ABI, get_cproxy(),
+                  static_cast<int>(strategy_type) );
         return *this;
     }
 
@@ -703,14 +769,14 @@ public:
     get_price() const
     {
         double p;
-        OrderTicket_GetPrice_ABI( get_cproxy(), &p, 1 );
+        call_abi( OrderTicket_GetPrice_ABI, get_cproxy(), &p );
         return p;
     }
 
     OrderTicket&
     set_price(double price)
     {
-        OrderTicket_SetPrice_ABI( get_cproxy(), price, 1 );
+        call_abi( OrderTicket_SetPrice_ABI, get_cproxy(), price );
         return *this;
     }
 
@@ -718,14 +784,14 @@ public:
     get_stop_price() const
     {
         double p;
-        OrderTicket_GetStopPrice_ABI( get_cproxy(), &p, 1 );
+        call_abi( OrderTicket_GetStopPrice_ABI, get_cproxy(), &p );
         return p;
     }
 
     OrderTicket&
     set_stop_price(double stop_price)
     {
-        OrderTicket_SetStopPrice_ABI( get_cproxy(), stop_price, 1 );
+        call_abi( OrderTicket_SetStopPrice_ABI, get_cproxy(), stop_price );
         return *this;
     }
 
@@ -734,12 +800,12 @@ public:
     {
         OrderLeg_C *lbuf;
         size_t n;
-        OrderTicket_GetLegs_ABI( get_cproxy(), &lbuf, &n, 1 );
+        call_abi( OrderTicket_GetLegs_ABI, get_cproxy(), &lbuf, &n );
         std::vector<OrderLeg> legs;
         for(size_t i = 0; i < n; ++i){
             legs.emplace_back( std::move(lbuf[i]) );
         }
-        FreeOrderLegBuffer_ABI( lbuf, 1 );
+        call_abi( FreeOrderLegBuffer_ABI, lbuf );
         return legs;
     }
 
@@ -747,14 +813,14 @@ public:
     get_leg(size_t pos) const
     {
         OrderLeg_C leg;
-        OrderTicket_GetLeg_ABI( get_cproxy(), pos, &leg, 1 );
+        call_abi( OrderTicket_GetLeg_ABI, get_cproxy(), pos, &leg );
         return std::move(leg);
     }
 
     OrderTicket&
     add_leg(const OrderLeg& leg)
     {
-        OrderTicket_AddLegs_ABI( get_cproxy(), leg.get_cproxy(), 1, 1 );
+        call_abi( OrderTicket_AddLegs_ABI, get_cproxy(), leg.get_cproxy(), 1 );
         return *this;
     }
 
@@ -766,7 +832,8 @@ public:
             for(auto& l : legs){
                 plegs.push_back( *l.get_cproxy() );
             }
-            OrderTicket_AddLegs_ABI( get_cproxy(), &plegs[0], legs.size(), 1 );
+            call_abi( OrderTicket_AddLegs_ABI, get_cproxy(), &plegs[0],
+                      legs.size() );
         }
         return *this;
     }
@@ -774,21 +841,22 @@ public:
     OrderTicket&
     remove_leg(size_t pos)
     {
-        OrderTicket_RemoveLeg_ABI( get_cproxy(), pos, 1 );
+        call_abi( OrderTicket_RemoveLeg_ABI, get_cproxy(), pos );
         return *this;
     }
 
     OrderTicket&
     replace_leg(size_t pos, const OrderLeg& leg)
     {
-        OrderTicket_ReplaceLeg_ABI( get_cproxy(), pos, leg.get_cproxy(), 1 );
+        call_abi( OrderTicket_ReplaceLeg_ABI, get_cproxy(), pos,
+                  leg.get_cproxy() );
         return *this;
     }
 
     OrderTicket&
     clear_legs()
     {
-        OrderTicket_ClearLegs_ABI( get_cproxy(), 1 );
+        call_abi( OrderTicket_ClearLegs_ABI, get_cproxy() );
         return *this;
     }
 
@@ -797,26 +865,26 @@ public:
     {
         OrderTicket_C *cbuf;
         size_t n;
-        OrderTicket_GetChildren_ABI( get_cproxy(), &cbuf, &n, 1 );
+        call_abi( OrderTicket_GetChildren_ABI, get_cproxy(), &cbuf, &n );
         std::vector<OrderTicket> kids(n);
         for(size_t i = 0; i < n; ++i){
             kids[i] = std::move(cbuf[i]);
         }
-        FreeOrderTicketBuffer_ABI( cbuf, 1 );
+        call_abi( FreeOrderTicketBuffer_ABI, cbuf );
         return kids;
     }
 
     OrderTicket&
     add_child(const OrderTicket& child)
     {
-        OrderTicket_AddChild_ABI( get_cproxy(), child.get_cproxy(), 1 );
+        call_abi( OrderTicket_AddChild_ABI, get_cproxy(), child.get_cproxy() );
         return *this;
     }
 
     OrderTicket&
     clear_children()
     {
-        OrderTicket_ClearChildren_ABI( get_cproxy(), 1 );
+        call_abi( OrderTicket_ClearChildren_ABI, get_cproxy() );
         return *this;
     }
 
@@ -829,330 +897,123 @@ public:
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 BuildOrder_Simple_ABI( int order_type,
-                         int asset_type,
-                         const char* symbol,
-                         int instruction,
+                       int asset_type,
+                       const char* symbol,
+                       int instruction,
+                       size_t quantity,
+                       double limit_price,
+                       double stop_price,
+                       OrderTicket_C *porder,
+                       int allow_exceptions );
+
+EXTERN_C_SPEC_ DLL_SPEC_ int
+BuildOrder_Equity_ABI( int order_type,
+                       const char* symbol,
+                       int instruction,
+                       size_t quantity,
+                       double limit_price,
+                       double stop_price,
+                       OrderTicket_C *porder,
+                       int allow_exceptions );
+
+EXTERN_C_SPEC_ DLL_SPEC_ int
+BuildOrder_Option_ABI( int order_type,
+                       const char* symbol,
+                       size_t quantity,
+                       int is_buy,
+                       int to_open,
+                       double price,
+                       OrderTicket_C *porder,
+                       int allow_exceptions );
+
+EXTERN_C_SPEC_ DLL_SPEC_ int
+BuildOrder_OptionEx_ABI( int order_type,
+                         const char* underlying,
+                         unsigned int month,
+                         unsigned int day,
+                         unsigned int year,
+                         int is_call,
+                         double strike,
                          size_t quantity,
-                         double limit_price,
-                         double stop_price,
+                         int is_buy,
+                         int to_open,
+                         double price,
                          OrderTicket_C *porder,
                          int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
-BuildOrder_Option_ABI( int order_type,
-                        const char* symbol,
-                        size_t quantity,
-                        int is_buy,
-                        int to_open,
-                        double price,
-                        OrderTicket_C *porder,
-                        int allow_exceptions );
-
-EXTERN_C_SPEC_ DLL_SPEC_ int
-BuildOrder_OptionEx_ABI( int order_type,
-                            const char* underlying,
-                            unsigned int month,
-                            unsigned int day,
-                            unsigned int year,
-                            int is_call,
-                            double strike,
-                            size_t quantity,
-                            int is_buy,
-                            int to_open,
-                            double price,
-                            OrderTicket_C *porder,
-                            int allow_exceptions );
-
-EXTERN_C_SPEC_ DLL_SPEC_ int
 BuildOrder_Spread_ABI( int complex_strategy_type,
-                        OrderLeg_C *plegs,
-                        size_t n,
-                        int is_market,
-                        double price,
-                        OrderTicket_C *porder,
-                        int allow_exceptions );
+                       OrderLeg_C *plegs,
+                       size_t n,
+                       int is_market,
+                       double price,
+                       OrderTicket_C *porder,
+                       int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 BuildOrder_Spread_Vertical_ABI( const char* symbol_buy,
-                                 const char* symbol_sell,
-                                 size_t quantity,
-                                 int to_open,
-                                 int is_market,
-                                 double price,
-                                 OrderTicket_C *porder,
-                                 int allow_exceptions );
+                                const char* symbol_sell,
+                                size_t quantity,
+                                int to_open,
+                                int is_market,
+                                double price,
+                                OrderTicket_C *porder,
+                                int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 BuildOrder_Spread_VerticalEx_ABI( const char* underlying,
-                                     unsigned int month,
-                                     unsigned int day,
-                                     unsigned int year,
-                                     int are_calls,
-                                     double strike_buy,
-                                     double strike_sell,
-                                     size_t quantity,
-                                     int to_open,
-                                     int is_market,
-                                     double price,
-                                     OrderTicket_C *porder,
-                                     int allow_exceptions );
+                                  unsigned int month,
+                                  unsigned int day,
+                                  unsigned int year,
+                                  int are_calls,
+                                  double strike_buy,
+                                  double strike_sell,
+                                  size_t quantity,
+                                  int to_open,
+                                  int is_market,
+                                  double price,
+                                  OrderTicket_C *porder,
+                                  int allow_exceptions );
 
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 BuildOrder_Spread_VerticalRoll_ABI( const char* symbol_close_buy,
-                                        const char* symbol_close_sell,
-                                        const char* symbol_open_buy,
-                                        const char* symbol_open_sell,
-                                       size_t quantity_close,
-                                       size_t quantity_open,
-                                       int is_market,
-                                       double price,
-                                       OrderTicket_C *porder,
-                                       int allow_exceptions );
+                                    const char* symbol_close_sell,
+                                    const char* symbol_open_buy,
+                                    const char* symbol_open_sell,
+                                    size_t quantity_close,
+                                    size_t quantity_open,
+                                    int is_market,
+                                    double price,
+                                    OrderTicket_C *porder,
+                                    int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 BuildOrder_Spread_VerticalRollEx_ABI( const char* underlying,
-                                            unsigned int month_close,
-                                            unsigned int day_close,
-                                            unsigned int year_close,
-                                            unsigned int month_open,
-                                            unsigned int day_open,
-                                            unsigned int year_open,
-                                            int are_calls,
-                                            double strike_close_buy,
-                                            double strike_close_sell,
-                                            double strike_open_buy,
-                                            double strike_open_sell,
-                                            size_t quantity_close,
-                                            size_t quantity_open,
-                                            int is_market,
-                                            double price,
-                                            OrderTicket_C *porder,
-                                            int allow_exceptions );
+                                      unsigned int month_close,
+                                      unsigned int day_close,
+                                      unsigned int year_close,
+                                      unsigned int month_open,
+                                      unsigned int day_open,
+                                      unsigned int year_open,
+                                      int are_calls,
+                                      double strike_close_buy,
+                                      double strike_close_sell,
+                                      double strike_open_buy,
+                                      double strike_open_sell,
+                                      size_t quantity_close,
+                                      size_t quantity_open,
+                                      int is_market,
+                                      double price,
+                                      OrderTicket_C *porder,
+                                      int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 BuildOrder_Spread_Butterfly_ABI( const char* symbol_outer1,
-                                     const char* symbol_inner1,
-                                     const char* symbol_outer2,
-                                     size_t quantity_outer1,
-                                     size_t quantity_outer2,
-                                     int is_buy,
-                                     int to_open,
-                                     int is_market,
-                                     double price,
-                                     OrderTicket_C *porder,
-                                     int allow_exceptions );
-
-EXTERN_C_SPEC_ DLL_SPEC_ int
-BuildOrder_Spread_ButterflyEx_ABI( const char* underlying,
-                                     unsigned int month,
-                                     unsigned int day,
-                                     unsigned int year,
-                                     int are_calls,
-                                     double strike_outer1,
-                                     double strike_inner1,
-                                     double strike_outer2,
-                                     size_t quantity_outer1,
-                                     size_t quantity_outer2,
-                                     int is_buy,
-                                     int to_open,
-                                     int is_market,
-                                     double price,
-                                     OrderTicket_C *porder,
-                                     int allow_exceptions );
-
-EXTERN_C_SPEC_ DLL_SPEC_ int
-BuildOrder_Spread_BackRatio_ABI( const char* symbol_buy,
-                                     const char* symbol_sell,
-                                     size_t quantity_buy,
-                                     size_t quantity_sell,
-                                     int to_open,
-                                     int is_market,
-                                     double price,
-                                     OrderTicket_C *porder,
-                                     int allow_exceptions );
-
-EXTERN_C_SPEC_ DLL_SPEC_ int
-BuildOrder_Spread_BackRatioEx_ABI( const char* underlying,
-                                       unsigned int month,
-                                       unsigned int day,
-                                       unsigned int year,
-                                       int are_calls,
-                                       double strike_buy,
-                                       double strike_sell,
-                                     size_t quantity_buy,
-                                     size_t quantity_sell,
-                                     int to_open,
-                                     int is_market,
-                                     double price,
-                                     OrderTicket_C *porder,
-                                     int allow_exceptions );
-
-EXTERN_C_SPEC_ DLL_SPEC_ int
-BuildOrder_Spread_Calendar_ABI( const char* symbol_buy,
-                                     const char* symbol_sell,
-                                     size_t quantity,
-                                     int to_open,
-                                     int is_market,
-                                     double price,
-                                     OrderTicket_C *porder,
-                                     int allow_exceptions );
-
-EXTERN_C_SPEC_ DLL_SPEC_ int
-BuildOrder_Spread_CalendarEx_ABI( const char* underlying,
-                                       unsigned int month_buy,
-                                       unsigned int day_buy,
-                                       unsigned int year_buy,
-                                       unsigned int month_sell,
-                                       unsigned int day_sell,
-                                       unsigned int year_sell,
-                                       int are_calls,
-                                       double strike,
-                                       size_t quantity,
-                                       int to_open,
-                                       int is_market,
-                                       double price,
-                                       OrderTicket_C *porder,
-                                       int allow_exceptions );
-
-EXTERN_C_SPEC_ DLL_SPEC_ int
-BuildOrder_Spread_Diagonal_ABI( const char* symbol_buy,
-                                     const char* symbol_sell,
-                                     size_t quantity,
-                                     int to_open,
-                                     int is_market,
-                                     double price,
-                                     OrderTicket_C *porder,
-                                     int allow_exceptions );
-
-EXTERN_C_SPEC_ DLL_SPEC_ int
-BuildOrder_Spread_DiagonalEx_ABI( const char* underlying,
-                                       unsigned int month_buy,
-                                       unsigned int day_buy,
-                                       unsigned int year_buy,
-                                       unsigned int month_sell,
-                                       unsigned int day_sell,
-                                       unsigned int year_sell,
-                                       int are_calls,
-                                       double strike_buy,
-                                       double strike_sell,
-                                       size_t quantity,
-                                       int to_open,
-                                       int is_market,
-                                       double price,
-                                       OrderTicket_C *porder,
-                                       int allow_exceptions );
-
-EXTERN_C_SPEC_ DLL_SPEC_ int
-BuildOrder_Spread_Straddle_ABI( const char* symbol_call,
-                                     const char* symbol_put,
-                                     size_t quantity,
-                                     int is_buy,
-                                     int to_open,
-                                     int is_market,
-                                     double price,
-                                     OrderTicket_C *porder,
-                                     int allow_exceptions );
-
-EXTERN_C_SPEC_ DLL_SPEC_ int
-BuildOrder_Spread_StraddleEx_ABI( const char* underlying,
-                                       unsigned int month,
-                                       unsigned int day,
-                                       unsigned int year,
-                                       double strike,
-                                     size_t quantity,
-                                     int is_buy,
-                                     int to_open,
-                                     int is_market,
-                                     double price,
-                                     OrderTicket_C *porder,
-                                     int allow_exceptions );
-
-EXTERN_C_SPEC_ DLL_SPEC_ int
-BuildOrder_Spread_Strangle_ABI( const char* symbol_call,
-                                     const char* symbol_put,
-                                     size_t quantity,
-                                     int is_buy,
-                                     int to_open,
-                                     int is_market,
-                                     double price,
-                                     OrderTicket_C *porder,
-                                     int allow_exceptions );
-
-EXTERN_C_SPEC_ DLL_SPEC_ int
-BuildOrder_Spread_StrangleEx_ABI( const char* underlying,
-                                       unsigned int month,
-                                       unsigned int day,
-                                       unsigned int year,
-                                       double strike_call,
-                                       double strike_put,
-                                     size_t quantity,
-                                     int is_buy,
-                                     int to_open,
-                                     int is_market,
-                                     double price,
-                                     OrderTicket_C *porder,
-                                     int allow_exceptions );
-
-EXTERN_C_SPEC_ DLL_SPEC_ int
-BuildOrder_Spread_CollarSynthetic_ABI( const char* symbol_buy,
-                                             const char* symbol_sell,
-                                             size_t quantity,
-                                             int to_open,
-                                             int is_market,
-                                             double price,
-                                             OrderTicket_C *porder,
-                                             int allow_exceptions );
-
-EXTERN_C_SPEC_ DLL_SPEC_ int
-BuildOrder_Spread_CollarSyntheticEx_ABI( const char* underlying,
-                                             unsigned int month,
-                                             unsigned int day,
-                                             unsigned int year,
-                                             double strike_call,
-                                             double strike_put,
-                                             size_t quantity,
-                                             int is_buy,
-                                             int to_open,
-                                             int is_market,
-                                             double price,
-                                             OrderTicket_C *porder,
-                                             int allow_exceptions );
-
-EXTERN_C_SPEC_ DLL_SPEC_ int
-BuildOrder_Spread_CollarWithStock_ABI( const char* symbol_buy,
-                                             const char* symbol_sell,
-                                             const char* symbol_stock,
-                                             size_t quantity,
-                                             int is_buy,
-                                             int to_open,
-                                             int is_market,
-                                             double price,
-                                             OrderTicket_C *porder,
-                                             int allow_exceptions );
-
-EXTERN_C_SPEC_ DLL_SPEC_ int
-BuildOrder_Spread_CollarWithStockEx_ABI( const char* underlying,
-                                             unsigned int month,
-                                             unsigned int day,
-                                             unsigned int year,
-                                             double strike_call,
-                                             double strike_put,
-                                             size_t quantity,
-                                             int is_buy,
-                                             int to_open,
-                                             int is_market,
-                                             double price,
-                                             OrderTicket_C *porder,
-                                             int allow_exceptions );
-
-EXTERN_C_SPEC_ DLL_SPEC_ int
-BuildOrder_Spread_Condor_ABI( const char* symbol_outer1,
                                  const char* symbol_inner1,
-                                 const char* symbol_inner2,
                                  const char* symbol_outer2,
-                                 size_t quantity1,
-                                 size_t quantity2,
+                                 size_t quantity_outer1,
+                                 size_t quantity_outer2,
                                  int is_buy,
                                  int to_open,
                                  int is_market,
@@ -1161,32 +1022,28 @@ BuildOrder_Spread_Condor_ABI( const char* symbol_outer1,
                                  int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
-BuildOrder_Spread_CondorEx_ABI( const char* underlying,
-                                     unsigned int month,
-                                     unsigned int day,
-                                     unsigned int year,
-                                     double strike_outer1,
-                                     double strike_inner1,
-                                     double strike_inner2,
-                                     double strike_outer2,
-                                     int are_calls,
-                                     size_t quantity1,
-                                     size_t quantity2,
-                                     int is_buy,
-                                     int to_open,
-                                     int is_market,
-                                     double price,
-                                     OrderTicket_C *porder,
-                                     int allow_exceptions );
-
+BuildOrder_Spread_ButterflyEx_ABI( const char* underlying,
+                                   unsigned int month,
+                                   unsigned int day,
+                                   unsigned int year,
+                                   int are_calls,
+                                   double strike_outer1,
+                                   double strike_inner1,
+                                   double strike_outer2,
+                                   size_t quantity_outer1,
+                                   size_t quantity_outer2,
+                                   int is_buy,
+                                   int to_open,
+                                   int is_market,
+                                   double price,
+                                   OrderTicket_C *porder,
+                                   int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
-BuildOrder_Spread_IronCondor_ABI( const char* symbol_call_buy,
-                                 const char* symbol_call_sell,
-                                 const char* symbol_put_buy,
-                                 const char* symbol_put_sell,
-                                 size_t quantity_call,
-                                 size_t quantity_put,
+BuildOrder_Spread_BackRatio_ABI( const char* symbol_buy,
+                                 const char* symbol_sell,
+                                 size_t quantity_buy,
+                                 size_t quantity_sell,
                                  int to_open,
                                  int is_market,
                                  double price,
@@ -1194,28 +1051,146 @@ BuildOrder_Spread_IronCondor_ABI( const char* symbol_call_buy,
                                  int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
-BuildOrder_Spread_IronCondorEx_ABI( const char* underlying,
-                                     unsigned int month,
-                                     unsigned int day,
-                                     unsigned int year,
-                                     double strike_call_buy,
-                                     double strike_call_sell,
-                                     double strike_put_buy,
-                                     double strike_put_sell,
-                                     size_t quantity_call,
-                                     size_t quantity_put,
-                                     int to_open,
-                                     int is_market,
-                                     double price,
-                                     OrderTicket_C *porder,
-                                     int allow_exceptions );
+BuildOrder_Spread_BackRatioEx_ABI( const char* underlying,
+                                   unsigned int month,
+                                   unsigned int day,
+                                   unsigned int year,
+                                   int are_calls,
+                                   double strike_buy,
+                                   double strike_sell,
+                                   size_t quantity_buy,
+                                   size_t quantity_sell,
+                                   int to_open,
+                                   int is_market,
+                                   double price,
+                                   OrderTicket_C *porder,
+                                   int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
-BuildOrder_Spread_DoubleDiagonal_ABI( const char* symbol_call_buy,
-                                         const char* symbol_call_sell,
-                                         const char* symbol_put_buy,
-                                         const char* symbol_put_sell,
+BuildOrder_Spread_Calendar_ABI( const char* symbol_buy,
+                                const char* symbol_sell,
+                                size_t quantity,
+                                int to_open,
+                                int is_market,
+                                double price,
+                                OrderTicket_C *porder,
+                                int allow_exceptions );
+
+EXTERN_C_SPEC_ DLL_SPEC_ int
+BuildOrder_Spread_CalendarEx_ABI( const char* underlying,
+                                  unsigned int month_buy,
+                                  unsigned int day_buy,
+                                  unsigned int year_buy,
+                                  unsigned int month_sell,
+                                  unsigned int day_sell,
+                                  unsigned int year_sell,
+                                  int are_calls,
+                                  double strike,
+                                  size_t quantity,
+                                  int to_open,
+                                  int is_market,
+                                  double price,
+                                  OrderTicket_C *porder,
+                                  int allow_exceptions );
+
+EXTERN_C_SPEC_ DLL_SPEC_ int
+BuildOrder_Spread_Diagonal_ABI( const char* symbol_buy,
+                                const char* symbol_sell,
+                                size_t quantity,
+                                int to_open,
+                                int is_market,
+                                double price,
+                                OrderTicket_C *porder,
+                                int allow_exceptions );
+
+EXTERN_C_SPEC_ DLL_SPEC_ int
+BuildOrder_Spread_DiagonalEx_ABI( const char* underlying,
+                                  unsigned int month_buy,
+                                  unsigned int day_buy,
+                                  unsigned int year_buy,
+                                  unsigned int month_sell,
+                                  unsigned int day_sell,
+                                  unsigned int year_sell,
+                                  int are_calls,
+                                  double strike_buy,
+                                  double strike_sell,
+                                  size_t quantity,
+                                  int to_open,
+                                  int is_market,
+                                  double price,
+                                  OrderTicket_C *porder,
+                                  int allow_exceptions );
+
+EXTERN_C_SPEC_ DLL_SPEC_ int
+BuildOrder_Spread_Straddle_ABI( const char* symbol_call,
+                                const char* symbol_put,
+                                size_t quantity,
+                                int is_buy,
+                                int to_open,
+                                int is_market,
+                                double price,
+                                OrderTicket_C *porder,
+                                int allow_exceptions );
+
+EXTERN_C_SPEC_ DLL_SPEC_ int
+BuildOrder_Spread_StraddleEx_ABI( const char* underlying,
+                                  unsigned int month,
+                                  unsigned int day,
+                                  unsigned int year,
+                                  double strike,
+                                  size_t quantity,
+                                  int is_buy,
+                                  int to_open,
+                                  int is_market,
+                                  double price,
+                                  OrderTicket_C *porder,
+                                  int allow_exceptions );
+
+EXTERN_C_SPEC_ DLL_SPEC_ int
+BuildOrder_Spread_Strangle_ABI( const char* symbol_call,
+                                const char* symbol_put,
+                                size_t quantity,
+                                int is_buy,
+                                int to_open,
+                                int is_market,
+                                double price,
+                                OrderTicket_C *porder,
+                                int allow_exceptions );
+
+EXTERN_C_SPEC_ DLL_SPEC_ int
+BuildOrder_Spread_StrangleEx_ABI( const char* underlying,
+                                  unsigned int month,
+                                  unsigned int day,
+                                  unsigned int year,
+                                  double strike_call,
+                                  double strike_put,
+                                  size_t quantity,
+                                  int is_buy,
+                                  int to_open,
+                                  int is_market,
+                                  double price,
+                                  OrderTicket_C *porder,
+                                  int allow_exceptions );
+
+EXTERN_C_SPEC_ DLL_SPEC_ int
+BuildOrder_Spread_CollarSynthetic_ABI( const char* symbol_buy,
+                                       const char* symbol_sell,
+                                       size_t quantity,
+                                       int to_open,
+                                       int is_market,
+                                       double price,
+                                       OrderTicket_C *porder,
+                                       int allow_exceptions );
+
+EXTERN_C_SPEC_ DLL_SPEC_ int
+BuildOrder_Spread_CollarSyntheticEx_ABI( const char* underlying,
+                                         unsigned int month,
+                                         unsigned int day,
+                                         unsigned int year,
+                                         double strike_call,
+                                         double strike_put,
                                          size_t quantity,
+                                         int is_buy,
                                          int to_open,
                                          int is_market,
                                          double price,
@@ -1223,35 +1198,138 @@ BuildOrder_Spread_DoubleDiagonal_ABI( const char* symbol_call_buy,
                                          int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
-BuildOrder_Spread_DoubleDiagonalEx_ABI( const char* underlying,
-                                             unsigned int month_buy,
-                                             unsigned int day_buy,
-                                             unsigned int year_buy,
-                                             unsigned int month_sell,
-                                             unsigned int day_sell,
-                                             unsigned int year_sell,
-                                             double strike_call_buy,
-                                             double strike_call_sell,
-                                             double strike_put_buy,
-                                             double strike_put_sell,
-                                             size_t quantity,
-                                             int to_open,
-                                             int is_market,
-                                             double price,
-                                             OrderTicket_C *porder,
-                                             int allow_exceptions );
+BuildOrder_Spread_CollarWithStock_ABI( const char* symbol_buy,
+                                       const char* symbol_sell,
+                                       const char* symbol_stock,
+                                       size_t quantity,
+                                       int is_buy,
+                                       int to_open,
+                                       int is_market,
+                                       double price,
+                                       OrderTicket_C *porder,
+                                       int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
-BuildOrder_OneCancelsOther_ABI( OrderTicket_C *porder1,
-                                    OrderTicket_C *porder2,
+BuildOrder_Spread_CollarWithStockEx_ABI( const char* underlying,
+                                         unsigned int month,
+                                         unsigned int day,
+                                         unsigned int year,
+                                         double strike_call,
+                                         double strike_put,
+                                         size_t quantity,
+                                         int is_buy,
+                                         int to_open,
+                                         int is_market,
+                                         double price,
+                                         OrderTicket_C *porder,
+                                         int allow_exceptions );
+
+EXTERN_C_SPEC_ DLL_SPEC_ int
+BuildOrder_Spread_Condor_ABI( const char* symbol_outer1,
+                              const char* symbol_inner1,
+                              const char* symbol_inner2,
+                              const char* symbol_outer2,
+                              size_t quantity1,
+                              size_t quantity2,
+                              int is_buy,
+                              int to_open,
+                              int is_market,
+                              double price,
+                              OrderTicket_C *porder,
+                              int allow_exceptions );
+
+EXTERN_C_SPEC_ DLL_SPEC_ int
+BuildOrder_Spread_CondorEx_ABI( const char* underlying,
+                                unsigned int month,
+                                unsigned int day,
+                                unsigned int year,
+                                double strike_outer1,
+                                double strike_inner1,
+                                double strike_inner2,
+                                double strike_outer2,
+                                int are_calls,
+                                size_t quantity1,
+                                size_t quantity2,
+                                int is_buy,
+                                int to_open,
+                                int is_market,
+                                double price,
+                                OrderTicket_C *porder,
+                                int allow_exceptions );
+
+
+EXTERN_C_SPEC_ DLL_SPEC_ int
+BuildOrder_Spread_IronCondor_ABI( const char* symbol_call_buy,
+                                  const char* symbol_call_sell,
+                                  const char* symbol_put_buy,
+                                  const char* symbol_put_sell,
+                                  size_t quantity_call,
+                                  size_t quantity_put,
+                                  int to_open,
+                                  int is_market,
+                                  double price,
+                                  OrderTicket_C *porder,
+                                  int allow_exceptions );
+
+EXTERN_C_SPEC_ DLL_SPEC_ int
+BuildOrder_Spread_IronCondorEx_ABI( const char* underlying,
+                                    unsigned int month,
+                                    unsigned int day,
+                                    unsigned int year,
+                                    double strike_call_buy,
+                                    double strike_call_sell,
+                                    double strike_put_buy,
+                                    double strike_put_sell,
+                                    size_t quantity_call,
+                                    size_t quantity_put,
+                                    int to_open,
+                                    int is_market,
+                                    double price,
                                     OrderTicket_C *porder,
                                     int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
+BuildOrder_Spread_DoubleDiagonal_ABI( const char* symbol_call_buy,
+                                      const char* symbol_call_sell,
+                                      const char* symbol_put_buy,
+                                      const char* symbol_put_sell,
+                                      size_t quantity,
+                                      int to_open,
+                                      int is_market,
+                                      double price,
+                                      OrderTicket_C *porder,
+                                      int allow_exceptions );
+
+EXTERN_C_SPEC_ DLL_SPEC_ int
+BuildOrder_Spread_DoubleDiagonalEx_ABI( const char* underlying,
+                                        unsigned int month_buy,
+                                        unsigned int day_buy,
+                                        unsigned int year_buy,
+                                        unsigned int month_sell,
+                                        unsigned int day_sell,
+                                        unsigned int year_sell,
+                                        double strike_call_buy,
+                                        double strike_call_sell,
+                                        double strike_put_buy,
+                                        double strike_put_sell,
+                                        size_t quantity,
+                                        int to_open,
+                                        int is_market,
+                                        double price,
+                                        OrderTicket_C *porder,
+                                        int allow_exceptions );
+
+EXTERN_C_SPEC_ DLL_SPEC_ int
+BuildOrder_OneCancelsOther_ABI( OrderTicket_C *porder1,
+                                OrderTicket_C *porder2,
+                                OrderTicket_C *porder,
+                                int allow_exceptions );
+
+EXTERN_C_SPEC_ DLL_SPEC_ int
 BuildOrder_OneTriggersOther_ABI( OrderTicket_C *porder_primary,
-                                     OrderTicket_C *porder_conditional,
-                                     OrderTicket_C *porder,
-                                     int allow_exceptions );
+                                 OrderTicket_C *porder_conditional,
+                                 OrderTicket_C *porder,
+                                 int allow_exceptions );
 
 #ifndef __cplusplus
 
@@ -1268,26 +1346,36 @@ BuildOrder_Simple( OrderType order_type,
                                (int)instruction, quantity, limit_price,
                                stop_price, porder, 0); }
 
+static inline int
+BuildOrder_Equity( OrderType order_type,
+                  const char* symbol,
+                  OrderInstruction instruction,
+                  size_t quantity,
+                  double limit_price,
+                  double stop_price,
+                  OrderTicket_C *porder )
+{ return BuildOrder_Equity_ABI( (int)order_type, symbol, (int)instruction,
+                                quantity, limit_price, stop_price, porder, 0); }
 
 static inline int
 BuildOrder_Equity_Market_Buy( const char* symbol,
                               size_t quantity,
                               OrderTicket_C *porder )
-{ return BuildOrder_Simple( OrderType_MARKET, OrderAssetType_EQUITY, symbol,
-                           OrderInstruction_BUY, quantity, 0., 0., porder ); }
+{ return BuildOrder_Equity( OrderType_MARKET, symbol, OrderInstruction_BUY,
+                            quantity, 0., 0., porder ); }
 
 static inline int
 BuildOrder_Equity_Market_Sell( const char* symbol,
                                size_t quantity,
                                OrderTicket_C *porder )
-{ return BuildOrder_Simple( OrderType_MARKET, OrderAssetType_EQUITY, symbol,
+{ return BuildOrder_Equity( OrderType_MARKET, symbol,
                            OrderInstruction_SELL, quantity, 0., 0., porder ); }
 
 static inline int
 BuildOrder_Equity_Market_Short( const char* symbol,
                                 size_t quantity,
                                 OrderTicket_C *porder )
-{ return BuildOrder_Simple( OrderType_MARKET, OrderAssetType_EQUITY, symbol,
+{ return BuildOrder_Equity( OrderType_MARKET, symbol,
                            OrderInstruction_SELL_SHORT, quantity, 0., 0.,
                            porder ); }
 
@@ -1295,7 +1383,7 @@ static inline int
 BuildOrder_Equity_Market_Cover( const char* symbol,
                                 size_t quantity,
                                 OrderTicket_C *porder )
-{ return BuildOrder_Simple( OrderType_MARKET, OrderAssetType_EQUITY, symbol,
+{ return BuildOrder_Equity( OrderType_MARKET, symbol,
                            OrderInstruction_BUY_TO_COVER, quantity, 0., 0.,
                            porder ); }
 
@@ -1304,7 +1392,7 @@ BuildOrder_Equity_Limit_Buy( const char* symbol,
                              size_t quantity,
                              double price,
                              OrderTicket_C *porder )
-{ return BuildOrder_Simple( OrderType_LIMIT, OrderAssetType_EQUITY, symbol,
+{ return BuildOrder_Equity( OrderType_LIMIT, symbol,
                            OrderInstruction_BUY, quantity, price, 0., porder); }
 
 static inline int
@@ -1312,7 +1400,7 @@ BuildOrder_Equity_Limit_Sell( const char* symbol,
                                 size_t quantity,
                                 double price,
                                 OrderTicket_C *porder )
-{ return BuildOrder_Simple( OrderType_LIMIT, OrderAssetType_EQUITY, symbol,
+{ return BuildOrder_Equity( OrderType_LIMIT, symbol,
                            OrderInstruction_SELL, quantity, price, 0.,
                            porder ); }
 
@@ -1321,7 +1409,7 @@ BuildOrder_Equity_Limit_Short( const char* symbol,
                                 size_t quantity,
                                 double price,
                                 OrderTicket_C *porder )
-{ return BuildOrder_Simple( OrderType_LIMIT, OrderAssetType_EQUITY, symbol,
+{ return BuildOrder_Equity( OrderType_LIMIT, symbol,
                            OrderInstruction_SELL_SHORT, quantity, price, 0.,
                            porder ); }
 
@@ -1330,7 +1418,7 @@ BuildOrder_Equity_Limit_Cover( const char* symbol,
                                 size_t quantity,
                                 double price,
                                 OrderTicket_C *porder )
-{ return BuildOrder_Simple( OrderType_LIMIT, OrderAssetType_EQUITY, symbol,
+{ return BuildOrder_Equity( OrderType_LIMIT, symbol,
                            OrderInstruction_BUY_TO_COVER, quantity, price, 0.,
                            porder ); }
 
@@ -1339,7 +1427,7 @@ BuildOrder_Equity_Stop_Buy( const char* symbol,
                              size_t quantity,
                              double price,
                              OrderTicket_C *porder )
-{ return BuildOrder_Simple( OrderType_STOP, OrderAssetType_EQUITY, symbol,
+{ return BuildOrder_Equity( OrderType_STOP, symbol,
                            OrderInstruction_BUY, quantity, 0., price,  porder); }
 
 static inline int
@@ -1347,7 +1435,7 @@ BuildOrder_Equity_Stop_Sell( const char* symbol,
                               size_t quantity,
                               double price,
                               OrderTicket_C *porder )
-{ return BuildOrder_Simple( OrderType_STOP, OrderAssetType_EQUITY, symbol,
+{ return BuildOrder_Equity( OrderType_STOP, symbol,
                            OrderInstruction_SELL, quantity, 0., price,
                            porder ); }
 
@@ -1356,7 +1444,7 @@ BuildOrder_Equity_Stop_Short( const char* symbol,
                               size_t quantity,
                                double price,
                                OrderTicket_C *porder)
-{ return BuildOrder_Simple( OrderType_STOP, OrderAssetType_EQUITY, symbol,
+{ return BuildOrder_Equity( OrderType_STOP, symbol,
                            OrderInstruction_SELL_SHORT, quantity, 0., price,
                            porder ); }
 
@@ -1365,7 +1453,7 @@ BuildOrder_Equity_Stop_Cover( const char* symbol,
                               size_t quantity,
                                double price,
                                OrderTicket_C *porder)
-{ return BuildOrder_Simple( OrderType_STOP, OrderAssetType_EQUITY, symbol,
+{ return BuildOrder_Equity( OrderType_STOP, symbol,
                            OrderInstruction_BUY_TO_COVER, quantity, 0., price,
                            porder ); }
 
@@ -1375,7 +1463,7 @@ BuildOrder_Equity_StopLimit_Buy( const char* symbol,
                                  double stop_price,
                                  double limit_price,
                                  OrderTicket_C *porder )
-{ return BuildOrder_Simple( OrderType_STOP_LIMIT, OrderAssetType_EQUITY, symbol,
+{ return BuildOrder_Equity( OrderType_STOP_LIMIT, symbol,
                            OrderInstruction_BUY, quantity, limit_price,
                            stop_price, porder); }
 
@@ -1385,7 +1473,7 @@ BuildOrder_Equity_StopLimit_Sell( const char* symbol,
                                   double stop_price,
                                   double limit_price,
                                   OrderTicket_C *porder )
-{ return BuildOrder_Simple( OrderType_STOP_LIMIT, OrderAssetType_EQUITY, symbol,
+{ return BuildOrder_Equity( OrderType_STOP_LIMIT, symbol,
                            OrderInstruction_SELL, quantity, limit_price,
                            stop_price, porder ); }
 
@@ -1395,7 +1483,7 @@ BuildOrder_Equity_StopLimit_Short( const char* symbol,
                                    double stop_price,
                                    double limit_price,
                                    OrderTicket_C *porder)
-{ return BuildOrder_Simple( OrderType_STOP_LIMIT, OrderAssetType_EQUITY, symbol,
+{ return BuildOrder_Equity( OrderType_STOP_LIMIT,symbol,
                            OrderInstruction_SELL_SHORT, quantity, limit_price,
                            stop_price, porder ); }
 
@@ -1405,7 +1493,7 @@ BuildOrder_Equity_StopLimit_Cover( const char* symbol,
                                    double stop_price,
                                    double limit_price,
                                    OrderTicket_C *porder)
-{ return BuildOrder_Simple( OrderType_STOP_LIMIT, OrderAssetType_EQUITY, symbol,
+{ return BuildOrder_Equity( OrderType_STOP_LIMIT, symbol,
                            OrderInstruction_BUY_TO_COVER, quantity, limit_price,
                            stop_price, porder ); }
 
@@ -1448,16 +1536,16 @@ BuildOrder_Option_Limit( const char* symbol,
 
 static inline int
 BuildOrder_Option_LimitEx( const char* underlying,
-                            unsigned int month,
-                            unsigned int day,
-                            unsigned int year,
-                            int is_call,
-                            double strike,
-                            size_t quantity,
-                            int is_buy,
-                            int to_open,
-                            double price,
-                            OrderTicket_C *porder )
+                           unsigned int month,
+                           unsigned int day,
+                           unsigned int year,
+                           int is_call,
+                           double strike,
+                           size_t quantity,
+                           int is_buy,
+                           int to_open,
+                           double price,
+                           OrderTicket_C *porder )
 { return BuildOrder_OptionEx_ABI( OrderType_LIMIT, underlying, month, day, year,
                                 is_call, strike, quantity, is_buy, to_open,
                                 price, porder, 0 ); }
@@ -1466,11 +1554,11 @@ BuildOrder_Option_LimitEx( const char* underlying,
 
 static inline int
 BuildOrder_Spread( ComplexOrderStrategyType complex_strategy_type,
-                    OrderLeg_C *plegs,
-                    size_t n,
-                    int is_market,
-                    double price,
-                    OrderTicket_C *porder)
+                   OrderLeg_C *plegs,
+                   size_t n,
+                   int is_market,
+                   double price,
+                   OrderTicket_C *porder)
 { return BuildOrder_Spread_ABI( complex_strategy_type, plegs, n, is_market, price,
                            porder, 0 ); }
 
@@ -1478,50 +1566,50 @@ BuildOrder_Spread( ComplexOrderStrategyType complex_strategy_type,
 
 static inline int
 BuildOrder_Spread_Vertical_Market( const char* symbol_buy,
-                                 const char* symbol_sell,
-                                 size_t quantity,
-                                 int to_open,
-                                 OrderTicket_C *porder )
+                                   const char* symbol_sell,
+                                   size_t quantity,
+                                   int to_open,
+                                   OrderTicket_C *porder )
 { return BuildOrder_Spread_Vertical_ABI( symbol_buy, symbol_sell, quantity,
                                        to_open, 1, 0, porder, 0 ); }
 
 static inline int
 BuildOrder_Spread_Vertical_MarketEx( const char* underlying,
-                                      unsigned int month,
-                                      unsigned int day,
-                                      unsigned int year,
-                                      int are_calls,
-                                      double strike_buy,
-                                      double strike_sell,
-                                      size_t quantity,
-                                      int to_open,
-                                      OrderTicket_C *porder )
+                                     unsigned int month,
+                                     unsigned int day,
+                                     unsigned int year,
+                                     int are_calls,
+                                     double strike_buy,
+                                     double strike_sell,
+                                     size_t quantity,
+                                     int to_open,
+                                     OrderTicket_C *porder )
 { return BuildOrder_Spread_VerticalEx_ABI( underlying, month, day, year, are_calls,
                                           strike_buy, strike_sell, quantity,
                                           to_open, 1, 0, porder, 0 ); }
 
 static inline int
 BuildOrder_Spread_Vertical_Limit( const char* symbol_buy,
-                                 const char* symbol_sell,
-                                 size_t quantity,
-                                 int to_open,
-                                 double price,
-                                 OrderTicket_C *porder )
+                                  const char* symbol_sell,
+                                  size_t quantity,
+                                  int to_open,
+                                  double price,
+                                  OrderTicket_C *porder )
 { return BuildOrder_Spread_Vertical_ABI( symbol_buy, symbol_sell, quantity,
                                        to_open, 0, price, porder, 0 ); }
 
 static inline int
 BuildOrder_Spread_Vertical_LimitEx( const char* underlying,
-                                      unsigned int month,
-                                      unsigned int day,
-                                      unsigned int year,
-                                      int are_calls,
-                                      double strike_buy,
-                                      double strike_sell,
-                                      size_t quantity,
-                                      int to_open,
-                                      double price,
-                                      OrderTicket_C *porder )
+                                    unsigned int month,
+                                    unsigned int day,
+                                    unsigned int year,
+                                    int are_calls,
+                                    double strike_buy,
+                                    double strike_sell,
+                                    size_t quantity,
+                                    int to_open,
+                                    double price,
+                                    OrderTicket_C *porder )
 { return BuildOrder_Spread_VerticalEx_ABI( underlying, month, day, year, are_calls,
                                           strike_buy, strike_sell, quantity,
                                           to_open, 0, price, porder, 0 ); }
@@ -1531,12 +1619,12 @@ BuildOrder_Spread_Vertical_LimitEx( const char* underlying,
 static inline int
 BuildOrder_Spread_VerticalRoll_Market(
     const char* symbol_close_buy,
-   const char* symbol_close_sell,
-   const char* symbol_open_buy,
-   const char* symbol_open_sell,
-   size_t quantity,
-   OrderTicket_C *porder
-   )
+    const char* symbol_close_sell,
+    const char* symbol_open_buy,
+    const char* symbol_open_sell,
+    size_t quantity,
+    OrderTicket_C *porder
+    )
 { return BuildOrder_Spread_VerticalRoll_ABI( symbol_close_buy, symbol_close_sell,
                                              symbol_open_buy, symbol_open_sell,
                                              quantity, quantity, 1, 0, porder,
@@ -2764,8 +2852,8 @@ class SimpleOrderBuilder
 public:
     SimpleOrderBuilder() = delete;
 
-    typedef OrderTicket(*build_meth_ty)(OrderType, OrderAssetType, const std::string&,
-        OrderInstruction, size_t, double, double);
+    typedef OrderTicket(*build_meth_ty)(OrderType, OrderAssetType,
+        const std::string&, OrderInstruction, size_t, double, double);
 
     static OrderTicket
     build( OrderType order_type,
@@ -2787,6 +2875,9 @@ public:
 
     class Equity{
     public:
+        typedef OrderTicket(*build_meth_ty)(OrderType, const std::string&,
+            OrderInstruction, size_t, double, double);
+
         static OrderTicket
         build( OrderType order_type,
                 const std::string& symbol,
@@ -2794,9 +2885,19 @@ public:
                 size_t quantity,
                 double limit_price = 0.0,
                 double stop_price = 0.0)
-        { return SimpleOrderBuilder::build( order_type, EQUITY, symbol,
-                                            instruction, quantity, limit_price,
-                                            stop_price ); }
+        {
+            if( (order_type == LIMIT || order_type == STOP_LIMIT)
+                && limit_price <= 0.0 ){
+                    THROW_VALUE_EXCEPTION("limit price <= 0.0");
+            }
+            if( (order_type == STOP || order_type == STOP_LIMIT)
+                && stop_price <= 0.0 ){
+                THROW_VALUE_EXCEPTION("stop price <= 0.0");
+            }
+            return SimpleOrderBuilder::build( order_type, EQUITY, symbol,
+                                              instruction, quantity,
+                                              limit_price, stop_price );
+        }
 
         class Market{
         public:
@@ -2845,62 +2946,52 @@ public:
             Stop() = delete;
 
             static OrderTicket
-            build(  const std::string& symbol,
-                    OrderInstruction instruction,
-                    size_t quantity,
-                    double stop_price,
-                    double limit_price )
-            {
-                OrderType ot = limit_price != 0.0 ? STOP_LIMIT : STOP;
-                return Equity::build( ot, symbol, instruction, quantity,
-                                      limit_price, stop_price );
-            }
-
-            static OrderTicket
             Buy(const std::string& symbol, size_t quantity, double stop_price)
-            { return build(symbol, BUY, quantity, stop_price, 0.0); }
+            { return build(STOP, symbol, BUY, quantity, 0., stop_price); }
 
             static OrderTicket
             Buy( const std::string& symbol,
                  size_t quantity,
                  double stop_price,
                  double limit_price )
-            { return build(symbol, BUY, quantity, stop_price, limit_price); }
+            { return build( STOP_LIMIT, symbol, BUY, quantity, limit_price,
+                            stop_price ); }
 
             static OrderTicket
             Sell(const std::string& symbol, size_t quantity, double stop_price)
-            { return build(symbol, SELL, quantity, stop_price, 0.0); }
+            { return build(STOP, symbol, SELL, quantity, 0., stop_price); }
 
             static OrderTicket
             Sell( const std::string& symbol,
                    size_t quantity,
                    double stop_price,
                    double limit_price )
-            { return build(symbol, SELL, quantity, stop_price, limit_price); }
+            { return build( STOP_LIMIT, symbol, SELL, quantity, limit_price,
+                            stop_price ); }
 
             static OrderTicket
             Short(const std::string& symbol, size_t quantity, double stop_price)
-            { return build(symbol, SELL_SHORT, quantity, stop_price, 0.0); }
+            { return build(STOP, symbol, SELL_SHORT, quantity, 0., stop_price); }
 
             static OrderTicket
             Short( const std::string& symbol,
                     size_t quantity,
                     double stop_price,
                     double limit_price )
-            { return build(symbol, SELL_SHORT, quantity, stop_price,
-                           limit_price); }
+            { return build( STOP_LIMIT, symbol, SELL_SHORT, quantity,
+                            limit_price, stop_price ); }
 
             static OrderTicket
             Cover(const std::string& symbol, size_t quantity, double stop_price)
-            { return build(symbol, BUY_TO_COVER, quantity, stop_price, 0.0); }
+            { return build(STOP, symbol, BUY_TO_COVER, quantity, 0., stop_price); }
 
             static OrderTicket
             Cover( const std::string& symbol,
                     size_t quantity,
                     double stop_price,
                     double limit_price )
-            { return build(symbol, BUY_TO_COVER, quantity, stop_price,
-                           limit_price); }
+            { return build( STOP_LIMIT, symbol, BUY_TO_COVER, quantity,
+                            limit_price, stop_price ); }
         };
 
     }; /* Equity */
@@ -2922,8 +3013,12 @@ public:
                 OrderInstruction instruction,
                 size_t quantity,
                 double price = 0)
-        { return SimpleOrderBuilder::build( order_type, OPTION, symbol,
-                                            instruction, quantity, price ); }
+        {
+            if( order_type == LIMIT && price <= 0.0 )
+                THROW_VALUE_EXCEPTION("limit price <= 0.0");
+            return SimpleOrderBuilder::build( order_type, OPTION, symbol,
+                                            instruction, quantity, price );
+        }
 
         static OrderTicket
         build( OrderType order_type,
@@ -3067,7 +3162,7 @@ public:
 
         if( market_order ){
             if( price )
-                throw ValueException("market order contains price");
+                THROW_VALUE_EXCEPTION("market order contains price");
             return o;
         }else{ // overides MARKET
             if( price > 0 )
@@ -5313,6 +5408,8 @@ public:
  */
 
 } /* tdma */
+
+#undef THROW_VALUE_EXCEPTION
 
 #endif /* __cplusplus */
 

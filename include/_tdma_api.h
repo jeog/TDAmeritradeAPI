@@ -18,6 +18,8 @@ along with this program.  If not, see http://www.gnu.org/licenses.
 #ifndef TDMA_API_H_
 #define TDMA_API_H_
 
+/* HEADER FOR ALL (BACKEND) TDMA API LIBRAY/SOURCE */
+
 #include "_common.h"
 
 #include <string>
@@ -30,6 +32,17 @@ along with this program.  If not, see http://www.gnu.org/licenses.
 #include "tdma_api_streaming.h"
 #include "tdma_api_execute.h"
 #include "curl_connect.h"
+
+
+void
+set_error_state(int code,
+                  const std::string&  msg,
+                  int fileno,
+                  const std::string& filename);
+
+std::tuple<int, std::string, int, std::string>
+get_error_state();
+
 
 namespace tdma{
 
@@ -173,6 +186,12 @@ struct ImplReturnHelper<void>{
     { return err; }
 };
 
+/*
+ * CallImplFromABI provides an exception-safe environment to run implementation
+ *                 code on the 'inside' of the library boundary. Can propogate
+ *                 exceptions or return error codes with or without return
+ *                 value of passed function pointer.
+ */
 template<typename RetTy, typename... Args, typename... Args2>
 typename ImplReturnHelper<RetTy>::type
 CallImplFromABI(bool allow_throw, RetTy(*func)(Args...), Args2... args)
@@ -183,31 +202,51 @@ CallImplFromABI(bool allow_throw, RetTy(*func)(Args...), Args2... args)
         return ImplReturnHelper<RetTy>::from_call(func, args...);
 
     int err = 0;
-    string msg;
+    int lineno = 0;
+    string msg, filename;
+
     try{
         return ImplReturnHelper<RetTy>::from_call(func, args...);
-    }catch(APIExecutionException& e){
+    }catch(ConnectException& e){
         err = e.error_code();
-        msg = e.what() + string("(") + to_string(e.status_code()) + ")";
+        msg = e.what();
+        lineno = e.lineno();
+        filename = e.filename();
         cerr<< "ABI :: " << e.name() << " --> error code " << err << endl;
     }catch(APIException& e){
         err = e.error_code();
         msg = e.what();
+        lineno = e.lineno();
+        filename = e.filename();
         cerr<< "ABI :: " << e.name() << " --> error code " << err << endl;
     }catch(std::exception& e){
-        cerr<< "ABI :: caught " << e.what() << "... rethrowing" << endl;
-        set_error_state(-1, e.what());
-        throw;
+        err = TDMA_API_STD_EXCEPTION;
+        msg = e.what();
+        cerr<< "ABI :: std::exception(" << msg << ") --> error code "
+            << err << endl;
     }catch(...){
-        cerr<< "ABI :: caught unknown object... rethrowing" << endl;
-        set_error_state(-1, "unknown error");
-        throw;
+        err = TDMA_API_UNKNOWN_EXCEPTION;
+        msg = "unknown exception";
+        cerr<< "ABI :: unknown exception --> error code" << err << endl;
     }
 
-    set_error_state(err, msg);
+    set_error_state(err, msg, lineno, filename);
     return ImplReturnHelper<RetTy>::from_error(err);
 }
 
+
+/*
+ * TDMA_API_THROW should ONLY be used by code that is run by CallImplFromABI
+ */
+#define TDMA_API_THROW(exc, ...) throw exc(__VA_ARGS__, __LINE__, __FILE__)
+
+
+template<typename T2>
+inline int
+return_error(std::pair<T2, int>&& r){ return r.second; }
+
+inline int
+return_error(int r){ return r; }
 
 
 template<typename ProxyTy>
@@ -244,40 +283,64 @@ kill_proxy( ProxyTy *proxy,
                  >::type* _ = nullptr )
 {}
 
+
+/*
+ * handle_error<> can be used anywhere on the 'inside' of the library boundary
+ *                 to throw exceptions, set error state, and kill proxies
+ *
+ * HANDLE_ERROR/EX are recommended for building exceptions w/ line number/file
+ *                 that can be stored globally and passed to the reconstituted
+ *                 exceptions on the client side of the lib (see error_to_exc).
+ */
 template<typename ExcTy, typename ProxyTy=nullptr_t>
 int
-handle_error(std::string msg, bool exc, ProxyTy *proxy=nullptr)
+handle_error( const std::string& msg,
+                bool exc,
+                int lineno,
+                const std::string& filename,
+                ProxyTy *proxy=nullptr)
 {
     if( proxy )
         kill_proxy(proxy);
     int code = ExcTy::ERROR_CODE;
-    set_error_state(code, msg);
-    if( exc ){
-        throw ExcTy(msg);
-    }
+    set_error_state(code, msg, lineno, filename);
+    if( exc )
+        throw ExcTy(msg, lineno, filename);
     return code;
 }
 
+#define HANDLE_ERROR(exc, msg, allow) \
+    handle_error<exc>(msg, allow, __LINE__, __FILE__)
 
+#define HANDLE_ERROR_EX(exc, msg, allow, proxy) \
+    handle_error<exc>(msg, allow, __LINE__, __FILE__, proxy)
+
+
+/*
+ * CHECK_PTR/KILL check for null pointer and call HANDLE_ERROR/EX
+ */
 #define CHECK_PTR(ptr, name, exc) \
 if( !(ptr) ) \
-    return tdma::handle_error<tdma::ValueException>(\
-        "null " name " pointer", exc )
+    return HANDLE_ERROR( tdma::ValueException, "null " name " pointer", exc )
 
 #define CHECK_PTR_KILL_PROXY(ptr, name, exc, proxy) \
 if( !(ptr) ) \
-    return tdma::handle_error<tdma::ValueException>(\
-        "null " name " pointer", exc, proxy )
+    return HANDLE_ERROR_EX( tdma::ValueException, "null " name " pointer", \
+                            exc, proxy )
 
+
+/*
+ * CHECK_ENUM/KILL check for invalid enums and call HANDLE_ERROR/EX
+ */
 #define CHECK_ENUM(name, val, exc) \
 if( !(name##_is_valid(val)) ) \
-    return tdma::handle_error<tdma::ValueException>( \
-        "invalid " #name " enum value", exc )
+    return HANDLE_ERROR( tdma::ValueException, "invalid " #name " enum value", \
+                         exc )
 
 #define CHECK_ENUM_KILL_PROXY(name, val, exc, proxy) \
 if( !(name##_is_valid(val)) ) \
-    return tdma::handle_error<tdma::ValueException>( \
-        "invalid " #name " enum value", exc, proxy )
+    return HANDLE_ERROR_EX( tdma::ValueException, "invalid " #name " enum value", \
+                            exc, proxy )
 
 
 template<typename ImplTy>
@@ -294,7 +357,7 @@ getter_is_creatable( Credentials *pcreds,
     CHECK_PTR_KILL_PROXY(pcreds, "credentials", allow_exceptions, pgetter);
 
     if( !pcreds->access_token | !pcreds->refresh_token | !pcreds->client_id ){
-        return handle_error<tdma::LocalCredentialException>(
+        return HANDLE_ERROR_EX(tdma::LocalCredentialException,
             "invalid credentials struct", allow_exceptions, pgetter
             );
     }
@@ -324,7 +387,7 @@ proxy_is_callable( typename ImplTy::ProxyType::CType *proxy,
     if( proxy->type_id < ImplTy::TYPE_ID_LOW ||
         proxy->type_id > ImplTy::TYPE_ID_HIGH )
     {
-        return handle_error<TypeException>("invalid type id", allow_exceptions);
+        return HANDLE_ERROR(TypeException,"invalid type id", allow_exceptions);
     }
     return 0;
 }
@@ -346,14 +409,6 @@ destroy_proxy(typename ImplTy::ProxyType::CType *proxy, int allow_exceptions)
     kill_proxy(proxy);
     return err;
 }
-
-
-template<typename T2>
-inline int
-return_error(std::pair<T2, int>&& r){ return r.second; }
-
-inline int
-return_error(int r){ return r; }
 
 
 template<typename T> /* FOR BASIC TYPES i.e. enum <--> int */
@@ -422,7 +477,7 @@ struct ImplAccessor{
             return err;
 
         if( !pval){
-            return handle_error<tdma::ValueException>(
+            return HANDLE_ERROR(tdma::ValueException,
                 "null " + val_name + " pointer", allow_exceptions
                 );
         }
@@ -495,7 +550,7 @@ struct ImplAccessor<char**>{
         *n = r.size() + 1; // NULL TERM
         *pval = reinterpret_cast<char*>(malloc(*n));
         if( !*pval ){
-            return handle_error<tdma::MemoryError>(
+            return HANDLE_ERROR( tdma::MemoryError,
                 "failed to allocate buffer memory", allow_exceptions
                 );
         }
@@ -576,7 +631,7 @@ struct ImplAccessor<char***>{
         *n = strs.size();
         *pval = reinterpret_cast<char**>(malloc((*n) * sizeof(char*)));
         if( !*pval ){
-            return handle_error<tdma::MemoryError>(
+            return HANDLE_ERROR(tdma::MemoryError,
                 "failed to allocate buffer memory", allow_exceptions
                 );
         }
@@ -586,7 +641,7 @@ struct ImplAccessor<char***>{
             size_t s_sz = s.size();
             (*pval)[cnt] = reinterpret_cast<char*>(malloc(s_sz+1));
             if( !(*pval)[cnt] ){
-                return handle_error<tdma::MemoryError>(
+                return HANDLE_ERROR(tdma::MemoryError,
                     "failed to allocate buffer memory", allow_exceptions
                     );
             }

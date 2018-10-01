@@ -18,6 +18,8 @@ along with this program.  If not, see http://www.gnu.org/licenses.
 #ifndef TDMA_COMMON_H
 #define TDMA_COMMON_H
 
+/* HEADER COMMON TO ALL TDMA API CLIENT HEADERS */
+
 #include "_common.h"
 #include <string.h>
 
@@ -66,7 +68,7 @@ to_string(const type& v) \
 { \
     char* buf; \
     size_t n; \
-    type##_##to_string_ABI(static_cast<int>(v), &buf, &n, 1); \
+    call_abi( type##_##to_string_ABI, static_cast<int>(v), &buf, &n ); \
     std::string s(buf); \
     if( buf ) free(buf); \
     return s; \
@@ -118,34 +120,35 @@ typedef struct{
 #define TDMA_API_TYPE_ERROR 4
 #define TDMA_API_MEMORY_ERROR 5
 
-#define TDMA_API_EXEC_ERROR 101
+#define TDMA_API_CONNECT_ERROR 101
 #define TDMA_API_AUTH_ERROR 102
 #define TDMA_API_REQUEST_ERROR 103
 #define TDMA_API_SERVER_ERROR 104
 
 #define TDMA_API_STREAM_ERROR 201
 
+#define TDMA_API_EXECUTE_ERROR 301
+
+#define TDMA_API_STD_EXCEPTION 501
+
+#define TDMA_API_UNKNOWN_EXCEPTION 1001
 
 struct Credentials;
 
 /*
  * ABI bridge functions
  *
- *
  * How we provide C and C++ interface w/ a stable ABI
  *
- *           Interface   -->     ABI Bridge   -->    Implementation
+ *        Interface    -->      ABI Bridge    -->    Implementation
  *
- *  C    LoadCredentials()   LoadCredentials_ABI()
- *  C++  LoadCredentials()                           LoadCredentialsImpl()
+ *  C     Function()          Function_ABI()
+ *  C++   Function()                                 FunctionImpl()
  *
  *  Errors:
  *
- *  C       Error Code    <--   Error Code   <--    Exception
- *  C++     Exception     <--   Exception    <--    Exception
- *
- *
- * INLINE interface calss  so they stay on client-side of ABI
+ *  C     Error Code   <--     Error Code     <--     Exception
+ *  C++   Exception    <--     Error Code     <--     Exception
  */
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
@@ -206,11 +209,30 @@ FreeOrderLegBuffer_ABI( OrderLeg_C *legs, int allow_exceptions );
 EXTERN_C_SPEC_ DLL_SPEC_ int
 FreeOrderTicketBuffer_ABI( OrderTicket_C *orders, int allow_exceptions );
 
+/*
+ * 'LastError' calls only return information for the last exc/error to occur
+ *  ON THE 'INSIDE' of the library boundary. (Not from header definitions.)
+ */
 EXTERN_C_SPEC_ DLL_SPEC_ int
 LastErrorCode_ABI( int *code, int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 LastErrorMsg_ABI( char** buf, size_t *n, int allow_exceptions );
+
+EXTERN_C_SPEC_ DLL_SPEC_ int
+LastErrorLineNumber_ABI( int *lineno, int allow_exceptions );
+
+EXTERN_C_SPEC_ DLL_SPEC_ int
+LastErrorFilename_ABI( char** buf, size_t *n, int allow_exceptions );
+
+EXTERN_C_SPEC_ DLL_SPEC_ int
+LastErrorState_ABI( int *code,
+                      char **buf_msg,
+                      size_t *n_msg,
+                      int *lineno,
+                      char **buf_filename,
+                      size_t *n_filename,
+                      int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 BuildOptionSymbol_ABI( const char* underlying,
@@ -225,6 +247,8 @@ BuildOptionSymbol_ABI( const char* underlying,
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 OptionSymbolCheck_ABI(const char* symbol, int allow_exceptions);
+
+
 
 
 #ifndef __cplusplus
@@ -293,6 +317,10 @@ static inline int
 FreeOrderTicketBuffer( OrderTicket_C *orders )
 { return FreeOrderTicketBuffer_ABI(orders, 0); }
 
+/*
+ * 'LastError' calls only return information for the last exc/error to occur
+ *  ON THE 'INSIDE' of the library boundary. (Not from header definitions.)
+ */
 static inline int
 LastErrorCode( int *code )
 { return LastErrorCode_ABI(code, 0); }
@@ -300,6 +328,14 @@ LastErrorCode( int *code )
 static inline int
 LastErrorMsg( char** buf, size_t *n)
 { return LastErrorMsg_ABI(buf, n, 0); }
+
+static inline int
+LastErrorLineNumber( int *lineno )
+{ return LastErrorLineNumber_ABI(lineno, 0); }
+
+static inline int
+LastErrorFilename( char** buf, size_t *n )
+{ return LastErrorFilename_ABI(buf, n, 0); }
 
 static inline int
 BuildOptionSymbol( const char* underlying,
@@ -317,13 +353,29 @@ static inline int
 OptionSymbolCheck(const char* symbol)
 { return OptionSymbolCheck_ABI(symbol, 0); }
 
+#else
+
+namespace tdma{
+
+static void
+error_to_exc(int code);
+
+template<typename... Args1, typename... Args2>
+inline void
+call_abi( int(*abicall)(Args1...), Args2... args)
+{
+    error_to_exc( abicall(args..., ALLOW_EXCEPTIONS) );
+}
+
+}; /* tdma */
+
 #endif /* __cplusplus */
 
 
 /*
  * if C, client has to call CloseCredentials and CopyCredentials directly
  * a) when done and b) before passing an active instance to LoadCredentials
- * or RequestAccessToken or the internal char*s will leak memory.
+ * or RequestAccessToken, or the internal char*s will leak memory.
  *
  * if C++ we do it automatically BUT don't define a virtual destructor
  * to avoid any issues with the vptr and the ABI
@@ -364,14 +416,14 @@ public:
     {}
 
     Credentials( const Credentials& sc )
-    { CopyCredentials_ABI(&sc, this, true); }
+    { tdma::call_abi( CopyCredentials_ABI, &sc, this ); }
 
     Credentials&
     operator=( Credentials& sc )
     {
         // NOTE don't check for logical self, quicker to just overwrite
-        CloseCredentials_ABI(this, true);
-        CopyCredentials_ABI(&sc, this, true);
+        tdma::call_abi( CloseCredentials_ABI, this );
+        tdma::call_abi( CopyCredentials_ABI, &sc, this );
         return *this;
     }
 
@@ -382,14 +434,14 @@ public:
     operator=( Credentials&& sc )
     {
         // NOTE don't check for logical self, quicker to just overwrite
-        CloseCredentials_ABI(this, true);
+        tdma::call_abi( CloseCredentials_ABI, this );
         _move_in(sc);
         return *this;
     }
 
     /* NOT VIRTUAL */
     ~Credentials()
-    { CloseCredentials_ABI(this, true); }
+    {  tdma::call_abi( CloseCredentials_ABI, this ); }
 
 };
 
@@ -428,20 +480,19 @@ struct IsCProxyBase{
         || std::is_same<ProxyTy, OrderTicket_C>::value;
 };
 
-
 template<typename F, typename... Args>
 std::string
 str_from_abi_vargs( F abicall, bool allow_exception, Args... args )
 {
     char *buf = nullptr;
     size_t n;
-    abicall(args..., &buf, &n, allow_exception);
+    error_to_exc( abicall(args..., &buf, &n, allow_exception) );
     if( !allow_exception && !buf ){
         return {};
     }
     assert(buf);
     std::string s(buf, n-1);
-    FreeBuffer_ABI(buf, allow_exception);
+    error_to_exc( FreeBuffer_ABI(buf, allow_exception) );
     return s;
 }
 
@@ -480,7 +531,7 @@ inline Credentials
 LoadCredentials(std::string path, std::string password)
 {
     Credentials c;
-    LoadCredentials_ABI(path.c_str(), password.c_str(), &c, true);
+    call_abi( LoadCredentials_ABI, path.c_str(), password.c_str(), &c );
     return c;
 }
 
@@ -488,7 +539,7 @@ inline void
 StoreCredentials(std::string path, std::string password, const Credentials& creds)
 {
     Credentials c(creds); // copy
-    StoreCredentials_ABI(path.c_str(), password.c_str(), &c, true);
+    call_abi( StoreCredentials_ABI, path.c_str(), password.c_str(), &c );
 }
 
 
@@ -512,39 +563,51 @@ RequestAccessToken( std::string code,
                       std::string redirect_uri = "https://127.0.0.1")
 {
     Credentials c;
-    RequestAccessToken_ABI( code.c_str(), client_id.c_str(),
-                            redirect_uri.c_str(), &c, true);
+    call_abi( RequestAccessToken_ABI, code.c_str(), client_id.c_str(),
+              redirect_uri.c_str(), &c );
     return c;
 }
 
 
 inline void
 RefreshAccessToken(Credentials& creds)
-{ RefreshAccessToken_ABI( &creds, true ); }
+{ call_abi(RefreshAccessToken_ABI, &creds ); }
 
 inline void
 SetCertificateBundlePath(const std::string& path)
-{ SetCertificateBundlePath_ABI(path.c_str(), true); }
+{ call_abi( SetCertificateBundlePath_ABI, path.c_str() ); }
 
 inline std::string
 GetCertificateBundlePath()
-{ return str_from_abi_vargs(GetCertificateBundlePath_ABI, true); }
+{ return str_from_abi_vargs(GetCertificateBundlePath_ABI, ALLOW_EXCEPTIONS); }
 
 inline std::string
 GetDefaultCertificateBundlePath()
-{ return str_from_abi_vargs(GetDefaultCertificateBundlePath_ABI, true); }
+{ return str_from_abi_vargs(GetDefaultCertificateBundlePath_ABI, ALLOW_EXCEPTIONS); }
 
 inline int
 LastErrorCode()
 {
     int code;
-    LastErrorCode_ABI(&code, 1);
+    call_abi( LastErrorCode_ABI, &code );
     return code;
 }
 
 inline std::string
 LastErrorMsg()
-{ return str_from_abi_vargs(LastErrorMsg_ABI, true); }
+{ return str_from_abi_vargs(LastErrorMsg_ABI,ALLOW_EXCEPTIONS); }
+
+inline int
+LastErrorLineNumber()
+{
+    int lineno;
+    call_abi( LastErrorLineNumber_ABI, &lineno);
+    return lineno;
+}
+
+inline std::string
+LastErrorFilename()
+{ return str_from_abi_vargs(LastErrorFilename_ABI, ALLOW_EXCEPTIONS); }
 
 inline std::string
 BuildOptionSymbol( const std::string& underlying,
@@ -553,36 +616,37 @@ BuildOptionSymbol( const std::string& underlying,
                      unsigned int year,
                      bool is_call,
                      double strike )
-{ return str_from_abi_vargs( BuildOptionSymbol_ABI, true, underlying.c_str(),
+{ return str_from_abi_vargs( BuildOptionSymbol_ABI, ALLOW_EXCEPTIONS,
+                             underlying.c_str(),
                              month, day, year, static_cast<int>(is_call),
                              strike ); }
 
 inline void
 OptionSymbolCheck(const std::string& symbol)
-{ OptionSymbolCheck_ABI(symbol.c_str(), 1); }
+{ call_abi( OptionSymbolCheck_ABI, symbol.c_str() ); }
 
 
 class APIException
         : public std::exception{
-    char* _what;
+    std::string _what;
+    int _lineno;
+    std::string _filename;
+
 public:
     static const int ERROR_CODE = TDMA_API_ERROR;
 
-    APIException()
-        : _what( new char[1]() )
+    APIException( const std::string& what,
+                   int lineno=0,
+                   const std::string& filename="" )
+        :
+            _what(what),
+            _lineno(lineno),
+            _filename(filename)
         {}
 
-    APIException(const std::string& what)
-        : _what( new char[what.size()+1] )
-        { strcpy( _what, what.c_str() ); }
-
-    virtual
-    ~APIException()
-    { if(_what) delete[] _what; }
-
-    virtual const char*
+    const char*
     what() const noexcept
-    { return _what; }
+    { return _what.c_str(); }
 
     virtual const char*
     name() const noexcept
@@ -591,7 +655,23 @@ public:
     virtual int
     error_code() const noexcept
     { return ERROR_CODE; }
+
+    int
+    lineno() const noexcept
+    { return _lineno; }
+
+    const char*
+    filename() const noexcept
+    { return _filename.c_str(); }
 };
+
+
+inline std::ostream&
+operator<<(std::ostream& out, const APIException& exc)
+{
+    out<< exc.name() << ": " << exc.what();
+    return out;
+}
 
 
 class LocalCredentialException
@@ -601,9 +681,7 @@ protected:
 public:
     static const int ERROR_CODE = TDMA_API_CRED_ERROR;
 
-    LocalCredentialException(std::string what)
-        : APIException(what)
-    {}
+    using APIException::APIException;
 
     const char*
     name() const noexcept
@@ -620,9 +698,7 @@ class ValueException
 public:
     static const int ERROR_CODE = TDMA_API_VALUE_ERROR;
 
-    ValueException(std::string what)
-        : APIException(what)
-    {}
+    using APIException::APIException;
 
     const char*
     name() const noexcept
@@ -639,9 +715,7 @@ class TypeException
 public:
     static const int ERROR_CODE = TDMA_API_TYPE_ERROR;
 
-    TypeException(std::string what)
-        : APIException(what)
-    {}
+    using APIException::APIException;
 
     const char*
     name()
@@ -658,9 +732,7 @@ class MemoryError
 public:
     static const int ERROR_CODE = TDMA_API_MEMORY_ERROR;
 
-    MemoryError(std::string what)
-        : APIException(what)
-    {}
+    using APIException::APIException;
 
     virtual const char*
     name() const noexcept
@@ -672,39 +744,41 @@ public:
 };
 
 
-class APIExecutionException
+class ConnectException
         : public APIException{
-    int _status_code;
 public:
-    static const int ERROR_CODE = TDMA_API_EXEC_ERROR;
+    static const int ERROR_CODE = TDMA_API_CONNECT_ERROR;
 
-    APIExecutionException(std::string what, int status_code)
-        : APIException(what),
-          _status_code(status_code)
-    {}
+    ConnectException( std::string what,
+                        int lineno,
+                        const std::string& filename )
+        : APIException(what, lineno, filename)
+        {}
+
+    ConnectException( std::string what,
+                         int status_code,
+                         int lineno,
+                         const std::string& filename )
+        : APIException(what + '(' + std::to_string(status_code) + ')',
+                       lineno, filename)
+        {}
 
     virtual const char*
     name() const noexcept
-    { return "APIExecutionException"; }
+    { return "ConnectException"; }
 
     virtual int
     error_code() const noexcept
     { return ERROR_CODE; }
-
-    int
-    status_code() const noexcept
-    { return _status_code; }
 };
 
 
 class AuthenticationException
-        : public APIExecutionException{
+        : public ConnectException{
 public:
     static const int ERROR_CODE = TDMA_API_AUTH_ERROR;
 
-    AuthenticationException(std::string what, int status_code)
-        : APIExecutionException(what, status_code)
-    {}
+    using ConnectException::ConnectException;
 
     virtual const char*
     name() const noexcept
@@ -717,13 +791,11 @@ public:
 
 
 class InvalidRequest
-        : public APIExecutionException{
+        : public ConnectException{
 public:
     static const int ERROR_CODE = TDMA_API_REQUEST_ERROR;
 
-    InvalidRequest(std::string what, int status_code)
-        : APIExecutionException(what, status_code)
-    {}
+    using ConnectException::ConnectException;
 
     virtual const char*
     name() const noexcept
@@ -736,12 +808,11 @@ public:
 
 
 class ServerError
-        : public APIExecutionException{
+        : public ConnectException{
 public:
     static const int ERROR_CODE = TDMA_API_SERVER_ERROR;
-    ServerError(std::string what, int status_code)
-        : APIExecutionException(what, status_code)
-    {}
+
+    using ConnectException::ConnectException;
 
     virtual const char*
     name() const noexcept
@@ -758,12 +829,7 @@ class StreamingException
 public:
     static const int ERROR_CODE = TDMA_API_STREAM_ERROR;
 
-    StreamingException()
-    {}
-
-    StreamingException(std::string what)
-        : APIException(what)
-    {}
+    using APIException::APIException;
 
     virtual const char*
     name() const noexcept
@@ -774,6 +840,109 @@ public:
     { return ERROR_CODE; }
 };
 
+
+class ExecuteException
+        : public APIException {
+public:
+    static const int ERROR_CODE = TDMA_API_EXECUTE_ERROR;
+
+    using APIException::APIException;
+
+    virtual const char*
+    name() const noexcept
+    { return "ExecuteException"; }
+
+    virtual int
+    error_code() const noexcept
+    { return ERROR_CODE; }
+};
+
+
+class StdException
+        : public APIException {
+public:
+    static const int ERROR_CODE = TDMA_API_STD_EXCEPTION;
+
+    StdException(const std::string& what)
+        : APIException(what){}
+
+    virtual const char*
+    name() const noexcept
+    { return "StdException"; }
+
+    virtual int
+    error_code() const noexcept
+    { return ERROR_CODE; }
+};
+
+
+class UnknownException
+        : public APIException {
+public:
+    static const int ERROR_CODE = TDMA_API_UNKNOWN_EXCEPTION;
+
+    UnknownException(const std::string& what)
+        : APIException(what){}
+
+    virtual const char*
+    name() const noexcept
+    { return "UnknownException"; }
+
+    virtual int
+    error_code() const noexcept
+    { return ERROR_CODE; }
+};
+
+
+static void
+error_to_exc(int code)
+{
+    if( code == 0 )
+        return;
+
+    char *bufs[] = {nullptr, nullptr};
+    int lineno, c;
+    size_t n;
+
+    int err = LastErrorState_ABI(&c, &bufs[0], &n, &lineno, &bufs[1], &n, 0);
+    if( err ) {
+        throw std::runtime_error("failed to get last error state("
+                                 + std::to_string(err) + ")");
+    }
+    assert(bufs[0]);
+    assert(bufs[1]);
+    assert(code == c);
+    std::string msg(bufs[0]);
+    std::string fname(bufs[1]);
+    FreeBuffer_ABI(bufs[0], 0);
+    FreeBuffer_ABI(bufs[1], 0);
+
+    // move original exc info -> what
+    std::stringstream ss;
+    ss << msg << " [error code: " << code << ", file: " << fname
+       << ", line: " << lineno << ']';
+    msg = ss.str();
+
+    switch(code){
+    case TDMA_API_ERROR: throw APIException(msg, lineno, fname);
+    case TDMA_API_CRED_ERROR: throw LocalCredentialException(msg, lineno, fname);
+    case TDMA_API_VALUE_ERROR: throw ValueException(msg, lineno, fname);
+    case TDMA_API_TYPE_ERROR: throw TypeException(msg, lineno, fname);
+    case TDMA_API_MEMORY_ERROR: throw MemoryError(msg, lineno, fname);
+    case TDMA_API_CONNECT_ERROR: throw ConnectException(msg, lineno, fname);
+    case TDMA_API_AUTH_ERROR: throw AuthenticationException(msg, lineno, fname);
+    case TDMA_API_REQUEST_ERROR: throw InvalidRequest(msg, lineno, fname);
+    case TDMA_API_SERVER_ERROR: throw ServerError(msg, lineno, fname);
+    case TDMA_API_STREAM_ERROR: throw StreamingException(msg, lineno, fname);
+    case TDMA_API_EXECUTE_ERROR: throw ExecuteException(msg, lineno, fname);
+    case TDMA_API_STD_EXCEPTION: throw StdException(msg);
+    case TDMA_API_UNKNOWN_EXCEPTION: throw UnknownException("unknown exception");
+    default:
+        throw UnknownException(
+            "unknown error code(" + std::to_string(code) + ')'
+            );
+    };
+}
 
 
 template<typename FromTy, typename ToTy>
@@ -790,10 +959,9 @@ inline const char**
 set_to_new_cstrs(const std::set<std::string>& symbols )
 {
     if( symbols.empty() )
-        throw ValueException("empty symbols set");
-    return set_to_new_array(
-        symbols, +[](const std::string& s){ return s.c_str(); }
-    );
+        throw ValueException("empty symbols set", __LINE__, __FILE__);
+    return set_to_new_array( symbols,
+                             +[](const std::string& s){ return s.c_str(); } );
 }
 
 template<typename FTy>
@@ -801,10 +969,9 @@ int*
 set_to_new_int_array(const std::set<FTy>& fields)
 {
     if( fields.empty() )
-        throw ValueException("empty fields set");
-    return set_to_new_array(
-        fields, +[](const FTy& f){ return static_cast<int>(f); }
-    );
+        throw ValueException("empty fields set", __LINE__, __FILE__);
+    return set_to_new_array( fields,
+                             +[](const FTy& f){ return static_cast<int>(f); } );
 }
 
 template<typename F, typename A, typename... Args>
@@ -812,7 +979,7 @@ void
 new_array_to_abi(F abicall, A *a, Args... args )
 {
     try{
-        abicall(args..., 1);
+        call_abi( abicall, args... );
     }catch(...){
         if(a) delete[] a;
         throw;
@@ -823,7 +990,7 @@ new_array_to_abi(F abicall, A *a, Args... args )
 template<typename CTy>
 std::string
 str_from_abi( int(*abicall)(CTy*, char**, size_t*, int), CTy *cty )
-{ return str_from_abi_vargs(abicall, true, cty); }
+{ return str_from_abi_vargs(abicall, ALLOW_EXCEPTIONS, cty); }
 
 template<typename CTy>
 std::set<std::string>
@@ -832,7 +999,7 @@ set_of_strs_from_abi( int(*abicall)(CTy*, char***, size_t*, int), CTy *cty )
     char **buf;
     size_t n;
     std::set<std::string> strs;
-    abicall(cty, &buf, &n, 1);
+    call_abi( abicall, cty, &buf, &n );
     if( buf ){
         while(n--){
             char *c = buf[n];
@@ -851,11 +1018,11 @@ enums_from_abi( int(*abicall)(CTy*, int**, size_t*,int), CTy *cty )
 {
     int *f;
     size_t n;
-    abicall(cty, &f, &n, 1);
+    call_abi( abicall, cty, &f, &n );
     std::set<FTy> ret;
     while( n-- )
         ret.insert( static_cast<FTy>(f[n]) );
-    FreeFieldsBuffer_ABI(f, 1);
+    call_abi( FreeFieldsBuffer_ABI, f );
     return ret;
 }
 

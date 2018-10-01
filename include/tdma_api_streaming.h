@@ -851,7 +851,7 @@ protected:
         {
             /* IF WE THROW BEFORE HERE WE MAY LEAK IN DERIVED */
             if( create_func )
-                create_func(args..., csub<CTy>(), 1);
+                call_abi( create_func, args..., csub<CTy>() );
         }
 
 
@@ -872,7 +872,7 @@ public:
     get_service() const
     {
         int ss;
-        StreamingSubscription_GetService_ABI(_csub.get(), &ss, 1);
+        call_abi( StreamingSubscription_GetService_ABI, _csub.get(), &ss );
         return static_cast<StreamerServiceType>(ss);
     }
 
@@ -903,7 +903,8 @@ protected:
             try{
                 s = set_to_new_cstrs(symbols);
                 i = set_to_new_int_array(fields);
-                create_func(s, symbols.size(), i, fields.size(), csub<CTy>(), 1);
+                call_abi( create_func, s, symbols.size(), i, fields.size(),
+                          csub<CTy>() );
                 delete[] s;
                 delete[] i;
             }catch(...){
@@ -916,7 +917,10 @@ protected:
 public:
     std::set<std::string>
     get_symbols() const
-    { return set_of_strs_from_abi(SubscriptionBySymbolBase_GetSymbols_ABI, csub()); }
+    {
+        return set_of_strs_from_abi( SubscriptionBySymbolBase_GetSymbols_ABI,
+                                     csub() );
+    }
 };
 
 
@@ -1042,13 +1046,15 @@ public:
     static const StreamerServiceType STREAMER_SERVICE_TYPE =
         StreamerServiceType::LEVELONE_FUTURES_OPTIONS;
 
-    LevelOneFuturesOptionsSubscription( const std::set<std::string>& symbols,
-                                            const std::set<FieldType>& fields )
+    LevelOneFuturesOptionsSubscription(const std::set<std::string>& symbols,
+                                           const std::set<FieldType>& fields )
         :
-            SubscriptionBySymbolBase( LevelOneFuturesOptionsSubscription_C{},
-                                      LevelOneFuturesOptionsSubscription_Create_ABI,
-                                      symbols,
-                                      fields )
+            SubscriptionBySymbolBase(
+                LevelOneFuturesOptionsSubscription_C{},
+                LevelOneFuturesOptionsSubscription_Create_ABI,
+                symbols,
+                fields
+                )
         {
             assert( csub<>()->type_id == TYPE_ID_SUB_LEVEL_ONE_FUTURES_OPTIONS);
         }
@@ -1085,7 +1091,11 @@ public:
 
     std::set<FieldType>
     get_fields() const
-    { return fields_from_abi<FieldType>(NewsHeadlineSubscription_GetFields_ABI); }
+    {
+        return fields_from_abi<FieldType>(
+            NewsHeadlineSubscription_GetFields_ABI
+            );
+    }
 };
 
 
@@ -1112,7 +1122,11 @@ public:
 
     std::set<FieldType>
     get_fields() const
-    { return fields_from_abi<FieldType>(ChartEquitySubscription_GetFields_ABI); }
+    {
+        return fields_from_abi<FieldType>(
+            ChartEquitySubscription_GetFields_ABI
+            );
+    }
 };
 
 
@@ -1311,7 +1325,7 @@ public:
     get_duration() const
     {
         int d;
-        ActivesSubscriptionBase_GetDuration_ABI(csub(), &d, 1);
+        call_abi( ActivesSubscriptionBase_GetDuration_ABI, csub(), &d );
         return static_cast<DurationType>(d);
     }
 
@@ -1394,7 +1408,7 @@ public:
     get_venue() const
     {
         int v;
-        OptionActivesSubscription_GetVenue_ABI(csub<CType>(), &v, 1);
+        call_abi( OptionActivesSubscription_GetVenue_ABI, csub<CType>(), &v );
         return static_cast<VenueType>(v);
     }
 
@@ -1563,8 +1577,7 @@ private:
 
     std::deque<bool>
     _call_abi_with_subs(
-        std::function<int(CType*, StreamingSubscription_C**,
-                          size_t, int*, int)> abicall,
+        int(*abicall)(CType*, StreamingSubscription_C**, size_t, int*, int),
         const std::vector<StreamingSubscription>& subscriptions
         )
     {
@@ -1574,11 +1587,13 @@ private:
         size_t sz = subscriptions.size();
         try{
             buffer = new StreamingSubscription_C*[sz];
-            std::transform(subscriptions.begin(), subscriptions.end(), buffer,
-                           [](const StreamingSubscription& s){ return s.csub(); });
+            std::transform( subscriptions.begin(), subscriptions.end(), buffer,
+                            [](const StreamingSubscription& s){
+                                return s.csub();
+                            });
 
             results = new int[sz];
-            abicall(_obj.get(), buffer, sz, results, 1);
+            call_abi( abicall, _obj.get(), buffer, sz, results );
             while( sz-- ){
                 cpp_results.push_front(static_cast<bool>(results[sz]));
             }
@@ -1604,11 +1619,9 @@ public:
         StreamingSession *ss = nullptr;
         try{
             ss = new StreamingSession;
-            StreamingSession_Create_ABI( &creds, callback,
-                                         connect_timeout.count(),
-                                         listening_timeout.count(),
-                                         subscribe_timeout.count(),
-                                         ss->_obj.get(), 1 );
+            call_abi( StreamingSession_Create_ABI, &creds, callback,
+                      connect_timeout.count(), listening_timeout.count(),
+                      subscribe_timeout.count(), ss->_obj.get() );
             assert( ss->_obj.get()->type_id == TYPE_ID_STREAMING_SESSION );
         }catch(...){
             if( ss ) delete ss;
@@ -1632,31 +1645,34 @@ public:
 
     void
     stop()
-    { StreamingSession_Stop_ABI(_obj.get(), 1); }
+    { call_abi( StreamingSession_Stop_ABI, _obj.get() ); }
 
     bool
     is_active() const
     {
         int active;
-        StreamingSession_IsActive_ABI(_obj.get(), &active, 1);
+        call_abi( StreamingSession_IsActive_ABI, _obj.get(), &active );
         return static_cast<bool>(active);
     }
 
     std::deque<bool> // success/fails in the order passed
     add_subscriptions(const std::vector<StreamingSubscription>& subscriptions)
-    { return _call_abi_with_subs(StreamingSession_AddSubscriptions_ABI,
-                                 subscriptions); }
+    { return _call_abi_with_subs( StreamingSession_AddSubscriptions_ABI,
+                                  subscriptions ); }
 
     bool 
     add_subscription(const StreamingSubscription& subscription)
-    { return add_subscriptions(std::vector<StreamingSubscription>{subscription})[0]; }
+    {
+        return add_subscriptions(
+            std::vector<StreamingSubscription>{subscription})[0];
+    }
 
 
     QOSType
     get_qos() const
     {
         int q;
-        StreamingSession_GetQOS_ABI(_obj.get(), &q, 1);
+        call_abi( StreamingSession_GetQOS_ABI, _obj.get(), &q );
         return static_cast<QOSType>(q);
     }
 
@@ -1664,7 +1680,8 @@ public:
     set_qos(const QOSType& qos)
     {
         int result;
-        StreamingSession_SetQOS_ABI(_obj.get(), static_cast<int>(qos), &result, 1);
+        call_abi( StreamingSession_SetQOS_ABI, _obj.get(),
+                  static_cast<int>(qos), &result );
         return static_cast<bool>(result);
     }
 };

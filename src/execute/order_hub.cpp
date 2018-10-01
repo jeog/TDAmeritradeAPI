@@ -45,7 +45,7 @@ TestExecuteImpl(std::string addr, std::string fields)
 
     if( r_code != HTTP_RESPONSE_OK ){
         cerr<< "error response: " << r_code << endl;
-        throw APIExecutionException("TestExecute failed", r_code);
+        TDMA_API_THROW(ConnectException,"TestExecute failed", r_code);
     }
 
     json r_json = json::parse(r_data);

@@ -34,7 +34,7 @@ timestamp_to_ms(string ts)
 {
     //"2018-06-12T02:18:23+0000"
     if( ts.size() != 24 || ts.substr(20,4) != "0000" )
-        throw APIException("invalid timestamp from streamerInfo");
+        TDMA_API_THROW(APIException,"invalid timestamp from streamerInfo");
 
     auto pos = ts.begin();
     tm t = {0};
@@ -62,11 +62,11 @@ get_streamer_info(Credentials& creds)
 
     auto i_acct = j.find("accounts");
     if( i_acct == j.end() )
-        throw APIException("returned user principals has no 'accounts'");
+        TDMA_API_THROW(APIException,"returned user principals has no 'accounts'");
 
     auto i_sinfo = j.find("streamerInfo");
     if( i_sinfo == j.end() )
-        throw APIException("returned user principals has no 'streamerInfo");
+        TDMA_API_THROW(APIException,"returned user principals has no 'streamerInfo");
 
     json acct = (*i_acct)[0];
     json sinfo = *i_sinfo;
@@ -89,7 +89,7 @@ get_streamer_info(Credentials& creds)
         si.primary_acct_id = j.at("primaryAccountId");
         si.encode_credentials();
     }catch(json::exception& e){
-        throw APIException("failed to convert UserPrincipals JSON to"
+        TDMA_API_THROW(APIException,"failed to convert UserPrincipals JSON to"
                            " StreamerInfo: " + string(e.what()));
     }
 
@@ -160,7 +160,7 @@ streamer_service_from_str(string service_name)
     else if( service_name == "TIMESALE_OPTIONS" )
         return StreamerServiceType::TIMESALE_OPTIONS;
     else
-        throw ValueException("invalid service name: " + service_name);
+        TDMA_API_THROW(ValueException,"invalid service name: " + service_name);
 }
 
 

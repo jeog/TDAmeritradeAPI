@@ -6,6 +6,8 @@
 
 #include "tdma_common.h"
 
+extern bool use_live_connection;
+
 long long msec_since_epoch();
 
 void test_getters(const std::string& account_id, Credentials& creds);

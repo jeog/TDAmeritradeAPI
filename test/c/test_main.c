@@ -22,6 +22,18 @@ int main(int argc, char* argv[])
         return 1;
     }
 
+
+    printf("*** [BEGIN] TEST OPTION SYMBOL BUILDER [BEGIN] ***\n");
+    err = Test_BuildOptionSymbol();
+    if( err ){
+        printf("\n *** [ERROR] TEST OPTION SYMBOL BUILDER [ERROR] ***\n");
+        StoreCredentials( argv[2], argv[3], &creds);
+        return err;
+    }
+    printf("\n *** [END] TEST OPTION SYMBOL BUILDER [END] ***\n\n");
+
+    return 0; // DEBUG
+
     printf("*** [BEGIN] TEST EXECUTION ORDER OBJECTS [BEGIN] ***\n");
     err = Test_Execution_Order_Objects();
     if( err ){
@@ -32,15 +44,6 @@ int main(int argc, char* argv[])
 
     if( (err = LoadCredentials( argv[2], argv[3], &creds )) )
         CHECK_AND_RETURN_ON_ERROR(err, "LoadCredentials");
-
-    printf("*** [BEGIN] TEST OPTION SYMBOL BUILDER [BEGIN] ***\n");
-    err = Test_BuildOptionSymbol();
-    if( err ){
-        printf("\n *** [ERROR] TEST OPTION SYMBOL BUILDER [ERROR] ***\n");
-        StoreCredentials( argv[2], argv[3], &creds);
-        return err;
-    }
-    printf("\n *** [END] TEST OPTION SYMBOL BUILDER [END] ***\n\n");
 
 
     printf("*** [BEGIN] TEST GETTERS [BEGIN] ***\n");

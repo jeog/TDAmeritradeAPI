@@ -72,9 +72,9 @@ This project would not be possible without some of the great open-source project
 - - -
 | | Get Interface  |  Streaming Interface  |  Execute Interface 
 -------------------|---------------|---------------------|--------------------
-**C**              | *Working*     | *Working*       | *Coming Soon*
-**C++**            | *Working (incomplete ABI)* | *Working (incomplete ABI)* | *Coming Soon*
-**Python**         | *Working*     | *Working*       | *Coming Soon*
+**C**              | *Working*     | *Working*   | *OrderTicket Only*
+**C++**            | *Working*     | *Working*   | *OrderTicket Only*
+**Python**         | *Working*     | *Working*   | *Coming Soon*
 
 *Note: 'Working' does not necessarily mean 'Stable'*
 
@@ -93,17 +93,11 @@ This project would not be possible without some of the great open-source project
     |       (non binary compatible) C++ interface to TDAmeritradeAPI      |
     |---------------------------------------------------------------------|
 
-**IMPORTANT** - *There are certain binary compatibility issues when exporting C++ code accross compilations(from name mangling, differing runtimes, changes to STL implementations etc.). If, for instance, we return an std::vector in an earlier version of a library, its implementation changes, and code that imports the library is compiled against a new version of the STL, there can be an issue.*
-
-*The C++ interfaces still throw exceptions across the library boundary which can create issues.*
-
-***Until we implement a better way to deal w/ this either 1) compile your code and the library using the same compiler/settings and link to the same libraries to avoid ABI incompatibility or 2) use the C or Python bindings and corresponding error codes.***
-
+There are certain binary compatibility issues when exporting C++ code accross compilations(from name mangling, differing runtimes, changes to STL implementations etc.). Although we attempt to limit these issues with an ABI layer and 'proxy' objects, it's recommended to compile client code and the library using the same compiler/settings and link to the same libraries.
 
 ### Getting Started
 - - -
 
-To get up and running you'll need to:
 1. build the necessary dependencies
 2. build the TDAmeritradeAPI shared library(or use a precompiled version).
 3. install the dependencies and TDAmeritradeAPI library in a place the linker can find
@@ -111,20 +105,20 @@ To get up and running you'll need to:
     - (**C/C++**) include the necessary headers in your code and link to the library
     - (**Python**) install the tdma_api package
 
-It's recommend you build from source. This is especially true for the C++ interface, because of the ABI issues mentioned above. If you're not comfortable with this or just want to use the Python interface it may be easier to use a [precompiled linux/windows library](#precompiled). 
+It's recommend you build from source. If you're not comfortable with this or just want to use the Python interface it may be easier to use a [precompiled linux/windows library](#precompiled). 
 
 #### Build Dependencies 
 
 ##### unix-like
 
-If using a package manager like apt install the libcurl and libssl dev packages (this should take care of the other dependencies): 
+If using a package manager, like apt, install the libcurl and libssl dev packages (this should take care of the other dependencies): 
 
-        user@host:~$ sudo apt-get install libcurl4-openssl-dev libssl-dev
+    user@host:~$ sudo apt-get install libcurl4-openssl-dev libssl-dev
 
 Alternatively, you can download them manually via github:
 
     user@host:~$ git clone https://github.com/openssl/openssl.git
-    user@host:~$ git clone https://github.com/curl/curl.git   
+    user@host:~$ git clone https://github.com/curl/curl.git 
     user@host:~$ git clone https://github.com/madler/zlib.git
 
 ...or the individual project sites:
@@ -147,7 +141,7 @@ The current build setup is a bit messy. Hopefully things will get a little simpl
 You can currently build on Unix-like systems and Windows. For Mac OS/X you'll have to download/install the necessary libraries and adjust the makefiles. (If you build sucessfully on Mac feel free to share and we can 
 include it in the docs.)
 
-- The library is implemented in C++ and needs to be built accordingly. It exports a C/ABI layer which is wrapped by header defined C calls, allowing for access from pure C and Python via ctypes.py.
+- The library is implemented in C++ and needs to be built accordingly. It exports a C/ABI layer which is wrapped by header defined C calls and C++ calls/objects, allowing for access from pure C, C++ and Python via ctypes.py.
 ```
   FunctionImpl(string)                [C++ implementation code defined in lib]
   Funtion_ABI(const char*)            [C ABI code defined in lib and exported]
@@ -171,13 +165,13 @@ include it in the docs.)
 
 - Compilers need to support C++11.
 
-- As mentioned above the C++ interfaces still have binary compatibility issues so you'll need to compile/link your C++ code the same way you compile/link this library.
+- By default, exceptions are caught inside the library, exported as error codes, and (for C++) reconstituted/rethrown on the client side of the ABI. 
 
-- On windows you should compile your code with the /EHs switch to allow exceptions from 'extern C' functions.
+- ```#define ALLOW_EXCEPTIONS_ACROSS_ABI``` to allow exceptions to be thrown directly from the library. ***Be sure there's binary compatibility between your code and the library.*** (*On Windows you'll need to compile your code with the /EHs switch to allow exceptions from 'extern C' functions.*)
+
+- ```#define DEBUG_VERBOSE_1_``` to send verbose logging/debug info to stdout. (Debug builds do this automatically.)
 
 - If you have a build issue file an issue or send an email.
-
-- Define ```DEBUG_VERBOSE_1_``` to send verbose logging/debug info to stdout. (Debug builds do this automatically.)
 
 ##### unix-like
 
@@ -258,11 +252,10 @@ Since all the dependencies are included(or built manually) you'll need to manage
 1. include headers:
     - "tdma_api_get.h" for the 'HTTPS Get' interface 
     - "tdma_api_streaming.h" for the 'Streaming' interface  
-    - "tdma_api_execute.h" for the 'Execute' interface ***(not available yet)***
+    - "tdma_api_execute.h" for the 'Execute' interface
     - *(headers/source use relative include links, don't change the directory structure)*
 2. add Library/API calls to your code
-3. compile *(read the message above on binary compatibility)*
-    - (C++) use the /EHs switch (properties -> C/C++ -> Code Generation -> Enable C++ Exceptions -> Yes with Extern C functions (/EHs))
+3. compile 
 4. link your code with the TDAmeritradeAPI library *(be sure the linker can find it)*
 5. run 
 
@@ -292,7 +285,7 @@ Since all the dependencies are included(or built manually) you'll need to manage
 
 - All front-end C++ library code is in namespace ```tdma```. 
 
-- **ONLY** Symbol strings are converted to upper-case by the library, e.g 'spy' -> 'SPY'.
+- **ONLY** Symbol strings are converted to upper-case by the library, e.g 'sPy' -> 'SPY'.
 
 - Enums are defined for both C and C++ code using MACROS. Python mimics these enums by defining constant values. For example:
     ```
@@ -331,14 +324,22 @@ Since all the dependencies are included(or built manually) you'll need to manage
         - ```FreeBuffer(char *buf)```
         - ```FreeBuffers(char **bufers, size_t n)```
         - ```FreeFieldsBuffer(int* fields)```
+        - ```FreeOrderLegBuffer(OrderLeg_C *legs)```
+        - ```FreeOrderTicketBuffer(OrderTicket_C *orders)```
     - All buffers are accompanied w/ a size_t* arg to be filled w/ the size of the populated buffer. Buffers of type char* return the size of the string + 1 for the null term.
     - Arrays passed by caller have to pass a size_t value of the number of elements
 
-- Only ABI functions(those ending in '_ABI') are directly exported from the library. The C interface calls and C++ classes wrap these as header-defined inlines.
+- Only ABI functions(those ending in '_ABI') are directly exported from the library. The C interface calls and C++ calls/classes wrap these as header-defined statics/inlines.
 
 ### Errors & Exceptions
 - - -
-All exceptional/error states from the C++ interface will cause exceptions to be thrown.  ***Currently C++ exceptions are passed across the library boundary and may break the ABI***
+All exceptional/error states from the C++ interface will cause exceptions to be thrown. 
+
+- If ```ALLOW_EXCEPTIONS_ACROSS_ABI``` is not defined (default behavior) exceptions will be caught at the library boundary, converted to error codes, and reconstituted/rethrown from the client side. 
+    - Exceptions defined by the libaray will contain the line number, source file name, and corresponding error codes. Upon being reconstituted/rethrown this information will be appended to the string returned by the exception's ```what()``` method.
+    - Exceptions inheriting from std::exception and NOT defined by the library will be reconstituted/rethrown as
+```tdma::StdException``` objects without additional line number and filename info.
+    - Anything else thrown be will be reconstituted/rethrown as a ```tdma::UnknownException``` object.
 
 - Library Exceptions:
     - ```APIExcetion``` : base class and generic exceptions
@@ -346,16 +347,18 @@ All exceptional/error states from the C++ interface will cause exceptions to be 
         - ```ValueException``` : bad/invalid argument to a function or constructor (checked locally)
         - ```TypeException``` : type inconsistency of a proxy object
         - ```MemoryError``` : error allocating memory within the ABI layer
-        - ```APIExecutionException``` : a general error connecting/communicating with the server, these
-exceptions tend to be the result of some low(er) level failure with the connection        
-            - ```AuthenticationException``` : an error authenticating with the server
+        - ```ConnectException``` : general error connecting/communicating with the server  
+            - ```AuthenticationException``` : error authenticating with the server
             - ```InvalidRequest``` : user made an invalid/malformed request to the server
             - ```ServerError``` : server has returned some type of error status
-        - ```StreamingException``` : a general error connecting/communicating via StreamingSession            
+        - ```StreamingException``` : general error connecting/communicating via StreamingSession   
+        - ```ExectuteException``` : general error building/managing/executing orders
+        - ```StdException``` : non-library exception, derived from std::exception, thrown from the library
+        - ```UnknownException``` : indicates something unexpected was thrown from the library         
 
 - 3rd Party Exceptions:
     - ```json::exception``` : base class for exceptions from the json library (review the documentation
-for the derived classes)
+for the derived classes). If ```ALLOW_EXCEPTIONS_ACROSS_ABI``` is not defined (default behavior) this will be rethrown as ```StdException```.
 
 - The C interface has corresponding error codes:
     ```
@@ -365,16 +368,23 @@ for the derived classes)
     #define TDMA_API_TYPE_ERROR 4
     #define TDMA_API_MEMORY_ERROR 5
 
-    #define TDMA_API_EXEC_ERROR 101
+    #define TDMA_API_CONNECT_ERROR 101
     #define TDMA_API_AUTH_ERROR 102
     #define TDMA_API_REQUEST_ERROR 103
     #define TDMA_API_SERVER_ERROR 104
 
     #define TDMA_API_STREAM_ERROR 201
+
+    #define TDMA_API_EXECUTE_ERROR 301
+
+    #define TDMA_API_STD_EXCEPTION 501
+
+    #define TDMA_API_UNKNOWN_EXCEPTION 1001
     ```
 - The Python interface throws ```tdma_api.clib.LibraryNotLoaded``` and ```tdma_api.clib.CLibException``` w/ the error code, name, and message returned from the library.         
 
-- ```LastErrorMsg``` and ```LastErrorCode``` can be used to get the last error message and code, respectively.
+- ```LastErrorMsg```, ```LastErrorCode```, ```LastErrorLineNumber```, and ```LastErrorFilename``` can be used to get the last error message, code, line number and filename, respectively. This error state is only set by errors/exceptions from WITHIN the library, not errors/exceptions from code defined in the headers.
+
 ### Authentication
 - - -
 Authentication is done through OAuth2 using your account login information. 
@@ -549,17 +559,17 @@ CloseCredentials(struct Credentials* pcreds );
 ### Access
 - - -
 
-- ##### *HTTPS Get*
+- ##### *Get*
 
-    For queries, (non-streaming) real-time data, and account information you'll make HTTPS Get requests through 'Getter' objects and convenience functions that internally use libcurl and return json objects. [Please review the full documentation](README_GET.md).
+    For queries, (non-streaming) real-time data, and account information you'll make HTTPS Get requests through 'Getter' objects and convenience functions that internally use libcurl and return json objects or strings. [Please review the full documentation](README_GET.md).
 
 - ##### *Streaming*
 
-    For real-time, low(er)-latency streaming data you'll establish a long-lived WebSocket connection through the StreamingSession class that will callback with json strings/objects. [Please review the full documentation](README_STREAMING.md).
+    For real-time, low(er)-latency streaming data you'll establish a long-lived WebSocket connection through the StreamingSession class that will callback with json objects or strings. [Please review the full documentation](README_STREAMING.md).
 
-- ##### *HTTPS Update/Execute* 
+- ##### *Update/Execute* 
 
-    For updating your account and executing trades you'll make HTTPS Put/Post/Delete requests that have yet to be implemented. *As soon as the get calls are determined stable and there's a means to test execution outside of live trading they will be added.* [Please review the preliminary documentation](README_EXECUTE.md).
+    For updating your account and executing trades you'll make HTTPS Put/Post/Delete requests. ***Currently, we are waiting on a mechanism from Ameritrade to test execution outside of live trading before allowing direct access from the library***. In the meantime you can create 'OrderTicket' objects, retrieve the underlying JSON, and POST yourself. [Please review the preliminary documentation](README_EXECUTE.md).
 
 
 #### LICENSING & WARRANTY

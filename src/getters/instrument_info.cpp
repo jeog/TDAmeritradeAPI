@@ -65,7 +65,7 @@ public:
             _search_type(search_type)
         {
             if( query_string.empty() )
-                throw ValueException("empty query_string");
+                TDMA_API_THROW(ValueException,"empty query_string");
             _build();
         }
 
@@ -81,7 +81,7 @@ public:
     set_query(InstrumentSearchType search_type, const std::string& query_string)
     {
         if( query_string.empty() )
-            throw ValueException("empty query_string");
+            TDMA_API_THROW(ValueException,"empty query_string");
         _search_type = search_type;
         _query_string = query_string;
         build();

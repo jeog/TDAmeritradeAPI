@@ -162,6 +162,8 @@ typedef union {
     OptionRangeType range;
 } OptionStrikesValue;
 
+#define THROW_VALUE_EXCEPTION(m) throw ValueException(m, __LINE__, __FILE__)
+
 #ifdef __cplusplus
 
 namespace tdma{
@@ -303,27 +305,6 @@ DECL_CGETTER_STRUCT(InstrumentInfoGetter_C);
 
 #undef DECL_CGETTER_STRUCT
 
-
-/*
- * ABI bridge functions
- *
- *
- * How we provide C and C++ interface w/ a stable ABI
- * (e.g for QuoteGetter)
- *
- *            Interface      -->         ABI Bridge         -->     Implementation
- *
- *  C   QuoteGetter_GetSymbol()   QuoteGetter_GetSymbol_ABI()
- *  C++ QuoteGetter.get_symbol()                               QuoteGetterImpl.get_symbol()
- *
- *  Errors:
- *
- *  C        Error Code      <--        Error Code         <--      Exception
- *  C++      Exception       <--        Exception          <--      Exception
- *
- *
- * INLINE interface calls  so they stay on client-side of ABI
- */
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 APIGetter_Get_ABI( Getter_C *pgetter,
@@ -619,30 +600,31 @@ OptionChainGetter_Create_ABI( struct Credentials *pcreds,
                                   int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
-OptionChainGetter_Destroy_ABI(OptionChainGetter_C *pgetter, int allow_exceptions);
+OptionChainGetter_Destroy_ABI( OptionChainGetter_C *pgetter,
+                                   int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 OptionChainGetter_GetSymbol_ABI( OptionChainGetter_C *pgetter,
-                              char **buf,
-                              size_t *n,
-                              int allow_exceptions);
+                                     char **buf,
+                                     size_t *n,
+                                     int allow_exceptions);
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 OptionChainGetter_SetSymbol_ABI( OptionChainGetter_C *pgetter,
-                              const char *symbol,
-                              int allow_exceptions );
+                                     const char *symbol,
+                                     int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 OptionChainGetter_GetStrikes_ABI( OptionChainGetter_C *pgetter,
-                                          int *strikes_type,
-                                          OptionStrikesValue *strikes_value,
-                                          int allow_exceptions);
+                                      int *strikes_type,
+                                      OptionStrikesValue *strikes_value,
+                                      int allow_exceptions);
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 OptionChainGetter_SetStrikes_ABI( OptionChainGetter_C *pgetter,
-                                          int strikes_type,
-                                          OptionStrikesValue strikes_value,
-                                          int allow_exceptions);
+                                      int strikes_type,
+                                      OptionStrikesValue strikes_value,
+                                      int allow_exceptions);
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 OptionChainGetter_GetContractType_ABI( OptionChainGetter_C *pgetter,
@@ -652,7 +634,7 @@ OptionChainGetter_GetContractType_ABI( OptionChainGetter_C *pgetter,
 EXTERN_C_SPEC_ DLL_SPEC_ int
 OptionChainGetter_SetContractType_ABI( OptionChainGetter_C *pgetter,
                                             int contract_type,
-                                           int allow_exceptions);
+                                            int allow_exceptions);
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 OptionChainGetter_IncludesQuotes_ABI( OptionChainGetter_C *pgetter,
@@ -666,45 +648,45 @@ OptionChainGetter_IncludeQuotes_ABI( OptionChainGetter_C *pgetter,
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 OptionChainGetter_GetFromDate_ABI( OptionChainGetter_C *pgetter,
-                                      char **buf,
-                                      size_t *n,
-                                      int allow_exceptions);
+                                       char **buf,
+                                       size_t *n,
+                                       int allow_exceptions);
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 OptionChainGetter_SetFromDate_ABI( OptionChainGetter_C *pgetter,
-                                      const char *date,
-                                      int allow_exceptions );
+                                       const char *date,
+                                       int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 OptionChainGetter_GetToDate_ABI( OptionChainGetter_C *pgetter,
-                                      char **buf,
-                                      size_t *n,
-                                      int allow_exceptions);
+                                     char **buf,
+                                     size_t *n,
+                                     int allow_exceptions);
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 OptionChainGetter_SetToDate_ABI( OptionChainGetter_C *pgetter,
-                                      const char *date,
-                                      int allow_exceptions );
+                                     const char *date,
+                                     int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 OptionChainGetter_GetExpMonth_ABI( OptionChainGetter_C *pgetter,
-                                           int *exp_month,
-                                           int allow_exceptions);
+                                       int *exp_month,
+                                       int allow_exceptions);
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 OptionChainGetter_SetExpMonth_ABI( OptionChainGetter_C *pgetter,
-                                           int exp_month,
-                                           int allow_exceptions);
+                                       int exp_month,
+                                       int allow_exceptions);
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 OptionChainGetter_GetOptionType_ABI( OptionChainGetter_C *pgetter,
-                                           int *option_type,
-                                           int allow_exceptions);
+                                         int *option_type,
+                                         int allow_exceptions);
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 OptionChainGetter_SetOptionType_ABI( OptionChainGetter_C *pgetter,
-                                           int option_type,
-                                           int allow_exceptions);
+                                         int option_type,
+                                         int allow_exceptions);
 
 /* OptionChainStrategyGetter */
 EXTERN_C_SPEC_ DLL_SPEC_ int
@@ -745,22 +727,24 @@ OptionChainStrategyGetter_SetStrategy_ABI(
 
 /* OptionChainAnalyticalGetter */
 EXTERN_C_SPEC_ DLL_SPEC_ int
-OptionChainAnalyticalGetter_Create_ABI( struct Credentials *pcreds,
-                                          const char* symbol,
-                                          double volatility,
-                                          double underlying_price,
-                                          double interest_rate,
-                                          unsigned int days_to_exp,
-                                          int strikes_type,
-                                          OptionStrikesValue strikes_value,
-                                          int contract_type,
-                                          int include_quotes,
-                                          const char* from_date,
-                                          const char* to_date,
-                                          int exp_month,
-                                          int option_type,
-                                          OptionChainAnalyticalGetter_C *pgetter,
-                                          int allow_exceptions );
+OptionChainAnalyticalGetter_Create_ABI(
+    struct Credentials *pcreds,
+    const char* symbol,
+    double volatility,
+    double underlying_price,
+    double interest_rate,
+    unsigned int days_to_exp,
+    int strikes_type,
+    OptionStrikesValue strikes_value,
+    int contract_type,
+    int include_quotes,
+    const char* from_date,
+    const char* to_date,
+    int exp_month,
+    int option_type,
+    OptionChainAnalyticalGetter_C *pgetter,
+    int allow_exceptions
+    );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 OptionChainAnalyticalGetter_Destroy_ABI(
@@ -827,14 +811,14 @@ OptionChainAnalyticalGetter_SetDaysToExp_ABI(
 /* AccountGetterBase */
 EXTERN_C_SPEC_ DLL_SPEC_ int
 AccountGetterBase_GetAccountId_ABI( Getter_C *pgetter,
-                                    char **buf,
-                                    size_t *n,
-                                    int allow_exceptions );
+                                        char **buf,
+                                        size_t *n,
+                                        int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 AccountGetterBase_SetAccountId_ABI( Getter_C *pgetter,
-                                    const char *account_id,
-                                    int allow_exceptions );
+                                        const char *account_id,
+                                        int allow_exceptions );
 
 /* AccountInfoGetter */
 EXTERN_C_SPEC_ DLL_SPEC_ int
@@ -1094,6 +1078,7 @@ InstrumentInfoGetter_SetQuery_ABI( InstrumentInfoGetter_C *pgetter,
 
 
 #ifndef __cplusplus
+
 /*
  * C interface
  *
@@ -1104,12 +1089,10 @@ InstrumentInfoGetter_SetQuery_ABI( InstrumentInfoGetter_C *pgetter,
  *
  * CLIENTS NEED TO DEALLOC (CALL FREE) WHEN DONE, BEFORE USING AGAIN
  *
- *
  * Getter objects created by Create need to be destroyed w/ Destroy
  *
  * NOTE - for Get and Close client can use the versions associate with the
  *        getter type or the 'base' versions: APIGetter_Get and APIGetter_Close
- *
  */
 
 /* APIGetter -> APIGetterImpl */
@@ -1382,13 +1365,13 @@ HistoricalPeriodGetter_SetFrequency( HistoricalPeriodGetter_C *pgetter,
 /* HistoricalRangeGetter */
 static inline int
 HistoricalRangeGetter_Create( struct Credentials *pcreds,
-                                   const char* symbol,
-                                   FrequencyType frequency_type,
-                                   unsigned int frequency,
-                                   unsigned long long start_msec_since_epoch,
-                                   unsigned long long end_msec_since_epoch,
-                                   int extended_hours,
-                                   HistoricalRangeGetter_C *pgetter )
+                               const char* symbol,
+                               FrequencyType frequency_type,
+                               unsigned int frequency,
+                               unsigned long long start_msec_since_epoch,
+                               unsigned long long end_msec_since_epoch,
+                               int extended_hours,
+                               HistoricalRangeGetter_C *pgetter )
 {
     return HistoricalRangeGetter_Create_ABI(pcreds, symbol, (int)frequency_type,
                                           frequency, start_msec_since_epoch,
@@ -1638,20 +1621,20 @@ OptionChainStrategyGetter_SetStrategy( OptionChainStrategyGetter_C *pgetter,
 /* OptionChainAnalyticalGetter */
 static inline int
 OptionChainAnalyticalGetter_Create( struct Credentials *pcreds,
-                                      const char* symbol,
-                                      double volatility,
-                                      double underlying_price,
-                                      double interest_rate,
-                                      unsigned int days_to_exp,
-                                      OptionStrikesType strikes_type,
-                                      OptionStrikesValue strikes_value,
-                                      OptionContractType contract_type,
-                                      int include_quotes,
-                                      const char* from_date,
-                                      const char* to_date,
-                                      OptionExpMonth exp_month,
-                                      OptionType option_type,
-                                      OptionChainAnalyticalGetter_C *pgetter )
+                                    const char* symbol,
+                                    double volatility,
+                                    double underlying_price,
+                                    double interest_rate,
+                                    unsigned int days_to_exp,
+                                    OptionStrikesType strikes_type,
+                                    OptionStrikesValue strikes_value,
+                                    OptionContractType contract_type,
+                                    int include_quotes,
+                                    const char* from_date,
+                                    const char* to_date,
+                                    OptionExpMonth exp_month,
+                                    OptionType option_type,
+                                    OptionChainAnalyticalGetter_C *pgetter )
 {
     return OptionChainAnalyticalGetter_Create_ABI( pcreds, symbol, volatility,
                                                    underlying_price, interest_rate,
@@ -1755,10 +1738,10 @@ name##_SetAccountId( name##_C *pgetter, const char *symbol ) \
 /* AccountInfoGetter */
 static inline int
 AccountInfoGetter_Create( struct Credentials *pcreds,
-                                 const char* account_id,
-                                 int positions,
-                                 int orders,
-                                 AccountInfoGetter_C *pgetter )
+                          const char* account_id,
+                          int positions,
+                          int orders,
+                          AccountInfoGetter_C *pgetter )
 { return AccountInfoGetter_Create_ABI(pcreds, account_id, positions, orders,
                                       pgetter, 0); }
 
@@ -1772,7 +1755,7 @@ DECL_WRAPPED_ACCOUNT_GETTER_BASE_FUNCS(AccountInfoGetter)
 
 static inline int
 AccountInfoGetter_ReturnsPositions( AccountInfoGetter_C *pgetter,
-                                            int *returns_positions)
+                                    int *returns_positions)
 { return AccountInfoGetter_ReturnsPositions_ABI(pgetter, returns_positions, 0); }
 
 static inline int
@@ -1793,8 +1776,8 @@ AccountInfoGetter_ReturnOrders( AccountInfoGetter_C *pgetter,
 /* PreferencesGetter */
 static inline int
 PreferencesGetter_Create( struct Credentials *pcreds,
-                                 const char* account_id,
-                                 PreferencesGetter_C *pgetter )
+                          const char* account_id,
+                          PreferencesGetter_C *pgetter )
 { return PreferencesGetter_Create_ABI(pcreds, account_id, pgetter, 0); }
 
 static inline int
@@ -1910,7 +1893,8 @@ IndividualTransactionHistoryGetter_Create(
 
 static inline int
 IndividualTransactionHistoryGetter_Destroy(
-    IndividualTransactionHistoryGetter_C *pgetter )
+    IndividualTransactionHistoryGetter_C *pgetter
+    )
 { return IndividualTransactionHistoryGetter_Destroy_ABI(pgetter, 0); }
 
 DECL_WRAPPED_API_GETTER_BASE_FUNCS(IndividualTransactionHistoryGetter)
@@ -1941,11 +1925,11 @@ IndividualTransactionHistoryGetter_SetTransactionId(
 /* UserPrincipalsGetter */
 static inline int
 UserPrincipalsGetter_Create( struct Credentials *pcreds,
-                                     int streamer_subscription_keys,
-                                     int streamer_connection_info,
-                                     int preferences,
-                                     int surrogate_ids,
-                                     UserPrincipalsGetter_C *pgetter)
+                             int streamer_subscription_keys,
+                             int streamer_connection_info,
+                             int preferences,
+                             int surrogate_ids,
+                             UserPrincipalsGetter_C *pgetter)
 {
     return UserPrincipalsGetter_Create_ABI(
         pcreds, streamer_subscription_keys, streamer_connection_info,
@@ -2036,9 +2020,9 @@ UserPrincipalsGetter_ReturnSurrogateIds(  UserPrincipalsGetter_C *pgetter,
 /* InstrumentInfoGetter */
 static inline int
 InstrumentInfoGetter_Create( struct Credentials *pcreds,
-                                     InstrumentSearchType search_type,
-                                     const char* query_string,
-                                     InstrumentInfoGetter_C *pgetter )
+                             InstrumentSearchType search_type,
+                             const char* query_string,
+                             InstrumentInfoGetter_C *pgetter )
 {
     return InstrumentInfoGetter_Create_ABI( pcreds, (int)search_type,
                                             query_string, pgetter, 0 );
@@ -2115,7 +2099,7 @@ protected:
         {
             /* IF WE THROW BEFORE HERE WE MAY LEAK IN DERIVED */
             if( create_func )
-                create_func(args..., cgetter<CTy>(), 1);
+                call_abi( create_func, args..., cgetter<CTy>() );
         }
 
     template<typename CTy, typename F>
@@ -2147,7 +2131,7 @@ public:
     get_def_wait_msec()
     {
         unsigned long long w;
-        APIGetter_GetDefWaitMSec_ABI(&w, 1);
+        call_abi( APIGetter_GetDefWaitMSec_ABI, &w );
         return std::chrono::milliseconds(w);
     }
 
@@ -2155,23 +2139,22 @@ public:
     get_wait_msec()
     {
         unsigned long long w;
-        APIGetter_GetWaitMSec_ABI(&w, 1);
+        call_abi( APIGetter_GetWaitMSec_ABI, &w );
         return std::chrono::milliseconds(w);
     }
 
     static void
     set_wait_msec(std::chrono::milliseconds msec)
     {
-        APIGetter_SetWaitMSec_ABI(
-            static_cast<unsigned long long>(msec.count()), 1
-            );
+        call_abi( APIGetter_SetWaitMSec_ABI,
+                  static_cast<unsigned long long>(msec.count()) );
     }
 
     static std::chrono::milliseconds
     wait_remaining()
     {
         unsigned long long w;
-        APIGetter_WaitRemaining_ABI(&w, 1);
+        call_abi( APIGetter_WaitRemaining_ABI, &w );
         return std::chrono::milliseconds(w);
     }
 
@@ -2180,7 +2163,7 @@ public:
     {
         char *buf;
         size_t n;
-        APIGetter_Get_ABI(_cgetter.get(), &buf, &n, 1);
+        call_abi( APIGetter_Get_ABI, _cgetter.get(), &buf, &n );
         json j = (n > 1) ? json::parse(std::string(buf)) : json();
         if(buf)
             free(buf);
@@ -2189,13 +2172,13 @@ public:
 
     void
     close()
-    { APIGetter_Close_ABI(_cgetter.get(), 1); }
+    { call_abi(APIGetter_Close_ABI, _cgetter.get() ); }
 
     bool
     is_closed() const
     {
         int b;
-        APIGetter_IsClosed_ABI(_cgetter.get(), &b, 1);
+        call_abi( APIGetter_IsClosed_ABI, _cgetter.get(), &b );
         return static_cast<bool>(b);
     }
 };
@@ -2223,7 +2206,9 @@ public:
 
     void
     set_symbol(const std::string& symbol)
-    { QuoteGetter_SetSymbol_ABI(cgetter<QuoteGetter_C>(), symbol.c_str(), 1); }
+    {
+        call_abi( QuoteGetter_SetSymbol_ABI, cgetter<CType>(), symbol.c_str() );
+    }
 };
 
 inline json
@@ -2233,33 +2218,36 @@ GetQuote(Credentials& creds, const std::string& symbol)
 
 class QuotesGetter
         : public APIGetter {
+public:
+    typedef QuotesGetter_C CType;
+
+private:
     void
     _str_set_to_abi(
-        int(*abicall)(QuotesGetter_C*, const char**, size_t, int),
+        int(*abicall)(CType*, const char**, size_t, int),
         const std::set<std::string>& symbols
         ) const
     {
         const char** tmp = set_to_new_cstrs(symbols);
-        new_array_to_abi( abicall, tmp, cgetter<QuotesGetter_C>(), tmp,
-                          symbols.size() );
+        new_array_to_abi( abicall, tmp, cgetter<CType>(), tmp, symbols.size() );
     }
 
 public:
-    typedef QuotesGetter_C CType;
-
     QuotesGetter(Credentials& creds, const std::set<std::string>& symbols)
         :
-            APIGetter( QuotesGetter_C{}, QuotesGetter_Destroy_ABI )
+            APIGetter( CType{}, QuotesGetter_Destroy_ABI )
         {
             const char** tmp = set_to_new_cstrs(symbols);
             new_array_to_abi( QuotesGetter_Create_ABI, tmp, &creds, tmp,
-                              symbols.size(), cgetter<QuotesGetter_C>() );
+                              symbols.size(), cgetter<CType>() );
         }
 
     std::set<std::string>
     get_symbols() const
-    { return set_of_strs_from_abi( QuotesGetter_GetSymbols_ABI,
-                                   cgetter<QuotesGetter_C>() ); }
+    {
+        return set_of_strs_from_abi( QuotesGetter_GetSymbols_ABI,
+                                     cgetter<CType>() );
+    }
 
     void
     set_symbols(const std::set<std::string>& symbols)
@@ -2267,11 +2255,17 @@ public:
 
     void
     add_symbol(const std::string& symbol)
-    { QuotesGetter_AddSymbol_ABI(cgetter<QuotesGetter_C>(), symbol.c_str(), 1); }
+    {
+        call_abi( QuotesGetter_AddSymbol_ABI, cgetter<CType>(),
+                  symbol.c_str() );
+    }
 
     void
     remove_symbol(const std::string& symbol)
-    { QuotesGetter_RemoveSymbol_ABI(cgetter<QuotesGetter_C>(), symbol.c_str(), 1); }
+    {
+        call_abi( QuotesGetter_RemoveSymbol_ABI, cgetter<CType>(),
+                  symbol.c_str() );
+    }
 
     void
     add_symbols(const std::set<std::string>& symbols)
@@ -2314,27 +2308,23 @@ public:
     void
     set_date(const std::string& date)
     {
-        MarketHoursGetter_SetDate_ABI(
-            cgetter<MarketHoursGetter_C>(), date.c_str(), true
-            );
+        call_abi( MarketHoursGetter_SetDate_ABI, cgetter<CType>(),
+                  date.c_str() );
     }
 
     MarketType
     get_market_type() const
     {
         int m;
-        MarketHoursGetter_GetMarketType_ABI(
-            cgetter<MarketHoursGetter_C>(), &m, 1
-            );
+        call_abi( MarketHoursGetter_GetMarketType_ABI, cgetter<CType>(), &m );
         return static_cast<MarketType>(m);
     }
 
     void
     set_market_type(MarketType market_type)
     {
-        MarketHoursGetter_SetMarketType_ABI(
-            cgetter<MarketHoursGetter_C>(), static_cast<int>(market_type), 1
-            );
+        call_abi( MarketHoursGetter_SetMarketType_ABI, cgetter<CType>(),
+                  static_cast<int>(market_type) );
     }
 };
 
@@ -2371,7 +2361,7 @@ public:
     get_index() const
     {
         int m;
-        MoversGetter_GetIndex_ABI(cgetter<MoversGetter_C>(), &m, 1);
+        call_abi( MoversGetter_GetIndex_ABI, cgetter<CType>(), &m );
         return static_cast<MoversIndex>(m);
     }
 
@@ -2379,7 +2369,7 @@ public:
     get_direction_type() const
     {
         int m;
-        MoversGetter_GetDirectionType_ABI(cgetter<MoversGetter_C>(), &m, 1);
+        call_abi( MoversGetter_GetDirectionType_ABI, cgetter<CType>(), &m );
         return static_cast<MoversDirectionType>(m);
     }
 
@@ -2387,32 +2377,29 @@ public:
     get_change_type() const
     {
         int m;
-        MoversGetter_GetChangeType_ABI(cgetter<MoversGetter_C>(), &m, 1);
+        call_abi( MoversGetter_GetChangeType_ABI, cgetter<CType>(), &m );
         return static_cast<MoversChangeType>(m);
     }
 
     void
     set_index(MoversIndex index)
     {
-        MoversGetter_SetIndex_ABI(
-            cgetter<MoversGetter_C>(), static_cast<int>(index), 1
-            );
+        call_abi( MoversGetter_SetIndex_ABI, cgetter<CType>(),
+                  static_cast<int>(index) );
     }
 
     void
     set_direction_type(MoversDirectionType direction_type)
     {
-        MoversGetter_SetDirectionType_ABI(
-            cgetter<MoversGetter_C>(), static_cast<int>(direction_type), 1
-            );
+        call_abi( MoversGetter_SetDirectionType_ABI, cgetter<CType>(),
+                  static_cast<int>(direction_type) );
     }
 
     void
     set_change_type(MoversChangeType change_type)
     {
-        MoversGetter_SetChangeType_ABI(
-            cgetter<MoversGetter_C>(), static_cast<int>(change_type), 1
-            );
+        call_abi( MoversGetter_SetChangeType_ABI, cgetter<CType>(),
+                  static_cast<int>(change_type) );
     }
 };
 
@@ -2455,7 +2442,7 @@ public:
     get_frequency() const
     {
         unsigned int f;
-        HistoricalGetterBase_GetFrequency_ABI(cgetter<>(), &f, 1);
+        call_abi( HistoricalGetterBase_GetFrequency_ABI, cgetter<>(), &f );
         return f;
     }
 
@@ -2463,7 +2450,7 @@ public:
     get_frequency_type() const
     {
         int ft;
-        HistoricalGetterBase_GetFrequencyType_ABI(cgetter<>(), &ft, 1);
+        call_abi( HistoricalGetterBase_GetFrequencyType_ABI, cgetter<>(), &ft );
         return static_cast<FrequencyType>(ft);
     }
 
@@ -2471,30 +2458,29 @@ public:
     is_extended_hours() const
     {
         int et;
-        HistoricalGetterBase_IsExtendedHours_ABI(cgetter<>(), &et, 1);
+        call_abi( HistoricalGetterBase_IsExtendedHours_ABI, cgetter<>(), &et );
         return static_cast<bool>(et);
     }
 
     void
     set_symbol(const std::string& symbol)
     {
-        HistoricalGetterBase_SetSymbol_ABI(cgetter<>(), symbol.c_str(), 1);
+        call_abi( HistoricalGetterBase_SetSymbol_ABI, cgetter<>(),
+                  symbol.c_str() );
     }
 
     void
     set_extended_hours(bool extended_hours)
     {
-        HistoricalGetterBase_SetExtendedHours_ABI(
-            cgetter<>(), static_cast<int>(extended_hours), 1
-            );
+        call_abi( HistoricalGetterBase_SetExtendedHours_ABI, cgetter<>(),
+                  static_cast<int>(extended_hours) );
     }
 
     void
     set_frequency(FrequencyType frequency_type, unsigned int frequency)
     {
-        HistoricalGetterBase_SetFrequency_ABI(
-           cgetter<>(), static_cast<int>(frequency_type), frequency, 1
-           );
+        call_abi( HistoricalGetterBase_SetFrequency_ABI, cgetter<>(),
+                  static_cast<int>(frequency_type), frequency );
     }
 
 };
@@ -2530,9 +2516,8 @@ public:
     get_period_type() const
     {
         int pt;
-        HistoricalPeriodGetter_GetPeriodType_ABI(
-            cgetter<HistoricalPeriodGetter_C>(), &pt, 1
-            );
+        call_abi( HistoricalPeriodGetter_GetPeriodType_ABI,
+                  cgetter<CType>(), &pt );
         return static_cast<PeriodType>(pt);
     }
 
@@ -2540,19 +2525,15 @@ public:
     get_period() const
     {
         unsigned int p;
-        HistoricalPeriodGetter_GetPeriod_ABI(
-                cgetter<HistoricalPeriodGetter_C>(), &p, 1
-               );
+        call_abi( HistoricalPeriodGetter_GetPeriod_ABI, cgetter<CType>(), &p );
         return p;
     }
 
     void
     set_period(PeriodType period_type, unsigned int period)
     {
-        HistoricalPeriodGetter_SetPeriod_ABI(
-           cgetter<HistoricalPeriodGetter_C>(), static_cast<int>(period_type),
-           period, 1
-           );
+        call_abi( HistoricalPeriodGetter_SetPeriod_ABI, cgetter<CType>(),
+                  static_cast<int>(period_type), period );
     }
 };
 
@@ -2602,9 +2583,8 @@ public:
     get_end_msec_since_epoch() const
     {
         unsigned long long ms;
-        HistoricalRangeGetter_GetEndMSecSinceEpoch_ABI(
-                cgetter<HistoricalRangeGetter_C>(), &ms, 1
-               );
+        call_abi( HistoricalRangeGetter_GetEndMSecSinceEpoch_ABI,
+                  cgetter<CType>(), &ms );
         return ms;
     }
 
@@ -2612,26 +2592,23 @@ public:
     get_start_msec_since_epoch() const
     {
        unsigned long long ms;
-       HistoricalRangeGetter_GetStartMSecSinceEpoch_ABI(
-               cgetter<HistoricalRangeGetter_C>(), &ms, 1
-              );
+       call_abi( HistoricalRangeGetter_GetStartMSecSinceEpoch_ABI,
+                 cgetter<CType>(), &ms );
        return ms;
     }
 
     void
     set_end_msec_since_epoch(unsigned long long end_msec_since_epoch)
     {
-       HistoricalRangeGetter_SetEndMSecSinceEpoch_ABI(
-               cgetter<HistoricalRangeGetter_C>(), end_msec_since_epoch, 1
-              );
+        call_abi( HistoricalRangeGetter_SetEndMSecSinceEpoch_ABI,
+                  cgetter<CType>(), end_msec_since_epoch );
     }
 
     void
     set_start_msec_since_epoch(unsigned long long start_msec_since_epoch)
     {
-       HistoricalRangeGetter_SetStartMSecSinceEpoch_ABI(
-               cgetter<HistoricalRangeGetter_C>(), start_msec_since_epoch, 1
-              );
+        call_abi( HistoricalRangeGetter_SetStartMSecSinceEpoch_ABI,
+                  cgetter<CType>(), start_msec_since_epoch );
     }
 };
 
@@ -2677,6 +2654,14 @@ public:
     OptionStrikes&
     operator=( const OptionStrikes& ) = default;
 
+    bool
+    operator!=(const OptionStrikes& other)
+    { return _type != other._type || _value.single != other._value.single; }
+
+    bool
+    operator==(const OptionStrikes& other)
+    { return !(*this != other); }
+
     Type
     get_type() const
     { return _type; }
@@ -2701,7 +2686,7 @@ public:
     N_ATM(unsigned int n)
     {
         if (n < 1)
-            throw ValueException("number of strikes can not be < 1");
+            THROW_VALUE_EXCEPTION("empty symbols set");
         OptionStrikes o(Type::n_atm);
         o._value.n_atm = n;
         return o;
@@ -2711,7 +2696,7 @@ public:
     Single(double price)
     {
         if (price < 0.1)
-            throw ValueException("strike price can not be < 0.1");
+            THROW_VALUE_EXCEPTION("strike price can not be < 0.1");
         OptionStrikes o(Type::single);
         o._value.single = price;
         return o;
@@ -2721,7 +2706,7 @@ public:
     Range(OptionRangeType range)
     {
         if (range == OptionRangeType::null)
-            throw ValueException("strike range can not be 'null'");
+            THROW_VALUE_EXCEPTION("strike range can not be 'null'");
         OptionStrikes o(Type::range);
         o._value.range = range;
         return o;
@@ -2763,10 +2748,21 @@ public:
                 strategy != OptionStrategyType::calendar &&
                 spread_interval < .01)
             {
-                throw ValueException(to_string(strategy)
+                THROW_VALUE_EXCEPTION( to_string(strategy)
                     + " strategy requires spread interval >= .01");
             }
         }
+
+    bool
+    operator!=(const OptionStrategy& other)
+    {
+        return _strategy != other._strategy
+            || _spread_interval != other._spread_interval;
+    }
+
+    bool
+    operator==(const OptionStrategy& other)
+    { return !(*this != other); }
 
     OptionStrategyType
     get_strategy() const
@@ -2892,9 +2888,7 @@ public:
     {
         OptionStrikesValue sv;
         int st;
-        OptionChainGetter_GetStrikes_ABI(
-            cgetter<OptionChainGetter_C>(), &st, &sv, 1
-            );
+        call_abi( OptionChainGetter_GetStrikes_ABI, cgetter<CType>(), &st, &sv );
         return OptionStrikes(static_cast<OptionStrikesType>(st), sv);
     }
 
@@ -2902,7 +2896,7 @@ public:
     get_contract_type() const
     {
         int ct;
-        OptionChainGetter_GetContractType_ABI(cgetter<OptionChainGetter_C>(), &ct, 1);
+        call_abi( OptionChainGetter_GetContractType_ABI, cgetter<CType>(), &ct );
         return static_cast<OptionContractType>(ct);
     }
 
@@ -2910,7 +2904,7 @@ public:
     includes_quotes() const
     {
         int iq;
-        OptionChainGetter_IncludesQuotes_ABI(cgetter<OptionChainGetter_C>(), &iq, 1);
+        call_abi( OptionChainGetter_IncludesQuotes_ABI, cgetter<CType>(), &iq );
         return static_cast<bool>(iq);
     }
 
@@ -2926,7 +2920,7 @@ public:
     get_exp_month() const
     {
         int em;
-        OptionChainGetter_GetExpMonth_ABI(cgetter<OptionChainGetter_C>(), &em, 1);
+        call_abi( OptionChainGetter_GetExpMonth_ABI, cgetter<CType>(), &em );
         return static_cast<OptionExpMonth>(em);
     }
 
@@ -2934,73 +2928,64 @@ public:
     get_option_type() const
     {
         int ot;
-        OptionChainGetter_GetOptionType_ABI(cgetter<OptionChainGetter_C>(), &ot, 1);
+        call_abi( OptionChainGetter_GetOptionType_ABI, cgetter<CType>(), &ot );
         return static_cast<OptionType>(ot);
     }
 
     void
     set_symbol(const std::string& symbol)
     {
-        OptionChainGetter_SetSymbol_ABI(
-            cgetter<OptionChainGetter_C>(), symbol.c_str(), 1
-            );
+        call_abi( OptionChainGetter_SetSymbol_ABI, cgetter<CType>(),
+                  symbol.c_str() );
     }
 
     void
     set_strikes(OptionStrikes strikes)
     {
-        OptionChainGetter_SetStrikes_ABI(
-            cgetter<OptionChainGetter_C>(), static_cast<int>(strikes.get_type()),
-            strikes.get_value(), 1
-            );
+        call_abi( OptionChainGetter_SetStrikes_ABI, cgetter<CType>(),
+                  static_cast<int>(strikes.get_type()), strikes.get_value() );
     }
 
     void
     set_contract_type(OptionContractType contract_type)
     {
-        OptionChainGetter_SetContractType_ABI(
-            cgetter<OptionChainGetter_C>(), static_cast<int>(contract_type), 1
-            );
+        call_abi( OptionChainGetter_SetContractType_ABI, cgetter<CType>(),
+                  static_cast<int>(contract_type) );
     }
 
     void
     include_quotes(bool include_quotes)
     {
-        OptionChainGetter_IncludeQuotes_ABI(
-            cgetter<OptionChainGetter_C>(), static_cast<int>(include_quotes), 1
-            );
+        call_abi( OptionChainGetter_IncludeQuotes_ABI, cgetter<CType>(),
+                  static_cast<int>(include_quotes) );
     }
 
     void
     set_from_date(const std::string& from_date)
     {
-        OptionChainGetter_SetFromDate_ABI(
-            cgetter<OptionChainGetter_C>(), from_date.c_str(), 1
-            );
+        call_abi( OptionChainGetter_SetFromDate_ABI, cgetter<CType>(),
+                  from_date.c_str() );
     }
 
     void
     set_to_date(const std::string& to_date)
     {
-        OptionChainGetter_SetToDate_ABI(
-            cgetter<OptionChainGetter_C>(), to_date.c_str(), 1
-            );
+        call_abi( OptionChainGetter_SetToDate_ABI, cgetter<CType>(),
+                  to_date.c_str() );
     }
 
     void
     set_exp_month(OptionExpMonth exp_month)
     {
-        OptionChainGetter_SetExpMonth_ABI(
-            cgetter<OptionChainGetter_C>(), static_cast<int>(exp_month), 1
-            );
+        call_abi( OptionChainGetter_SetExpMonth_ABI, cgetter<CType>(),
+                  static_cast<int>(exp_month) );
     }
 
     void
     set_option_type(OptionType option_type)
     {
-        OptionChainGetter_SetOptionType_ABI(
-            cgetter<OptionChainGetter_C>(), static_cast<int>(option_type), 1
-            );
+        call_abi( OptionChainGetter_SetOptionType_ABI, cgetter<CType>(),
+                  static_cast<int>(option_type) );
     }
 };
 
@@ -3061,21 +3046,17 @@ public:
     {
         int strat;
         double spread;
-        OptionChainStrategyGetter_GetStrategy_ABI(
-            cgetter<OptionChainStrategyGetter_C>(), &strat, &spread, 1
-            );
+        call_abi( OptionChainStrategyGetter_GetStrategy_ABI,
+                  cgetter<CType>(), &strat, &spread );
         return OptionStrategy(static_cast<OptionStrategyType>(strat), spread);
     }
 
     void
     set_strategy(OptionStrategy strategy)
     {
-        OptionChainStrategyGetter_SetStrategy_ABI(
-            cgetter<OptionChainStrategyGetter_C>(),
-            static_cast<int>(strategy.get_strategy()),
-            strategy.get_spread_interval(),
-            1
-            );
+        call_abi( OptionChainStrategyGetter_SetStrategy_ABI,
+                  cgetter<CType>(), static_cast<int>(strategy.get_strategy()),
+                  strategy.get_spread_interval() );
     }
 };
 
@@ -3141,9 +3122,8 @@ public:
     get_volatility() const
     {
         double v;
-        OptionChainAnalyticalGetter_GetVolatility_ABI(
-            cgetter<OptionChainAnalyticalGetter_C>(), &v, 1
-            );
+        call_abi( OptionChainAnalyticalGetter_GetVolatility_ABI,
+                  cgetter<CType>(), &v );
         return v;
     }
 
@@ -3151,9 +3131,8 @@ public:
     get_underlying_price() const
     {
         double p;
-        OptionChainAnalyticalGetter_GetUnderlyingPrice_ABI(
-            cgetter<OptionChainAnalyticalGetter_C>(), &p, 1
-            );
+        call_abi( OptionChainAnalyticalGetter_GetUnderlyingPrice_ABI,
+                  cgetter<CType>(), &p );
         return p;
     }
 
@@ -3161,9 +3140,8 @@ public:
     get_interest_rate() const
     {
         double r;
-        OptionChainAnalyticalGetter_GetInterestRate_ABI(
-            cgetter<OptionChainAnalyticalGetter_C>(), &r, 1
-            );
+        call_abi( OptionChainAnalyticalGetter_GetInterestRate_ABI,
+                  cgetter<CType>(), &r );
         return r;
     }
 
@@ -3171,42 +3149,37 @@ public:
     get_days_to_exp() const
     {
         unsigned int d;
-        OptionChainAnalyticalGetter_GetDaysToExp_ABI(
-            cgetter<OptionChainAnalyticalGetter_C>(), &d, 1
-            );
+        call_abi( OptionChainAnalyticalGetter_GetDaysToExp_ABI,
+                  cgetter<CType>(), &d );
         return d;
     }
 
     void
     set_volatility(double volatility)
     {
-        OptionChainAnalyticalGetter_SetVolatility_ABI(
-            cgetter<OptionChainAnalyticalGetter_C>(), volatility, 1
-            );
+        call_abi( OptionChainAnalyticalGetter_SetVolatility_ABI,
+                  cgetter<CType>(), volatility );
     }
 
     void
     set_underlying_price(double underlying_price)
     {
-        OptionChainAnalyticalGetter_SetUnderlyingPrice_ABI(
-            cgetter<OptionChainAnalyticalGetter_C>(), underlying_price, 1
-            );
+        call_abi( OptionChainAnalyticalGetter_SetUnderlyingPrice_ABI,
+                  cgetter<CType>(), underlying_price );
     }
 
     void
     set_interest_rate(double interest_rate)
     {
-        OptionChainAnalyticalGetter_SetInterestRate_ABI(
-            cgetter<OptionChainAnalyticalGetter_C>(), interest_rate, 1
-            );
+        call_abi( OptionChainAnalyticalGetter_SetInterestRate_ABI,
+                  cgetter<CType>(), interest_rate );
     }
 
     void
     set_days_to_exp(unsigned int days_to_exp)
     {
-        OptionChainAnalyticalGetter_SetDaysToExp_ABI(
-            cgetter<OptionChainAnalyticalGetter_C>(), days_to_exp, 1
-            );
+        call_abi( OptionChainAnalyticalGetter_SetDaysToExp_ABI,
+                  cgetter<CType>(), days_to_exp );
     }
 };
 
@@ -3262,7 +3235,10 @@ public:
 
     void
     set_account_id(const std::string& account_id)
-    { AccountGetterBase_SetAccountId_ABI(cgetter<>(), account_id.c_str(), 1); }
+    {
+        call_abi( AccountGetterBase_SetAccountId_ABI, cgetter<>(),
+                  account_id.c_str() );
+    }
 };
 
 
@@ -3290,9 +3266,7 @@ public:
     returns_positions() const
     {
         int p;
-        AccountInfoGetter_ReturnsPositions_ABI(
-            cgetter<AccountInfoGetter_C>(), &p, 1
-            );
+        call_abi( AccountInfoGetter_ReturnsPositions_ABI, cgetter<CType>(), &p );
         return static_cast<bool>(p);
     }
 
@@ -3300,26 +3274,22 @@ public:
     returns_orders() const
     {
         int o;
-        AccountInfoGetter_ReturnsOrders_ABI(
-            cgetter<AccountInfoGetter_C>(), &o, 1
-            );
+        call_abi( AccountInfoGetter_ReturnsOrders_ABI, cgetter<CType>(), &o );
         return static_cast<bool>(o);
     }
 
     void
     return_positions(bool positions)
     {
-        AccountInfoGetter_ReturnPositions_ABI(
-            cgetter<AccountInfoGetter_C>(), static_cast<int>(positions), 1
-            );
+        call_abi( AccountInfoGetter_ReturnPositions_ABI, cgetter<CType>(),
+                  static_cast<int>(positions) );
     }
 
     void
     return_orders(bool orders)
     {
-        AccountInfoGetter_ReturnOrders_ABI(
-            cgetter<AccountInfoGetter_C>(), static_cast<int>(orders), 1
-            );
+        call_abi( AccountInfoGetter_ReturnOrders_ABI, cgetter<CType>(),
+                  static_cast<int>(orders) );
     }
 };
 
@@ -3402,68 +3372,58 @@ public:
     get_transaction_type() const
     {
         int tt;
-        TransactionHistoryGetter_GetTransactionType_ABI(
-            cgetter<TransactionHistoryGetter_C>(), &tt, 1
-            );
+        call_abi( TransactionHistoryGetter_GetTransactionType_ABI,
+                  cgetter<CType>(), &tt );
         return static_cast<TransactionType>(tt);
     }
 
     std::string
     get_symbol() const
     {
-        return str_from_abi(
-            TransactionHistoryGetter_GetSymbol_ABI, cgetter<CType>()
-            );
+        return str_from_abi( TransactionHistoryGetter_GetSymbol_ABI,
+                             cgetter<CType>() );
     }
 
     std::string
     get_start_date() const
     {
-        return str_from_abi(
-            TransactionHistoryGetter_GetStartDate_ABI, cgetter<CType>()
-            );
+        return str_from_abi( TransactionHistoryGetter_GetStartDate_ABI,
+                             cgetter<CType>() );
     }
 
     std::string
     get_end_date() const
     {
-        return str_from_abi(
-            TransactionHistoryGetter_GetEndDate_ABI, cgetter<CType>()
-            );
+        return str_from_abi( TransactionHistoryGetter_GetEndDate_ABI,
+                             cgetter<CType>() );
     }
 
     void
     set_transaction_type(TransactionType transaction_type)
     {
-        TransactionHistoryGetter_SetTransactionType_ABI(
-            cgetter<TransactionHistoryGetter_C>(),
-            static_cast<int>(transaction_type),
-            1
-            );
+        call_abi( TransactionHistoryGetter_SetTransactionType_ABI,
+                  cgetter<CType>(), static_cast<int>(transaction_type) );
     }
 
     void
     set_symbol(const std::string& symbol)
     {
-        TransactionHistoryGetter_SetSymbol_ABI(
-            cgetter<TransactionHistoryGetter_C>(), symbol.c_str(), 1
-            );
+        call_abi( TransactionHistoryGetter_SetSymbol_ABI,
+                  cgetter<CType>(), symbol.c_str() );
     }
 
     void
     set_start_date(const std::string& start_date)
     {
-        TransactionHistoryGetter_SetStartDate_ABI(
-            cgetter<TransactionHistoryGetter_C>(), start_date.c_str(), 1
-            );
+        call_abi( TransactionHistoryGetter_SetStartDate_ABI,
+                  cgetter<CType>(), start_date.c_str() );
     }
 
     void
     set_end_date(const std::string& end_date)
     {
-        TransactionHistoryGetter_SetEndDate_ABI(
-            cgetter<TransactionHistoryGetter_C>(), end_date.c_str(), 1
-            );
+        call_abi( TransactionHistoryGetter_SetEndDate_ABI,
+                  cgetter<CType>(), end_date.c_str() );
     }
 
 };
@@ -3505,17 +3465,14 @@ public:
     {
         return str_from_abi(
             IndividualTransactionHistoryGetter_GetTransactionId_ABI,
-            cgetter<CType>()
-            );
+            cgetter<CType>() );
     }
 
     void
     set_transaction_id(const std::string& transaction_id)
     {
-        IndividualTransactionHistoryGetter_SetTransactionId_ABI(
-            cgetter<IndividualTransactionHistoryGetter_C>(),
-            transaction_id.c_str(), 1
-            );
+        call_abi( IndividualTransactionHistoryGetter_SetTransactionId_ABI,
+                  cgetter<CType>(), transaction_id.c_str() );
     }
 
 };
@@ -3557,9 +3514,8 @@ public:
     returns_streamer_subscription_keys() const
     {
         int k;
-        UserPrincipalsGetter_ReturnsSubscriptionKeys_ABI(
-            cgetter<UserPrincipalsGetter_C>(), &k, 1
-            );
+        call_abi( UserPrincipalsGetter_ReturnsSubscriptionKeys_ABI,
+                  cgetter<CType>(), &k );
         return static_cast<bool>(k);
     }
 
@@ -3567,9 +3523,8 @@ public:
     returns_streamer_connection_info() const
     {
         int ci;
-        UserPrincipalsGetter_ReturnsConnectionInfo_ABI(
-            cgetter<UserPrincipalsGetter_C>(), &ci, 1
-            );
+        call_abi( UserPrincipalsGetter_ReturnsConnectionInfo_ABI,
+                  cgetter<CType>(), &ci );
         return static_cast<bool>(ci);
     }
 
@@ -3577,9 +3532,8 @@ public:
     returns_preferences() const
     {
         int p;
-        UserPrincipalsGetter_ReturnsPreferences_ABI(
-            cgetter<UserPrincipalsGetter_C>(), &p, 1
-            );
+        call_abi( UserPrincipalsGetter_ReturnsPreferences_ABI,
+                  cgetter<CType>(), &p );
         return static_cast<bool>(p);
     }
 
@@ -3587,46 +3541,38 @@ public:
     returns_surrogate_ids() const
     {
         int si;
-        UserPrincipalsGetter_ReturnsSurrogateIds_ABI(
-            cgetter<UserPrincipalsGetter_C>(), &si, 1
-            );
+        call_abi( UserPrincipalsGetter_ReturnsSurrogateIds_ABI,
+                  cgetter<CType>(), &si );
         return static_cast<bool>(si);
     }
 
     void
     return_streamer_subscription_keys(bool streamer_subscription_keys)
     {
-        UserPrincipalsGetter_ReturnSubscriptionKeys_ABI(
-            cgetter<UserPrincipalsGetter_C>(),
-            static_cast<int>(streamer_subscription_keys), 1
-            );
+        call_abi( UserPrincipalsGetter_ReturnSubscriptionKeys_ABI,
+                  cgetter<CType>(),
+                  static_cast<int>(streamer_subscription_keys) );
     }
 
     void
     return_streamer_connection_info(bool streamer_connection_info)
     {
-        UserPrincipalsGetter_ReturnConnectionInfo_ABI(
-            cgetter<UserPrincipalsGetter_C>(),
-            static_cast<int>(streamer_connection_info), 1
-            );
+        call_abi( UserPrincipalsGetter_ReturnConnectionInfo_ABI,
+                  cgetter<CType>(), static_cast<int>(streamer_connection_info) );
     }
 
     void
     return_preferences(bool preferences)
     {
-        UserPrincipalsGetter_ReturnPreferences_ABI(
-            cgetter<UserPrincipalsGetter_C>(),
-            static_cast<int>(preferences), 1
-            );
+        call_abi( UserPrincipalsGetter_ReturnPreferences_ABI,
+                  cgetter<CType>(), static_cast<int>(preferences) );
     }
 
     void
     return_surrogate_ids(bool surrogate_ids)
     {
-        UserPrincipalsGetter_ReturnSurrogateIds_ABI(
-            cgetter<UserPrincipalsGetter_C>(),
-            static_cast<int>(surrogate_ids), 1
-            );
+        call_abi( UserPrincipalsGetter_ReturnSurrogateIds_ABI,
+                  cgetter<CType>(), static_cast<int>(surrogate_ids) );
     }
 };
 
@@ -3663,18 +3609,16 @@ public:
     std::string
     get_query_string() const
     {
-        return str_from_abi(
-            InstrumentInfoGetter_GetQueryString_ABI, cgetter<CType>()
-            );
+        return str_from_abi( InstrumentInfoGetter_GetQueryString_ABI,
+                             cgetter<CType>() );
     }
 
     InstrumentSearchType
     get_search_type() const
     {
         int ist;
-        InstrumentInfoGetter_GetSearchType_ABI(
-            cgetter<InstrumentInfoGetter_C>(), &ist, 1
-            );
+        call_abi( InstrumentInfoGetter_GetSearchType_ABI, cgetter<CType>(),
+                  &ist );
         return static_cast<InstrumentSearchType>(ist);
     }
 
@@ -3682,10 +3626,8 @@ public:
     set_query( InstrumentSearchType search_type,
                 const std::string& query_string )
     {
-        InstrumentInfoGetter_SetQuery_ABI(
-            cgetter<InstrumentInfoGetter_C>(), static_cast<int>(search_type),
-            query_string.c_str(), 1
-            );
+        call_abi( InstrumentInfoGetter_SetQuery_ABI, cgetter<CType>(),
+                  static_cast<int>(search_type), query_string.c_str() );
     }
 };
 
@@ -3698,6 +3640,8 @@ GetInstrumentInfo( Credentials& creds,
 using std::to_string;
 
 } /* tdma */
+
+#undef THROW_VALUE_EXCEPTION
 
 #endif /* __cplusplus */
 

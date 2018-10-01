@@ -44,7 +44,7 @@ class HistoricalGetterBaseImpl
         auto valid = VALID_FREQUENCIES_BY_FREQUENCY_TYPE.find(fty);
         assert( valid != end(VALID_FREQUENCIES_BY_FREQUENCY_TYPE) );
         if( valid->second.count(f) == 0 ){
-            throw ValueException(
+            TDMA_API_THROW(ValueException,
                 "invalid frequency(" + std::to_string(f)
                 + ") for frequency type(" + to_string(fty) + ")"
                 );
@@ -65,7 +65,7 @@ protected:
             _extended_hours(extended_hours)
         {
             if( symbol.empty() )
-                throw ValueException("empty symbol");
+                TDMA_API_THROW(ValueException,"empty symbol");
             _throw_if_invalid_frequency(frequency_type, frequency);
         }
 
@@ -102,7 +102,7 @@ public:
     set_symbol(const std::string& symbol)
     {
         if( symbol.empty() )
-            throw ValueException("empty symbol");
+            TDMA_API_THROW(ValueException,"empty symbol");
         _symbol = util::toupper(symbol);
         build();
     }
@@ -154,7 +154,7 @@ class HistoricalPeriodGetterImpl
         auto valid = VALID_FREQUENCY_TYPES_BY_PERIOD_TYPE.find(pty);
         assert( valid != end(VALID_FREQUENCY_TYPES_BY_PERIOD_TYPE) );
         if( valid->second.count(fty) == 0 ){
-            throw ValueException(
+            TDMA_API_THROW(ValueException,
                 "invalid frequency type(" + to_string(fty)
                 + ") for period type(" + to_string(pty) + ")"
                 );
@@ -167,7 +167,7 @@ class HistoricalPeriodGetterImpl
         auto valid = VALID_PERIODS_BY_PERIOD_TYPE.find(pty);
         assert( valid != end(VALID_PERIODS_BY_PERIOD_TYPE) );
         if( valid->second.count(p) == 0 ){
-            throw ValueException(
+            TDMA_API_THROW(ValueException,
                 "invalid period(" + std::to_string(p)
                 + ") for period type(" + to_string(pty) + ")"
                 );

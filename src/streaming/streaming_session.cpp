@@ -258,7 +258,11 @@ class StreamingSessionImpl{
 
         StreamingSessionImpl *_ss;
 
-        class Timeout : public StreamingException {};
+        class Timeout
+            : public StreamingException {
+        public:
+            using StreamingException::StreamingException;
+        };
 
         void
         exec();
@@ -456,7 +460,7 @@ StreamingSessionImpl::ListenerThreadTarget::exec()
 
         /* _client should *always* be connected while listening */
         if( !_ss->_client->is_connected() )
-            throw StreamingException("client connection ended unexpectedly");
+            TDMA_API_THROW(StreamingException,"client connection ended unexpectedly");
 
         /* BLOCK for _listening_timeout msec until we get at least 1 message */
         auto results = _ss->_client->recv_atleast_n_or_wait_for( 1,
@@ -464,7 +468,7 @@ StreamingSessionImpl::ListenerThreadTarget::exec()
                         );
 
         if( results.empty() ) /* TIMED OUT */
-            throw Timeout();
+            throw Timeout("exec timeout", __LINE__, __FILE__);
 
         /* each message can have mutliple results */
         for(string& res : results){
@@ -507,7 +511,7 @@ StreamingSessionImpl::ListenerThreadTarget::parse(const string& responses)
     auto resp = json::parse(responses);
     auto r = resp.begin();
     if( r == resp.end() )
-        throw StreamingException("invalid response JSON");
+        TDMA_API_THROW(StreamingException,"invalid response JSON");
 
     string resp_ty = r.key();
     auto resp_array = r.value();
@@ -525,7 +529,7 @@ StreamingSessionImpl::ListenerThreadTarget::parse(const string& responses)
         for(auto& resp : resp_array)
             parse_response_data(resp);
     }else{
-        throw StreamingException("invalid response type");
+        TDMA_API_THROW(StreamingException,"invalid response type");
     }
 }
 
@@ -553,7 +557,7 @@ StreamingSessionImpl::ListenerThreadTarget::parse_response_to_request(
         std::stringstream ss;
         ss << "invalid response to request: " << response.dump()
            << ", (" << pr.service << "," << pr.command << ")";
-        throw StreamingException( ss.str() );
+        TDMA_API_THROW(StreamingException, ss.str() );
     }
 
     auto content = response["content"];
@@ -613,7 +617,7 @@ StreamingSessionImpl::ListenerThreadTarget::parse_response_data(
                              streamer_service_from_str(service),
                              response.at("timestamp"), response.at("content") );
     }catch(exception& e){
-        throw StreamingException("invalid 'data' response: " + string(e.what()));
+        TDMA_API_THROW(StreamingException,"invalid 'data' response: " + string(e.what()));
     }
 }
 
@@ -649,11 +653,11 @@ StreamingSessionImpl::_login()
     auto response = json::parse(rmessage);
     auto r = response.begin();
     if( r == response.end() )
-        throw StreamingException("invalid response JSON");
+        TDMA_API_THROW(StreamingException,"invalid response JSON");
 
     string response_ty = r.key();
     if( response_ty != "response" )
-        throw StreamingException("invalid login response: " + response_ty);
+        TDMA_API_THROW(StreamingException,"invalid login response: " + response_ty);
 
     auto info = r.value()[0];
     string service = info["service"];
@@ -742,7 +746,7 @@ StreamingSessionImpl::_logout()
         auto response = json::parse(rmessage);
         auto r = response.begin();
         if( r == response.end() )
-            throw StreamingException("invalid logout response JSON");
+            TDMA_API_THROW(StreamingException,"invalid logout response JSON");
 
         string response_ty = r.key();
         if( response_ty == "response" ){
@@ -796,7 +800,7 @@ StreamingSessionImpl::set_qos(const QOSType& qos)
     if( _client ){
         assert( _client->is_connected() );
     }else
-        throw StreamingException("can not set QOS on a stopped session");
+        TDMA_API_THROW(StreamingException,"can not set QOS on a stopped session");
 
     std::shared_ptr<PendingResponseBundle> bndl(new PendingResponseBundle());
     PendingResponse::response_cb_ty cb =
@@ -891,7 +895,7 @@ StreamingSessionImpl::add_subscriptions(
     if( _client ){
         assert( _client->is_connected() );
     }else
-        throw StreamingException("can not add subscriptions to a stopped session");
+        TDMA_API_THROW(StreamingException,"can not add subscriptions to a stopped session");
 
     if( subscriptions.empty() )
         return {};
@@ -941,15 +945,15 @@ StreamingSessionImpl::start(const vector<StreamingSubscriptionImpl>& subscriptio
     D("start", this);
 
     if( _client )
-        throw StreamingException("session has already started");
+        TDMA_API_THROW(StreamingException,"session has already started");
 
     if( subscriptions.empty() )
-        throw StreamingException("subscriptions is empty");
+        TDMA_API_THROW(StreamingException,"subscriptions is empty");
 
     D("check unique session", this);
     string acct = get_primary_account_id();
     if( active_accounts.count(acct) )
-        throw StreamingException( "Can not start Session; "
+        TDMA_API_THROW(StreamingException, "Can not start Session; "
             "one is already active for this primary account: " + acct );
 
     D("_client->reset", this);
@@ -959,12 +963,12 @@ StreamingSessionImpl::start(const vector<StreamingSubscriptionImpl>& subscriptio
     _client->connect( _connect_timeout );
     if( !_client->is_connected() ){
         _client.reset();
-        throw StreamingException("streaming session failed to connect");
+        TDMA_API_THROW(StreamingException,"streaming session failed to connect");
     }
 
     _logged_in = _login();
     if( !_logged_in )
-        throw StreamingException("login failed");
+        TDMA_API_THROW(StreamingException,"login failed");
 
     /* only after connect AND login do we consider this an active session */
     active_accounts.insert(acct);
@@ -1054,12 +1058,12 @@ call_session_with_subs(
         return err;
 
     if( nsubs > STREAMING_MAX_SUBSCRIPTIONS )
-        return handle_error<ValueException>(
+        return HANDLE_ERROR(ValueException,
             "nsubs > STREAMING_MAX_SUBSCRIPTIONS", allow_exceptions
             );
 
     if( nsubs == 0 )
-        return handle_error<ValueException>("nsubs == 0", allow_exceptions);
+        return HANDLE_ERROR(ValueException,"nsubs == 0", allow_exceptions);
 
     vector<StreamingSubscriptionImpl> res;
     try{
@@ -1069,10 +1073,7 @@ call_session_with_subs(
             res.emplace_back( C_sub_ptr_to_impl(c) );
         }
     }catch(exception& e){
-        set_error_state(TDMA_API_STREAM_ERROR, e.what());
-        if( allow_exceptions )
-            throw;
-        return TDMA_API_STREAM_ERROR;
+        return HANDLE_ERROR(StreamingException, e.what(), allow_exceptions);
     }
 
     deque<bool> results;
@@ -1108,7 +1109,7 @@ StreamingSession_Create_ABI( struct Credentials *pcreds,
     CHECK_PTR_KILL_PROXY(callback, "callback", allow_exceptions, psession);
 
     if( !pcreds->access_token | !pcreds->refresh_token | !pcreds->client_id )
-        return handle_error<LocalCredentialException>(
+        return HANDLE_ERROR_EX(LocalCredentialException,
             "invalid credentials struct", allow_exceptions, psession
             );
 

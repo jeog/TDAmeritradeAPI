@@ -21,13 +21,55 @@ along with this program.  If not, see http://www.gnu.org/licenses.
 #include <string>
 #include <chrono>
 
+#include "../include/_tdma_api.h"
 #include "../include/_common.h"
 #include "../include/tdma_common.h"
 
+using namespace std;
+
 namespace {
 int last_error_code = 0;
-std::string last_error_msg("");
+string last_error_msg("");
+int last_error_lineno = 0;
+string last_error_filename("");
 };
+
+
+void
+set_error_state( int code,
+                   const string& msg,
+                   int lineno,
+                   const string& filename )
+{
+    last_error_code = code;
+    last_error_msg = msg;
+    last_error_lineno = lineno;
+    last_error_filename = filename;
+}
+
+tuple<int, string, int, string>
+get_error_state()
+{
+    return make_tuple(last_error_code, last_error_msg, last_error_lineno,
+                      last_error_filename);
+}
+
+int
+get_error_string( const string& s, char** buf, size_t *n, int allow_exceptions )
+{
+    using namespace tdma;
+
+    *n = s.size() + 1;
+    *buf = reinterpret_cast<char*>(malloc(*n));
+    if( !*buf ){
+        return HANDLE_ERROR( tdma::MemoryError,
+                             "failed to allocate buffer memory",
+                             allow_exceptions );
+    }
+    (*buf)[(*n)-1] = 0;
+    strncpy(*buf, s.c_str(), (*n)-1);
+    return 0;
+}
 
 int
 LastErrorCode_ABI( int *code, int allow_exceptions )
@@ -38,33 +80,41 @@ LastErrorCode_ABI( int *code, int allow_exceptions )
 
 int
 LastErrorMsg_ABI( char** buf, size_t *n, int allow_exceptions )
+{ return get_error_string(last_error_msg, buf, n, allow_exceptions); }
+
+int
+LastErrorLineNumber_ABI( int *lineno, int allow_exceptions )
 {
-    *n = last_error_msg.size() + 1;
-    *buf = reinterpret_cast<char*>(malloc(*n));
-    if( !*buf ){
-        std::string err("failed to allocate buffer memory");
-        set_error_state(TDMA_API_MEMORY_ERROR, err);
-        if( allow_exceptions ){
-            throw tdma::MemoryError(err);
-        }
-        return TDMA_API_MEMORY_ERROR;
-    }
-    (*buf)[(*n)-1] = 0;
-    strncpy(*buf, last_error_msg.c_str(), (*n)-1);
+    *lineno = last_error_lineno;
     return 0;
 }
 
-void
-set_error_state(int code, const std::string&  msg)
+int
+LastErrorFilename_ABI( char** buf, size_t *n, int allow_exceptions )
+{ return get_error_string(last_error_filename, buf, n, allow_exceptions); }
+
+int
+LastErrorState_ABI( int *code,
+                      char **buf_msg,
+                      size_t *n_msg,
+                      int *lineno,
+                      char **buf_filename,
+                      size_t *n_filename,
+                      int allow_exceptions )
 {
-    last_error_code = code;
-    last_error_msg = msg;
+    *code = last_error_code;
+    *lineno = last_error_lineno;
+
+    int err = LastErrorMsg_ABI(buf_msg, n_msg, allow_exceptions);
+    if( err )
+        return err;
+
+    err = LastErrorFilename_ABI(buf_filename, n_filename, allow_exceptions);
+    if( err )
+        FreeBuffer_ABI(*buf_msg, 0);
+
+    return err;
 }
 
-std::pair<int, std::string>
-get_error_state()
-{
-    return std::make_pair(last_error_code, last_error_msg);
-}
 
 #endif /* ERROR_H_ */

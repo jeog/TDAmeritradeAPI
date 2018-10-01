@@ -217,13 +217,13 @@ hash_sha256(SmartByteBuffer& in)
 {
     EVP_MD_CTX *ctx = EVP_MD_CTX_create();
     if( !ctx )
-        throw LocalCredentialException("failed to create digest context");
+        TDMA_API_THROW(LocalCredentialException,"failed to create digest context");
 
     if( EVP_DigestInit(ctx, EVP_sha256()) != 1 )
-        throw LocalCredentialException("failed to init digest");
+        TDMA_API_THROW(LocalCredentialException,"failed to init digest");
     
     if( EVP_DigestUpdate(ctx, in.get(), in.size()) != 1)
-        throw LocalCredentialException("failed to update digest");
+        TDMA_API_THROW(LocalCredentialException,"failed to update digest");
 
     int sz = EVP_MD_size(EVP_sha256());
     assert( sz > 0 );
@@ -231,7 +231,7 @@ hash_sha256(SmartByteBuffer& in)
     unsigned int outlen;
     if( EVP_DigestFinal(ctx, out.get(), &outlen) != 1 ){
         EVP_MD_CTX_destroy(ctx);
-        throw LocalCredentialException("failed to get digest");
+        TDMA_API_THROW(LocalCredentialException,"failed to get digest");
     }
     assert( outlen == static_cast<unsigned int>(sz) );
 
@@ -263,10 +263,10 @@ encrypt(const string& in, const string& key)
 
     EVP_CIPHER_CTX *ctx = EVP_CIPHER_CTX_new();
     if( !ctx )
-        throw LocalCredentialException("failed to create cipher context");
+        TDMA_API_THROW(LocalCredentialException,"failed to create cipher context");
 
     if( EVP_EncryptInit(ctx, EVP_aes_256_cbc(), hashed_key.get(), iv.get()) != 1 )
-        throw LocalCredentialException("failed to init credential encryption");
+        TDMA_API_THROW(LocalCredentialException,"failed to init credential encryption");
 
     SmartByteBuffer in_b(in);
     SmartByteBuffer result(in_b.size() + CREDS_IV_LENGTH);
@@ -274,13 +274,13 @@ encrypt(const string& in, const string& key)
     int result_len, len;
     if( EVP_EncryptUpdate(ctx, result.get(), &len, in_b.get(), in_b.size()) != 1 ){
         EVP_CIPHER_CTX_free(ctx);
-        throw LocalCredentialException("failed to update credential encryption");
+        TDMA_API_THROW(LocalCredentialException,"failed to update credential encryption");
     }
     result_len = len;
 
     if( EVP_EncryptFinal(ctx, result.get() + len, &len) != 1 ){
         EVP_CIPHER_CTX_free(ctx);
-        throw LocalCredentialException("failed to finalize credential encryption");
+        TDMA_API_THROW(LocalCredentialException,"failed to finalize credential encryption");
     }
     result.resize(result_len + len);
 
@@ -291,36 +291,38 @@ encrypt(const string& in, const string& key)
 
 class DecryptFinalException
     : public LocalCredentialException {
+public:
+    using LocalCredentialException::LocalCredentialException;
 };
 
 SmartByteBuffer
 decrypt(SmartByteBuffer in, SmartByteBuffer iv, const string& key)
 {
     if( in.size() <= CREDS_IV_LENGTH )
-        throw LocalCredentialException("not enough input to decrypt");
+        TDMA_API_THROW(LocalCredentialException,"not enough input to decrypt");
 
     EVP_CIPHER_CTX *ctx = EVP_CIPHER_CTX_new();
     if( !ctx )
-        throw LocalCredentialException("failed to create cipher context");
+        TDMA_API_THROW(LocalCredentialException,"failed to create cipher context");
 
     SmartByteBuffer hashed_key = hash_sha256(key);
 
     if( EVP_DecryptInit(ctx, EVP_aes_256_cbc(), hashed_key.get(), iv.get()) != 1){
         EVP_CIPHER_CTX_free(ctx);
-        throw LocalCredentialException("failed to init credential decryption");
+        TDMA_API_THROW(LocalCredentialException,"failed to init credential decryption");
     }
 
     SmartByteBuffer result(in.size());
     int result_len, len;
     if( EVP_DecryptUpdate(ctx, result.get(), &len, in.get(), in.size() ) != 1){
         EVP_CIPHER_CTX_free(ctx);
-        throw LocalCredentialException("failed to update credential decryption");
+        TDMA_API_THROW(LocalCredentialException,"failed to update credential decryption");
     }
     result_len = len;
 
     if( EVP_DecryptFinal(ctx, result.get() + len, &len) != 1){
         EVP_CIPHER_CTX_free(ctx);
-        throw DecryptFinalException();
+        TDMA_API_THROW(DecryptFinalException, "");
     }
     result.resize(result_len + len);
     result.push_back(0);
@@ -337,7 +339,7 @@ store_credentials( const string& path,
 {
     fstream file(path, ios_base::out | ios_base::trunc | ios_base::binary );
     if( !file.is_open() ){
-        throw LocalCredentialException("no credentials file at " + path);
+        TDMA_API_THROW(LocalCredentialException,"no credentials file at " + path);
     }
     file.exceptions(ios_base::badbit | ios_base::failbit);
 
@@ -389,7 +391,7 @@ create_credentials_struct( const string& access_token,
     if( at_sz > Credentials::CRED_FIELD_MAX_STR_LEN ||
         rt_sz > Credentials::CRED_FIELD_MAX_STR_LEN ||
         cid_sz > Credentials::CRED_FIELD_MAX_STR_LEN ){
-        throw LocalCredentialException("invalid string length");
+        TDMA_API_THROW(LocalCredentialException,"invalid string length");
     }
 
     creds.access_token = new char[at_sz + 1];
@@ -418,12 +420,12 @@ load_credentials(fstream& file, const string& path, const string& password)
         f_str = string( (std::istreambuf_iterator<char>(file)), 
                          std::istreambuf_iterator<char>() );
     }catch (ios_base::failure& f) {
-        throw LocalCredentialException( "failed to load credentials from " + path
+        TDMA_API_THROW(LocalCredentialException, "failed to load credentials from " + path
                                         + " - ios_base::failure - " + f.what() );        
     }
 
     if( f_str.size() <= (CREDS_IV_LENGTH + CREDS_CHECKSUM_LENGTH) ){
-        throw LocalCredentialException("failed to load credentials from " 
+        TDMA_API_THROW(LocalCredentialException,"failed to load credentials from " 
                                         + path + " - input too small");
     }
 
@@ -435,7 +437,7 @@ load_credentials(fstream& file, const string& path, const string& password)
 
     auto civ_and_ctext = civ + ctext;
     if( hash_sha256(civ_and_ctext) != cchecksum)
-        throw LocalCredentialException("corrupted credentials file(checksum");        
+        TDMA_API_THROW(LocalCredentialException,"corrupted credentials file(checksum");        
 
     SmartByteBuffer dbody;
     try {
@@ -473,7 +475,7 @@ load_credentials(fstream& file, const string& path, const string& password)
         derived_checksum = hash_sha256(ss.str());
 
     }catch( ios_base::failure& f ){
-        throw LocalCredentialException( string("failed to read credentials")
+        TDMA_API_THROW(LocalCredentialException, string("failed to read credentials")
                                         + " - ios_base::failure - " + f.what());
     }
 
@@ -489,7 +491,7 @@ load_credentials(fstream& file, const string& path, const string& password)
         cerr << (int)e << ' ';
         cerr << endl;
         */
-        throw LocalCredentialException("invalid credentials(checksum)");
+        TDMA_API_THROW(LocalCredentialException,"invalid credentials(checksum)");
     }
 
     if( !store_credentials(path + ".backup", password, &creds) )
@@ -567,7 +569,7 @@ LoadCredentialsImpl( const string& path,
             return;
         }catch (DecryptFinalException& e) {
             /* if bad password don't try the backup */
-            throw LocalCredentialException("BAD PASSWORD");
+            TDMA_API_THROW(LocalCredentialException,"BAD PASSWORD");
 
         }catch (LocalCredentialException& e) {
             cerr << "failed to load primary credentials file: " << endl
@@ -582,13 +584,13 @@ LoadCredentialsImpl( const string& path,
 
     fstream file2(path2, ios_base::in | ios_base::binary);
     if (!file2.is_open())
-        throw LocalCredentialException("no backup credentials file at " + path2);
+        TDMA_API_THROW(LocalCredentialException,"no backup credentials file at " + path2);
 
     try {
         *pcreds = load_credentials(file2, path2, password);
         return;
     }catch (DecryptFinalException&) {
-        throw LocalCredentialException("BAD PASSWORD");
+        TDMA_API_THROW(LocalCredentialException,"BAD PASSWORD");
     }
 }
 
@@ -607,7 +609,7 @@ StoreCredentialsImpl( const string& path,
          * since the store op is beyond saving at that point.
          */
         if( !copy_credentials_file(path + ".backup", path) )
-            throw LocalCredentialException("failed to store credentials");
+            TDMA_API_THROW(LocalCredentialException,"failed to store credentials");
     }
 }
 
@@ -619,10 +621,10 @@ RequestAccessTokenImpl( const string& code,
                            Credentials *pcreds )
 {
     if( code.empty() )
-        throw LocalCredentialException("'code' is empty");
+        TDMA_API_THROW(LocalCredentialException,"'code' is empty");
 
     if( client_id.empty() )
-        throw LocalCredentialException("'client_id' required");
+        TDMA_API_THROW(LocalCredentialException,"'client_id' required");
 
     HTTPSPostConnection connection(URL_ACCESS_TOKEN);
     connection.ADD_headers(AUTH_HEADERS);
@@ -649,7 +651,7 @@ RequestAccessTokenImpl( const string& code,
     if( pcreds->epoch_sec_token_expiration < TOKEN_EARLIEST_EXPIRATION ||
         pcreds->epoch_sec_token_expiration > TOKEN_LATEST_EXPIRATION )
     {
-        throw LocalCredentialException("creds.epoch_sec_toke_expiration "
+        TDMA_API_THROW(LocalCredentialException,"creds.epoch_sec_toke_expiration "
                                        "contains invalid value.");
     };
 }
@@ -662,7 +664,7 @@ RefreshAccessTokenImpl(Credentials* creds)
         creds->epoch_sec_token_expiration > TOKEN_LATEST_EXPIRATION )
     {
         string e( to_string(creds->epoch_sec_token_expiration) );
-        throw LocalCredentialException("creds.epoch_sec_toke_expiration "
+        TDMA_API_THROW(LocalCredentialException,"creds.epoch_sec_toke_expiration "
                                         "contains invalid value (" + e + ")" );
     };
 
@@ -671,12 +673,12 @@ RefreshAccessTokenImpl(Credentials* creds)
         /*
          *  TODO implement mechanism to automatically auth new token
          */
-        throw LocalCredentialException("refresh token has expired; "
+        TDMA_API_THROW(LocalCredentialException,"refresh token has expired; "
                                        "use RequestAccessToken() for new token");
     }
 
     if( string(creds->refresh_token).empty() )
-        throw LocalCredentialException("creds.refresh_token is empty");
+        TDMA_API_THROW(LocalCredentialException,"creds.refresh_token is empty");
 
     HTTPSPostConnection connection(URL_ACCESS_TOKEN);
     connection.ADD_headers(AUTH_HEADERS);
@@ -701,7 +703,7 @@ RefreshAccessTokenImpl(Credentials* creds)
     strcpy(creds->access_token, r_str.c_str());
 
     if( string(creds->access_token).empty() ){
-        throw LocalCredentialException("creds.access_token is empty");
+        TDMA_API_THROW(LocalCredentialException,"creds.access_token is empty");
     }
 }
 
@@ -714,11 +716,11 @@ SetCertificateBundlePathImpl(const string& path)
     if (sz < 5 || path[sz - 1] != 'm' || path[sz - 2] != 'e'
                || path[sz - 3] != 'p' || path[sz - 4] != '.')
     {
-        throw ValueException("certicate bundle path is not valid '.pem' file path");
+        TDMA_API_THROW(ValueException,"certicate bundle path is not valid '.pem' file path");
     }
 
     if( !fstream(path).is_open() )
-        throw ValueException("invalid certificate bundle file");
+        TDMA_API_THROW(ValueException,"invalid certificate bundle file");
 
     certificate_bundle_path = path;
 }
@@ -774,12 +776,11 @@ LoadCredentials_ABI( const char* path,
                                      path, password, pcreds );
     }catch(...){
         CloseCredentialsImpl(pcreds);
-        assert(allow_exceptions);
         throw;
     }
 
     if( err )
-        CloseCredentialsImpl(pcreds);
+        CloseCredentialsImpl(pcreds); // EXC ESCAPE
 
     return err;
 }
@@ -796,7 +797,7 @@ StoreCredentials_ABI( const char* path,
     CHECK_PTR(pcreds, "credentials", allow_exceptions);
 
     if( !pcreds->access_token | !pcreds->refresh_token | !pcreds->client_id ){
-        return handle_error<LocalCredentialException>(
+        return HANDLE_ERROR(LocalCredentialException,
             "invalid Credentials struct", allow_exceptions
             );
     }
@@ -826,12 +827,11 @@ RequestAccessToken_ABI( const char* code,
                                code, client_id, redirect_uri, pcreds );
     }catch(...){
         CloseCredentialsImpl(pcreds);
-        assert(allow_exceptions);
         throw;
     }
 
     if( err )
-        CloseCredentialsImpl(pcreds);
+        CloseCredentialsImpl(pcreds); // EXC ESCAPE
 
     return err;
 }
@@ -867,7 +867,7 @@ GetCertificateBundlePath_ABI(char **path, size_t *n, int allow_exceptions)
     *n = r.size() + 1;
     *path = reinterpret_cast<char*>(malloc(*n));
     if( !path ){
-        return handle_error<MemoryError>(
+        return HANDLE_ERROR(MemoryError,
             "failed to allocate buffer memory", allow_exceptions
             );
     }
@@ -894,7 +894,7 @@ GetDefaultCertificateBundlePath_ABI( char **path,
     *n = r.size() + 1;
     *path = reinterpret_cast<char*>(malloc(*n));
     if( !path ){
-        return handle_error<MemoryError>(
+        return HANDLE_ERROR(MemoryError,
             "failed to allocate buffer memory", allow_exceptions
             );
     }
@@ -927,7 +927,7 @@ CopyCredentials_ABI( const struct Credentials* from,
     if( (atl = strnlen(from->access_token, FAIL_LEN)) == FAIL_LEN||
         (rtl = strnlen(from->refresh_token, FAIL_LEN)) == FAIL_LEN ||
         (cidl = strnlen(from->client_id, FAIL_LEN)) == FAIL_LEN ){
-        return handle_error<LocalCredentialException>(
+        return HANDLE_ERROR(LocalCredentialException,
             "invalid string length", allow_exceptions
             );
         }

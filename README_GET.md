@@ -60,7 +60,7 @@ The Python interface mirrors C++ almost exactly.
 
 ### Certificates
 
-Certificates are required to validate the hosts. If libcurl is built against the native ssl lib(e.g openssl on linux) or you use the pre-built dependencies for Windows(we built libcurl with -ENABLE_WINSSL) the default certificate store ***should*** take care of this for you. If this doesn't happen an ```APIExecutionException```  will be thrown with code CURLE_SSL_CACERT(60) and you'll have to use your own certificates via:
+Certificates are required to validate the hosts. If libcurl is built against the native ssl lib(e.g openssl on linux) or you use the pre-built dependencies for Windows(we built libcurl with -ENABLE_WINSSL) the default certificate store ***should*** take care of this for you. If this doesn't happen an ```ConnectException```  will be thrown with code CURLE_SSL_CACERT(60) and you'll have to use your own certificates via:
 ```
 [C++]
 void
@@ -357,7 +357,7 @@ qg.get();
             j = qg.get();
         }catch( InvalidRequest& e){
             // invalid symbol ?
-        }catch( APIExecutionException& e ){
+        }catch( ConnectException& e ){
             // something more serious 
         }
         

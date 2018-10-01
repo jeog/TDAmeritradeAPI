@@ -60,7 +60,7 @@ public:
             _date(date)
         {
             if( !util::is_valid_iso8601_datetime(date) ){
-                throw ValueException("invalid ISO-8601 date/time: " + date);
+                TDMA_API_THROW(ValueException,"invalid ISO-8601 date/time: " + date);
             }
             _build();
         }
@@ -85,7 +85,7 @@ public:
     set_date(const string& date)
     {
         if( !util::is_valid_iso8601_datetime(date) ){
-            throw ValueException("invalid ISO-8601 date/time: " + date);
+            TDMA_API_THROW(ValueException,"invalid ISO-8601 date/time: " + date);
         }
         _date = date;
         build();

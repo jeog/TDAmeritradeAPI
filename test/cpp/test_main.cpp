@@ -11,7 +11,7 @@ using namespace std;
 
 void test_option_symbol_builder();
 
-
+bool use_live_connection = false;
 
 int main(int argc, char* argv[])
 {
@@ -57,7 +57,11 @@ int main(int argc, char* argv[])
         cout<< "*** [END] TEST GETTERS [END] ***" << endl << endl;
         
         cout<< "*** [BEGIN] TEST STREAMING [BEGIN] ***" << endl;
-        test_streaming(account_id, cmanager.credentials);
+        if( use_live_connection ){
+            test_streaming(account_id, cmanager.credentials);
+        }else{
+            cout<< "CAN NOT TEST STREAMING WITHOUT USING LIVE CONNECTION" << endl;
+        }
         cout<< "*** [END] TEST STREAMING [END] ***" << endl << endl;       
     }
 
@@ -84,8 +88,8 @@ void test_option_symbol_builder()
         try{
             o = tdma::BuildOptionSymbol(underlying, month, day, year,
                                                     is_call, strike);
-        }catch(std::exception& e ){
-            cout<< "successfully caught exception: " << e.what() << endl;
+        }catch(tdma::APIException& e ){
+            cout<< "successfully caught exception: " << e << endl;
             return;
         }
         throw std::runtime_error("failed to catch exception for: " + o);

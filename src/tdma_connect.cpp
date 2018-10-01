@@ -70,28 +70,28 @@ base_on_error_callback(long code, const string& data, bool allow_refresh)
     switch(code){
     case 401:
         if( !allow_refresh ){
-            throw APIExecutionException("not allowed to refresh token", code);
+            TDMA_API_THROW(ConnectException,"not allowed to refresh token", code);
         }
         data_json = json::parse(data);
         err_msg = data_json["error"];
         if( !error_msg_about_token_expiration(err_msg) ){
-            throw APIExecutionException("unknow exception: " + err_msg, code);
+            TDMA_API_THROW(ConnectException,"unknow exception: " + err_msg, code);
         }
         return true ; /* REFRESH TOKEN */
     case 403:
-        throw InvalidRequest("forbidden", code);
+        TDMA_API_THROW(InvalidRequest,"forbidden", code);
     case 404:
-        throw InvalidRequest("not found", code);
+        TDMA_API_THROW(InvalidRequest,"not found", code);
     case 500:
         // do we still need to unescape this ??
         data_uesc = unescape_returned_post_data(data);
         data_json = json::parse(data_uesc);
         err_msg = data_json["error"];
-        throw ServerError("unexpected server error: " + err_msg, code);
+        TDMA_API_THROW(ServerError,"unexpected server error: " + err_msg, code);
     case 503:
-        throw ServerError("server (temporarily) unavailable", code);
+        TDMA_API_THROW(ServerError,"server (temporarily) unavailable", code);
     case 504:
-        throw ServerError("unknown server error: " + data, code);
+        TDMA_API_THROW(ServerError,"unknown server error: " + data, code);
     };
     return false;
 }
@@ -104,9 +104,9 @@ data_api_on_error_callback(long code, const string& data)
      */
     switch(code){
     case 400:
-        throw InvalidRequest("bad/malformed request", code);
+        TDMA_API_THROW(InvalidRequest,"bad/malformed request", code);
     case 406:
-        throw InvalidRequest("invalid regex or excessive requests", code);
+        TDMA_API_THROW(InvalidRequest,"invalid regex or excessive requests", code);
     };
 }
 
@@ -117,7 +117,7 @@ account_api_on_error_callback(long code, const string& data)
      *  codes 500, 503, 401, 403, 404 handled by base callback
      */
     if( code == 400 )
-        throw InvalidRequest("validation problem", code);
+        TDMA_API_THROW(InvalidRequest,"validation problem", code);
 }
 
 void
@@ -128,9 +128,9 @@ query_api_on_error_callback(long code, const string& data)
      */
     switch(code){
     case 400:
-        throw InvalidRequest("validation problem", code);
+        TDMA_API_THROW(InvalidRequest,"validation problem", code);
     case 406:
-        throw InvalidRequest("invalid regex or excessive requests", code);
+        TDMA_API_THROW(InvalidRequest,"invalid regex or excessive requests", code);
     };
 }
 
@@ -145,7 +145,7 @@ on_api_return( long code,
 
     cerr<< "error response: " << code << endl;
     if( data.empty() )
-        throw APIExecutionException("no return message", code);
+        TDMA_API_THROW(ConnectException, "no return message", code);
 
     if( !base_on_error_callback(code, data, allow_refresh) ){
         /*
@@ -157,7 +157,7 @@ on_api_return( long code,
          */
         on_error_cb(code, data);
         /* callback may not handle the error and throw so... */
-        throw APIExecutionException("unknown exception", code);
+        TDMA_API_THROW(ConnectException,"unknown exception", code);
     }
 
     cerr<< "access token expired; try to refresh..." << endl;
@@ -175,7 +175,7 @@ curl_execute(HTTPSConnection& connection)
         return connection.execute();
     }catch( CurlConnectionError& e ){
         cerr<< "CurlConnectionError --> APIExecutionException" << endl;
-        throw APIExecutionException(e.what(), e.code);
+        TDMA_API_THROW(ConnectException,e.what(), e.code);
     }
 }
 
@@ -186,7 +186,7 @@ api_execute( HTTPSConnection& connection,
               api_on_error_cb_ty on_error_cb )
 {
     if( !creds.access_token || string(creds.access_token).empty() )
-        throw LocalCredentialException("creds.access_token is empty");
+        TDMA_API_THROW(LocalCredentialException,"creds.access_token is empty");
 
     if( !connection.has_headers() ){
         /* 
@@ -238,7 +238,8 @@ api_auth_execute(HTTPSPostConnection& connection, std::string fname)
 
     if( r_code != HTTP_RESPONSE_OK ){
         cerr<< "error response: " << r_code << endl;
-        throw AuthenticationException(fname + " failed " + r_data, r_code);
+        TDMA_API_THROW( AuthenticationException,
+                        fname + " failed " + r_data, r_code );
     }
 
     string r_esc = unescape_returned_post_data(r_data); // REMOVE ????
@@ -270,7 +271,7 @@ string
 APIGetterImpl::get()
 {
     if( is_closed() )
-        throw APIException("connection is closed");
+        TDMA_API_THROW(APIException, "connection is closed");
 
     assert( !_connection.is_closed() );
     return APIGetterImpl::throttled_get(*this);

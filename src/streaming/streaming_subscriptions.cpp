@@ -71,10 +71,10 @@ class SubscriptionBySymbolBaseImpl
                         const std::set<F>& fields )
     {
         if( symbols.empty() )
-            throw ValueException("no symbols");
+            TDMA_API_THROW(ValueException,"no symbols");
 
         if( fields.empty() )
-            throw ValueException("no fields");
+            TDMA_API_THROW(ValueException,"no fields");
 
         std::vector<std::string> symbols_enc;
         for(auto& s : symbols)
@@ -667,7 +667,7 @@ C_sub_ptr_to_impl_ptr(StreamingSubscription_C *psub)
     case TYPE_ID_SUB_ACTIVES_OPTION:
         return reinterpret_cast<OptionActivesSubscriptionImpl*>(psub->obj);
     default:
-        throw TypeException("invalid C subscription type_id");
+        TDMA_API_THROW(TypeException,"invalid C subscription type_id");
     }
 }
 
@@ -694,13 +694,13 @@ create_symbol_field_subscription( const char **symbols,
     CHECK_PTR_KILL_PROXY(fields, "fields", allow_exceptions, psub);
 
     if( nsymbols > SUBSCRIPTION_MAX_SYMBOLS ){
-        return handle_error<ValueException>(
+        return HANDLE_ERROR_EX(ValueException,
             "nsymbols > SUBSCRIPTION_MAX_SYMBOLS", allow_exceptions, psub
             );
     }
 
     if( nfields > SUBSCRIPTION_MAX_FIELDS ){
-        return handle_error<ValueException>(
+        return HANDLE_ERROR_EX(ValueException,
             "nfields > SUBSCRIPTION_MAX_FIELDS", allow_exceptions, psub
             );
     }
@@ -710,7 +710,7 @@ create_symbol_field_subscription( const char **symbols,
     //TODO combine with buffers_to_set
     for(size_t i = 0; i < nfields; ++i){
         if( !ImplTy::is_valid_field(fields[i]) ){
-            return handle_error<ValueException>(
+            return HANDLE_ERROR_EX(ValueException,
                 "invalid FieldType value", allow_exceptions, psub
                 );
         }
@@ -750,7 +750,7 @@ create_duration_subscription( int duration,
         return err;
 
     if( !ImplTy::is_valid_duration(duration) ){
-        return handle_error<ValueException>(
+        return HANDLE_ERROR_EX(ValueException,
             "invalid DurationType value", allow_exceptions, psub
             );
     }
@@ -794,7 +794,7 @@ get_fields(typename ImplTy::ProxyType::CType *psub, int** fields, size_t *n,
     *n = f.size();
     *fields = reinterpret_cast<int*>(malloc(*n * sizeof(int)));
     if( !*fields ){
-        return handle_error<MemoryError>(
+        return HANDLE_ERROR(MemoryError,
             "failed to allocate buffer memory", allow_exceptions
             );
     }
@@ -908,7 +908,7 @@ StreamingSubscription_GetCommand_ABI( StreamingSubscription_C *psub,
     *n = r.size() + 1;
     *buf = reinterpret_cast<char*>(malloc(*n));
     if( !*buf ){
-        return handle_error<MemoryError>(
+        return HANDLE_ERROR(MemoryError,
             "failed to allocate buffer memory", allow_exceptions
             );
     }
@@ -944,7 +944,7 @@ SubscriptionBySymbolBase_GetSymbols_ABI( StreamingSubscription_C *psub,
     *n = strs.size();
     *buffers = reinterpret_cast<char**>(malloc((*n) * sizeof(char*)));
     if( !*buffers ){
-       return handle_error<MemoryError>(
+       return HANDLE_ERROR(MemoryError,
            "failed to allocate buffer memory", allow_exceptions
            );
     }
@@ -954,7 +954,7 @@ SubscriptionBySymbolBase_GetSymbols_ABI( StreamingSubscription_C *psub,
        size_t s_sz = s.size();
        (*buffers)[cnt] = reinterpret_cast<char*>(malloc(s_sz+1));
        if( !(*buffers)[cnt] ){
-           return handle_error<MemoryError>(
+           return HANDLE_ERROR(MemoryError,
                "failed to allocate buffer memory", allow_exceptions
                );
        }
@@ -1253,13 +1253,13 @@ OptionActivesSubscription_Create_ABI( int venue,
         return err;
 
     if( !OptionActivesSubscriptionImpl::is_valid_venue(venue) ){
-        return handle_error<ValueException>(
+        return HANDLE_ERROR_EX(ValueException,
             "invalid VenueType value", allow_exceptions, psub
             );
     }
 
     if( !OptionActivesSubscriptionImpl::is_valid_duration(duration_type) ){
-        return handle_error<ValueException>(
+        return HANDLE_ERROR_EX(ValueException,
             "invalid DurationType value", allow_exceptions, psub
             );
     }

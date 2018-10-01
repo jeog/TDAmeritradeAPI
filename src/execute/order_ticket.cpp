@@ -491,7 +491,7 @@ OrderTicket_GetLegs_ABI( OrderTicket_C *porder, OrderLeg_C** plegs, size_t* n,
     *n = legs.size();
     *plegs = reinterpret_cast<OrderLeg_C*>(malloc((*n) * sizeof(OrderLeg_C)));
     if( !*plegs ){
-        return handle_error<tdma::MemoryError>(
+        return HANDLE_ERROR(tdma::MemoryError,
             "failed to allocate buffer memory for order legs", allow_exceptions
             );
     }
@@ -616,7 +616,7 @@ OrderTicket_GetChildren_ABI( OrderTicket_C *porder, OrderTicket_C** pchildren, s
     *n = kids.size();
     *pchildren = reinterpret_cast<OrderTicket_C*>(malloc((*n) * sizeof(OrderLeg_C)));
     if( !*pchildren ){
-        return handle_error<tdma::MemoryError>(
+        return HANDLE_ERROR(tdma::MemoryError,
             "failed to allocate buffer memory for child orders", allow_exceptions
             );
     }
@@ -730,6 +730,28 @@ BuildOrder_Simple_ABI( int order_type,
     return build( allow_exceptions, (B::build_meth_ty)(B::build), porder,
                   static_cast<OrderType>(order_type),
                   static_cast<OrderAssetType>(asset_type), symbol,
+                  static_cast<OrderInstruction>(instruction), quantity,
+                  limit_price, stop_price );
+}
+
+int
+BuildOrder_Equity_ABI( int order_type,
+                           const char* symbol,
+                           int instruction,
+                           size_t quantity,
+                           double limit_price,
+                           double stop_price,
+                           OrderTicket_C *porder,
+                           int allow_exceptions )
+{
+    CHECK_PTR_KILL_PROXY(symbol, "symbol", allow_exceptions, porder);
+    CHECK_ENUM_KILL_PROXY(OrderType, order_type, allow_exceptions, porder);
+    CHECK_ENUM_KILL_PROXY(OrderInstruction, instruction, allow_exceptions, porder);
+
+    using B = SimpleOrderBuilder::Equity;
+
+    return build( allow_exceptions, (B::build_meth_ty)(B::build), porder,
+                  static_cast<OrderType>(order_type), symbol,
                   static_cast<OrderInstruction>(instruction), quantity,
                   limit_price, stop_price );
 }
