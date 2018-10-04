@@ -28,14 +28,18 @@ PACKAGES = ['tdma_api']
 BUILD_INFO_FILE = 'tdma_api_build.info'
 
 if sys.version_info.major < 3:
-    sys.stderr.write("fatal: tdma_api requires python3\n")
+    sys.stderr.write("\nFATAL: tdma_api requires python3\n")
     exit(1)
+
+if sys.version_info.minor < 3:
+    sys.stdout.write("\nWARNING: version < 3.3 (may not "
+                     "completely support tdma_api imports)\n\n")
 
 if __name__ == '__main__':
     setup(name=NAME, version=VERSION, description=DESCRIPTION, author=AUTHOR,
           author_email=AUTHOR_EMAIL, packages=PACKAGES)
     try:
-        print('+ Write build info to:', BUILD_INFO_FILE)
+        sys.stdout.write('\n+ Write build info to: ' + BUILD_INFO_FILE + '\n')
         with open(BUILD_INFO_FILE, 'w') as f:
             d = { 'NAME': NAME, 
                   'VERSION_PACKAGE': VERSION,                  
@@ -47,5 +51,5 @@ if __name__ == '__main__':
                   'DATETIME ': time.strftime("%m/%d/%Y %H:%M:%S") }            
             json.dump(d, f)
     except BaseException as e:
-        print('- Failed to write build info file:', str(e))
+        sys.stdout.write('- Failed to write build info: ' + str(e) + '\n')
         
