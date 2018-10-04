@@ -6,6 +6,7 @@
 *.project
 *.creds
 *core
+*.info
 
 python/build/*
 *.pydevproject

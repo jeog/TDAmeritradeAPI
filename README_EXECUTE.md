@@ -13,19 +13,29 @@
 
 ### Overview
 
+```
+[C, C++]
+#include "tdma_api_execute.h"
+
+[C++]
+using namespace tdma;
+
+[Python]
+from tdma_api import execute
+```
+
 Order execution and management interface. 
 
-This interface is waiting on a mechanism from Ameritrade to test execution without having to send live dummy orders. In the meantime we'll provide some basics of the proposed interface so prospective users can comment and provide feedback.
+This interface is waiting on a mechanism from Ameritrade to test execution without having to send live dummy orders. There has been no actual testing of execution but you can build ```OrderTicket``` objects whose underlying JSON can be submitted for execution. Currently we DO NOT provide a means to send/manage orders.
 
-Feel free to comment via [issues](https://github.com/jeog/TDAmeritradeAPI/issues/1) or email: jeog.dev@gmail.com
+Below we provide some basics of the proposed interface. Feel free to comment via [issues](https://github.com/jeog/TDAmeritradeAPI/issues/1) or email: jeog.dev@gmail.com
 
-```tdma_api_execute.h``` contains the early framework for the execute interface. There has been no actual testing of execution but you can build ```OrderTicket``` objects in C and C++ whose JSON can be submitted for execution. Currently we DO NOT provide a means to send/manage them.
 
 ### Using OrderTicket Objects
 
 **IF YOU CHOOSE TO SEND THESE ORDERS BE VERY VERY CAREFUL - MAKE SURE YOU KNOW EXACTLY WHAT IS BEING SENT!** 
 
-1. Build an ```OrderTicket``` (see tdma_api_execute.h or examples below)
+1. Build an ```OrderTicket``` (see tdma_api_execute.h, tdma_api.execute.py, or examples below)
 2. Check that the ```OrderTicket``` is accurately representing the JSON you intend to POST.
     - because of the number of builders and accessors expect bugs 
     - triple check quantities, prices, order types etc. **of the raw json** 
@@ -110,13 +120,23 @@ if( err ) {
     //
 }
 ```
+```
+[Python]
+leg1 = execute.OrderLeg(execute.ORDER_ASSET_TYPE_OPTION, "SPY_011720C300",
+                        execute.ORDER_INSTRUCTION_BUY, 10)
+order1 = execute.OrderTicket()
+order1.add_legs(leg1).set_type(execute.ORDER_TYPE_LIMIT).set_price(9.99)
+
+// json as builtin object
+print( str(order1.as_json()) )
+```
 
 If a specific order type is allowed by TDMA it *should* be possible for a motivated user to build it this way.
 
 
 #### Managed Orders
 
-Most users will probably only need certain basic orders, most of the time. To help (safely) build they would use nested static builders/factories that would handle many of the details:
+Most users will probably only need certain basic orders, most of the time. To help (safely) build, use the nested static builders/factories:
 
 ##### Equity 
 ```
@@ -138,12 +158,25 @@ if( err ){
 }
 ```
 
+```
+[Python]
+
+order1 = execute.SimpleOrderBuilder.Equity.Limit.Buy("SPY", 100, 285.05)
+```
+
 Once the user has the order they can add to it as necessary e.g:
 ```
 [C++]
 
 // defaults to OrderSession::DAY so...
 order1.set_sesion(OrderSession::GOOD_TILL_CANCEL).set_cancel_time("2019-01-01");
+```
+```
+[Python]
+
+order1.set_session(execute.ORDER_SESSION_GOOD_TILL_CANCEL) \
+      .set_cancel_time("2019-01-01") 
+
 ```
 ```
 [C]
@@ -169,8 +202,8 @@ if( err ){
 }
 ```
 
-
 ##### Option Spreads
+Option Spread builders are currently only available for C and C++.
 ```
 [C++]
 

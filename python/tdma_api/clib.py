@@ -16,8 +16,57 @@
 # 
 
 
-from ctypes import CDLL, c_int, c_char_p, c_size_t, byref as REF, POINTER
+from ctypes import CDLL, c_int, c_char_p, c_size_t, c_void_p, byref as REF, \
+                    POINTER, Structure as _Structure
+from abc import ABCMeta, abstractmethod
 
+
+class _CProxy2(_Structure):    
+    _fields_ = [
+        ("obj", c_void_p), 
+        ("type_id", c_int)
+        ] 
+    
+class _CProxy3(_Structure):    
+    _fields_ = _CProxy2._fields_ + [("ctx", c_void_p)] 
+          
+          
+class _ProxyBase(metaclass=ABCMeta):  
+    """_ProxyBase - (Abstract) base class for all proxy/interface objects. 
+    
+    ALL METHODS THROW -> LibraryNotLoaded, CLibException
+    """
+    
+    def __init__(self, *cargs):      
+        self._obj = self._cproxy_type()()                                
+        call( self._abi('Create'), *(cargs + (REF(self._obj),)) )  
+        self._alive = True 
+                                                  
+    def __del__(self):           
+        if hasattr(self,'_alive') and self._alive:
+            self._alive = False 
+            try:
+                try:                                  
+                    call( self._abi('Destroy'), REF(self._obj) )
+                except CLibException as e:
+                    print("CLibException in", self.__del__, ":", str(e))                                 
+            except:
+                pass  
+            
+    # NOTE because of how the ABI calls for derived objects are structured
+    # _abi() can only be called: 
+    #      1) by non-base classes, or
+    #      2) for Create/Destroy abi methods            
+    @classmethod
+    def _abi(cls, f):
+        return "{}_{}_ABI".format(cls.__name__ , f)
+        
+    @classmethod
+    @abstractmethod
+    def _cproxy_type(cls):
+        pass                 
+    
+    
 _lib = None
 
 ERRORS = {
@@ -50,6 +99,7 @@ class CLibException(Exception):
         
 class LibraryNotLoaded(Exception):
     pass
+    
 
 def PCHAR_BUFFER(strs):
     s = [c_char_p(s.encode()) for s in strs]   
@@ -63,8 +113,7 @@ def init(lib, reload=False):
         _lib = CDLL(lib)           
     return bool(_lib)
 
-def call(name, *args):
-    global _lib
+def call(name, *args):  
     if _lib is None:
         raise LibraryNotLoaded()    
     func = getattr(_lib, name)
@@ -73,25 +122,32 @@ def call(name, *args):
         raise CLibException(err)
     
     
-def free_buffer(buf):
-    global _lib
+def free_buffer(buf):    
     if _lib is None:
         raise LibraryNotLoaded()
-    _lib.FreeBuffer_ABI(buf, 0)
+    _lib.FreeBuffer_ABI(buf, 0)    
     
-    
-def free_buffers(bufs, n):
-    global _lib 
+def free_buffers(bufs, n):   
     if _lib is None:
         raise LibraryNotLoaded()
     _lib.FreeBuffers_ABI(bufs, n, 0)
 
-def free_fields_buffer(fields):
-    global _lib 
+def free_fields_buffer(fields):  
     if _lib is None:
         raise LibraryNotLoaded()
     _lib.FreeFieldsBuffer_ABI(fields)       
-        
+    
+def free_order_leg_buffer(buf):
+    if _lib is None:
+        raise LibraryNotLoaded()
+    _lib.FreeOrderLegBuffer_ABI(buf)       
+ 
+def free_order_ticket_buffer(buf):
+    if _lib is None:
+        raise LibraryNotLoaded()
+    _lib.FreeOrderTicketBuffer_ABI(buf)   
+           
+           
 def get_str(fname, obj=None):
     c = c_char_p()
     n = c_size_t()

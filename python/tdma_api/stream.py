@@ -45,8 +45,8 @@ in the appropriately named module constants. (e.g NasdaqActivesSubscription)
 See README_STREAMING.md for a more thorough explanation.
 """
 
-from ctypes import byref as _REF, Structure as _Structure, c_int, c_void_p, \
-                    c_ulonglong, CFUNCTYPE, c_char_p, c_ulong, pointer, POINTER
+from ctypes import byref as _REF, c_int, c_void_p, c_ulonglong, CFUNCTYPE, \
+                    c_char_p, c_ulong, pointer, POINTER
 from inspect import signature
                     
 import json
@@ -107,16 +107,17 @@ def callback_type_to_str(cb_type):
     return clib.to_str("StreamingCallbackType_to_string_ABI", c_int, cb_type)
     
 
-class _StreamingSession_C(_Structure): 
-    """C struct representing StreamingSession_C type. (IMPLEMENTATION DETAIL)"""
-    _fields_ = [
-        ("obj", c_void_p), 
-        ("type_id", c_int), 
-        ("ctx", c_void_p)
-        ] 
+class _StreamingSession_C(clib._CProxy3): 
+    """C struct representing StreamingSession_C type."""
+    pass   
                               
+        
+class _StreamingSubscription_C(clib._CProxy2): 
+    """C struct representing StreamingSubscription_C type."""
+    pass                              
 
-class StreamingSession:
+
+class StreamingSession( clib._ProxyBase ):
     """StreamingSession - object used for accessing the Streaming interface.
     
     The authenticated user creates a StreamingSession using their Credentials
@@ -170,22 +171,13 @@ class StreamingSession:
         self._creds = creds   
         self._cb_raw = callback
         self._cb_wrapper = self._build_callback_wrapper(callback)
-        self._obj = _StreamingSession_C()
-        clib.call(self._abi('Create'), _REF(creds), self._cb_wrapper, 
-                  c_ulong(connect_timeout), c_ulong(listening_timeout), 
-                  c_ulong(subscribe_timeout), _REF(self._obj))    
-        self._alive = True                         
+        super().__init__(_REF(creds), self._cb_wrapper, 
+                         c_ulong(connect_timeout), c_ulong(listening_timeout), 
+                         c_ulong(subscribe_timeout))                                    
                                                      
-    def __del__(self):         
-        if hasattr(self,'_alive') and self._alive:
-            self._alive = False 
-            try:
-                try:                                  
-                    clib.call(self._abi('Destroy'), _REF(self._obj))
-                except clib.CLibException as e:
-                    print("CLibException in", self.__del__, ":", str(e))                                  
-            except:
-                pass
+    @classmethod               
+    def _cproxy_type(cls):
+        return _StreamingSession_C
                    
     @property
     def credentials(self):
@@ -197,10 +189,6 @@ class StreamingSession:
             raise TypeError("callback requires %i args" % CALLBACK_NARGS)
         f = lambda a,b,c,d : cb(a,b,c, json.loads(d.decode()) if d else None)
         return CALLBACK_FUNC_TYPE(f)
-    
-    @classmethod
-    def _abi(cls, f):
-        return "{}_{}_ABI".format(cls.__name__,f)
     
     @classmethod
     def _check_subs(cls, subs):
@@ -269,43 +257,18 @@ class StreamingSession:
         
     def get_qos(self):
         """Returns the quality-of-service."""
-        return clib.get_val(self._abi("GetQOS"), c_int, self._obj)
-        
-        
-        
-class _StreamingSubscription_C(_Structure): 
-    """C struct representing StreamingSubscription_C type. (IMPLEMENTATION DETAIL)"""
-    _fields_ = [
-        ("obj", c_void_p), 
-        ("type_id", c_int)
-        ] 
+        return clib.get_val(self._abi("GetQOS"), c_int, self._obj)            
 
 
-class _StreamingSubscription:
+class _StreamingSubscription( clib._ProxyBase ):
     """_StreamingSubscription - Base Subscription class. DO NOT INSTANTIATE!
     
     ALL METHODS THROW -> LibraryNotLoaded, CLibException
     """
-    def __init__(self, *args):        
-        self._obj = _StreamingSubscription_C()            
-        args = args + (_REF(self._obj),)            
-        clib.call(self._abi('Create'), *args)    
-        self._alive = True 
-                                                  
-    def __del__(self):         
-        if hasattr(self,'_alive') and self._alive:
-            self._alive = False 
-            try:
-                try:                                  
-                    clib.call(self._abi('Destroy'), _REF(self._obj))
-                except clib.CLibException as e:
-                    print("CLibException in", self.__del__, ":", str(e))                                   
-            except:
-                pass
-            
-    @classmethod
-    def _abi(cls, f):
-        return "{}_{}_ABI".format(cls.__name__,f)
+
+    @classmethod               
+    def _cproxy_type(cls):
+        return _StreamingSubscription_C
                 
     def get_service(self):
         """Returns the service type as SERVICE_TYPE_[] constant."""

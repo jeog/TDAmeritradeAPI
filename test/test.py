@@ -18,9 +18,9 @@
 from platform import system, architecture
 from traceback import print_exc
 from time import strftime, perf_counter, sleep
-import argparse, gc, os
+import argparse, gc, os, json
 
-from tdma_api import get, auth, clib, stream
+from tdma_api import get, auth, clib, stream, execute
 
 SYSTEM = system()
 ARCH = architecture()[0]
@@ -38,6 +38,7 @@ if SYSTEM == 'Windows':
 
 TEST_DIR = os.path.dirname(os.path.realpath(__file__))
 LIBRARY_PATH = os.path.join(TEST_DIR, REL_LIB_PATH)
+PACKAGE_BUILD_INFO_PATH = os.path.join(TEST_DIR, '../python/tdma_api_build.info')
         
 parser = argparse.ArgumentParser("test tdma_api")
 parser.add_argument("account_id", type=str, help="account id" )
@@ -45,10 +46,20 @@ parser.add_argument("credentials_path", type=str,
                     help="path of encrypted credentials file")
 parser.add_argument("credentials_password", type=str,
                     help="password to decrypt credentials files")
+parser.add_argument("--no-live-connect", action='store_true')
+
+use_live_connection = True
+
+def Get(getter):
+    if use_live_connection:
+        return getter.get()
+    else:
+        print("GET requires 'use_live_connection=True'")
+        return {}
             
 def print_title(s):
     l = len(s) + 4
-    print('\n')  
+    print()  
     print('+' * l)
     print('+', s, '+')
     print('+' * l, '\n')
@@ -113,6 +124,10 @@ def test_throttling(creds):
     assert get.get_wait_msec() == W
     print('+', get.get_def_wait_msec(), '->', get.get_wait_msec())
     
+    if not use_live_connection:
+        print("THROTTLE test requires 'use_live_connection=True'")
+        return
+    
     print("+ throttling test - BEGIN")
     g = get.QuoteGetter(creds, "SPY")
     ntests = 5
@@ -136,24 +151,24 @@ def test_throttling(creds):
 def test_quote_getters(creds):
     g = get.QuoteGetter(creds, "SpY")   
     assert g.get_symbol() == "SPY"  
-    j = g.get()
+    j = Get(g)
     print(str(j))
     g.set_symbol('qqq')
     assert g.get_symbol() == 'QQQ'
-    j = g.get()
+    j = Get(g)
     print(str(j))
  
 
 def test_quotes_getters(creds):    
     g = get.QuotesGetter(creds, "SPY", "qqq", "IwM") 
     assert sorted(g.get_symbols()) == sorted(["SPY", "QQQ", "IWM"])  
-    j = g.get()
+    j = Get(g)
     for k, v in j.items():
         print(k)
         print(str(v))
     g.set_symbols('QqQ')  
     assert g.get_symbols() == ['QQQ']
-    j = g.get()
+    j = Get(g)
     for k, v in j.items():
         print(k)
         print(str(v)) 
@@ -162,13 +177,13 @@ def test_quotes_getters(creds):
     assert sorted(g.get_symbols()) == sorted(["SPY", "QQQ", "IWM", "GLD"])
     g.remove_symbols('sPY','IWM')
     assert g.get_symbols() == sorted(['QQQ','GLD'])
-    j = g.get()
+    j = Get(g)
     for k, v in j.items():
         print(k)
         print(str(v))     
     g.remove_symbols('QQQ','gld')
     assert g.get_symbols() == []
-    assert not g.get()
+    assert not Get(g)
     
 
 
@@ -176,13 +191,13 @@ def test_market_hours_getters(creds):
     g = get.MarketHoursGetter(creds, get.MARKET_TYPE_BOND, "2019-07-04")   
     assert g.get_market_type() == get.MARKET_TYPE_BOND
     assert g.get_date() == "2019-07-04"   
-    j = g.get()
+    j = Get(g)
     print(str(j))   
     g.set_market_type(get.MARKET_TYPE_EQUITY)
     g.set_date("2019-07-05")
     assert g.get_market_type() == get.MARKET_TYPE_EQUITY  
     assert g.get_date() == "2019-07-05" 
-    j = g.get()
+    j = Get(g)
     print(str(j))  
     
     
@@ -193,7 +208,7 @@ def test_movers_getters(creds):
     assert g.get_index() == get.MOVERS_INDEX_COMPX
     assert g.get_direction_type() == get.MOVERS_DIRECTION_TYPE_UP
     assert g.get_change_type() == get.MOVERS_CHANGE_TYPE_PERCENT
-    j = g.get()
+    j = Get(g)
     print(str(j))
     g.set_index(get.MOVERS_INDEX_SPX)
     g.set_direction_type(get.MOVERS_DIRECTION_TYPE_UP_AND_DOWN)
@@ -201,7 +216,7 @@ def test_movers_getters(creds):
     assert g.get_index() == get.MOVERS_INDEX_SPX
     assert g.get_direction_type() == get.MOVERS_DIRECTION_TYPE_UP_AND_DOWN
     assert g.get_change_type() == get.MOVERS_CHANGE_TYPE_VALUE  
-    j = g.get()
+    j = Get(g)
     print(str(j))  
     
  
@@ -217,7 +232,7 @@ def test_historical_period_getters(creds):
     assert g.get_frequency() == f
     assert g.get_frequency_type() == ft
     assert g.is_extended_hours() == True
-    j = g.get()
+    j = Get(g)
     print(str(j))   
 
     pt = get.PERIOD_TYPE_YEAR
@@ -234,7 +249,7 @@ def test_historical_period_getters(creds):
     assert g.get_frequency() == f
     assert g.get_frequency_type() == ft
     assert g.is_extended_hours() == False
-    j = g.get()
+    j = Get(g)
     print(str(j)) 
         
         
@@ -250,7 +265,7 @@ def test_historical_range_getters(creds):
     assert g.get_start_msec_since_epoch() == start
     assert g.get_end_msec_since_epoch() == end
     assert g.is_extended_hours() == False
-    j = g.get()
+    j = Get(g)
     print(str(j))   
 
     f = get.VALID_FREQUENCIES_BY_FREQUENCY_TYPE[ft][1]
@@ -263,14 +278,14 @@ def test_historical_range_getters(creds):
     assert g.get_start_msec_since_epoch() == start
     assert g.get_end_msec_since_epoch() == end
     assert g.is_extended_hours() == True
-    j = g.get()
+    j = Get(g)
     print(str(j))   
     
     
 def test_option_chain_getters(creds):
     strikes = get.OptionStrikes.N_ATM(2)
-    from_date = "2018-07-24"
-    to_date = "2018-09-24"
+    from_date = "2019-01-01"
+    to_date = "2019-02-01"
     g = get.OptionChainGetter(creds, "kors", strikes, 
                               get.OPTION_CONTRACT_TYPE_CALL, True,
                               from_date, to_date, get.OPTION_EXP_MONTH_AUG,
@@ -283,12 +298,12 @@ def test_option_chain_getters(creds):
     assert g.get_to_date() == to_date
     assert g.get_exp_month() == get.OPTION_EXP_MONTH_AUG
     assert g.get_option_type() == get.OPTION_TYPE_ALL
-    j = g.get()
+    j = Get(g)
     print(str(j))
         
     strikes = get.OptionStrikes.RANGE(get.OPTION_RANGE_TYPE_ITM)
-    from_date = "2018-08-21"
-    to_date = "2018-09-15"
+    from_date = "2019-01-01"
+    to_date = "2019-02-01"
     g.set_symbol("SPy")
     g.set_strikes(strikes)
     g.set_contract_type(get.OPTION_CONTRACT_TYPE_ALL)
@@ -306,15 +321,15 @@ def test_option_chain_getters(creds):
     assert g.get_to_date() == to_date
     assert g.get_exp_month() == get.OPTION_EXP_MONTH_ALL
     assert g.get_option_type() == get.OPTION_TYPE_S
-    j = g.get()
+    j = Get(g)
     print(str(j))
     
     
 def test_option_chain_strategy_getters(creds):
     strikes = get.OptionStrikes.N_ATM(2)
     strategy = get.OptionStrategy.COVERED()
-    from_date = "2018-07-24"
-    to_date = "2018-09-24"
+    from_date = "2019-01-01"
+    to_date = "2019-02-01"
     g = get.OptionChainStrategyGetter(creds, "kORS", strategy, strikes, 
                                       get.OPTION_CONTRACT_TYPE_CALL, True,
                                       from_date, to_date, 
@@ -329,13 +344,13 @@ def test_option_chain_strategy_getters(creds):
     assert g.get_to_date() == to_date
     assert g.get_exp_month() == get.OPTION_EXP_MONTH_AUG
     assert g.get_option_type() == get.OPTION_TYPE_ALL
-    j = g.get()
+    j = Get(g)
     print(str(j))
         
     strikes = get.OptionStrikes.RANGE(get.OPTION_RANGE_TYPE_ITM)
     strategy = get.OptionStrategy.VERTICAL(5.0)
-    from_date = "2018-08-21"
-    to_date = "2018-09-15"
+    from_date = "2019-02-01"
+    to_date = "2019-03-01"
     g.set_symbol("sPY")
     g.set_strategy(strategy)
     g.set_strikes(strikes)    
@@ -355,14 +370,14 @@ def test_option_chain_strategy_getters(creds):
     assert g.get_to_date() == to_date
     assert g.get_exp_month() == get.OPTION_EXP_MONTH_ALL
     assert g.get_option_type() == get.OPTION_TYPE_S
-    j = g.get()
+    j = Get(g)
     print(str(j))
     
     
 def test_option_chain_analytical_getters(creds):
     strikes = get.OptionStrikes.N_ATM(2)    
-    from_date = "2018-07-24"
-    to_date = "2018-09-24"
+    from_date = "2019-01-01"
+    to_date = "2019-02-01"
     g = get.OptionChainAnalyticalGetter(creds, "KORs", 20.00, 70.00, 3.00,
                                         100, strikes, 
                                         get.OPTION_CONTRACT_TYPE_CALL, True,
@@ -381,12 +396,12 @@ def test_option_chain_analytical_getters(creds):
     assert g.get_to_date() == to_date
     assert g.get_exp_month() == get.OPTION_EXP_MONTH_AUG
     assert g.get_option_type() == get.OPTION_TYPE_ALL
-    j = g.get()
+    j = Get(g)
     print(str(j))
         
     strikes = get.OptionStrikes.RANGE(get.OPTION_RANGE_TYPE_ITM)    
-    from_date = "2018-08-21"
-    to_date = "2018-09-15"
+    from_date = "2019-02-01"
+    to_date = "2019-03-01"
     g.set_symbol("SpY")
     g.set_volatility(100.10)
     g.set_underlying_price(49.99)
@@ -412,7 +427,7 @@ def test_option_chain_analytical_getters(creds):
     assert g.get_to_date() == to_date
     assert g.get_exp_month() == get.OPTION_EXP_MONTH_ALL
     assert g.get_option_type() == get.OPTION_TYPE_S
-    j = g.get()
+    j = Get(g)
     print(str(j))
 
 
@@ -421,7 +436,7 @@ def test_account_info_getters(creds, account_id):
     assert g.get_account_id() == account_id
     assert g.returns_positions() == True
     assert g.returns_orders() == False
-    j = g.get()
+    j = Get(g)
     print(str(j))    
     g.set_account_id("BAD_ACCOUNT_ID")
     assert g.get_account_id() == "BAD_ACCOUNT_ID"
@@ -431,14 +446,14 @@ def test_account_info_getters(creds, account_id):
     assert g.get_account_id() == account_id
     assert g.returns_positions() == False
     assert g.returns_orders() == True
-    j = g.get()
+    j = Get(g)
     print(str(j))
     
     
 def test_preferences_getter(creds, account_id):
     g = get.PreferencesGetter(creds, account_id)
     assert g.get_account_id() == account_id
-    j = g.get()
+    j = Get(g)
     print(str(j))    
     g.set_account_id("BAD_ACCOUNT_ID")
     assert g.get_account_id() == "BAD_ACCOUNT_ID"
@@ -447,7 +462,7 @@ def test_preferences_getter(creds, account_id):
 def test_subscription_keys_getter(creds, account_id):
     g = get.StreamerSubscriptionKeysGetter(creds, account_id)
     assert g.get_account_id() == account_id
-    j = g.get()
+    j = Get(g)
     print(str(j))    
     g.set_account_id("BAD_ACCOUNT_ID")
     assert g.get_account_id() == "BAD_ACCOUNT_ID"
@@ -462,7 +477,7 @@ def test_transaction_history_getters(creds, account_id):
     assert g.get_symbol() == "SPY"
     assert g.get_start_date() == "2018-01-01"
     assert g.get_end_date() == "2019-01-01"
-    j = g.get()
+    j = Get(g)
     print(str(j))
     
     g.set_account_id("BAD_ACCOUNT_ID")
@@ -477,7 +492,7 @@ def test_transaction_history_getters(creds, account_id):
     assert g.get_symbol() == ""
     assert g.get_start_date() == "2018-02-02"
     assert g.get_end_date() == "2019-02-02"  
-    j = g.get()
+    j = Get(g)
     print(str(j))      
   
 
@@ -485,10 +500,11 @@ def test_individual_transaction_history_getters(creds, account_id):
     g = get.IndividualTransactionHistoryGetter(creds, account_id, "012345678")
     assert g.get_account_id() == account_id
     assert g.get_transaction_id() == "012345678"
-    try:
-        g.get()
-    except clib.CLibException as e:
-        assert e.error_code == 103    
+    if use_live_connection:
+        try:
+            g.get()
+        except clib.CLibException as e:
+            assert e.error_code == 103                    
     
     g.set_account_id("BAD_ACCOUNT_ID")
     g.set_transaction_id("BAD_TRANSACTION_ID")
@@ -502,7 +518,7 @@ def test_user_principals_getters(creds):
     assert g.returns_connection_info() == False
     assert g.returns_preferences() == False
     assert g.returns_surrogate_ids() == False
-    j = g.get()
+    j = Get(g)
     print(str(j))     
          
     g.return_subscription_keys(True)
@@ -513,7 +529,7 @@ def test_user_principals_getters(creds):
     assert g.returns_connection_info() == True
     assert g.returns_preferences() == True
     assert g.returns_surrogate_ids() == True
-    j = g.get()
+    j = Get(g)
     print(str(j)) 
      
 
@@ -522,13 +538,13 @@ def test_instrument_info_getters(creds):
                                  "GOOGL?")
     assert g.get_search_type() == get.INSTRUMENT_SEARCH_TYPE_SYMBOL_REGEX
     assert g.get_query_string() == "GOOGL?"
-    j = g.get()
+    j = Get(g)
     print(str(j)) 
     
     g.set_query(get.INSTRUMENT_SEARCH_TYPE_CUSIP, "78462F103")
     assert g.get_search_type() == get.INSTRUMENT_SEARCH_TYPE_CUSIP
     assert g.get_query_string() == "78462F103"
-    j = g.get()
+    j = Get(g)
     print(str(j))    
 
 
@@ -767,18 +783,480 @@ def test_streaming(creds):
     gc.collect()
     _pause(1)
                 
-if __name__ == '__main__':
+                
+def test_execute_order_objects():
+    def test_exc(n, func, *args):
+        try:    
+            func( *args )
+            raise Exception("failed to catch exception(%i)" % n)   
+        except (clib.CLibException, TypeError) as e:
+            print("+ successfully caught exception: ", str(e))
+
+    OLEG = execute.OrderLeg
+    OTICK = execute.OrderTicket
+    
+    test_exc(1, OLEG, execute.ORDER_ASSET_TYPE_EQUITY, "", 
+             execute.ORDER_INSTRUCTION_BUY, 100)
+    test_exc(2, OLEG, execute.ORDER_ASSET_TYPE_EQUITY, "SPY", 
+             execute.ORDER_INSTRUCTION_BUY, 0)
+    test_exc(3, OLEG, 0, "",  execute.ORDER_INSTRUCTION_BUY, 100)
+    test_exc(4, OLEG, 8, "",  execute.ORDER_INSTRUCTION_BUY, 100)
+    test_exc(5, OLEG, execute.ORDER_ASSET_TYPE_EQUITY, "", 0, 100)
+    test_exc(6, OLEG, execute.ORDER_ASSET_TYPE_EQUITY, "", 10, 100)
+    
+    leg1 = OLEG( execute.ORDER_ASSET_TYPE_EQUITY, "SPY", 
+                 execute.ORDER_INSTRUCTION_BUY, 100)
+    order1 = OTICK()
+    
+    test_exc(7, order1.set_duration, 0)
+    test_exc(8, order1.set_duration, 4)
+    test_exc(9, order1.set_session, 0)
+    test_exc(10, order1.set_session, 5)
+    test_exc(11, order1.set_type, -1)
+    test_exc(12, order1.set_type, 12)
+    test_exc(13, order1.add_legs, None)
+    
+    order1.set_duration(execute.ORDER_DURATION_DAY) \
+          .set_session(execute.ORDER_SESSION_NORMAL) \
+          .set_type(execute.ORDER_TYPE_STOP_LIMIT) \
+          .set_price(300.001) \
+          .set_stop_price(299.999) \
+          .add_legs(leg1)
+          
+    def check_order1(o):          
+        assert o.get_strategy_type() == execute.ORDER_STRATEGY_TYPE_SINGLE
+        assert o.get_duration() == execute.ORDER_DURATION_DAY
+        assert o.get_session() == execute.ORDER_SESSION_NORMAL
+        assert o.get_type() == execute.ORDER_TYPE_STOP_LIMIT
+        assert o.get_price() == 300.001
+        assert o.get_stop_price() == 299.999
+        
+        leg1b = o.get_leg(0)
+        
+        assert leg1b.get_asset_type() == execute.ORDER_ASSET_TYPE_EQUITY
+        assert leg1b.get_symbol() == "SPY"
+        assert leg1b.get_instruction() == execute.ORDER_INSTRUCTION_BUY
+        assert leg1b.get_quantity() == 100
+        
+    print("Order 1 JSON:")
+    print( str(order1.as_json()) )
+    check_order1(order1)
+    
+    leg1_old = order1.get_leg(0)
+    order1.remove_leg(0)
+    assert not order1.get_legs()    
+    
+    leg1 = OLEG( execute.ORDER_ASSET_TYPE_EQUITY, "SPY", 
+                 execute.ORDER_INSTRUCTION_SELL, 200)
+
+    order1.add_legs(leg1)  
+    assert order1.get_leg(0).get_instruction() == execute.ORDER_INSTRUCTION_SELL
+    assert order1.get_leg(0).get_quantity() == 200   
+        
+    leg1 = leg1_old
+    test_exc(14, order1.replace_leg, 1, leg1)    
+    order1.replace_leg(0, leg1)
+    check_order1(order1) 
+    
+    test_exc(15, order1.get_leg, 1)
+            
+    leg2 = OLEG( execute.ORDER_ASSET_TYPE_OPTION, "SPY_011720C300", 
+                             execute.ORDER_INSTRUCTION_BUY_TO_OPEN, 2)
+    leg3 = OLEG( execute.ORDER_ASSET_TYPE_OPTION, "SPY_011720C350", 
+                             execute.ORDER_INSTRUCTION_SELL_TO_OPEN, 2)
+    
+    order2 = OTICK()
+    
+    test_exc(16, order2.set_complex_strategy_type, -1)
+    test_exc(17, order2.set_complex_strategy_type, 20)
+    
+    order2.set_duration(execute.ORDER_DURATION_GOOD_TILL_CANCEL) \
+          .set_cancel_time("2019-01-01") \
+          .set_session(execute.ORDER_SESSION_NORMAL) \
+          .set_type(execute.ORDER_TYPE_NET_DEBIT) \
+          .set_price(9.99) \
+          .set_complex_strategy_type(execute.COMPLEX_ORDER_STRATEGY_TYPE_VERTICAL) \
+          .add_legs(leg2, leg3)   
+          
+    def check_order2(o):
+        assert o.get_strategy_type() == execute.ORDER_STRATEGY_TYPE_SINGLE
+        assert o.get_complex_strategy_type() \
+            == execute.COMPLEX_ORDER_STRATEGY_TYPE_VERTICAL 
+        assert o.get_duration() == execute.ORDER_DURATION_GOOD_TILL_CANCEL
+        assert o.get_cancel_time() == "2019-01-01"
+        assert o.get_session() == execute.ORDER_SESSION_NORMAL
+        assert o.get_type() == execute.ORDER_TYPE_NET_DEBIT      
+        assert o.get_price() == 9.99
+        
+        leg2b, leg3b = o.get_legs()
+        
+        assert leg2b.get_asset_type() == execute.ORDER_ASSET_TYPE_OPTION
+        assert leg2b.get_symbol() == "SPY_011720C300"
+        assert leg2b.get_instruction() == execute.ORDER_INSTRUCTION_BUY_TO_OPEN
+        assert leg2b.get_quantity() == 2   
+    
+        assert leg3b.get_asset_type() == execute.ORDER_ASSET_TYPE_OPTION
+        assert leg3b.get_symbol() == "SPY_011720C350"
+        assert leg3b.get_instruction() == execute.ORDER_INSTRUCTION_SELL_TO_OPEN
+        assert leg3b.get_quantity() == 2   
+    
+    print("Order 2 JSON:")
+    print( str(order2.as_json()) )
+    check_order2(order2)
+    
+    order3 = OTICK()
+    order3.set_strategy_type(execute.ORDER_STRATEGY_TYPE_OCO) \
+          .add_child(order1) \
+          .add_child(order2)
+          
+    order1.clear_legs()
+    assert not order1.get_children() 
+    order2 = None
+          
+    assert order3.get_strategy_type() == execute.ORDER_STRATEGY_TYPE_OCO
+    
+    order1b, order2b = order3.get_children()
+    
+    check_order1(order1b)
+    check_order2(order2b)
+    
+    print("Order 3 JSON:")
+    print( str(order3.as_json()) )
+    
+    order3.clear_children()
+    assert not order3.get_children()
+          
+          
+#TODO check exceptions  
+def test_execute_order_builders():
+    print('*** Simple-Equity ***')
+    test_execute_simple_equity_builders()
+    print('\n*** Simple-Option ***')
+    test_execute_simple_option_builders()
+    print('\n*** Spread-Option ***')
+    test_execute_spread_option_builders()
+    print('\n*** OCO / OTO ***')
+    test_execute_oco_oto_builders()
+            
+  
+def test_execute_simple_equity_builders():
+    B = execute.SimpleOrderBuilder    
+    EQUITY = execute.ORDER_ASSET_TYPE_EQUITY
+    BUY = execute.ORDER_INSTRUCTION_BUY
+    SELL = execute.ORDER_INSTRUCTION_SELL
+    SHORT = execute.ORDER_INSTRUCTION_SELL_SHORT
+    COVER = execute.ORDER_INSTRUCTION_BUY_TO_COVER
+    MARKET = execute.ORDER_TYPE_MARKET
+    LIMIT = execute.ORDER_TYPE_LIMIT
+    STOP = execute.ORDER_TYPE_STOP
+    STOP_LIMIT = execute.ORDER_TYPE_STOP_LIMIT
+        
+    def check_order(o, oty, sym, instr, q, lp=0, sp=0 ):
+        assert o.get_type() == oty
+        assert o.get_price() == lp 
+        assert o.get_stop_price() == sp 
+        assert o.get_strategy_type() == execute.ORDER_STRATEGY_TYPE_SINGLE
+        assert o.get_complex_strategy_type() == \
+            execute.COMPLEX_ORDER_STRATEGY_TYPE_NONE            
+        l = o.get_legs()
+        assert len(l) == 1
+        l = l[0]            
+        assert l.get_asset_type() == execute.ORDER_ASSET_TYPE_EQUITY 
+        assert l.get_symbol() == sym 
+        assert l.get_instruction() == instr 
+        assert l.get_quantity() == q 
+        
+    def test_exc(n, func, *args):
+        try:    
+            func( *args )
+            raise Exception("failed to catch exception(%i)" % n)   
+        except clib.CLibException as e:
+            print("+ successfully caught exception: ", str(e))
+            
+    test_exc(1, B.Equity.Market.Buy, "", 1)
+    test_exc(2, B.Equity.Market.Sell, "SPY", 0)
+    test_exc(3, B.Equity.Limit.Short, "SPY", 1, 0.0)
+    test_exc(4, B.Equity.Limit.Cover, "SPY", 1, -1)
+    test_exc(5, B.Equity.Stop.Buy, "SPY", 1, 0.0, 1.00)
+    test_exc(6, B.Equity.Stop.Sell, "SPY", 1, -1.0, 0.00)
+    test_exc(7, B.Equity.Stop.Short, "SPY", 1, 1.0, -1.00)    
+    
+    # MARKET
+    mb = B.Equity.Market.Buy('SPY', 100)
+    print( mb.as_json() )
+    check_order(mb, MARKET, 'SPY', BUY, 100)    
+    mb2 = B.build(MARKET, EQUITY, 'SPY', BUY, 100)    
+    assert mb2 == mb
+    assert mb2.as_json() == mb.as_json()
+    
+    ms = B.Equity.Market.Sell('SPY', 200)
+    print( ms.as_json() )
+    check_order(ms, MARKET,'SPY', SELL, 200)
+    ms2 = B.build(MARKET, EQUITY, 'SPY', SELL, 200)
+    assert ms2 == ms
+    assert ms2.as_json() == ms.as_json()
+    
+    mss = B.Equity.Market.Short('QQQ', 99)
+    print( mss.as_json() )
+    check_order(mss, MARKET,'QQQ', SHORT, 99)
+    mss2 = B.build(MARKET, EQUITY, 'QQQ', SHORT, 99)
+    assert mss2 == mss
+    assert mss2.as_json() == mss.as_json()
+    
+    mbc = B.Equity.Market.Cover('QQQ', 1)
+    print( mbc.as_json() )
+    check_order(mbc, MARKET,'QQQ', COVER, 1)
+    mbc2 = B.build(MARKET, EQUITY, 'QQQ', COVER, 1)
+    assert mbc2 == mbc    
+    assert mbc2.as_json() == mbc.as_json()
+    
+    # LIMIT
+    lb = B.Equity.Limit.Buy('SPY', 100, 300.01)
+    print( lb.as_json() )
+    check_order(lb, LIMIT, 'SPY', BUY, 100, 300.01)    
+    lb2 = B.build(LIMIT, EQUITY, 'SPY', BUY, 100, 300.01)
+    assert lb2 == lb
+    assert lb2.as_json() == lb.as_json()
+    
+    ls = B.Equity.Limit.Sell('SPY', 200, 299.9999)
+    print( ls.as_json() )
+    check_order(ls, LIMIT,'SPY', SELL, 200, 299.9999)
+    ls2 = B.build(LIMIT, EQUITY, 'SPY', SELL, 200, 299.9999)
+    assert ls2 == ls
+    assert ls2.as_json() == ls.as_json()
+    
+    lss = B.Equity.Limit.Short('QQQ', 99, 300)
+    print( lss.as_json() )
+    check_order(lss, LIMIT,'QQQ', SHORT, 99, 300)
+    lss2 = B.build(LIMIT, EQUITY, 'QQQ', SHORT, 99, 300)
+    assert lss2 == lss
+    assert lss2.as_json() == lss.as_json()
+    
+    lbc = B.Equity.Limit.Cover('QQQ', 1, .01)
+    print( lbc.as_json() )
+    check_order(lbc, LIMIT,'QQQ', COVER, 1, .01)
+    lbc2 = B.build(LIMIT, EQUITY, 'QQQ', COVER, 1, .01)
+    assert lbc2 == lbc    
+    assert lbc2.as_json() == lbc.as_json()
+    
+    # STOP
+    sb = B.Equity.Stop.Buy('SPY', 100, 300.01)
+    print( sb.as_json() )
+    check_order(sb, STOP, 'SPY', BUY, 100, 0, 300.01)    
+    sb2 = B.build(STOP, EQUITY, 'SPY', BUY, 100, 0, 300.01)
+    assert sb2 == sb
+    assert sb2.as_json() == sb.as_json()
+    
+    ss = B.Equity.Stop.Sell('SPY', 200, 299.9999)
+    print( ss.as_json() )
+    check_order(ss, STOP,'SPY', SELL, 200, 0, 299.9999)
+    ss2 = B.build(STOP, EQUITY, 'SPY', SELL, 200, 0, 299.9999)
+    assert ss2 == ss
+    assert ss2.as_json() == ss.as_json()
+    
+    sss = B.Equity.Stop.Short('QQQ', 99, 300)
+    print( sss.as_json() )
+    check_order(sss, STOP,'QQQ', SHORT, 99, 0, 300)
+    sss2 = B.build(STOP, EQUITY, 'QQQ', SHORT, 99, 0, 300)
+    assert sss2 == sss
+    assert sss2.as_json() == sss.as_json()
+    
+    sbc = B.Equity.Stop.Cover('QQQ', 1, .01)
+    print( sbc.as_json() )
+    check_order(sbc, STOP,'QQQ', COVER, 1, 0, .01)
+    sbc2 = B.build(STOP, EQUITY, 'QQQ', COVER, 1, 0, .01)
+    assert sbc2 == sbc    
+    assert sbc2.as_json() == sbc.as_json()
+    
+    # STOP_LIMIT
+    slb = B.Equity.Stop.Buy('SPY', 100, 300.01, 300.09)
+    print( slb.as_json() )
+    check_order(slb, STOP_LIMIT, 'SPY', BUY, 100, 300.09, 300.01)    
+    slb2 = B.build(STOP_LIMIT, EQUITY, 'SPY', BUY, 100, 300.09, 300.01)
+    assert slb2 == slb
+    assert slb2.as_json() == slb.as_json()
+    
+    sls = B.Equity.Stop.Sell('SPY', 200, 299.9999, 299.8888)
+    print( sls.as_json() )
+    check_order(sls, STOP_LIMIT,'SPY', SELL, 200, 299.8888, 299.9999)
+    sls2 = B.build(STOP_LIMIT, EQUITY, 'SPY', SELL, 200, 299.8888, 299.9999)
+    assert sls2 == sls
+    assert sls2.as_json() == sls.as_json()
+    
+    slss = B.Equity.Stop.Short('QQQ', 99, 300, 299)
+    print( slss.as_json() )
+    check_order(slss, STOP_LIMIT,'QQQ', SHORT, 99, 299, 300)
+    slss2 = B.build(STOP_LIMIT, EQUITY, 'QQQ', SHORT, 99, 299, 300)
+    assert slss2 == slss
+    assert slss2.as_json() == slss.as_json()
+    
+    slbc = B.Equity.Stop.Cover('QQQ', 1, .01, .0001)
+    print( slbc.as_json() )
+    check_order(slbc, STOP_LIMIT,'QQQ', COVER, 1, .0001, .01)
+    slbc2 = B.build(STOP_LIMIT, EQUITY, 'QQQ', COVER, 1, .0001, .01)
+    assert slbc2 == slbc    
+    assert slbc2.as_json() == slbc.as_json()
+    
+    
+def test_execute_simple_option_builders():
+    B = execute.SimpleOrderBuilder    
+    OPTION = execute.ORDER_ASSET_TYPE_OPTION
+    BTO = execute.ORDER_INSTRUCTION_BUY_TO_OPEN
+    BTC = execute.ORDER_INSTRUCTION_BUY_TO_CLOSE
+    STO = execute.ORDER_INSTRUCTION_SELL_TO_OPEN
+    STC = execute.ORDER_INSTRUCTION_SELL_TO_CLOSE
+    MARKET = execute.ORDER_TYPE_MARKET
+    LIMIT = execute.ORDER_TYPE_LIMIT
+        
+    def check_order(o, oty, sym, instr, q, lp=0, sp=0 ):
+        assert o.get_type() == oty
+        assert o.get_price() == lp 
+        assert o.get_stop_price() == sp 
+        assert o.get_strategy_type() == execute.ORDER_STRATEGY_TYPE_SINGLE
+        assert o.get_complex_strategy_type() == \
+            execute.COMPLEX_ORDER_STRATEGY_TYPE_NONE            
+        l = o.get_legs()
+        assert len(l) == 1
+        l = l[0]            
+        assert l.get_asset_type() == OPTION 
+        assert l.get_symbol() == sym 
+        assert l.get_instruction() == instr 
+        assert l.get_quantity() == q 
+    
+    def test_exc(n, func, *args):
+        try:    
+            func( *args )
+            raise Exception("failed to catch exception(%i)" % n)   
+        except clib.CLibException as e:
+            print("+ successfully caught exception: ", str(e))
+            
+    test_exc(1, B.Option.Market.BuyToOpen1, "", 1)
+    test_exc(2, B.Option.Market.SellToOpen1, "SPY_011720C300", 0)
+    test_exc(3, B.Option.Market.BuyToOpen2, "", 1, 17, 2020, True, 300, 1)
+    test_exc(4, B.Option.Market.SellToOpen2, "SPY", 0, 17, 2020, True, 300, 1)
+    test_exc(5, B.Option.Market.BuyToClose2, "SPY", 1, 0, 2020, True, 300, 1)
+    test_exc(6, B.Option.Market.SellToClose2, "SPY", 1, 17, 0, True, 300, 1)
+    test_exc(7, B.Option.Market.BuyToOpen2, "SPY", 1, 17, 0, True, 0.0, 1)
+    test_exc(8, B.Option.Market.SellToOpen2, "SPY", 1, 17, 0, True, 300, 0)
+    test_exc(9, B.Option.Limit.BuyToOpen1, "", 1, 100.00)
+    test_exc(10, B.Option.Limit.SellToOpen1, "SPY_011720C300", 0, 100)
+    test_exc(11, B.Option.Limit.BuyToClose1, "SPY_011720C300", 1, 0.0)
+    test_exc(12, B.Option.Limit.SellToClose1, "SPY_011720C300", 1, -1)
+    test_exc(13, B.Option.Limit.BuyToOpen2, "", 1, 17, 2020, True, 300, 1, 100.0)
+    test_exc(14, B.Option.Limit.SellToOpen2, "SPY", 0, 17, 2020, True, 300, 1, 100.0)
+    test_exc(15, B.Option.Limit.BuyToClose2, "SPY", 1, 0, 2020, True, 300, 1, 100.0)
+    test_exc(16, B.Option.Limit.SellToClose2, "SPY", 1, 17, 0, True, 300, 1, 100.0)
+    test_exc(17, B.Option.Limit.BuyToOpen2, "SPY", 1, 17, 0, True, 0.0, 1, 100.0)
+    test_exc(18, B.Option.Limit.SellToOpen2, "SPY", 1, 17, 0, True, 300, 0, 100.0)
+    test_exc(19, B.Option.Limit.BuyToClose2, "SPY", 1, 17, 0, True, 300, 1, .0)
+    test_exc(20, B.Option.Limit.SellToClose2, "SPY", 1, 17, 0, True, 300, 1, -100.0)
+    
+    # MARKET
+    mbto = B.Option.Market.BuyToOpen1('SPY_011720C300', 1)
+    print( mbto.as_json() )
+    check_order(mbto, MARKET, 'SPY_011720C300', BTO, 1)   
+    mbto2 = B.Option.Market.BuyToOpen2("SPY", 1, 17, 2020, True, 300, 1)      
+    assert mbto2 == mbto
+    mbto3 = B.build(MARKET, OPTION, 'SPY_011720C300', BTO, 1)
+    assert mbto3 == mbto2
+    assert mbto3.as_json() == mbto2.as_json() == mbto.as_json()
+    
+    msto = B.Option.Market.SellToOpen1('SPY_011720P200', 99)
+    print( msto.as_json() )
+    check_order(msto, MARKET, 'SPY_011720P200', STO, 99)   
+    msto2 = B.Option.Market.SellToOpen2("SPY", 1, 17, 2020, False, 200, 99)      
+    assert msto2 == msto
+    msto3 = B.build(MARKET, OPTION, 'SPY_011720P200', STO, 99)
+    assert msto3 == msto2
+    assert msto3.as_json() == msto2.as_json() == msto.as_json()
+    
+    mbtc = B.Option.Market.BuyToClose1('SPY_011720C300', 1)
+    print( mbtc.as_json() )
+    check_order(mbtc, MARKET, 'SPY_011720C300', BTC, 1)   
+    mbtc2 = B.Option.Market.BuyToClose2("SPY", 1, 17, 2020, True, 300, 1)      
+    assert mbtc2 == mbtc
+    mbtc3 = B.build(MARKET, OPTION, 'SPY_011720C300', BTC, 1)
+    assert mbtc3 == mbtc2
+    assert mbtc3.as_json() == mbtc2.as_json() == mbtc.as_json()
+  
+    mstc = B.Option.Market.SellToClose1('SPY_011720C300', 1)
+    print( mstc.as_json() )
+    check_order(mstc, MARKET, 'SPY_011720C300', STC, 1)   
+    mstc2 = B.Option.Market.SellToClose2("SPY", 1, 17, 2020, True, 300, 1)      
+    assert mstc2 == mstc
+    mstc3 = B.build(MARKET, OPTION, 'SPY_011720C300', STC, 1)
+    assert mstc3 == mstc2
+    assert mstc3.as_json() == mstc2.as_json() == mstc.as_json()
+      
+    # LIMIT
+    lbto = B.Option.Limit.BuyToOpen1('SPY_011720C300', 1, 9.99)
+    print( lbto.as_json() )
+    check_order(lbto, LIMIT, 'SPY_011720C300', BTO, 1, 9.99)   
+    lbto2 = B.Option.Limit.BuyToOpen2("SPY", 1, 17, 2020, True, 300, 1, 9.99)      
+    assert lbto2 == lbto
+    lbto3 = B.build(LIMIT, OPTION, 'SPY_011720C300', BTO, 1, 9.99)
+    assert lbto3 == lbto2
+    assert lbto3.as_json() == lbto2.as_json() == lbto.as_json()
+    
+    lsto = B.Option.Limit.SellToOpen1('SPY_011720P200', 99, .009)
+    print( lsto.as_json() )
+    check_order(lsto, LIMIT, 'SPY_011720P200', STO, 99, .009)   
+    lsto2 = B.Option.Limit.SellToOpen2("SPY", 1, 17, 2020, False, 200, 99, .009)      
+    assert lsto2 == lsto
+    lsto3 = B.build(LIMIT, OPTION, 'SPY_011720P200', STO, 99, .009)
+    assert lsto3 == lsto2
+    assert lsto3.as_json() == lsto2.as_json() == lsto.as_json()
+    
+    lbtc = B.Option.Limit.BuyToClose1('SPY_011720C300', 1, 10)
+    print( lbtc.as_json() )
+    check_order(lbtc, LIMIT, 'SPY_011720C300', BTC, 1, 10.00)   
+    lbtc2 = B.Option.Limit.BuyToClose2("SPY", 1, 17, 2020, True, 300, 1, 10)      
+    assert lbtc2 == lbtc
+    lbtc3 = B.build(LIMIT, OPTION, 'SPY_011720C300', BTC, 1, 10)
+    assert lbtc3 == lbtc2
+    assert lbtc3.as_json() == lbtc2.as_json() == lbtc.as_json()
+  
+    lstc = B.Option.Limit.SellToClose1('SPY_011720C300', 1, 10.0001)
+    print( lstc.as_json() )
+    check_order(lstc, LIMIT, 'SPY_011720C300', STC, 1, 10.0001)   
+    lstc2 = B.Option.Limit.SellToClose2("SPY", 1, 17, 2020, True, 300, 1, 10.0001)      
+    assert lstc2 == lstc
+    lstc3 = B.build(LIMIT, OPTION, 'SPY_011720C300', STC, 1, 10.0001)
+    assert lstc3 == lstc2
+    assert lstc3.as_json() == lstc2.as_json() == lstc.as_json()
+    
+
+def test_execute_spread_option_builders():
+    pass
+    
+def test_execute_oco_oto_builders():
+    pass
+          
+                    
+if __name__ == '__main__':    
     print("\n*** TDAmeritradeAPI test.py ***")
     print("+", strftime("%m/%d/%Y %H:%M:%S"))
     print("+", SYSTEM)
     print("+", ARCH)
     print("+ PID:", os.getpid())
+    try:
+        print("+ PACKAGE BUILD INFO:")
+        with open(PACKAGE_BUILD_INFO_PATH, 'r') as f:
+            d = json.load(f)
+            for k,v in sorted(d.items()):
+                print("+    ", k, str(v))            
+    except BaseException as e:
+        print('- Failed to loade package build info:', str(e))
     args = parser.parse_args()
+    use_live_connection = not args.no_live_connect 
+    print("+ live-connection:", str(use_live_connection))
     test(init)
     print_title("load credentials") 
     with auth.CredentialsManager(args.credentials_path, \
                                   args.credentials_password, True) as cm:    
         test(test_option_symbol_builder)        
+        test(test_execute_order_objects)
+        test(test_execute_order_builders)        
         test(test_quote_getters, cm.credentials)        
         test(test_throttling, cm.credentials)        
         test(test_quotes_getters, cm.credentials)             
@@ -797,5 +1275,8 @@ if __name__ == '__main__':
              args.account_id)
         test(test_user_principals_getters, cm.credentials)
         test(test_instrument_info_getters, cm.credentials)
-        test(test_streaming, cm.credentials)
+        if use_live_connection:
+            test(test_streaming, cm.credentials)
+        else:
+            print("STREAMING test requires 'use_live_connection=True'")
         

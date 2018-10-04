@@ -52,9 +52,8 @@ argument types required by certain getters (i.e OptionStrikes and
 OptionStrategy static methods for the Option Getters).
 """
 
-from ctypes import byref as _REF, Structure as _Structure, c_int, c_void_p, \
-                    c_ulonglong, c_double, Union as _Union, c_uint, c_char_p, \
-                    c_size_t                 
+from ctypes import byref as _REF, c_int, c_ulonglong, c_double, \
+                    Union as _Union, c_uint, c_char_p, c_size_t                 
 import json
 
 from . import clib
@@ -151,13 +150,10 @@ INSTRUMENT_SEARCH_TYPE_DESCRIPTION_REGEX = 4
 INSTRUMENT_SEARCH_TYPE_CUSIP = 5
 
 
-class Getter_C(_Structure): 
-    """C struct representing Getter_C type. (IMPLEMENTATION DETAIL)"""
-    _fields_ = [
-        ("obj", c_void_p), 
-        ("type_id", c_int)
-        ] 
-          
+class _Getter_C(clib._CProxy2): 
+    """C struct representing Getter_C type."""
+    pass          
+   
    
 def get_def_wait_msec():      
     """get default minimum wait milliseconds between .get() calls"""                    
@@ -186,17 +182,14 @@ def build_option_symbol(underlying, month, day, year, is_call, strike):
     return s
 
 
-class _APIGetter:
+class _APIGetter( clib._ProxyBase ):
     """_APIGetter - Base getter class. DO NOT INSTANTIATE!
     
     ALL METHODS THROW -> LibraryNotLoaded, CLibException
     """
     def __init__(self, creds, *args):        
-        self._obj = Getter_C()
-        self._creds = creds       
-        args = args + (_REF(self._obj),)            
-        clib.call(self._abi('Create'), _REF(creds), *args)    
-        self._alive = True 
+        self._creds = creds 
+        super().__init__(_REF(creds), *args)
                                                   
     def __del__(self):         
         if hasattr(self,'_alive') and self._alive:
@@ -209,17 +202,13 @@ class _APIGetter:
             except:
                 pass
                    
+    @classmethod               
+    def _cproxy_type(cls):
+        return _Getter_C
+                       
     @property
     def credentials(self):
         return self._creds
-    
-    # NOTE because of how the ABI calls for derived objects are structured
-    # _abi() can only be called: 
-    #      1) by non-base classes, or
-    #      2) for Create/Destroy abi methods
-    @classmethod
-    def _abi(cls, f):
-        return "{}_{}_ABI".format(cls.__name__,f)
 
     def get(self):
         """Makes HTTPS/GET request and returns parsed data.
@@ -246,7 +235,7 @@ class QuoteGetter(_APIGetter):
         def __init__(self, creds, symbol):
         
              creds  :: Credentials :: instance class received from auth.py
-             symbol :: str         :: (case sensitive) symbol            
+             symbol :: str         ::  symbol            
          
          ALL METHODS THROW -> LibraryNotLoaded, CLibException
     """
@@ -268,7 +257,7 @@ class QuotesGetter(_APIGetter):
         def __init__(self, creds, *symbols):
         
              creds   :: Credentials :: instance received from auth.py
-             symbols :: str, str... :: multiple (case sensitive) symbols
+             symbols :: str, str... :: multiple  symbols
             
          ALL METHODS THROW -> LibraryNotLoaded, CLibException
     """
@@ -445,7 +434,7 @@ class HistoricalPeriodGetter(_HistoricalGetterBase):
     
          creds  :: Credentials :: instance received from auth.py      
                 
-         symbol         :: str  :: (case sensitive) symbol 
+         symbol         :: str  ::  symbol 
          period_type    :: int  :: PERIOD_TYPE_[] constant for type of 
                                    period (DAY, MONTH, YEAR, YTD)
          period         :: int  :: number of periods
@@ -499,7 +488,7 @@ class HistoricalRangeGetter(_HistoricalGetterBase):
     
          creds  :: Credentials :: instance received from auth.py      
                 
-         symbol                 :: str  :: (case sensitive) symbol   
+         symbol                 :: str  ::  symbol   
          frequency_type         :: int  :: FREQUENCY_TYPE_[] constant for 
                                            type of frequency e.g MINUTE
          frequency              :: int  :: size of frequency e.g 3 with 
@@ -809,7 +798,7 @@ class OptionChainGetter(_OptionChainGetterBase):
                  from_date, to_date, exp_month, option_type):
     
          creds          :: Credentials   :: instance received from auth.py                      
-         symbol         :: str           :: (case sensitive) symbol of 
+         symbol         :: str           ::  symbol of 
                                             underlying security
          strikes        :: OptionStrikes :: (see OptionStrikes.__doc__)
          contract_type  :: int           :: OPTION_CONTRACT_TYPE_[] constant
@@ -844,7 +833,7 @@ class OptionChainStrategyGetter(_OptionChainGetterBase):
                  include_quotes, from_date, to_date, exp_month, option_type):
     
          creds          :: Credentials    :: instance received from auth.py                      
-         symbol         :: str            :: (case sensitive) symbol of 
+         symbol         :: str            ::  symbol of 
                                              underlying security
          strategy       :: OptionStrategy :: (see OptionStrategy.__doc__)
          strikes        :: OptionStrikes  :: (see OptionStrikes.__doc__)
@@ -902,8 +891,7 @@ class OptionChainAnalyticalGetter(_OptionChainGetterBase):
                  include_quotes, from_date, to_date, exp_month, option_type):
     
          creds          :: Credentials   :: instance received from auth.py                      
-         symbol         :: str           :: (case sensitive) symbol of 
-                                            underlying security
+         symbol         :: str           ::  symbol of underlying security
          volatility     :: float         :: implied volatility 
          underlying_price :: float       :: price of underlying security
          interest_rate  :: float         :: market interest rate

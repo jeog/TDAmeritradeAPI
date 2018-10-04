@@ -72,9 +72,9 @@ This project would not be possible without some of the great open-source project
 - - -
 | | Get Interface  |  Streaming Interface  |  Execute Interface 
 -------------------|---------------|---------------------|--------------------
-**C**              | *Working*     | *Working*   | *OrderTicket Only*
-**C++**            | *Working*     | *Working*   | *OrderTicket Only*
-**Python**         | *Working*     | *Working*   | *Coming Soon*
+**C**              | *Working*     | *Working*   | *OrderTicket/Builders Only*
+**C++**            | *Working*     | *Working*   | *OrderTicket/Builders Only*
+**Python**         | *Working*     | *Working*   | *OrderTicket Only*
 
 *Note: 'Working' does not necessarily mean 'Stable'*
 
@@ -266,12 +266,13 @@ Since all the dependencies are included(or built manually) you'll need to manage
 3. ```user@host:~/dev/TDAmeritradeAPI/python$ python setup.py install```
     - if your ```python``` links to ```python2``` run ```python3 setup.py install``` instead
 4. Import the package or module(s):
-	``` 
-	import tdma_api # -or-
-	from tdma_api import auth    # authorization methods and objects
-	from tdma_api import get     # 'getter' objects and utilities
-	from tdma_api import stream  # 'streaming' class and subscriptions
-	```
+    ``` 
+    import tdma_api # -or-
+    from tdma_api import auth     # authorization methods and objects
+    from tdma_api import get      # 'getter' objects and utilities
+    from tdma_api import stream   # 'streaming' class and subscriptions
+    from tdma_api import execute  # order ticket/leg objects and builders
+    ```
     - the python package will try to load the library automatically
     - if it can't, it will output an error message on package import 
         - the most common issue is the library not being installed in the default library search path
