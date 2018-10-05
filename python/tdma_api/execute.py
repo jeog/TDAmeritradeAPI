@@ -113,6 +113,8 @@ class _OrderObjectBase(clib._ProxyBase):
         return t   
      
     def _is_same(self, other):
+        if type(self) != type(other):
+            return False
         i = c_int()
         clib.call( self._abi('IsSame'), _REF(self._obj), _REF(other._obj), 
                    _REF(i) )
