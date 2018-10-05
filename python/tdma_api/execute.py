@@ -109,7 +109,8 @@ class _OrderObjectBase(clib._ProxyBase):
         t = cls.__new__(cls)      
         t._obj = cls._cproxy_type()()     
         t._obj.obj = proxy.obj
-        t._obj.type_id = proxy.type_id       
+        t._obj.type_id = proxy.type_id 
+        t._alive = True      
         return t   
      
     def _is_same(self, other):
@@ -118,8 +119,16 @@ class _OrderObjectBase(clib._ProxyBase):
         i = c_int()
         clib.call( self._abi('IsSame'), _REF(self._obj), _REF(other._obj), 
                    _REF(i) )
-        return bool(i)
-                          
+        return bool(i)                        
+                                                                    
+    def deep_copy(self):    
+        """ Returns a new instance with self's fields copied into it. """ 
+        copy = self.__new__(self.__class__)
+        copy._obj = self._cproxy_type()()
+        clib.call( self._abi('Copy'), _REF(self._obj), _REF(copy._obj))
+        copy._alive = True
+        return copy
+          
     def as_json(self):
         """ Returns object as json - as dict, list, or None. """
         j = clib.get_str( self._abi('AsJsonString'), self._obj ) 

@@ -865,6 +865,30 @@ def test_execute_order_objects():
     leg3 = OLEG( execute.ORDER_ASSET_TYPE_OPTION, "SPY_011720C350", 
                              execute.ORDER_INSTRUCTION_SELL_TO_OPEN, 2)
     
+    print("+ Leg Deep Copy")
+    leg2c = leg2.deep_copy()
+        
+    assert leg2c == leg2
+    assert leg2c is not leg2
+    assert leg2c._obj is not leg2._obj
+    assert leg2c._obj.obj != leg2._obj.obj
+    assert leg2c._obj.type_id == leg2._obj.type_id
+     
+    leg2d = leg2c.deep_copy()
+    
+    assert leg2c == leg2d
+    assert leg2c is not leg2d
+    assert leg2c._obj is not leg2d._obj
+    assert leg2c._obj.obj != leg2d._obj.obj
+    assert leg2c._obj.type_id == leg2d._obj.type_id
+    
+    assert leg2.as_json() == leg2c.as_json() == leg2d.as_json()    
+    assert leg2._alive and leg2d._alive and leg2c._alive
+    
+    leg2 = leg2d
+    leg2c = None
+    leg2d = None
+    
     order2 = OTICK()
     
     test_exc(16, order2.set_complex_strategy_type, -1)
@@ -876,7 +900,21 @@ def test_execute_order_objects():
           .set_type(execute.ORDER_TYPE_NET_DEBIT) \
           .set_price(9.99) \
           .set_complex_strategy_type(execute.COMPLEX_ORDER_STRATEGY_TYPE_VERTICAL) \
-          .add_legs(leg2, leg3)   
+          .add_legs(leg2, leg3)  
+    
+    print("+ Order Deep Copy")      
+    order2c = order2.deep_copy() 
+    
+    assert order2 == order2c
+    assert order2 is not order2c
+    assert order2._obj is not order2c._obj
+    assert order2._obj.obj != order2c._obj.obj
+    assert order2._obj.type_id == order2c._obj.type_id
+    assert order2.as_json() == order2c.as_json()
+    assert order2._alive and order2c._alive
+    
+    order2 = order2c
+    order2c = None
           
     def check_order2(o):
         assert o.get_strategy_type() == execute.ORDER_STRATEGY_TYPE_SINGLE

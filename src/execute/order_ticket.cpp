@@ -272,6 +272,9 @@ OrderTicket_Copy_ABI( OrderTicket_C *from,
 {
     CHECK_PTR(to, "to order", allow_exceptions);
 
+    // bad 'from' fails silently, so allow client to check for non null ->obj
+    kill_proxy(to);
+
     if( proxy_is_callable<OrderTicketImpl>(from, 0) == 0 ){
         int err = OrderTicket_Create_ABI(to, allow_exceptions);
         if( err ){

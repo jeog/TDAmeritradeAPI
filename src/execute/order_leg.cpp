@@ -147,6 +147,9 @@ OrderLeg_Copy_ABI( OrderLeg_C *from, OrderLeg_C *to, int allow_exceptions  )
 {
     CHECK_PTR(to, "to leg", allow_exceptions);
 
+    // bad 'from' fails silently, so allow client to check for non null ->obj
+    kill_proxy(to);
+
     if( proxy_is_callable<OrderLegImpl>(from, 0) == 0 ){
         OrderLegImpl* obj = reinterpret_cast<OrderLegImpl*>(from->obj);
         int err = OrderLeg_Create_ABI( static_cast<int>(obj->get_asset_type()),

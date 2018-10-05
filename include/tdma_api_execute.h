@@ -129,6 +129,11 @@ OrderLeg_Create_ABI(  int asset_type,
 EXTERN_C_SPEC_ DLL_SPEC_ int
 OrderLeg_Destroy_ABI( OrderLeg_C *pleg, int allow_exceptions );
 
+/*
+ * COPY CONSTRUCT
+ * NOTE - if 'from' is invalid this fails silently (to support C++ copy/assign)
+ *        check 'to->obj' manually for non-null
+ */
 EXTERN_C_SPEC_ DLL_SPEC_ int
 OrderLeg_Copy_ABI( OrderLeg_C *from, OrderLeg_C *to, int allow_exceptions );
 
@@ -180,6 +185,15 @@ OrderLeg_Create( OrderAssetType asset_type,
 static inline int
 OrderLeg_Destroy( OrderLeg_C *pleg )
 { return OrderLeg_Destroy_ABI( pleg, 0 ); }
+
+/*
+ * COPY CONSTRUCT
+ * NOTE - if 'from' is invalid this fails silently (to support C++ copy/assign)
+ *        check 'to->obj' manually for non-null
+ */
+static inline int
+OrderLeg_Copy( OrderLeg_C *from, OrderLeg_C *to )
+{ return OrderLeg_Copy_ABI(from, to, 0); }
 
 static inline int
 OrderLeg_IsSame( OrderLeg_C* pl, OrderLeg_C* pr, int *is_same )
@@ -362,6 +376,11 @@ OrderTicket_Create_ABI( OrderTicket_C *porder, int allow_exceptions );
 EXTERN_C_SPEC_ DLL_SPEC_ int
 OrderTicket_Destroy_ABI( OrderTicket_C *porder, int allow_exceptions );
 
+/*
+ * COPY CONSTRUCT
+ * NOTE - if 'from' is invalid this fails silently (to support C++ copy/assign)
+ *        check 'to->obj' manually for non-null
+ */
 EXTERN_C_SPEC_ DLL_SPEC_ int
 OrderTicket_Copy_ABI( OrderTicket_C *from,
                       OrderTicket_C *to,
@@ -517,6 +536,11 @@ static inline int
 OrderTicket_Destroy( OrderTicket_C *porder)
 { return OrderTicket_Destroy_ABI( porder, 0 ); }
 
+/*
+ * COPY CONSTRUCT
+ * NOTE - if 'from' is invalid this fails silently (to support C++ copy/assign)
+ *        check 'to->obj' manually for non-null
+ */
 static inline int
 OrderTicket_Copy( OrderTicket_C *from, OrderTicket_C *to )
 { return OrderTicket_Copy_ABI( from, to, 0 ); }

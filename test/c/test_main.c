@@ -32,8 +32,6 @@ int main(int argc, char* argv[])
     }
     printf("\n *** [END] TEST OPTION SYMBOL BUILDER [END] ***\n\n");
 
-    return 0; // DEBUG
-
     printf("*** [BEGIN] TEST EXECUTION ORDER OBJECTS [BEGIN] ***\n");
     err = Test_Execution_Order_Objects();
     if( err ){

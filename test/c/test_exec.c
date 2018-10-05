@@ -4544,7 +4544,7 @@ test_simple_option_order_builder()
 
     /* LIMIT */
 
-    if( (err = BuildOrder_Option_Limit("SPY_011720C300", 1, 0, 1, -9.99, &o)) )
+    if( (err = BuildOrder_Option_Limit("SPY_011720C300", 1, 0, 1, 9.99, &o)) )
         CHECK_AND_RETURN_ON_ERROR(err, "BuildOrder_Option_Limit");
 
     if( (err = OrderTicket_AsJsonString(&o, &buf, &n)) ){
@@ -4555,7 +4555,7 @@ test_simple_option_order_builder()
     struct TestLeg legs3[] = {
         {"SPY_011720C300", OrderInstruction_SELL_TO_OPEN, ASSET_TYPE, 1}
     };
-    if( test_option_order(&o, OrderType_LIMIT, COMPLEX, -9.99, legs3, 1) ){
+    if( test_option_order(&o, OrderType_LIMIT, COMPLEX, 9.99, legs3, 1) ){
         return -1;
     }
 
@@ -4564,7 +4564,7 @@ test_simple_option_order_builder()
     printf( "Option-Limit-Sell-ToOpen (1): \n %s \n", buf);
 
     if( (err = BuildOrder_Option_LimitEx("SPY", 1, 17, 2020, 1, 300,
-                                          1, 0, 1, -9.99, &o2)) ){
+                                          1, 0, 1, 9.99, &o2)) ){
         FreeBuffer(buf);
         CHECK_AND_RETURN_ON_ERROR(err, "BuildOrder_Option_LimitEx ");
     }
@@ -4588,7 +4588,7 @@ test_simple_option_order_builder()
     const char* S3 = "{\"duration\":\"DAY\",\"orderLegCollection\""
         ":[{\"instruction\":\"SELL_TO_OPEN\",\"instrument\":{\"assetType\":\"OPTION\","
         "\"symbol\":\"SPY_011720C300\"},\"quantity\":1}],\"orderStrategyType\":\"SINGLE\","
-        "\"orderType\":\"LIMIT\",\"price\":\"-9.990000\",\"session\":\"NORMAL\"}";
+        "\"orderType\":\"LIMIT\",\"price\":\"9.990000\",\"session\":\"NORMAL\"}";
     if( strcmp(buf, S3) ){
         FreeBuffer(buf);
         fprintf(stderr, "json of raw option doesn't match \n");
