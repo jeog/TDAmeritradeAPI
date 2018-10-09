@@ -920,39 +920,45 @@ public:
 
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
-BuildOrder_Simple_ABI( int order_type,
-                       int asset_type,
-                       const char* symbol,
-                       int instruction,
-                       size_t quantity,
-                       double limit_price,
-                       double stop_price,
-                       OrderTicket_C *porder,
-                       int allow_exceptions );
+BuildOrder_Simple_ABI( int asset_type,
+                         const char* symbol,
+                         size_t quantity,
+                         int instruction,
+                         int order_type,
+                         double limit_price,
+                         double stop_price,
+                         OrderTicket_C *porder,
+                         int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
-BuildOrder_Equity_ABI( int order_type,
-                       const char* symbol,
-                       int instruction,
-                       size_t quantity,
-                       double limit_price,
-                       double stop_price,
-                       OrderTicket_C *porder,
-                       int allow_exceptions );
+SimpleOrder_CheckPrices_ABI( int order_type,
+                                 double limit_price,
+                                 double stop_price,
+                                 int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
-BuildOrder_Option_ABI( int order_type,
-                       const char* symbol,
-                       size_t quantity,
-                       int is_buy,
-                       int to_open,
-                       double price,
-                       OrderTicket_C *porder,
-                       int allow_exceptions );
+BuildOrder_Equity_ABI( const char* symbol,
+                         size_t quantity,
+                         int is_buy,
+                         int to_open,
+                         int order_type,
+                         double limit_price,
+                         double stop_price,
+                         OrderTicket_C *porder,
+                         int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
-BuildOrder_OptionEx_ABI( int order_type,
-                         const char* underlying,
+BuildOrder_Option_ABI( const char* symbol,
+                         size_t quantity,
+                         int is_buy,
+                         int to_open,
+                         int is_market_order,
+                         double price,
+                         OrderTicket_C *porder,
+                         int allow_exceptions );
+
+EXTERN_C_SPEC_ DLL_SPEC_ int
+BuildOrder_OptionEx_ABI( const char* underlying,
                          unsigned int month,
                          unsigned int day,
                          unsigned int year,
@@ -961,6 +967,7 @@ BuildOrder_OptionEx_ABI( int order_type,
                          size_t quantity,
                          int is_buy,
                          int to_open,
+                         int is_market_order,
                          double price,
                          OrderTicket_C *porder,
                          int allow_exceptions );
@@ -969,7 +976,7 @@ EXTERN_C_SPEC_ DLL_SPEC_ int
 BuildOrder_Spread_ABI( int complex_strategy_type,
                        OrderLeg_C *plegs,
                        size_t n,
-                       int is_market,
+                       int is_market_order,
                        double price,
                        OrderTicket_C *porder,
                        int allow_exceptions );
@@ -979,7 +986,7 @@ BuildOrder_Spread_Vertical_ABI( const char* symbol_buy,
                                 const char* symbol_sell,
                                 size_t quantity,
                                 int to_open,
-                                int is_market,
+                                int is_market_order,
                                 double price,
                                 OrderTicket_C *porder,
                                 int allow_exceptions );
@@ -994,7 +1001,7 @@ BuildOrder_Spread_VerticalEx_ABI( const char* underlying,
                                   double strike_sell,
                                   size_t quantity,
                                   int to_open,
-                                  int is_market,
+                                  int is_market_order,
                                   double price,
                                   OrderTicket_C *porder,
                                   int allow_exceptions );
@@ -1007,7 +1014,7 @@ BuildOrder_Spread_VerticalRoll_ABI( const char* symbol_close_buy,
                                     const char* symbol_open_sell,
                                     size_t quantity_close,
                                     size_t quantity_open,
-                                    int is_market,
+                                    int is_market_order,
                                     double price,
                                     OrderTicket_C *porder,
                                     int allow_exceptions );
@@ -1027,7 +1034,7 @@ BuildOrder_Spread_VerticalRollEx_ABI( const char* underlying,
                                       double strike_open_sell,
                                       size_t quantity_close,
                                       size_t quantity_open,
-                                      int is_market,
+                                      int is_market_order,
                                       double price,
                                       OrderTicket_C *porder,
                                       int allow_exceptions );
@@ -1040,7 +1047,7 @@ BuildOrder_Spread_Butterfly_ABI( const char* symbol_outer1,
                                  size_t quantity_outer2,
                                  int is_buy,
                                  int to_open,
-                                 int is_market,
+                                 int is_market_order,
                                  double price,
                                  OrderTicket_C *porder,
                                  int allow_exceptions );
@@ -1058,7 +1065,7 @@ BuildOrder_Spread_ButterflyEx_ABI( const char* underlying,
                                    size_t quantity_outer2,
                                    int is_buy,
                                    int to_open,
-                                   int is_market,
+                                   int is_market_order,
                                    double price,
                                    OrderTicket_C *porder,
                                    int allow_exceptions );
@@ -1069,7 +1076,7 @@ BuildOrder_Spread_BackRatio_ABI( const char* symbol_buy,
                                  size_t quantity_buy,
                                  size_t quantity_sell,
                                  int to_open,
-                                 int is_market,
+                                 int is_market_order,
                                  double price,
                                  OrderTicket_C *porder,
                                  int allow_exceptions );
@@ -1085,7 +1092,7 @@ BuildOrder_Spread_BackRatioEx_ABI( const char* underlying,
                                    size_t quantity_buy,
                                    size_t quantity_sell,
                                    int to_open,
-                                   int is_market,
+                                   int is_market_order,
                                    double price,
                                    OrderTicket_C *porder,
                                    int allow_exceptions );
@@ -1095,7 +1102,7 @@ BuildOrder_Spread_Calendar_ABI( const char* symbol_buy,
                                 const char* symbol_sell,
                                 size_t quantity,
                                 int to_open,
-                                int is_market,
+                                int is_market_order,
                                 double price,
                                 OrderTicket_C *porder,
                                 int allow_exceptions );
@@ -1112,7 +1119,7 @@ BuildOrder_Spread_CalendarEx_ABI( const char* underlying,
                                   double strike,
                                   size_t quantity,
                                   int to_open,
-                                  int is_market,
+                                  int is_market_order,
                                   double price,
                                   OrderTicket_C *porder,
                                   int allow_exceptions );
@@ -1122,7 +1129,7 @@ BuildOrder_Spread_Diagonal_ABI( const char* symbol_buy,
                                 const char* symbol_sell,
                                 size_t quantity,
                                 int to_open,
-                                int is_market,
+                                int is_market_order,
                                 double price,
                                 OrderTicket_C *porder,
                                 int allow_exceptions );
@@ -1140,7 +1147,7 @@ BuildOrder_Spread_DiagonalEx_ABI( const char* underlying,
                                   double strike_sell,
                                   size_t quantity,
                                   int to_open,
-                                  int is_market,
+                                  int is_market_order,
                                   double price,
                                   OrderTicket_C *porder,
                                   int allow_exceptions );
@@ -1151,7 +1158,7 @@ BuildOrder_Spread_Straddle_ABI( const char* symbol_call,
                                 size_t quantity,
                                 int is_buy,
                                 int to_open,
-                                int is_market,
+                                int is_market_order,
                                 double price,
                                 OrderTicket_C *porder,
                                 int allow_exceptions );
@@ -1165,7 +1172,7 @@ BuildOrder_Spread_StraddleEx_ABI( const char* underlying,
                                   size_t quantity,
                                   int is_buy,
                                   int to_open,
-                                  int is_market,
+                                  int is_market_order,
                                   double price,
                                   OrderTicket_C *porder,
                                   int allow_exceptions );
@@ -1176,7 +1183,7 @@ BuildOrder_Spread_Strangle_ABI( const char* symbol_call,
                                 size_t quantity,
                                 int is_buy,
                                 int to_open,
-                                int is_market,
+                                int is_market_order,
                                 double price,
                                 OrderTicket_C *porder,
                                 int allow_exceptions );
@@ -1191,7 +1198,7 @@ BuildOrder_Spread_StrangleEx_ABI( const char* underlying,
                                   size_t quantity,
                                   int is_buy,
                                   int to_open,
-                                  int is_market,
+                                  int is_market_order,
                                   double price,
                                   OrderTicket_C *porder,
                                   int allow_exceptions );
@@ -1201,7 +1208,7 @@ BuildOrder_Spread_CollarSynthetic_ABI( const char* symbol_buy,
                                        const char* symbol_sell,
                                        size_t quantity,
                                        int to_open,
-                                       int is_market,
+                                       int is_market_order,
                                        double price,
                                        OrderTicket_C *porder,
                                        int allow_exceptions );
@@ -1216,7 +1223,7 @@ BuildOrder_Spread_CollarSyntheticEx_ABI( const char* underlying,
                                          size_t quantity,
                                          int is_buy,
                                          int to_open,
-                                         int is_market,
+                                         int is_market_order,
                                          double price,
                                          OrderTicket_C *porder,
                                          int allow_exceptions );
@@ -1228,7 +1235,7 @@ BuildOrder_Spread_CollarWithStock_ABI( const char* symbol_buy,
                                        size_t quantity,
                                        int is_buy,
                                        int to_open,
-                                       int is_market,
+                                       int is_market_order,
                                        double price,
                                        OrderTicket_C *porder,
                                        int allow_exceptions );
@@ -1243,7 +1250,7 @@ BuildOrder_Spread_CollarWithStockEx_ABI( const char* underlying,
                                          size_t quantity,
                                          int is_buy,
                                          int to_open,
-                                         int is_market,
+                                         int is_market_order,
                                          double price,
                                          OrderTicket_C *porder,
                                          int allow_exceptions );
@@ -1257,7 +1264,7 @@ BuildOrder_Spread_Condor_ABI( const char* symbol_outer1,
                               size_t quantity2,
                               int is_buy,
                               int to_open,
-                              int is_market,
+                              int is_market_order,
                               double price,
                               OrderTicket_C *porder,
                               int allow_exceptions );
@@ -1276,7 +1283,7 @@ BuildOrder_Spread_CondorEx_ABI( const char* underlying,
                                 size_t quantity2,
                                 int is_buy,
                                 int to_open,
-                                int is_market,
+                                int is_market_order,
                                 double price,
                                 OrderTicket_C *porder,
                                 int allow_exceptions );
@@ -1290,7 +1297,7 @@ BuildOrder_Spread_IronCondor_ABI( const char* symbol_call_buy,
                                   size_t quantity_call,
                                   size_t quantity_put,
                                   int to_open,
-                                  int is_market,
+                                  int is_market_order,
                                   double price,
                                   OrderTicket_C *porder,
                                   int allow_exceptions );
@@ -1307,7 +1314,7 @@ BuildOrder_Spread_IronCondorEx_ABI( const char* underlying,
                                     size_t quantity_call,
                                     size_t quantity_put,
                                     int to_open,
-                                    int is_market,
+                                    int is_market_order,
                                     double price,
                                     OrderTicket_C *porder,
                                     int allow_exceptions );
@@ -1319,7 +1326,7 @@ BuildOrder_Spread_DoubleDiagonal_ABI( const char* symbol_call_buy,
                                       const char* symbol_put_sell,
                                       size_t quantity,
                                       int to_open,
-                                      int is_market,
+                                      int is_market_order,
                                       double price,
                                       OrderTicket_C *porder,
                                       int allow_exceptions );
@@ -1338,7 +1345,7 @@ BuildOrder_Spread_DoubleDiagonalEx_ABI( const char* underlying,
                                         double strike_put_sell,
                                         size_t quantity,
                                         int to_open,
-                                        int is_market,
+                                        int is_market_order,
                                         double price,
                                         OrderTicket_C *porder,
                                         int allow_exceptions );
@@ -1357,180 +1364,59 @@ BuildOrder_OneTriggersOther_ABI( OrderTicket_C *porder_primary,
 
 #ifndef __cplusplus
 
+/* EQUITY */
 static inline int
-BuildOrder_Simple( OrderType order_type,
-                  OrderAssetType asset_type,
-                  const char* symbol,
-                  OrderInstruction instruction,
-                  size_t quantity,
-                  double limit_price,
-                  double stop_price,
-                  OrderTicket_C *porder )
-{ return BuildOrder_Simple_ABI( (int)order_type, (int)asset_type, symbol,
-                               (int)instruction, quantity, limit_price,
-                               stop_price, porder, 0); }
+BuildOrder_Equity_Market( const char* symbol,
+                          size_t quantity,
+                          int is_buy,
+                          int to_open,
+                          OrderTicket_C *porder )
+{ return BuildOrder_Equity_ABI( symbol, quantity, is_buy, to_open,
+                                (int)OrderType_MARKET, 0.0, 0.0, porder, 0 ); }
 
 static inline int
-BuildOrder_Equity( OrderType order_type,
-                  const char* symbol,
-                  OrderInstruction instruction,
-                  size_t quantity,
-                  double limit_price,
-                  double stop_price,
-                  OrderTicket_C *porder )
-{ return BuildOrder_Equity_ABI( (int)order_type, symbol, (int)instruction,
-                                quantity, limit_price, stop_price, porder, 0); }
+BuildOrder_Equity_Limit( const char* symbol,
+                         size_t quantity,
+                         int is_buy,
+                         int to_open,
+                         double limit_price,
+                         OrderTicket_C *porder )
+{ return BuildOrder_Equity_ABI( symbol, quantity, is_buy, to_open,
+                                (int)OrderType_LIMIT, limit_price, 0.0,
+                                porder, 0 ); }
 
 static inline int
-BuildOrder_Equity_Market_Buy( const char* symbol,
-                              size_t quantity,
-                              OrderTicket_C *porder )
-{ return BuildOrder_Equity( OrderType_MARKET, symbol, OrderInstruction_BUY,
-                            quantity, 0., 0., porder ); }
+BuildOrder_Equity_Stop( const char* symbol,
+                        size_t quantity,
+                        int is_buy,
+                        int to_open,
+                        double stop_price,
+                        OrderTicket_C *porder )
+{ return BuildOrder_Equity_ABI( symbol, quantity, is_buy, to_open,
+                                (int)OrderType_STOP, 0.0, stop_price,
+                                porder, 0 ); }
 
 static inline int
-BuildOrder_Equity_Market_Sell( const char* symbol,
-                               size_t quantity,
-                               OrderTicket_C *porder )
-{ return BuildOrder_Equity( OrderType_MARKET, symbol,
-                           OrderInstruction_SELL, quantity, 0., 0., porder ); }
-
-static inline int
-BuildOrder_Equity_Market_Short( const char* symbol,
-                                size_t quantity,
-                                OrderTicket_C *porder )
-{ return BuildOrder_Equity( OrderType_MARKET, symbol,
-                           OrderInstruction_SELL_SHORT, quantity, 0., 0.,
-                           porder ); }
-
-static inline int
-BuildOrder_Equity_Market_Cover( const char* symbol,
-                                size_t quantity,
-                                OrderTicket_C *porder )
-{ return BuildOrder_Equity( OrderType_MARKET, symbol,
-                           OrderInstruction_BUY_TO_COVER, quantity, 0., 0.,
-                           porder ); }
-
-static inline int
-BuildOrder_Equity_Limit_Buy( const char* symbol,
+BuildOrder_Equity_StopLimit( const char* symbol,
                              size_t quantity,
-                             double price,
+                             int is_buy,
+                             int to_open,
+                             double stop_price,
+                             double limit_price,
                              OrderTicket_C *porder )
-{ return BuildOrder_Equity( OrderType_LIMIT, symbol,
-                           OrderInstruction_BUY, quantity, price, 0., porder); }
-
-static inline int
-BuildOrder_Equity_Limit_Sell( const char* symbol,
-                                size_t quantity,
-                                double price,
-                                OrderTicket_C *porder )
-{ return BuildOrder_Equity( OrderType_LIMIT, symbol,
-                           OrderInstruction_SELL, quantity, price, 0.,
-                           porder ); }
-
-static inline int
-BuildOrder_Equity_Limit_Short( const char* symbol,
-                                size_t quantity,
-                                double price,
-                                OrderTicket_C *porder )
-{ return BuildOrder_Equity( OrderType_LIMIT, symbol,
-                           OrderInstruction_SELL_SHORT, quantity, price, 0.,
-                           porder ); }
-
-static inline int
-BuildOrder_Equity_Limit_Cover( const char* symbol,
-                                size_t quantity,
-                                double price,
-                                OrderTicket_C *porder )
-{ return BuildOrder_Equity( OrderType_LIMIT, symbol,
-                           OrderInstruction_BUY_TO_COVER, quantity, price, 0.,
-                           porder ); }
-
-static inline int
-BuildOrder_Equity_Stop_Buy( const char* symbol,
-                             size_t quantity,
-                             double price,
-                             OrderTicket_C *porder )
-{ return BuildOrder_Equity( OrderType_STOP, symbol,
-                           OrderInstruction_BUY, quantity, 0., price,  porder); }
-
-static inline int
-BuildOrder_Equity_Stop_Sell( const char* symbol,
-                              size_t quantity,
-                              double price,
-                              OrderTicket_C *porder )
-{ return BuildOrder_Equity( OrderType_STOP, symbol,
-                           OrderInstruction_SELL, quantity, 0., price,
-                           porder ); }
-
-static inline int
-BuildOrder_Equity_Stop_Short( const char* symbol,
-                              size_t quantity,
-                               double price,
-                               OrderTicket_C *porder)
-{ return BuildOrder_Equity( OrderType_STOP, symbol,
-                           OrderInstruction_SELL_SHORT, quantity, 0., price,
-                           porder ); }
-
-static inline int
-BuildOrder_Equity_Stop_Cover( const char* symbol,
-                              size_t quantity,
-                               double price,
-                               OrderTicket_C *porder)
-{ return BuildOrder_Equity( OrderType_STOP, symbol,
-                           OrderInstruction_BUY_TO_COVER, quantity, 0., price,
-                           porder ); }
-
-static inline int
-BuildOrder_Equity_StopLimit_Buy( const char* symbol,
-                                 size_t quantity,
-                                 double stop_price,
-                                 double limit_price,
-                                 OrderTicket_C *porder )
-{ return BuildOrder_Equity( OrderType_STOP_LIMIT, symbol,
-                           OrderInstruction_BUY, quantity, limit_price,
-                           stop_price, porder); }
-
-static inline int
-BuildOrder_Equity_StopLimit_Sell( const char* symbol,
-                                  size_t quantity,
-                                  double stop_price,
-                                  double limit_price,
-                                  OrderTicket_C *porder )
-{ return BuildOrder_Equity( OrderType_STOP_LIMIT, symbol,
-                           OrderInstruction_SELL, quantity, limit_price,
-                           stop_price, porder ); }
-
-static inline int
-BuildOrder_Equity_StopLimit_Short( const char* symbol,
-                                   size_t quantity,
-                                   double stop_price,
-                                   double limit_price,
-                                   OrderTicket_C *porder)
-{ return BuildOrder_Equity( OrderType_STOP_LIMIT,symbol,
-                           OrderInstruction_SELL_SHORT, quantity, limit_price,
-                           stop_price, porder ); }
-
-static inline int
-BuildOrder_Equity_StopLimit_Cover( const char* symbol,
-                                   size_t quantity,
-                                   double stop_price,
-                                   double limit_price,
-                                   OrderTicket_C *porder)
-{ return BuildOrder_Equity( OrderType_STOP_LIMIT, symbol,
-                           OrderInstruction_BUY_TO_COVER, quantity, limit_price,
-                           stop_price, porder ); }
+{ return BuildOrder_Equity_ABI( symbol, quantity, is_buy, to_open,
+                                (int)OrderType_STOP_LIMIT, limit_price,
+                                stop_price, porder, 0 ); }
 
 /* OPTION */
-
 static inline int
 BuildOrder_Option_Market( const char* symbol,
                           size_t quantity,
                           int is_buy,
                           int to_open,
                           OrderTicket_C *porder )
-{ return BuildOrder_Option_ABI( OrderType_MARKET, symbol, quantity, is_buy,
-                                to_open, 0.0, porder, 0 ); }
+{ return BuildOrder_Option_ABI( symbol, quantity, is_buy, to_open, 1, 0.0,
+                                porder, 0 ); }
 
 static inline int
 BuildOrder_Option_MarketEx( const char* underlying,
@@ -1543,10 +1429,9 @@ BuildOrder_Option_MarketEx( const char* underlying,
                             int is_buy,
                             int to_open,
                             OrderTicket_C *porder )
-{ return BuildOrder_OptionEx_ABI( OrderType_MARKET, underlying, month, day, year,
-                                is_call, strike, quantity, is_buy, to_open,
-                                0.0, porder, 0 ); }
-
+{ return BuildOrder_OptionEx_ABI( underlying, month, day, year, is_call, strike,
+                                  quantity, is_buy, to_open, 1, 0.0, porder,
+                                  0 ); }
 
 static inline int
 BuildOrder_Option_Limit( const char* symbol,
@@ -1555,8 +1440,8 @@ BuildOrder_Option_Limit( const char* symbol,
                          int to_open,
                          double price,
                          OrderTicket_C *porder )
-{ return BuildOrder_Option_ABI( OrderType_LIMIT, symbol, quantity, is_buy,
-                                to_open, price, porder, 0 ); }
+{ return BuildOrder_Option_ABI( symbol, quantity, is_buy, to_open, 0, price,
+                                porder, 0 ); }
 
 static inline int
 BuildOrder_Option_LimitEx( const char* underlying,
@@ -1570,9 +1455,9 @@ BuildOrder_Option_LimitEx( const char* underlying,
                            int to_open,
                            double price,
                            OrderTicket_C *porder )
-{ return BuildOrder_OptionEx_ABI( OrderType_LIMIT, underlying, month, day, year,
-                                is_call, strike, quantity, is_buy, to_open,
-                                price, porder, 0 ); }
+{ return BuildOrder_OptionEx_ABI( underlying, month, day, year, is_call, strike,
+                                  quantity, is_buy, to_open, 0, price, porder,
+                                  0 ); }
 
 /* OPTION SPREAD (MANUAL) */
 
@@ -1580,10 +1465,10 @@ static inline int
 BuildOrder_Spread( ComplexOrderStrategyType complex_strategy_type,
                    OrderLeg_C *plegs,
                    size_t n,
-                   int is_market,
+                   int is_market_order,
                    double price,
                    OrderTicket_C *porder)
-{ return BuildOrder_Spread_ABI( complex_strategy_type, plegs, n, is_market, price,
+{ return BuildOrder_Spread_ABI( complex_strategy_type, plegs, n, is_market_order, price,
                            porder, 0 ); }
 
 /* VERTICAL SPREAD */
@@ -2839,226 +2724,149 @@ BuildOrder_OneTriggersOther( OrderTicket_C *porder_primary,
 
 namespace tdma {
 
+/* NOTE - The Builder classes are built for use by the C++ interface
+ *        BUT THEY ARE ALSO USED BY THE LIBRARY IMPLEMENTATION TO SUPPORT THE
+ *        C/ABI INTERFACES through PrivateBuildAccessor.
+ *
+ *        This limits the amount of code duplication and byzantine C/ABI access
+ *        for building complex orders at the expense of:
+ *
+ *        1) More overhead for the C interface as the flow goes:
+ *             V  C/ABI builder calls
+ *             V  C++ builders
+ *             V  proxy OrderTicket/Leg methods
+ *             V  OrderTicket/Leg ABI methods
+ *             V  C++ OrderTicket/Leg Impl methods
+ *
+ *        2) Linking the library implementation to the C++ Builder interface,
+ *           not allowing a clean seperation between interface and
+ *           implementation (i.e changes to builder interface may require
+ *           changes/recompilation of library).
+ */
+template<typename BTy, bool Arg2=true>
+class PrivateBuildAccessor {
+    template<typename BTy2, bool B>
+    struct Get{
+        static constexpr
+        typename BTy2::ex_build_meth_ty get(){ return BTy2::build; }
+    };
+
+    template<typename BTy2>
+    struct Get<BTy2, false>{
+        static constexpr void* get(){ return nullptr; }
+    };
+public:
+#ifdef THIS_EXPORTS_INTERFACE
+    static constexpr typename BTy::raw_build_meth_ty raw = BTy::build;
+    static constexpr auto ex = Get<BTy,Arg2>::get();
+#endif /* THIS_EXPORTS_INTERFACE */
+};
+
+
 class OrderBuilderBase {
 public:
     OrderBuilderBase() = delete;
-    /* aliases */
-    static constexpr OrderAssetType EQUITY = OrderAssetType::EQUITY;
-    static constexpr OrderAssetType OPTION = OrderAssetType::OPTION;
-    static constexpr OrderType MARKET = OrderType::MARKET;
-    static constexpr OrderType LIMIT = OrderType::LIMIT;
-    static constexpr OrderType STOP = OrderType::STOP;
-    static constexpr OrderType STOP_LIMIT = OrderType::STOP_LIMIT;
-    static constexpr OrderType NET_CREDIT = OrderType::NET_CREDIT;
-    static constexpr OrderType NET_DEBIT = OrderType::NET_DEBIT;
-    static constexpr OrderType NET_ZERO = OrderType::NET_ZERO;
-    static constexpr OrderInstruction BUY = OrderInstruction::BUY;
-    static constexpr OrderInstruction SELL = OrderInstruction::SELL;
-    static constexpr OrderInstruction SELL_SHORT =
-        OrderInstruction::SELL_SHORT;
-    static constexpr OrderInstruction BUY_TO_COVER =
-        OrderInstruction::BUY_TO_COVER;
-    static constexpr OrderInstruction BUY_TO_OPEN =
-        OrderInstruction::BUY_TO_OPEN;
-    static constexpr OrderInstruction SELL_TO_OPEN =
-        OrderInstruction::SELL_TO_OPEN;
-    static constexpr OrderInstruction BUY_TO_CLOSE =
-        OrderInstruction::BUY_TO_CLOSE;
-    static constexpr OrderInstruction SELL_TO_CLOSE =
-        OrderInstruction::SELL_TO_CLOSE;
+
 protected:
     static constexpr auto O = tdma::BuildOptionSymbol;
+
+    static constexpr OrderInstruction
+    op_instr(bool is_buy, bool to_open)
+    { return is_buy ? (to_open ? OrderInstruction::BUY_TO_OPEN
+                               : OrderInstruction::BUY_TO_CLOSE)
+                    : (to_open ? OrderInstruction::SELL_TO_OPEN
+                               : OrderInstruction::SELL_TO_CLOSE); }
+
+    static constexpr OrderInstruction
+    eq_instr(bool is_buy, bool to_open)
+    { return is_buy ? (to_open ? OrderInstruction::BUY
+                               : OrderInstruction::BUY_TO_COVER)
+                    : (to_open ? OrderInstruction::SELL_SHORT
+                               : OrderInstruction::SELL); }
 };
 
 
 class SimpleOrderBuilder
         : public OrderBuilderBase {
-public:
-    SimpleOrderBuilder() = delete;
+    friend class PrivateBuildAccessor<SimpleOrderBuilder, false>;
 
-    typedef OrderTicket(*build_meth_ty)(OrderType, OrderAssetType,
-        const std::string&, OrderInstruction, size_t, double, double);
+    typedef OrderTicket(*raw_build_meth_ty)(OrderAssetType, const std::string&,
+        size_t, OrderInstruction, OrderType, double, double);
 
     static OrderTicket
-    build( OrderType order_type,
-            OrderAssetType asset_type,
+    build( OrderAssetType asset_type,
             const std::string& symbol,
-            OrderInstruction instruction,
             size_t quantity,
+            OrderInstruction instruction,
+            OrderType order_type,
             double limit_price = 0.0,
             double stop_price = 0.0)
     {
+        call_abi( SimpleOrder_CheckPrices_ABI, static_cast<int>(order_type),
+                  limit_price, stop_price );
         OrderLeg leg(asset_type, symbol, instruction, quantity);
         return OrderTicket().set_type( order_type )
-                      .set_duration(OrderDuration::DAY)
-                      .set_session(OrderSession::NORMAL)
-                      .add_leg(leg)
-                      .set_price(limit_price)
-                      .set_stop_price(stop_price);
+                            .set_duration(OrderDuration::DAY)
+                            .set_session(OrderSession::NORMAL)
+                            .add_leg(leg)
+                            .set_price(limit_price)
+                            .set_stop_price(stop_price);
     }
 
+public:
+    SimpleOrderBuilder() = delete;
+
     class Equity{
-    public:
-        typedef OrderTicket(*build_meth_ty)(OrderType, const std::string&,
-            OrderInstruction, size_t, double, double);
+#define ARGS_RAW \
+        const std::string& symbol, \
+        size_t quantity, \
+        bool is_buy, \
+        bool to_open
+
+        friend class PrivateBuildAccessor<Equity, false>;
+
+        typedef OrderTicket(*raw_build_meth_ty)(const std::string&,
+            size_t, bool, bool, OrderType, double, double);
 
         static OrderTicket
-        build( OrderType order_type,
-                const std::string& symbol,
-                OrderInstruction instruction,
-                size_t quantity,
+        build( ARGS_RAW,
+                OrderType order_type,
                 double limit_price = 0.0,
                 double stop_price = 0.0)
-        {
-            if( (order_type == LIMIT || order_type == STOP_LIMIT)
-                && limit_price <= 0.0 ){
-                    THROW_VALUE_EXCEPTION("limit price <= 0.0");
-            }
-            if( (order_type == STOP || order_type == STOP_LIMIT)
-                && stop_price <= 0.0 ){
-                THROW_VALUE_EXCEPTION("stop price <= 0.0");
-            }
-            return SimpleOrderBuilder::build( order_type, EQUITY, symbol,
-                                              instruction, quantity,
-                                              limit_price, stop_price );
-        }
+        { return SimpleOrderBuilder::build(OrderAssetType::EQUITY, symbol,
+                                           quantity, eq_instr(is_buy, to_open),
+                                           order_type, limit_price, stop_price); }
 
-        class Market{
-        public:
-            Market() = delete;
+    public:
+        Equity() = delete;
 
-            static OrderTicket
-            Buy(const std::string& symbol, size_t quantity)
-            { return build(MARKET, symbol, BUY, quantity); }
+        static OrderTicket
+        Build( ARGS_RAW )
+        { return build( symbol, quantity, is_buy, to_open, OrderType::MARKET ); }
 
-            static OrderTicket
-            Sell(const std::string& symbol, size_t quantity)
-            { return build(MARKET, symbol, SELL, quantity); }
-
-            static OrderTicket
-            Short(const std::string& symbol, size_t quantity)
-            { return build(MARKET, symbol, SELL_SHORT, quantity); }
-
-            static OrderTicket
-            Cover(const std::string& symbol, size_t quantity)
-            { return build(MARKET, symbol, BUY_TO_COVER, quantity); }
-        };
-
-        class Limit{
-        public:
-            Limit() = delete;
-
-            static OrderTicket
-            Buy(const std::string& symbol, size_t quantity, double price)
-            { return build(LIMIT, symbol, BUY, quantity, price); }
-
-            static OrderTicket
-            Sell(const std::string& symbol, size_t quantity, double price)
-            { return build(LIMIT, symbol, SELL, quantity, price); }
-
-            static OrderTicket
-            Short(const std::string& symbol, size_t quantity, double price)
-            { return build(LIMIT, symbol, SELL_SHORT, quantity, price); }
-
-            static OrderTicket
-            Cover(const std::string& symbol, size_t quantity, double price)
-            { return build(LIMIT, symbol, BUY_TO_COVER, quantity, price); }
-        };
+        static OrderTicket
+        Build( ARGS_RAW, double limit_price )
+        { return build( symbol, quantity, is_buy, to_open, OrderType::LIMIT,
+                        limit_price ); }
 
         class Stop{
         public:
             Stop() = delete;
 
             static OrderTicket
-            Buy(const std::string& symbol, size_t quantity, double stop_price)
-            { return build(STOP, symbol, BUY, quantity, 0., stop_price); }
+            Build( ARGS_RAW, double stop_price )
+            { return build( symbol, quantity, is_buy, to_open, OrderType::STOP,
+                            0.0, stop_price ); }
 
             static OrderTicket
-            Buy( const std::string& symbol,
-                 size_t quantity,
-                 double stop_price,
-                 double limit_price )
-            { return build( STOP_LIMIT, symbol, BUY, quantity, limit_price,
-                            stop_price ); }
-
-            static OrderTicket
-            Sell(const std::string& symbol, size_t quantity, double stop_price)
-            { return build(STOP, symbol, SELL, quantity, 0., stop_price); }
-
-            static OrderTicket
-            Sell( const std::string& symbol,
-                   size_t quantity,
-                   double stop_price,
-                   double limit_price )
-            { return build( STOP_LIMIT, symbol, SELL, quantity, limit_price,
-                            stop_price ); }
-
-            static OrderTicket
-            Short(const std::string& symbol, size_t quantity, double stop_price)
-            { return build(STOP, symbol, SELL_SHORT, quantity, 0., stop_price); }
-
-            static OrderTicket
-            Short( const std::string& symbol,
-                    size_t quantity,
-                    double stop_price,
-                    double limit_price )
-            { return build( STOP_LIMIT, symbol, SELL_SHORT, quantity,
-                            limit_price, stop_price ); }
-
-            static OrderTicket
-            Cover(const std::string& symbol, size_t quantity, double stop_price)
-            { return build(STOP, symbol, BUY_TO_COVER, quantity, 0., stop_price); }
-
-            static OrderTicket
-            Cover( const std::string& symbol,
-                    size_t quantity,
-                    double stop_price,
-                    double limit_price )
-            { return build( STOP_LIMIT, symbol, BUY_TO_COVER, quantity,
-                            limit_price, stop_price ); }
+            Build( ARGS_RAW, double stop_price, double limit_price )
+            { return build( symbol, quantity, is_buy, to_open,
+                            OrderType::STOP_LIMIT, limit_price, stop_price ); }
         };
-
+#undef ARGS_RAW
     }; /* Equity */
 
     class Option{
-    public:
-        Option() = delete;
-
-        typedef OrderTicket(*raw_build_meth_ty)(OrderType, const std::string&,
-            OrderInstruction, size_t, double);
-
-        typedef OrderTicket(*ex_build_meth_ty)(OrderType, const std::string&,
-            unsigned int, unsigned int, unsigned int, bool, double,
-            OrderInstruction, size_t, double);
-
-        static OrderTicket
-        build( OrderType order_type,
-                const std::string& symbol,
-                OrderInstruction instruction,
-                size_t quantity,
-                double price = 0)
-        {
-            if( order_type == LIMIT && price <= 0.0 )
-                THROW_VALUE_EXCEPTION("limit price <= 0.0");
-            return SimpleOrderBuilder::build( order_type, OPTION, symbol,
-                                            instruction, quantity, price );
-        }
-
-        static OrderTicket
-        build( OrderType order_type,
-                const std::string& underlying,
-                unsigned int month,
-                unsigned int day,
-                unsigned int year,
-                bool is_call,
-                double strike,
-                OrderInstruction instruction,
-                size_t quantity,
-                double price = 0 )
-        { return build( order_type, O(underlying,month,day,year,is_call,strike),
-                        instruction, quantity, price ); }
-
-
 #define ARGS \
         const std::string& underlying, \
         unsigned int month, \
@@ -3066,91 +2874,62 @@ public:
         unsigned int year, \
         bool is_call, \
         double strike, \
-        size_t quantity
+        size_t quantity, \
+        bool is_buy, \
+        bool to_open
 
-        class Market{
-        public:
-            Market() = delete;
+#define ARGS_RAW \
+        const std::string& symbol, \
+        size_t quantity, \
+        bool is_buy, \
+        bool to_open
 
-            static OrderTicket
-            BuyToOpen(const std::string& symbol, size_t quantity)
-            { return build(MARKET, symbol, BUY_TO_OPEN, quantity); }
+        friend class PrivateBuildAccessor<Option>;
 
-            static OrderTicket
-            BuyToOpen( ARGS )
-            { return build( MARKET, underlying, month, day, year, is_call,
-                            strike, BUY_TO_OPEN, quantity); }
+        typedef OrderTicket(*raw_build_meth_ty)(const std::string&, size_t,
+            bool, bool, bool, double);
 
-            static OrderTicket
-            SellToOpen(const std::string& symbol, size_t quantity)
-            { return build(MARKET, symbol, SELL_TO_OPEN, quantity); }
+        typedef OrderTicket(*ex_build_meth_ty)(const std::string&, unsigned int,
+            unsigned int, unsigned int, bool, double, size_t, bool, bool, bool,
+            double);
 
-            static OrderTicket
-            SellToOpen( ARGS )
-            { return build( MARKET, underlying, month, day, year, is_call,
-                            strike, SELL_TO_OPEN, quantity); }
+        static OrderTicket
+        build( ARGS_RAW, bool is_market_order=true, double price = 0.0 )
+        {
+            auto ot = is_market_order ? OrderType::MARKET : OrderType::LIMIT;
+            return SimpleOrderBuilder::build(OrderAssetType::OPTION, symbol,
+                                             quantity, op_instr(is_buy,to_open),
+                                             ot, price );
+        }
 
-            static OrderTicket
-            BuyToClose(const std::string& symbol, size_t quantity)
-            { return build(MARKET, symbol, BUY_TO_CLOSE, quantity); }
+        static OrderTicket
+        build( ARGS, bool is_market_order=true, double price = 0 )
+        { return build( O(underlying,month,day,year,is_call,strike),
+                        quantity, is_buy, to_open, is_market_order, price ); }
 
-            static OrderTicket
-            BuyToClose( ARGS )
-            { return build( MARKET, underlying, month, day, year, is_call,
-                            strike, BUY_TO_CLOSE, quantity); }
+public:
+        Option() = delete;
 
-            static OrderTicket
-            SellToClose(const std::string& symbol, size_t quantity)
-            { return build(MARKET, symbol, SELL_TO_CLOSE, quantity); }
+        static OrderTicket
+        Build( ARGS_RAW )
+        { return build(symbol, quantity, is_buy, to_open); }
 
-            static OrderTicket
-            SellToClose( ARGS )
-            { return build( MARKET, underlying, month, day, year, is_call,
-                            strike, SELL_TO_CLOSE, quantity); }
-        };
+        static OrderTicket
+        Build( ARGS_RAW, double price )
+        { return build(symbol, quantity, is_buy, to_open, false, price); }
 
-        class Limit{
-        public:
-            Limit() = delete;
+        static OrderTicket
+        Build( ARGS )
+        { return build(underlying, month, day, year, is_call,
+                        strike, quantity, is_buy, to_open ); }
 
-            static OrderTicket
-            BuyToOpen(const std::string& symbol, size_t quantity, double price)
-            { return build(LIMIT, symbol, BUY_TO_OPEN, quantity, price); }
-
-            static OrderTicket
-            BuyToOpen( ARGS, double price )
-            { return build( LIMIT, underlying, month, day, year, is_call,
-                            strike, BUY_TO_OPEN, quantity, price); }
-
-            static OrderTicket
-            SellToOpen(const std::string& symbol, size_t quantity, double price)
-            { return build(LIMIT, symbol, SELL_TO_OPEN, quantity, price); }
-
-            static OrderTicket
-            SellToOpen( ARGS, double price )
-            { return build( LIMIT, underlying, month, day, year, is_call,
-                            strike, SELL_TO_OPEN, quantity, price); }
-
-            static OrderTicket
-            BuyToClose(const std::string& symbol, size_t quantity, double price)
-            { return build(LIMIT, symbol, BUY_TO_CLOSE, quantity, price); }
-
-            static OrderTicket
-            BuyToClose( ARGS, double price )
-            { return build( LIMIT, underlying, month, day, year, is_call,
-                            strike, BUY_TO_CLOSE, quantity, price); }
-
-            static OrderTicket
-            SellToClose(const std::string& symbol, size_t quantity, double price)
-            { return build(LIMIT, symbol, SELL_TO_CLOSE, quantity, price); }
-
-            static OrderTicket
-            SellToClose( ARGS, double price )
-            { return build( LIMIT, underlying, month, day, year, is_call,
-                strike, SELL_TO_CLOSE, quantity, price); }
-        };
+        static OrderTicket
+        Build( ARGS, double price )
+        { return build( underlying, month, day, year, is_call,
+                        strike, quantity, is_buy, to_open, false, price); }
 
 #undef ARGS
+#undef ARGS_RAW
     }; /* Option */
 
 }; /* SimpleOrderBuilder */
@@ -3158,57 +2937,52 @@ public:
 
 class SpreadOrderBuilder
         : public OrderBuilderBase {
+    friend class PrivateBuildAccessor<SpreadOrderBuilder, false>;
 
-    static OrderLeg
-    make_leg(const std::string& s, OrderInstruction instr, size_t quantity)
-    { return {OPTION, s, instr, quantity}; }
-
-public:
-    SpreadOrderBuilder() = delete;
-
-    using OrderBuilderBase::O;
-
-    typedef OrderTicket(*build_meth_ty)(ComplexOrderStrategyType,
+    typedef OrderTicket(*raw_build_meth_ty)(ComplexOrderStrategyType,
         const std::vector<OrderLeg>&, bool, double);
 
     static OrderTicket
     build( ComplexOrderStrategyType complex_strategy_type,
             const std::vector<OrderLeg>& legs,
-            bool market_order = true,
+            bool is_market_order = true,
             double price = 0.0 )
     {
         OrderTicket o;
-        o.set_type(MARKET)
+        o.set_type(OrderType::MARKET)
          .set_duration(OrderDuration::DAY)
          .set_session(OrderSession::NORMAL)
          .set_complex_strategy_type(complex_strategy_type)
          .add_legs(legs);
 
-        if( market_order ){
+        if( is_market_order ){
             if( price )
                 THROW_VALUE_EXCEPTION("market order contains price");
             return o;
         }else{ // overides MARKET
             if( price > 0 )
-                o.set_type(NET_DEBIT).set_price(price);
+                o.set_type(OrderType::NET_DEBIT).set_price(price);
             else if( price < 0 )
-                o.set_type(NET_CREDIT).set_price(-price);
+                o.set_type(OrderType::NET_CREDIT).set_price(-price);
             else
-                o.set_type(NET_ZERO);
+                o.set_type(OrderType::NET_ZERO);
         }
         return o;
     }
 
-    class Vertical {
-    public:
-        Vertical() = delete;
-        static constexpr ComplexOrderStrategyType strategy
-            = ComplexOrderStrategyType::VERTICAL;
+    static OrderLeg
+    make_leg(const std::string& s, OrderInstruction instr, size_t quantity)
+    { return {OrderAssetType::OPTION, s, instr, quantity}; }
 
+public:
+    SpreadOrderBuilder() = delete;
+
+    class Vertical {
 #define ARGS_RAW \
         const std::string& symbol_buy, \
         const std::string& symbol_sell, \
-        size_t quantity
+        size_t quantity, \
+        bool to_open
 
 #define ARGS \
         const std::string& underlying, \
@@ -3218,7 +2992,10 @@ public:
         bool are_calls, \
         double strike_buy, \
         double strike_sell, \
-        size_t quantity
+        size_t quantity, \
+        bool to_open
+
+        friend class PrivateBuildAccessor<Vertical>;
 
         typedef OrderTicket(*raw_build_meth_ty)(const std::string&,
             const std::string&, size_t, bool, bool, double);
@@ -3228,75 +3005,56 @@ public:
             bool, double);
 
         static OrderTicket
-        build( ARGS_RAW, bool to_open, bool market_order = true, double price = 0.0 )
+        build( ARGS_RAW, bool is_market_order = true, double price = 0.0 )
         {
-            OrderInstruction oi1 = to_open ? BUY_TO_OPEN : BUY_TO_CLOSE;
-            OrderInstruction oi2 = to_open ? SELL_TO_OPEN : SELL_TO_CLOSE;
             return SpreadOrderBuilder::build( strategy,
-                {make_leg(symbol_buy, oi1, quantity),
-                 make_leg(symbol_sell, oi2, quantity)},
-                market_order, price );
+                {make_leg(symbol_buy, op_instr(true, to_open), quantity),
+                 make_leg(symbol_sell, op_instr(false, to_open), quantity)},
+                is_market_order, price );
         }
 
         static OrderTicket
-        build( ARGS, bool to_open, bool market_order = true, double price = 0.0 )
+        build( ARGS, bool is_market_order = true, double price = 0.0 )
         {
             return build( O(underlying, month, day, year, are_calls, strike_buy),
                           O(underlying, month, day, year, are_calls, strike_sell),
-                          quantity, to_open, market_order, price );
+                          quantity, to_open, is_market_order, price );
         }
 
-        static OrderTicket
-        Open( ARGS_RAW )
-        { return build(symbol_buy, symbol_sell, quantity, true); }
+    public:
+        Vertical() = delete;
+        static constexpr ComplexOrderStrategyType strategy
+            = ComplexOrderStrategyType::VERTICAL;
 
         static OrderTicket
-        Open( ARGS_RAW, double price )
-        { return build(symbol_buy, symbol_sell, quantity, true, false, price); }
+        Build( ARGS_RAW )
+        { return build(symbol_buy, symbol_sell, quantity, to_open); }
 
         static OrderTicket
-        Open( ARGS )
+        Build( ARGS_RAW, double price )
+        { return build(symbol_buy, symbol_sell, quantity, to_open, false, price); }
+
+        static OrderTicket
+        Build( ARGS)
         { return build(underlying, month, day, year, are_calls, strike_buy,
-                              strike_sell, quantity, true); }
+                       strike_sell, quantity, to_open); }
 
         static OrderTicket
-        Open( ARGS, double price )
+        Build( ARGS, double price )
         { return build(underlying, month, day, year, are_calls, strike_buy,
-                              strike_sell, quantity, true, false,price); }
-
-        static OrderTicket
-        Close( ARGS_RAW )
-        { return build(symbol_buy, symbol_sell, quantity, false); }
-
-        static OrderTicket
-        Close( ARGS_RAW, double price )
-        { return build(symbol_buy, symbol_sell, quantity, false,false, price); }
-
-        static OrderTicket
-        Close( ARGS )
-        { return build(underlying, month, day, year, are_calls, strike_buy,
-                              strike_sell, quantity, false); }
-
-        static OrderTicket
-        Close( ARGS, double price )
-        { return build(underlying, month, day, year, are_calls, strike_buy,
-                              strike_sell, quantity, false, false, price); }
+                              strike_sell, quantity, to_open, false, price); }
 #undef ARGS_RAW
 #undef ARGS
 
         class Roll {
-        public:
-            Roll() = delete;
-            static constexpr ComplexOrderStrategyType strategy
-                = ComplexOrderStrategyType::VERTICAL_ROLL;
-
-#define ARGS_RAW \
+#define ARGS_RAW(...) \
             const std::string& symbol_close_buy, \
             const std::string& symbol_close_sell, \
             const std::string& symbol_open_buy, \
-            const std::string& symbol_open_sell
+            const std::string& symbol_open_sell, \
+            __VA_ARGS__
 
-#define ARGS_NEW_EXP \
+#define ARGS_NEW_EXP(...) \
             const std::string& underlying, \
             unsigned int month_close, \
             unsigned int day_close, \
@@ -3308,9 +3066,10 @@ public:
             double strike_close_buy, \
             double strike_close_sell, \
             double strike_open_buy, \
-            double strike_open_sell
+            double strike_open_sell, \
+            __VA_ARGS__
 
-#define ARGS_SAME_EXP \
+#define ARGS_SAME_EXP(...) \
             const std::string& underlying, \
             unsigned int month, \
             unsigned int day, \
@@ -3319,167 +3078,167 @@ public:
             double strike_close_buy, \
             double strike_close_sell, \
             double strike_open_buy, \
-            double strike_open_sell
+            double strike_open_sell, \
+            __VA_ARGS__
+
+            friend class PrivateBuildAccessor<Roll>;
 
             typedef OrderTicket(*raw_build_meth_ty)(const std::string&,
                  const std::string&, const std::string&, const std::string&,
                  size_t, size_t, bool, double);
 
-             typedef OrderTicket(*ex_build_meth_ty)(const std::string&, unsigned int,
+             typedef OrderTicket(*ex_build_meth_ty)(const std::string&,
                  unsigned int, unsigned int, unsigned int, unsigned int,
-                 unsigned int, bool, double, double, double, double, size_t,
-                 size_t, bool, double);
+                 unsigned int, unsigned int, bool, double, double, double,
+                 double, size_t, size_t, bool, double);
 
             static OrderTicket
-            build( ARGS_RAW,
-                   size_t quantity_close,
-                   size_t quantity_open,
-                   bool market_order = true,
+            build( ARGS_RAW(size_t quantity_close, size_t quantity_open),
+                   bool is_market_order = true,
                    double price = 0 )
             {
-                OrderTicket o = Open(symbol_open_buy, symbol_open_sell, quantity_open);
-                return Vertical::build(
-                    symbol_close_buy, symbol_close_sell, quantity_close, false,
-                    market_order, price)
-                          .add_legs( o.get_legs())
-                          .set_complex_strategy_type(strategy);
+                auto o = Vertical::Build( symbol_open_buy, symbol_open_sell,
+                                          quantity_open, true );
+
+                return Vertical::build( symbol_close_buy, symbol_close_sell,
+                                        quantity_close, false, is_market_order,
+                                        price )
+                                    .add_legs( o.get_legs())
+                                    .set_complex_strategy_type(strategy);
             }
 
             static OrderTicket
-            build( ARGS_NEW_EXP,
-                    size_t quantity_close,
-                    size_t quantity_open,
-                    bool market_order = true,
+            build( ARGS_NEW_EXP(size_t quantity_close, size_t quantity_open),
+                    bool is_market_order = true,
                     double price = 0 )
             {
-                OrderTicket o = Open(underlying, month_open, day_open, year_open,
-                               are_calls, strike_open_buy, strike_open_sell,
-                               quantity_open);
+                auto o = Vertical::Build(underlying, month_open, day_open,
+                                         year_open, are_calls, strike_open_buy,
+                                         strike_open_sell, quantity_open, true);
 
-                return Vertical::build(
-                    underlying, month_close, day_close, year_close, are_calls,
-                    strike_close_buy, strike_close_sell, quantity_close, false,
-                    market_order, price)
-                        .add_legs( o.get_legs())
-                        .set_complex_strategy_type(strategy);
+                return Vertical::build( underlying, month_close, day_close,
+                                        year_close, are_calls, strike_close_buy,
+                                        strike_close_sell, quantity_close,
+                                        false, is_market_order, price )
+                                    .add_legs( o.get_legs())
+                                    .set_complex_strategy_type(strategy);
             }
 
-            class Unbalanced {
-            public:
-                Unbalanced() = delete;
-                static constexpr ComplexOrderStrategyType strategy
-                    = ComplexOrderStrategyType::UNBALANCED_VERTICAL_ROLL;
+        public:
+            Roll() = delete;
 
-                template< typename... T >
-                static OrderTicket
-                build( T... args )
-                { return Roll::build(args...)
-                            .set_complex_strategy_type(strategy); }
-
-                static OrderTicket
-                Raw( ARGS_RAW, size_t quantity_close, size_t quantity_open )
-                { return build( symbol_close_buy, symbol_close_sell,
-                                       symbol_open_buy, symbol_open_sell,
-                                       quantity_close, quantity_open ); }
-
-                static OrderTicket
-                Raw( ARGS_RAW,
-                     size_t quantity_close,
-                     size_t quantity_open,
-                     double price )
-                { return build( symbol_close_buy, symbol_close_sell,
-                                      symbol_open_buy, symbol_open_sell,
-                                      quantity_close, quantity_open,
-                                      false, price ); }
-
-                static OrderTicket
-                NewExp( ARGS_NEW_EXP,
-                         size_t quantity_close,
-                         size_t quantity_open )
-                { return build( underlying, month_close, day_close,
-                                       year_close, month_open, day_open,
-                                       year_open, are_calls, strike_close_buy,
-                                       strike_close_sell, strike_open_buy,
-                                       strike_open_sell, quantity_close,
-                                       quantity_open); }
-
-                static OrderTicket
-                NewExp( ARGS_NEW_EXP,
-                        size_t quantity_close,
-                        size_t quantity_open,
-                        double price )
-                { return build( underlying, month_close, day_close,
-                                      year_close, month_open, day_open,
-                                      year_open, are_calls, strike_close_buy,
-                                      strike_close_sell, strike_open_buy,
-                                      strike_open_sell, quantity_close,
-                                      quantity_open, false, price); }
-
-                static OrderTicket
-                SameExp( ARGS_SAME_EXP,
-                          size_t quantity_close,
-                          size_t quantity_open )
-                { return build( underlying, month, day, year, month, day,
-                                       year, are_calls, strike_close_buy,
-                                       strike_close_sell, strike_open_buy,
-                                       strike_open_sell, quantity_close,
-                                       quantity_open ); }
-
-                static OrderTicket
-                SameExp( ARGS_SAME_EXP,
-                          size_t quantity_close,
-                          size_t quantity_open,
-                          double price )
-                { return build( underlying, month, day, year, month, day,
-                                      year, are_calls, strike_close_buy,
-                                      strike_close_sell, strike_open_buy,
-                                      strike_open_sell, quantity_close,
-                                      quantity_open, false, price ); }
-
-            }; /* Unbalanced */
-
+            static constexpr ComplexOrderStrategyType strategy
+                = ComplexOrderStrategyType::VERTICAL_ROLL;
 
             static OrderTicket
-            Raw( ARGS_RAW, size_t quantity )
+            Build( ARGS_RAW(size_t quantity) )
             { return build( symbol_close_buy, symbol_close_sell,
                                    symbol_open_buy, symbol_open_sell,
                                    quantity, quantity ); }
 
             static OrderTicket
-            Raw( ARGS_RAW, size_t quantity, double price )
+            Build( ARGS_RAW(size_t quantity), double price )
             { return build( symbol_close_buy, symbol_close_sell,
                                   symbol_open_buy, symbol_open_sell,
                                   quantity, quantity, false, price ); }
 
             static OrderTicket
-            NewExp( ARGS_NEW_EXP, size_t quantity )
+            Build( ARGS_NEW_EXP(size_t quantity) )
             { return build( underlying, month_close, day_close,
-                                   year_close, month_open, day_open, year_open,
-                                   are_calls, strike_close_buy, strike_close_sell,
-                                   strike_open_buy, strike_open_sell,
-                                   quantity, quantity); }
+                                   year_close, month_open, day_open,
+                                   year_open, are_calls, strike_close_buy,
+                                   strike_close_sell, strike_open_buy,
+                                   strike_open_sell, quantity,  quantity); }
 
             static OrderTicket
-            NewExp( ARGS_NEW_EXP, size_t quantity, double price )
+            Build( ARGS_NEW_EXP(size_t quantity), double price )
             { return build( underlying, month_close, day_close,
-                                   year_close, month_open, day_open, year_open,
-                                   are_calls, strike_close_buy, strike_close_sell,
-                                   strike_open_buy, strike_open_sell,
-                                   quantity, quantity, false, price); }
+                                  year_close, month_open, day_open,
+                                  year_open, are_calls, strike_close_buy,
+                                  strike_close_sell, strike_open_buy,
+                                  strike_open_sell, quantity,
+                                  quantity, false, price); }
 
             static OrderTicket
-            SameExp( ARGS_SAME_EXP, size_t quantity )
+            Build( ARGS_SAME_EXP(size_t quantity) )
             { return build( underlying, month, day, year, month, day,
                                    year, are_calls, strike_close_buy,
                                    strike_close_sell, strike_open_buy,
-                                   strike_open_sell, quantity, quantity ); }
+                                   strike_open_sell, quantity,
+                                   quantity ); }
 
             static OrderTicket
-            SameExp( ARGS_SAME_EXP, size_t quantity, double price )
-            { return build( underlying, month, day, year, month, day, year,
-                                  are_calls, strike_close_buy, strike_close_sell,
-                                  strike_open_buy, strike_open_sell, quantity,
+            Build( ARGS_SAME_EXP(size_t quantity), double price )
+            { return build( underlying, month, day, year, month, day,
+                                  year, are_calls, strike_close_buy,
+                                  strike_close_sell, strike_open_buy,
+                                  strike_open_sell, quantity,
                                   quantity, false, price ); }
+
+            class Unbalanced {
+                friend class PrivateBuildAccessor<Unbalanced>;
+
+                typedef typename Roll::raw_build_meth_ty raw_build_meth_ty;
+                typedef typename Roll::ex_build_meth_ty ex_build_meth_ty;
+
+                template< typename... T >
+                static OrderTicket
+                build( T... args )
+                { return Roll::build(args...)
+                      .set_complex_strategy_type(strategy); }
+
+            public:
+                Unbalanced() = delete;
+                static constexpr ComplexOrderStrategyType strategy
+                    = ComplexOrderStrategyType::UNBALANCED_VERTICAL_ROLL;
+
+                static OrderTicket
+                Build( ARGS_RAW(size_t quantity_close, size_t quantity_open) )
+                { return build( symbol_close_buy, symbol_close_sell,
+                                symbol_open_buy, symbol_open_sell,
+                                quantity_close, quantity_open ); }
+
+                static OrderTicket
+                Build( ARGS_RAW(size_t quantity_close, size_t quantity_open),
+                       double price )
+                { return build( symbol_close_buy, symbol_close_sell,
+                                symbol_open_buy, symbol_open_sell,
+                                quantity_close, quantity_open, false, price ); }
+
+                static OrderTicket
+                Build( ARGS_NEW_EXP(size_t quantity_close,
+                                    size_t quantity_open) )
+                { return build( underlying, month_close, day_close,
+                                 year_close, month_open, day_open, year_open,
+                                 are_calls, strike_close_buy, strike_close_sell,
+                                 strike_open_buy, strike_open_sell,
+                                 quantity_close, quantity_open ); }
+
+                static OrderTicket
+                Build( ARGS_NEW_EXP(size_t quantity_close, size_t quantity_open),
+                       double price )
+                { return build( underlying, month_close, day_close, year_close,
+                                month_open, day_open, year_open, are_calls,
+                                strike_close_buy, strike_close_sell,
+                                strike_open_buy, strike_open_sell,
+                                quantity_close, quantity_open, false, price); }
+
+                static OrderTicket
+                Build( ARGS_SAME_EXP(size_t quantity_close,
+                                     size_t quantity_open) )
+                { return build( underlying, month, day, year, month, day, year,
+                                are_calls, strike_close_buy, strike_close_sell,
+                                strike_open_buy, strike_open_sell,
+                                quantity_close, quantity_open ); }
+
+                static OrderTicket
+                Build( ARGS_SAME_EXP(size_t quantity_close, size_t quantity_open),
+                       double price )
+                { return build( underlying, month, day, year, month, day, year,
+                                are_calls, strike_close_buy, strike_close_sell,
+                                strike_open_buy, strike_open_sell,
+                                quantity_close, quantity_open, false, price ); }
+            }; /* Unbalanced */
 #undef ARGS_RAW
 #undef ARGS_NEW_EXP
 #undef ARGS_SAME_EXP
@@ -3489,346 +3248,145 @@ public:
 
 
     class Butterfly {
-    public:
-        Butterfly() = delete;
-        static constexpr ComplexOrderStrategyType strategy
-            = ComplexOrderStrategyType::BUTTERFLY;
+#define ARGS_RAW(...) \
+        const std::string& symbol_outer1, \
+        const std::string& symbol_inner, \
+        const std::string& symbol_outer2, \
+        __VA_ARGS__, \
+        bool is_buy, \
+        bool to_open
 
-#define ARGS_RAW(outer,inner) \
-        const std::string& symbol_##outer##1, \
-        const std::string& symbol_##inner##1, \
-        const std::string& symbol_##outer##2
-
-#define ARGS(outer,inner) \
+#define ARGS(...) \
         const std::string& underlying, \
         unsigned int month, \
         unsigned int day, \
         unsigned int year, \
         bool are_calls, \
-        double strike_##outer##1, \
-        double strike_##inner##1, \
-        double strike_##outer##2
+        double strike_outer1, \
+        double strike_inner, \
+        double strike_outer2, \
+        __VA_ARGS__, \
+        bool is_buy, \
+        bool to_open
+
+        friend class PrivateBuildAccessor<Butterfly>;
 
         typedef OrderTicket(*raw_build_meth_ty)(const std::string&,
-                const std::string&, const std::string&, OrderInstruction,
-                OrderInstruction, size_t, size_t, bool, double);
+                const std::string&, const std::string&, size_t, size_t, bool,
+                bool, bool, double);
 
         typedef OrderTicket(*ex_build_meth_ty)(const std::string&, unsigned int,
             unsigned int, unsigned int, bool, double, double, double,
-            OrderInstruction, OrderInstruction, size_t, size_t, bool, double);
+            size_t, size_t, bool, bool, bool, double);
 
         static OrderTicket
-        build( ARGS_RAW(outer,inner),
-                OrderInstruction instr_outer,
-                OrderInstruction instr_inner,
-                size_t quantity_outer1,
-                size_t quantity_outer2,
-                bool market_order = true,
+        build( ARGS_RAW(size_t quantity1, size_t quantity2),
+                bool is_market_order = true,
                 double price = 0.0 )
         {
-            size_t quantity_inner = quantity_outer1 + quantity_outer2;
             return SpreadOrderBuilder::build( strategy,
-                {make_leg(symbol_outer1, instr_outer, quantity_outer1),
-                 make_leg(symbol_inner1, instr_inner, quantity_inner),
-                 make_leg(symbol_outer2, instr_outer, quantity_outer2)},
-                 market_order, price );
+                {make_leg(symbol_outer1, op_instr(is_buy, to_open), quantity1),
+                 make_leg(symbol_inner, op_instr(!is_buy, to_open),
+                          quantity1 + quantity2),
+                 make_leg(symbol_outer2, op_instr(is_buy, to_open), quantity2)},
+                 is_market_order, price );
         }
 
         static OrderTicket
-        build( ARGS(outer,inner),
-                OrderInstruction instr_outer,
-                OrderInstruction instr_inner,
-                size_t quantity_outer1,
-                size_t quantity_outer2,
-                bool market_order = true,
+        build( ARGS( size_t quantity1, size_t quantity2),
+                bool is_market_order = true,
                 double price = 0.0 )
         {
             return build(
                 O(underlying, month, day, year, are_calls, strike_outer1),
-                O(underlying, month, day, year, are_calls, strike_inner1),
+                O(underlying, month, day, year, are_calls, strike_inner),
                 O(underlying, month, day, year, are_calls, strike_outer2),
-                instr_outer, instr_inner, quantity_outer1, quantity_outer2,
-                market_order, price
+                quantity1, quantity2, is_buy, to_open, is_market_order, price
                 );
         }
-
     public:
+        Butterfly() = delete;
+
+        static constexpr ComplexOrderStrategyType strategy
+            = ComplexOrderStrategyType::BUTTERFLY;
+
+        static OrderTicket
+        Build( ARGS_RAW( size_t quantity ) )
+        { return build(symbol_outer1, symbol_inner, symbol_outer2,
+                       quantity, quantity, is_buy, to_open); }
+
+        static OrderTicket
+        Build( ARGS_RAW( size_t quantity ), double price )
+        { return build(symbol_outer1, symbol_inner, symbol_outer2,
+                       quantity, quantity, is_buy, to_open,
+                       false, price); }
+
+        static OrderTicket
+        Build( ARGS( size_t quantity ) )
+        { return build(underlying, month, day, year, are_calls,
+                       strike_outer1, strike_inner, strike_outer2,
+                       quantity, quantity, is_buy, to_open ); }
+
+        static OrderTicket
+        Build( ARGS( size_t quantity ) , double price)
+        { return build(underlying, month, day, year, are_calls,
+                       strike_outer1, strike_inner, strike_outer2,
+                       quantity, quantity, is_buy, to_open,
+                       false, price); }
+
         class Unbalanced {
-        public:
-            Unbalanced() = delete;
-            static constexpr ComplexOrderStrategyType strategy
-                = ComplexOrderStrategyType::UNBALANCED_BUTTERFLY;
+            friend class PrivateBuildAccessor<Unbalanced>;
+
+            typedef typename Butterfly::raw_build_meth_ty raw_build_meth_ty;
+            typedef typename Butterfly::ex_build_meth_ty ex_build_meth_ty;
 
             template< typename... T >
             static OrderTicket
             build( T... args )
             { return Butterfly::build(args...)
-                        .set_complex_strategy_type(strategy); }
+                  .set_complex_strategy_type(strategy); }
+
+        public:
+            Unbalanced() = delete;
+            static constexpr ComplexOrderStrategyType strategy
+                = ComplexOrderStrategyType::UNBALANCED_BUTTERFLY;
 
             static OrderTicket
-            BuyToOpen( ARGS_RAW(buy,sell),
-                        size_t quantity_buy1,
-                        size_t quantity_buy2 )
-            { return build(symbol_buy1, symbol_sell1, symbol_buy2,
-                                  BUY_TO_OPEN, SELL_TO_OPEN,
-                                  quantity_buy1, quantity_buy2); }
+            Build( ARGS_RAW( size_t quantity1, size_t quantity2) )
+            { return build(symbol_outer1, symbol_inner, symbol_outer2,
+                           quantity1, quantity2, is_buy, to_open); }
 
             static OrderTicket
-            BuyToOpen( ARGS_RAW(buy,sell),
-                        size_t quantity_buy1,
-                        size_t quantity_buy2,
-                        double price)
-            { return build(symbol_buy1, symbol_sell1, symbol_buy2,
-                                  BUY_TO_OPEN, SELL_TO_OPEN,
-                                  quantity_buy1, quantity_buy2, false, price); }
+            Build( ARGS_RAW( size_t quantity1, size_t quantity2), double price )
+            { return build(symbol_outer1, symbol_inner, symbol_outer2,
+                           quantity1, quantity2, is_buy, to_open,
+                           false, price); }
 
             static OrderTicket
-            BuyToOpen( ARGS(buy,sell),
-                        size_t quantity_buy1,
-                        size_t quantity_buy2 )
+            Build( ARGS( size_t quantity1, size_t quantity2) )
             { return build(underlying, month, day, year, are_calls,
-                                  strike_buy1, strike_sell1, strike_buy2,
-                                  BUY_TO_OPEN, SELL_TO_OPEN,
-                                  quantity_buy1, quantity_buy2 ); }
+                           strike_outer1, strike_inner, strike_outer2,
+                           quantity1, quantity2, is_buy, to_open ); }
 
             static OrderTicket
-            BuyToOpen( ARGS(buy,sell),
-                        size_t quantity_buy1,
-                        size_t quantity_buy2,
-                        double price )
+            Build( ARGS( size_t quantity1, size_t quantity2), double price)
             { return build(underlying, month, day, year, are_calls,
-                                  strike_buy1, strike_sell1, strike_buy2,
-                                  BUY_TO_OPEN, SELL_TO_OPEN,
-                                  quantity_buy1, quantity_buy2, false, price ); }
-
-            static OrderTicket
-            SellToOpen( ARGS_RAW(sell,buy),
-                         size_t quantity_sell1,
-                         size_t quantity_sell2 )
-            { return build(symbol_sell1, symbol_buy1, symbol_sell2,
-                                  SELL_TO_OPEN, BUY_TO_OPEN,
-                                  quantity_sell1, quantity_sell2); }
-
-            static OrderTicket
-            SellToOpen( ARGS_RAW(sell,buy),
-                         size_t quantity_sell1,
-                         size_t quantity_sell2,
-                         double price )
-            { return build(symbol_sell1, symbol_buy1, symbol_sell2,
-                                  SELL_TO_OPEN, BUY_TO_OPEN,
-                                  quantity_sell1, quantity_sell2, false, price); }
-
-            static OrderTicket
-            SellToOpen( ARGS(sell,buy),
-                         size_t quantity_sell1,
-                         size_t quantity_sell2 )
-            { return build(underlying, month, day, year, are_calls,
-                                  strike_sell1, strike_buy1, strike_sell2,
-                                  SELL_TO_OPEN, BUY_TO_OPEN,
-                                  quantity_sell1, quantity_sell2 ); }
-
-            static OrderTicket
-            SellToOpen( ARGS(sell,buy),
-                         size_t quantity_sell1,
-                         size_t quantity_sell2,
-                         double price )
-            { return build(underlying, month, day, year, are_calls,
-                                 strike_sell1, strike_buy1, strike_sell2,
-                                 SELL_TO_OPEN, BUY_TO_OPEN,
-                                 quantity_sell1, quantity_sell2, false, price ); }
-
-            static OrderTicket
-            BuyToClose( ARGS_RAW(buy,sell),
-                         size_t quantity_buy1,
-                         size_t quantity_buy2 )
-            { return build(symbol_buy1, symbol_sell1, symbol_buy2,
-                                  BUY_TO_CLOSE, SELL_TO_CLOSE,
-                                  quantity_buy1, quantity_buy2); }
-
-            static OrderTicket
-            BuyToClose( ARGS_RAW(buy,sell),
-                        size_t quantity_buy1,
-                        size_t quantity_buy2,
-                        double price)
-            { return build(symbol_buy1, symbol_sell1, symbol_buy2,
-                                  BUY_TO_CLOSE, SELL_TO_CLOSE,
-                                  quantity_buy1, quantity_buy2, false, price); }
-
-            static OrderTicket
-            BuyToClose( ARGS(buy,sell),
-                         size_t quantity_buy1,
-                         size_t quantity_buy2 )
-            { return build(underlying, month, day, year, are_calls,
-                                  strike_buy1, strike_sell1, strike_buy2,
-                                  BUY_TO_CLOSE, SELL_TO_CLOSE,
-                                  quantity_buy1, quantity_buy2 ); }
-
-            static OrderTicket
-            BuyToClose( ARGS(buy,sell),
-                         size_t quantity_buy1,
-                         size_t quantity_buy2,
-                         double price )
-            { return build(underlying, month, day, year, are_calls,
-                                  strike_buy1, strike_sell1, strike_buy2,
-                                  BUY_TO_CLOSE, SELL_TO_CLOSE,
-                                  quantity_buy1, quantity_buy2, false, price ); }
-
-            static OrderTicket
-            SellToClose( ARGS_RAW(sell,buy),
-                          size_t quantity_sell1,
-                          size_t quantity_sell2 )
-            { return build(symbol_sell1, symbol_buy1, symbol_sell2,
-                                  SELL_TO_CLOSE, BUY_TO_CLOSE,
-                                  quantity_sell1, quantity_sell2); }
-
-            static OrderTicket
-            SellToClose( ARGS_RAW(sell,buy),
-                          size_t quantity_sell1,
-                          size_t quantity_sell2,
-                          double price )
-            { return build(symbol_sell1, symbol_buy1, symbol_sell2,
-                                  SELL_TO_CLOSE, BUY_TO_CLOSE,
-                                  quantity_sell1, quantity_sell2, false, price); }
-
-            static OrderTicket
-            SellToClose( ARGS(sell,buy),
-                          size_t quantity_sell1,
-                          size_t quantity_sell2 )
-            { return build(underlying, month, day, year, are_calls,
-                                  strike_sell1, strike_buy1, strike_sell2,
-                                  SELL_TO_CLOSE, BUY_TO_CLOSE,
-                                  quantity_sell1, quantity_sell2 ); }
-
-            static OrderTicket
-            SellToClose( ARGS(sell,buy),
-                          size_t quantity_sell1,
-                          size_t quantity_sell2,
-                          double price )
-            { return build(underlying, month, day, year, are_calls,
-                                 strike_sell1, strike_buy1, strike_sell2,
-                                 SELL_TO_CLOSE, BUY_TO_CLOSE,
-                                 quantity_sell1, quantity_sell2, false, price ); }
+                           strike_outer1, strike_inner, strike_outer2,
+                           quantity1, quantity2, is_buy, to_open,
+                           false, price); }
         }; /* Unbalanced */
-
-        static OrderTicket
-        BuyToOpen( ARGS_RAW(buy,sell), size_t quantity )
-        { return build(symbol_buy1, symbol_sell1, symbol_buy2,
-                              BUY_TO_OPEN, SELL_TO_OPEN,
-                              quantity, quantity); }
-
-        static OrderTicket
-        BuyToOpen( ARGS_RAW(buy,sell), size_t quantity, double price)
-        { return build(symbol_buy1, symbol_sell1, symbol_buy2,
-                              BUY_TO_OPEN, SELL_TO_OPEN,
-                              quantity, quantity, false, price); }
-
-        static OrderTicket
-        BuyToOpen( ARGS(buy,sell), size_t quantity )
-        { return build(underlying, month, day, year, are_calls,
-                              strike_buy1, strike_sell1, strike_buy2,
-                              BUY_TO_OPEN, SELL_TO_OPEN,
-                              quantity, quantity ); }
-
-        static OrderTicket
-        BuyToOpen( ARGS(buy,sell), size_t quantity, double price )
-        { return build(underlying, month, day, year, are_calls,
-                              strike_buy1, strike_sell1, strike_buy2,
-                              BUY_TO_OPEN, SELL_TO_OPEN,
-                              quantity, quantity, false, price ); }
-
-        static OrderTicket
-        SellToOpen( ARGS_RAW(sell,buy), size_t quantity )
-        { return build(symbol_sell1, symbol_buy1, symbol_sell2,
-                              SELL_TO_OPEN, BUY_TO_OPEN,
-                              quantity, quantity); }
-
-        static OrderTicket
-        SellToOpen( ARGS_RAW(sell,buy), size_t quantity, double price )
-        { return build(symbol_sell1, symbol_buy1, symbol_sell2,
-                              SELL_TO_OPEN, BUY_TO_OPEN,
-                              quantity, quantity, false, price); }
-
-        static OrderTicket
-        SellToOpen( ARGS(sell,buy), size_t quantity )
-        { return build(underlying, month, day, year, are_calls,
-                              strike_sell1, strike_buy1, strike_sell2,
-                              SELL_TO_OPEN, BUY_TO_OPEN,
-                              quantity, quantity ); }
-
-        static OrderTicket
-        SellToOpen( ARGS(sell,buy), size_t quantity, double price )
-        { return build(underlying, month, day, year, are_calls,
-                             strike_sell1, strike_buy1, strike_sell2,
-                             SELL_TO_OPEN, BUY_TO_OPEN,
-                             quantity, quantity, false, price ); }
-
-        static OrderTicket
-        BuyToClose( ARGS_RAW(buy,sell), size_t quantity )
-        { return build(symbol_buy1, symbol_sell1, symbol_buy2,
-                              BUY_TO_CLOSE, SELL_TO_CLOSE,
-                              quantity, quantity); }
-
-        static OrderTicket
-        BuyToClose( ARGS_RAW(buy,sell), size_t quantity, double price )
-        { return build(symbol_buy1, symbol_sell1, symbol_buy2,
-                              BUY_TO_CLOSE, SELL_TO_CLOSE,
-                              quantity, quantity, false, price); }
-
-        static OrderTicket
-        BuyToClose( ARGS(buy,sell), size_t quantity )
-        { return build(underlying, month, day, year, are_calls,
-                              strike_buy1, strike_sell1, strike_buy2,
-                              BUY_TO_CLOSE, SELL_TO_CLOSE,
-                              quantity, quantity ); }
-
-        static OrderTicket
-        BuyToClose( ARGS(buy,sell), size_t quantity, double price )
-        { return build(underlying, month, day, year, are_calls,
-                              strike_buy1, strike_sell1, strike_buy2,
-                              BUY_TO_CLOSE, SELL_TO_CLOSE,
-                              quantity, quantity, false, price ); }
-
-        static OrderTicket
-        SellToClose( ARGS_RAW(sell,buy), size_t quantity)
-        { return build(symbol_sell1, symbol_buy1, symbol_sell2,
-                              SELL_TO_CLOSE, BUY_TO_CLOSE,
-                              quantity, quantity); }
-
-        static OrderTicket
-        SellToClose( ARGS_RAW(sell,buy), size_t quantity, double price )
-        { return build(symbol_sell1, symbol_buy1, symbol_sell2,
-                              SELL_TO_CLOSE, BUY_TO_CLOSE,
-                              quantity, quantity, false, price); }
-
-        static OrderTicket
-        SellToClose( ARGS(sell,buy), size_t quantity)
-        { return build(underlying, month, day, year, are_calls,
-                              strike_sell1, strike_buy1, strike_sell2,
-                              SELL_TO_CLOSE, BUY_TO_CLOSE,
-                              quantity, quantity ); }
-
-        static OrderTicket
-        SellToClose( ARGS(sell,buy), size_t quantity, double price )
-        { return build(underlying, month, day, year, are_calls,
-                             strike_sell1, strike_buy1, strike_sell2,
-                             SELL_TO_CLOSE, BUY_TO_CLOSE,
-                             quantity, quantity, false, price ); }
 #undef ARGS_RAW
 #undef ARGS
     }; /* Butterfly */
 
 
-    class BackRatio{ // TODO consider checking quantities !=
-    public:
-        BackRatio() = delete;
-        static constexpr ComplexOrderStrategyType strategy
-            = ComplexOrderStrategyType::BACK_RATIO;
-
+    class BackRatio{
 #define ARGS_RAW \
         const std::string& symbol_buy, \
         const std::string& symbol_sell, \
         size_t quantity_buy, \
-        size_t quantity_sell
+        size_t quantity_sell, \
+        bool to_open
 
 #define ARGS \
         const std::string& underlying, \
@@ -3839,7 +3397,10 @@ public:
         double strike_buy, \
         double strike_sell, \
         size_t quantity_buy, \
-        size_t quantity_sell
+        size_t quantity_sell, \
+        bool to_open
+
+        friend class PrivateBuildAccessor<BackRatio>;
 
         typedef OrderTicket(*raw_build_meth_ty)(const std::string&,
                 const std::string&, size_t, size_t, bool, bool, double);
@@ -3849,82 +3410,60 @@ public:
             bool, bool, double);
 
         static OrderTicket
-        build( ARGS_RAW, bool to_open, bool market_order = true, double price = 0.0 )
+        build( ARGS_RAW, bool is_market_order = true, double price = 0.0 )
         {
-            OrderInstruction oi1 = to_open ? BUY_TO_OPEN : BUY_TO_CLOSE;
-            OrderInstruction oi2 = to_open ? SELL_TO_OPEN : SELL_TO_CLOSE;
             return SpreadOrderBuilder::build( strategy,
-                {make_leg(symbol_buy, oi1, quantity_buy),
-                 make_leg(symbol_sell, oi2, quantity_sell)},
-                 market_order, price);
+                {make_leg(symbol_buy, op_instr(true, to_open), quantity_buy),
+                 make_leg(symbol_sell, op_instr(false, to_open), quantity_sell)},
+                 is_market_order, price);
         }
 
         static OrderTicket
-        build( ARGS, bool to_open, bool market_order = true, double price = 0.0 )
+        build( ARGS, bool is_market_order = true, double price = 0.0 )
         {
             return build( O(underlying, month, day, year, are_calls, strike_buy),
                           O(underlying, month, day, year, are_calls, strike_sell),
-                          quantity_buy, quantity_sell, to_open, market_order,
+                          quantity_buy, quantity_sell, to_open, is_market_order,
                           price );
         }
 
-        static OrderTicket
-        Open( ARGS_RAW )
-        { return build( symbol_buy, symbol_sell, quantity_buy,
-                               quantity_sell, true ); }
+    public:
+        BackRatio() = delete;
+
+        static constexpr ComplexOrderStrategyType strategy
+            = ComplexOrderStrategyType::BACK_RATIO;
 
         static OrderTicket
-        Open( ARGS_RAW, double price )
-        { return build( symbol_buy, symbol_sell, quantity_buy,
-                              quantity_sell, true, false, price ); }
+        Build( ARGS_RAW )
+        { return build( symbol_buy, symbol_sell, quantity_buy, quantity_sell,
+                        to_open ); }
 
         static OrderTicket
-        Open( ARGS )
+        Build( ARGS_RAW, double price )
+        { return build( symbol_buy, symbol_sell, quantity_buy, quantity_sell,
+                        to_open, false, price ); }
+
+        static OrderTicket
+        Build( ARGS )
         { return build(underlying, month, day, year, are_calls, strike_buy,
-                              strike_sell, quantity_buy, quantity_sell, true); }
+                       strike_sell, quantity_buy, quantity_sell, to_open); }
 
         static OrderTicket
-        Open( ARGS, double price )
-        { return build(underlying, month, day, year, are_calls, strike_buy,
-                             strike_sell, quantity_buy, quantity_sell, true,
-                             false, price); }
-
-        static OrderTicket
-        Close( ARGS_RAW )
-        { return build(symbol_buy, symbol_sell, quantity_buy,
-                               quantity_sell, false); }
-
-        static OrderTicket
-        Close( ARGS_RAW, double price )
-        { return build( symbol_buy, symbol_sell, quantity_buy,
-                              quantity_sell, false, false, price ); }
-
-        static OrderTicket
-        Close( ARGS )
+        Build( ARGS, double price )
         { return build( underlying, month, day, year, are_calls, strike_buy,
-                               strike_sell, quantity_buy, quantity_sell,
-                               false ); }
-
-        static OrderTicket
-        Close( ARGS, double price )
-        { return build( underlying, month, day, year, are_calls, strike_buy,
-                              strike_sell,  quantity_buy, quantity_sell, false,
-                              false, price ); }
+                        strike_sell, quantity_buy, quantity_sell, to_open,
+                        false, price); }
 #undef ARGS_RAW
 #undef ARGS
     };
 
 
     class Calendar {
-    public:
-        Calendar() = delete;
-        static constexpr ComplexOrderStrategyType strategy
-            = ComplexOrderStrategyType::CALENDAR;
-
 #define ARGS_RAW \
         const std::string& symbol_buy, \
         const std::string& symbol_sell, \
-        size_t quantity
+        size_t quantity, \
+        bool to_open
 
 #define ARGS \
         const std::string& underlying, \
@@ -3936,7 +3475,10 @@ public:
         unsigned int year_sell, \
         bool are_calls, \
         double strike, \
-        size_t quantity
+        size_t quantity, \
+        bool to_open
+
+        friend class PrivateBuildAccessor<Calendar>;
 
         typedef OrderTicket(*raw_build_meth_ty)(const std::string&,
                 const std::string&, size_t, bool, bool, double);
@@ -3946,79 +3488,61 @@ public:
             unsigned int, bool, double, size_t, bool, bool, double);
 
         static OrderTicket
-        build( ARGS_RAW, bool to_open, bool market_order = true, double price = 0.0 )
+        build( ARGS_RAW, bool is_market_order = true, double price = 0.0 )
         {
-            OrderInstruction oi1 = to_open ? BUY_TO_OPEN : BUY_TO_CLOSE;
-            OrderInstruction oi2 = to_open ? SELL_TO_OPEN : SELL_TO_CLOSE;
             return SpreadOrderBuilder::build( strategy,
-                {make_leg(symbol_buy, oi1, quantity),
-                 make_leg(symbol_sell, oi2, quantity)},
-                market_order, price );
+                {make_leg(symbol_buy, op_instr(true, to_open), quantity),
+                 make_leg(symbol_sell, op_instr(false, to_open), quantity)},
+                is_market_order, price );
         }
 
         static OrderTicket
-        build( ARGS, bool to_open, bool market_order = true, double price = 0.0 )
+        build( ARGS, bool is_market_order = true, double price = 0.0 )
         {
             return build(
                 O(underlying, month_buy, day_buy, year_buy, are_calls, strike),
                 O(underlying, month_sell, day_sell, year_sell, are_calls, strike),
-                quantity, to_open, market_order, price );
+                quantity, to_open, is_market_order, price );
         }
 
-        static OrderTicket
-        Open( ARGS_RAW )
-        { return build(symbol_buy, symbol_sell, quantity, true); }
+    public:
+        Calendar() = delete;
+
+        static constexpr ComplexOrderStrategyType strategy
+            = ComplexOrderStrategyType::CALENDAR;
 
         static OrderTicket
-        Open( ARGS_RAW, double price )
-        { return build(symbol_buy, symbol_sell, quantity, true, false, price); }
+        Build( ARGS_RAW )
+        { return build( symbol_buy, symbol_sell, quantity, to_open ); }
 
         static OrderTicket
-        Open( ARGS )
-        { return build( underlying, month_buy, day_buy, year_buy,
-                               month_sell, day_sell, year_sell, are_calls,
-                               strike, quantity, true ); }
+        Build( ARGS_RAW, double price )
+        { return build( symbol_buy, symbol_sell, quantity, to_open, false,
+                        price ); }
 
         static OrderTicket
-        Open( ARGS, double price )
-        { return build( underlying, month_buy, day_buy, year_buy,
-                               month_sell, day_sell, year_sell, are_calls,
-                               strike, quantity, true, false, price ); }
+        Build( ARGS )
+        { return build( underlying, month_buy, day_buy, year_buy, month_sell,
+                        day_sell, year_sell, are_calls, strike, quantity,
+                        to_open); }
 
         static OrderTicket
-        Close( ARGS_RAW )
-        { return build(symbol_buy, symbol_sell, quantity, false); }
+        Build( ARGS, double price )
+        { return build( underlying, month_buy, day_buy, year_buy, month_sell,
+                        day_sell, year_sell, are_calls, strike, quantity,
+                        to_open, false, price ); }
 
-        static OrderTicket
-        Close( ARGS_RAW, double price )
-        { return build(symbol_buy, symbol_sell, quantity, false, false, price); }
-
-        static OrderTicket
-        Close( ARGS )
-        { return build( underlying, month_buy, day_buy, year_buy,
-                               month_sell, day_sell, year_sell, are_calls,
-                               strike, quantity, false ); }
-
-        static OrderTicket
-        Close( ARGS, double price )
-        { return build( underlying, month_buy, day_buy, year_buy,
-                               month_sell, day_sell, year_sell, are_calls,
-                               strike, quantity, false, false, price ); }
 #undef ARGS_RAW
 #undef ARGS
     }; /* Calendar */
 
 
     class Diagonal {
-    public:
-        Diagonal() = delete;
-        static constexpr ComplexOrderStrategyType strategy
-            = ComplexOrderStrategyType::DIAGONAL;
-
 #define ARGS_RAW \
         const std::string& symbol_buy, \
         const std::string& symbol_sell, \
-        size_t quantity
+        size_t quantity, \
+        bool to_open
 
 #define ARGS \
         const std::string& underlying, \
@@ -4031,7 +3555,10 @@ public:
         bool are_calls, \
         double strike_buy, \
         double strike_sell, \
-        size_t quantity
+        size_t quantity, \
+        bool to_open
+
+        friend class PrivateBuildAccessor<Diagonal>;
 
         typedef OrderTicket(*raw_build_meth_ty)(const std::string&,
                 const std::string&, size_t, bool, bool, double);
@@ -4041,83 +3568,64 @@ public:
             unsigned int, bool, double, double, size_t, bool, bool, double);
 
         static OrderTicket
-        build( ARGS_RAW, bool to_open, bool market_order = true, double price = 0.0 )
+        build( ARGS_RAW, bool is_market_order = true, double price = 0.0 )
         {
-            OrderInstruction oi1 = to_open ? BUY_TO_OPEN : BUY_TO_CLOSE;
-            OrderInstruction oi2 = to_open ? SELL_TO_OPEN : SELL_TO_CLOSE;
             return SpreadOrderBuilder::build( strategy,
-                {make_leg(symbol_buy, oi1, quantity),
-                 make_leg(symbol_sell, oi2, quantity)},
-                market_order, price );
+                {make_leg(symbol_buy, op_instr(true, to_open), quantity),
+                 make_leg(symbol_sell, op_instr(false, to_open), quantity)},
+                is_market_order, price );
         }
 
         static OrderTicket
-        build( ARGS, bool to_open, bool market_order = true, double price = 0.0 )
+        build( ARGS, bool is_market_order = true, double price = 0.0 )
         {
             return build(
                 O(underlying, month_buy, day_buy, year_buy, are_calls,
                     strike_buy),
                 O(underlying, month_sell, day_sell, year_sell, are_calls,
                     strike_sell),
-                quantity, to_open, market_order, price );
+                quantity, to_open, is_market_order, price );
         }
 
-        static OrderTicket
-        Open( ARGS_RAW )
-        { return build(symbol_buy, symbol_sell, quantity, true); }
+    public:
+        Diagonal() = delete;
+
+        static constexpr ComplexOrderStrategyType strategy
+            = ComplexOrderStrategyType::DIAGONAL;
 
         static OrderTicket
-        Open( ARGS_RAW, double price )
-        { return build(symbol_buy, symbol_sell, quantity, true, false, price); }
+        Build( ARGS_RAW )
+        { return build( symbol_buy, symbol_sell, quantity, to_open ); }
 
         static OrderTicket
-        Open( ARGS )
-        { return build( underlying, month_buy, day_buy, year_buy,
-                               month_sell, day_sell, year_sell, are_calls,
-                               strike_buy, strike_sell, quantity, true ); }
+        Build( ARGS_RAW, double price )
+        { return build( symbol_buy, symbol_sell, quantity, to_open, false,
+                        price ); }
 
         static OrderTicket
-        Open( ARGS, double price )
-        { return build( underlying, month_buy, day_buy, year_buy,
-                               month_sell, day_sell, year_sell, are_calls,
-                               strike_buy, strike_sell, quantity, true,
-                               false, price ); }
+        Build( ARGS )
+        { return build( underlying, month_buy, day_buy, year_buy, month_sell,
+                        day_sell, year_sell, are_calls, strike_buy,
+                        strike_sell, quantity, to_open); }
 
         static OrderTicket
-        Close( ARGS_RAW )
-        { return build(symbol_buy, symbol_sell, quantity, false); }
+        Build( ARGS, double price )
+        { return build( underlying, month_buy, day_buy, year_buy, month_sell,
+                        day_sell, year_sell, are_calls, strike_buy,
+                        strike_sell, quantity, to_open, false, price ); }
 
-        static OrderTicket
-        Close( ARGS_RAW, double price )
-        { return build(symbol_buy, symbol_sell, quantity, false, false, price); }
-
-        static OrderTicket
-        Close( ARGS )
-        { return build( underlying, month_buy, day_buy, year_buy,
-                               month_sell, day_sell, year_sell, are_calls,
-                               strike_buy, strike_sell, quantity, false ); }
-
-        static OrderTicket
-        Close( ARGS, double price )
-        { return build( underlying, month_buy, day_buy, year_buy,
-                               month_sell, day_sell, year_sell, are_calls,
-                               strike_buy, strike_sell, quantity, false,
-                               false, price ); }
 #undef ARGS_RAW
 #undef ARGS
     }; /* Diagonal */
 
 
     class Straddle {
-    public:
-        Straddle() = delete;
-        static constexpr ComplexOrderStrategyType strategy
-            = ComplexOrderStrategyType::STRADDLE;
-
 #define ARGS_RAW \
         const std::string& symbol_call, \
         const std::string& symbol_put, \
-        size_t quantity
+        size_t quantity, \
+        bool is_buy, \
+        bool to_open
 
 #define ARGS \
         const std::string& underlying, \
@@ -4125,261 +3633,69 @@ public:
         unsigned int day, \
         unsigned int year, \
         double strike, \
-        size_t quantity
+        size_t quantity, \
+        bool is_buy, \
+        bool to_open
+
+        friend class PrivateBuildAccessor<Straddle>;
 
         typedef OrderTicket(*raw_build_meth_ty)(const std::string&,
-                const std::string&, size_t, OrderInstruction, bool, double);
+                const std::string&, size_t, bool, bool, bool, double);
 
         typedef OrderTicket(*ex_build_meth_ty)(const std::string&, unsigned int,
-            unsigned int, unsigned int, double, size_t, OrderInstruction,
+            unsigned int, unsigned int, double, size_t,  bool, bool,
             bool, double);
 
         static OrderTicket
-        build( ARGS_RAW,
-                OrderInstruction instruction,
-                bool market_order = true,
-                double price = 0.0 )
+        build( ARGS_RAW, bool is_market_order = true, double price = 0.0 )
         { return SpreadOrderBuilder::build( strategy,
-                    {make_leg(symbol_call, instruction, quantity),
-                     make_leg(symbol_put, instruction, quantity)},
-                     market_order, price ); }
+                    {make_leg(symbol_call, op_instr(is_buy, to_open), quantity),
+                     make_leg(symbol_put, op_instr(is_buy, to_open), quantity)},
+                     is_market_order, price ); }
 
         static OrderTicket
-        build( ARGS,
-               OrderInstruction instruction,
-               bool market_order = true,
-               double price = 0.0 )
+        build( ARGS, bool is_market_order = true, double price = 0.0 )
         { return build( O(underlying, month, day, year, true, strike),
-                                 O(underlying, month, day, year, false, strike),
-                                 quantity, instruction, market_order, price ); }
+                        O(underlying, month, day, year, false, strike),
+                        quantity, is_buy, to_open, is_market_order, price ); }
+
+    public:
+        Straddle() = delete;
+
+        static constexpr ComplexOrderStrategyType strategy
+            = ComplexOrderStrategyType::STRADDLE;
 
         static OrderTicket
-        BuyToOpen( ARGS_RAW )
-        { return build( symbol_call, symbol_put, quantity,
-                              BUY_TO_OPEN ); }
+        Build( ARGS_RAW )
+        { return build( symbol_call, symbol_put, quantity, is_buy, to_open ); }
 
         static OrderTicket
-        BuyToOpen( ARGS_RAW, double price )
-        { return build( symbol_call, symbol_put, quantity,
-                              BUY_TO_OPEN, false, price ); }
+        Build( ARGS_RAW, double price )
+        { return build( symbol_call, symbol_put, quantity, is_buy, to_open,
+                        false, price ); }
 
         static OrderTicket
-        BuyToOpen( ARGS )
+        Build( ARGS )
         { return build( underlying, month, day, year, strike, quantity,
-                               BUY_TO_OPEN ); }
+                        is_buy, to_open ); }
 
         static OrderTicket
-        BuyToOpen( ARGS, double price )
+        Build( ARGS, double price )
         { return build( underlying, month, day, year, strike, quantity,
-                              BUY_TO_OPEN, false, price ); }
+                        is_buy, to_open, false, price ); }
 
-        static OrderTicket
-        SellToOpen( ARGS_RAW )
-        { return build( symbol_call, symbol_put, quantity,
-                               SELL_TO_OPEN ); }
-
-        static OrderTicket
-        SellToOpen( ARGS_RAW, double price )
-        { return build( symbol_call, symbol_put, quantity,
-                              SELL_TO_OPEN, false, price ); }
-
-        static OrderTicket
-        SellToOpen( ARGS )
-        { return build( underlying, month, day, year, strike, quantity,
-                               SELL_TO_OPEN ); }
-
-        static OrderTicket
-        SellToOpen( ARGS, double price )
-        { return build( underlying, month, day, year, strike, quantity,
-                              SELL_TO_OPEN, false, price ); }
-
-        static OrderTicket
-        BuyToClose( ARGS_RAW )
-        { return build( symbol_call, symbol_put, quantity,
-                              BUY_TO_CLOSE ); }
-
-        static OrderTicket
-        BuyToClose( ARGS_RAW, double price )
-        { return build( symbol_call, symbol_put, quantity,
-                             BUY_TO_CLOSE, false, price ); }
-
-        static OrderTicket
-        BuyToClose( ARGS )
-        { return build( underlying, month, day, year, strike, quantity,
-                               BUY_TO_CLOSE ); }
-
-        static OrderTicket
-        BuyToClose( ARGS, double price )
-        { return build( underlying, month, day, year, strike, quantity,
-                              BUY_TO_CLOSE, false, price ); }
-
-        static OrderTicket
-        SellToClose( ARGS_RAW )
-        { return build( symbol_call, symbol_put, quantity,
-                              SELL_TO_CLOSE ); }
-
-        static OrderTicket
-        SellToClose( ARGS_RAW, double price )
-        { return build( symbol_call, symbol_put, quantity,
-                             SELL_TO_CLOSE, false, price ); }
-
-        static OrderTicket
-        SellToClose( ARGS )
-        { return build( underlying, month, day, year, strike, quantity,
-                               SELL_TO_CLOSE ); }
-
-        static OrderTicket
-        SellToClose( ARGS, double price )
-        { return build( underlying, month, day, year, strike, quantity,
-                              SELL_TO_CLOSE, false, price); }
 #undef ARGS_RAW
 #undef ARGS
     }; /* STRADDLE */
 
 
     class Strangle {
-    public:
-        Strangle() = delete;
-        static constexpr ComplexOrderStrategyType strategy
-            = ComplexOrderStrategyType::STRANGLE;
-
 #define ARGS_RAW \
         const std::string& symbol_call, \
         const std::string& symbol_put, \
-        size_t quantity
-
-#define ARGS \
-        const std::string& underlying, \
-        unsigned int month, \
-        unsigned int day, \
-        unsigned int year, \
-        double strike_call, \
-        double strike_put, \
-        size_t quantity
-
-        typedef OrderTicket(*raw_build_meth_ty)(const std::string&,
-                const std::string&, size_t, OrderInstruction, bool, double);
-
-        typedef OrderTicket(*ex_build_meth_ty)(const std::string&, unsigned int,
-            unsigned int, unsigned int, double, double, size_t,
-            OrderInstruction, bool, double);
-
-        static OrderTicket
-        build( ARGS_RAW,
-                OrderInstruction instruction,
-                bool market_order = true,
-                double price = 0.0 )
-        {
-            return SpreadOrderBuilder::build( strategy,
-                    {make_leg(symbol_call, instruction, quantity),
-                     make_leg(symbol_put, instruction, quantity)},
-                     market_order, price );
-        }
-
-        static OrderTicket
-        build( ARGS,
-                OrderInstruction instruction,
-                bool market_order = true,
-                double price = 0.0 )
-        {
-            return build( O(underlying, month, day, year, true, strike_call),
-                          O(underlying, month, day, year, false, strike_put),
-                          quantity, instruction, market_order, price );
-        }
-
-        static OrderTicket
-        BuyToOpen( ARGS_RAW )
-        { return build( symbol_call, symbol_put, quantity,
-                               BUY_TO_OPEN ); }
-
-        static OrderTicket
-        BuyToOpen( ARGS_RAW, double price )
-        { return build( symbol_call, symbol_put, quantity,
-                              BUY_TO_OPEN, false, price ); }
-
-        static OrderTicket
-        BuyToOpen( ARGS )
-        { return build( underlying, month, day, year, strike_call,
-                               strike_put, quantity, BUY_TO_OPEN ); }
-
-        static OrderTicket
-        BuyToOpen( ARGS, double price )
-        { return build( underlying, month, day, year, strike_call,
-                              strike_put, quantity, BUY_TO_OPEN, false, price ); }
-
-        static OrderTicket
-        SellToOpen( ARGS_RAW )
-        { return build( symbol_call, symbol_put, quantity,
-                               SELL_TO_OPEN ); }
-
-        static OrderTicket
-        SellToOpen( ARGS_RAW, double price )
-        { return build( symbol_call, symbol_put, quantity,
-                              SELL_TO_OPEN, false, price ); }
-
-        static OrderTicket
-        SellToOpen( ARGS )
-        { return build( underlying, month, day, year, strike_call,
-                               strike_put, quantity, SELL_TO_OPEN ); }
-
-        static OrderTicket
-        SellToOpen( ARGS, double price )
-        { return build( underlying, month, day, year, strike_call,
-                              strike_put, quantity, SELL_TO_OPEN, false, price ); }
-
-        static OrderTicket
-        BuyToClose( ARGS_RAW )
-        { return build( symbol_call, symbol_put, quantity,
-                               BUY_TO_CLOSE ); }
-
-        static OrderTicket
-        BuyToClose( ARGS_RAW, double price )
-        { return build( symbol_call, symbol_put, quantity,
-                              BUY_TO_CLOSE, false, price ); }
-
-        static OrderTicket
-        BuyToClose( ARGS )
-        { return build( underlying, month, day, year, strike_call,
-                               strike_put, quantity, BUY_TO_CLOSE ); }
-
-        static OrderTicket
-        BuyToClose( ARGS, double price )
-        { return build( underlying, month, day, year, strike_call,
-                              strike_put, quantity, BUY_TO_CLOSE, false, price ); }
-        static OrderTicket
-        SellToClose( ARGS_RAW )
-        { return build( symbol_call, symbol_put, quantity,
-                               SELL_TO_CLOSE ); }
-
-        static OrderTicket
-        SellToClose( ARGS_RAW, double price )
-        { return build( symbol_call, symbol_put, quantity,
-                              SELL_TO_CLOSE, false, price ); }
-
-        static OrderTicket
-        SellToClose( ARGS )
-        { return build( underlying, month, day, year, strike_call,
-                               strike_put, quantity, SELL_TO_CLOSE ); }
-
-        static OrderTicket
-        SellToClose( ARGS, double price )
-        { return build( underlying, month, day, year, strike_call,
-                              strike_put, quantity, SELL_TO_CLOSE, false, price); }
-#undef ARGS_RAW
-#undef ARGS
-    }; /* STRANGLE */
-
-
-    class CollarSynthetic {
-    public:
-        CollarSynthetic() = delete;
-        static constexpr ComplexOrderStrategyType strategy
-            = ComplexOrderStrategyType::COLLAR_SYNTHETIC;
-
-#define ARGS_RAW \
-        const std::string& symbol_buy, \
-        const std::string& symbol_sell, \
-        size_t quantity
+        size_t quantity, \
+        bool is_buy, \
+        bool to_open
 
 #define ARGS \
         const std::string& underlying, \
@@ -4389,7 +3705,83 @@ public:
         double strike_call, \
         double strike_put, \
         size_t quantity, \
-        bool is_buy
+        bool is_buy, \
+        bool to_open
+
+        friend class PrivateBuildAccessor<Strangle>;
+
+        typedef OrderTicket(*raw_build_meth_ty)(const std::string&,
+                const std::string&, size_t,  bool, bool, bool, double);
+
+        typedef OrderTicket(*ex_build_meth_ty)(const std::string&, unsigned int,
+            unsigned int, unsigned int, double, double, size_t,
+            bool, bool, bool, double);
+
+        static OrderTicket
+        build( ARGS_RAW, bool is_market_order = true, double price = 0.0 )
+        {
+            return SpreadOrderBuilder::build( strategy,
+                    {make_leg(symbol_call, op_instr(is_buy, to_open), quantity),
+                     make_leg(symbol_put, op_instr(is_buy, to_open), quantity)},
+                     is_market_order, price );
+        }
+
+        static OrderTicket
+        build( ARGS, bool is_market_order = true, double price = 0.0 )
+        {
+            return build( O(underlying, month, day, year, true, strike_call),
+                          O(underlying, month, day, year, false, strike_put),
+                          quantity, is_buy, to_open, is_market_order, price );
+        }
+
+    public:
+        Strangle() = delete;
+
+        static constexpr ComplexOrderStrategyType strategy
+            = ComplexOrderStrategyType::STRANGLE;
+
+        static OrderTicket
+        Build( ARGS_RAW )
+        { return build( symbol_call, symbol_put, quantity, is_buy, to_open ); }
+
+        static OrderTicket
+        Build( ARGS_RAW, double price )
+        { return build( symbol_call, symbol_put, quantity, is_buy, to_open,
+                        false, price ); }
+
+        static OrderTicket
+        Build( ARGS )
+        { return build(underlying, month, day, year, strike_call,
+                       strike_put, quantity, is_buy, to_open); }
+
+        static OrderTicket
+        Build( ARGS, double price )
+        { return build( underlying, month, day, year, strike_call,
+                        strike_put, quantity, is_buy, to_open, false, price ); }
+#undef ARGS_RAW
+#undef ARGS
+    }; /* STRANGLE */
+
+
+    class CollarSynthetic {
+#define ARGS_RAW \
+        const std::string& symbol_buy, \
+        const std::string& symbol_sell, \
+        size_t quantity, \
+        bool to_open
+
+#define ARGS \
+        const std::string& underlying, \
+        unsigned int month, \
+        unsigned int day, \
+        unsigned int year, \
+        double strike_call, \
+        double strike_put, \
+        size_t quantity, \
+        bool is_buy, \
+        bool to_open
+
+        friend class PrivateBuildAccessor<CollarSynthetic>;
 
         typedef OrderTicket(*raw_build_meth_ty)(const std::string&,
             const std::string&, size_t, bool, bool, double);
@@ -4399,60 +3791,48 @@ public:
             size_t, bool, bool, bool, double);
 
         static OrderTicket
-        build( ARGS_RAW, bool to_open, bool market_order = true, double price = 0.0 )
+        build( ARGS_RAW, bool is_market_order = true, double price = 0.0 )
         {
-            OrderInstruction oi1 = to_open ? BUY_TO_OPEN : BUY_TO_CLOSE;
-            OrderInstruction oi2 = to_open ? SELL_TO_OPEN : SELL_TO_CLOSE;
             return SpreadOrderBuilder::build( strategy,
-                    {make_leg(symbol_buy, oi1, quantity),
-                     make_leg(symbol_sell, oi2, quantity)},
-                    market_order, price );
+                    {make_leg(symbol_buy, op_instr(true, to_open), quantity),
+                     make_leg(symbol_sell, op_instr(false, to_open), quantity)},
+                    is_market_order, price );
         }
 
         static OrderTicket
-        build( ARGS, bool to_open, bool market_order = true, double price = 0.0 )
+        build( ARGS, bool is_market_order = true, double price = 0.0 )
         {
             auto c = O(underlying, month, day, year, true, strike_call);
             auto p = O(underlying, month, day, year, false, strike_put);
             return build( is_buy ? c : p, is_buy ? p : c,
-                          quantity, to_open, market_order, price );
+                          quantity, to_open, is_market_order, price );
         }
 
-        static OrderTicket
-        Open( ARGS_RAW )
-        { return build(symbol_buy, symbol_sell, quantity, true); }
+    public:
+        CollarSynthetic() = delete;
+
+        static constexpr ComplexOrderStrategyType strategy
+            = ComplexOrderStrategyType::COLLAR_SYNTHETIC;
 
         static OrderTicket
-        Open( ARGS_RAW, double price )
-        { return build( symbol_buy, symbol_sell, quantity, true, false, price); }
+        Build( ARGS_RAW )
+        { return build(symbol_buy, symbol_sell, quantity, to_open); }
 
         static OrderTicket
-        Open( ARGS )
+        Build( ARGS_RAW, double price )
+        { return build( symbol_buy, symbol_sell, quantity, to_open, false,
+                        price); }
+
+        static OrderTicket
+        Build( ARGS )
         { return build( underlying, month, day, year, strike_call, strike_put,
-                        quantity, is_buy, true ); }
+                        quantity, is_buy, to_open ); }
 
         static OrderTicket
-        Open( ARGS, double price )
+        Build( ARGS, double price )
         { return build( underlying, month, day, year, strike_call, strike_put,
-                              quantity, is_buy, true, false, price); }
+                              quantity, is_buy, to_open, false, price); }
 
-        static OrderTicket
-        Close( ARGS_RAW )
-        { return build( symbol_buy, symbol_sell, quantity, false ); }
-
-        static OrderTicket
-        Close( ARGS_RAW, double price )
-        { return build( symbol_buy, symbol_sell, quantity, false, false, price); }
-
-        static OrderTicket
-        Close( ARGS )
-        { return build( underlying, month, day, year, strike_call, strike_put,
-                        quantity, is_buy, false ); }
-
-        static OrderTicket
-        Close( ARGS, double price )
-        { return build( underlying, month, day, year, strike_call, strike_put,
-                        quantity, is_buy, false, false, price); }
 #undef ARGS_RAW
 #undef ARGS
     }; /* CollarSynthetic */
@@ -4460,16 +3840,13 @@ public:
 
     // NOTE - 'Buy' refers to the stock side (buy put, sell call)
     class CollarWithStock {
-    public:
-        CollarWithStock() = delete;
-        static constexpr ComplexOrderStrategyType strategy
-            = ComplexOrderStrategyType::COLLAR_WITH_STOCK;
-
 #define ARGS_RAW \
         const std::string& symbol_option_buy, \
         const std::string& symbol_option_sell, \
         const std::string& symbol_stock, \
-        size_t quantity
+        size_t quantity, \
+        bool is_buy, \
+        bool to_open
 
 #define ARGS \
         const std::string& underlying, \
@@ -4478,7 +3855,11 @@ public:
         unsigned int year, \
         double strike_call, \
         double strike_put, \
-        size_t quantity
+        size_t quantity, \
+        bool is_buy, \
+        bool to_open
+
+        friend class PrivateBuildAccessor<CollarWithStock>;
 
         typedef OrderTicket(*raw_build_meth_ty)(const std::string&,
             const std::string&, const std::string&, size_t, bool, bool, bool,
@@ -4489,176 +3870,111 @@ public:
             bool, bool, bool, double);
 
         static OrderTicket
-        build( ARGS_RAW,
-                bool is_buy,
-                bool to_open,
-                bool market_order = true,
-                double price = 0.0 )
+        build( ARGS_RAW, bool is_market_order = true, double price = 0.0 )
         {
-            OrderInstruction oi1 = to_open ? BUY_TO_OPEN : BUY_TO_CLOSE;
-            OrderInstruction oi2 = to_open ? SELL_TO_OPEN : SELL_TO_CLOSE;
-            OrderInstruction oi3 = to_open ? (is_buy ? BUY : SELL_SHORT )
-                                           : (is_buy ? BUY_TO_COVER : SELL );
-            return SpreadOrderBuilder::build( strategy,
-                    {make_leg(symbol_option_buy, oi1, quantity),
-                     make_leg(symbol_option_sell, oi2, quantity)},
-                    market_order, price )
-                .add_leg({EQUITY, symbol_stock, oi3, quantity * 100});
+            OrderTicket o = SpreadOrderBuilder::build( strategy,
+                    { make_leg(symbol_option_buy, op_instr(true, to_open),
+                               quantity),
+                      make_leg(symbol_option_sell, op_instr(false, to_open),
+                               quantity) },
+                    is_market_order, price );
+
+            return o.add_leg( {OrderAssetType::EQUITY, symbol_stock,
+                               eq_instr(is_buy, to_open), quantity * 100} );
         }
 
         static OrderTicket
-        build( ARGS,
-                bool is_buy,
-                bool to_open,
-                bool market_order = true,
-                double price = 0.0 )
+        build( ARGS, bool is_market_order = true, double price = 0.0 )
         {
             auto c = O(underlying, month, day, year, true, strike_call);
             auto p = O(underlying, month, day, year, false, strike_put);
-            return build( is_buy ? p : c, is_buy ? c : p,
-                                   underlying, quantity, is_buy, to_open,
-                                   market_order, price );
+            return build( is_buy ? p : c, is_buy ? c : p, underlying, quantity,
+                          is_buy, to_open, is_market_order, price );
         }
 
+    public:
+        CollarWithStock() = delete;
+
+        static constexpr ComplexOrderStrategyType strategy
+            = ComplexOrderStrategyType::COLLAR_WITH_STOCK;
+
         static OrderTicket
-        BuyToOpen( ARGS_RAW )
+        Build( ARGS_RAW )
         { return build( symbol_option_buy, symbol_option_sell,
-                               symbol_stock, quantity, true, true ); }
+                        symbol_stock, quantity, is_buy, to_open ); }
 
         static OrderTicket
-        BuyToOpen( ARGS_RAW, double price)
-        { return build( symbol_option_buy, symbol_option_sell,
-                              symbol_stock, quantity, true, true, false, price ); }
+        Build( ARGS_RAW, double price)
+        { return build( symbol_option_buy, symbol_option_sell, symbol_stock,
+                        quantity, is_buy, to_open, false, price ); }
 
         static OrderTicket
-        BuyToOpen( ARGS )
+        Build( ARGS )
         { return build( underlying, month, day, year, strike_call, strike_put,
-                        quantity, true, true ); }
+                        quantity, is_buy, to_open ); }
 
         static OrderTicket
-        BuyToOpen( ARGS, double price )
+        Build( ARGS, double price )
         { return build( underlying, month, day, year, strike_call, strike_put,
-                        quantity, true, true, false, price); }
+                        quantity, is_buy, to_open, false, price); }
 
-        static OrderTicket
-        SellToOpen( ARGS_RAW )
-        { return build( symbol_option_buy, symbol_option_sell,
-                               symbol_stock, quantity, false, true ); }
-
-        static OrderTicket
-        SellToOpen( ARGS_RAW, double price)
-        { return build( symbol_option_buy, symbol_option_sell,
-                              symbol_stock, quantity, false, true, false, price ); }
-
-        static OrderTicket
-        SellToOpen( ARGS )
-        { return build( underlying, month, day, year, strike_call, strike_put,
-                        quantity, false, true ); }
-
-        static OrderTicket
-        SellToOpen( ARGS, double price )
-        { return build( underlying, month, day, year, strike_call, strike_put,
-                        quantity, false, true, false, price ); }
-
-        static OrderTicket
-        BuyToClose( ARGS_RAW )
-        { return build( symbol_option_buy, symbol_option_sell,
-                               symbol_stock, quantity, true, false ); }
-
-        static OrderTicket
-        BuyToClose( ARGS_RAW, double price)
-        { return build( symbol_option_buy, symbol_option_sell,
-                              symbol_stock, quantity, true, false, false, price ); }
-
-        static OrderTicket
-        BuyToClose( ARGS )
-        { return build( underlying, month, day, year, strike_call, strike_put,
-                        quantity, true, false ); }
-
-        static OrderTicket
-        BuyToClose( ARGS, double price )
-        { return build( underlying, month, day, year, strike_call, strike_put,
-                        quantity, true, false, false, price ); }
-
-        static OrderTicket
-        SellToClose( ARGS_RAW )
-        { return build( symbol_option_buy, symbol_option_sell,
-                               symbol_stock, quantity, false, false ); }
-
-        static OrderTicket
-        SellToClose( ARGS_RAW, double price)
-        { return build( symbol_option_buy, symbol_option_sell,
-                              symbol_stock, quantity, false, false, false, price ); }
-
-        static OrderTicket
-        SellToClose( ARGS )
-        { return build( underlying, month, day, year, strike_call, strike_put,
-                        quantity, false, false ); }
-
-        static OrderTicket
-        SellToClose( ARGS, double price )
-        { return build( underlying, month, day, year, strike_call, strike_put,
-                        quantity, false, false, false, price ); }
 #undef ARGS_RAW
 #undef ARGS
     }; /* CollarWithStock */
 
 
     class Condor {
-    public:
-        Condor() = delete;
-        static constexpr ComplexOrderStrategyType strategy
-            = ComplexOrderStrategyType::CONDOR;
+#define ARGS_RAW(...) \
+        const std::string& symbol_outer1,\
+        const std::string& symbol_inner1, \
+        const std::string& symbol_inner2, \
+        const std::string& symbol_outer2, \
+        __VA_ARGS__, \
+        bool is_buy, \
+        bool to_open
 
-#define ARGS_RAW(outer, inner) \
-        const std::string& symbol_##outer##1,\
-        const std::string& symbol_##inner##1, \
-        const std::string& symbol_##inner##2, \
-        const std::string& symbol_##outer##2
-
-#define ARGS(outer, inner) \
+#define ARGS(...) \
         const std::string& underlying, \
         unsigned int month, \
         unsigned int day, \
         unsigned int year, \
-        double strike_##outer##1, \
-        double strike_##inner##1, \
-        double strike_##inner##2, \
-        double strike_##outer##2, \
-        bool are_calls
+        double strike_outer1, \
+        double strike_inner1, \
+        double strike_inner2, \
+        double strike_outer2, \
+        bool are_calls, \
+        __VA_ARGS__, \
+        bool is_buy, \
+        bool to_open
+
+        friend class PrivateBuildAccessor<Condor>;
 
         typedef OrderTicket(*raw_build_meth_ty)(const std::string&,
             const std::string&, const std::string&, const std::string&,
-            OrderInstruction, OrderInstruction, size_t, size_t, bool, double);
+            size_t, size_t, bool, bool, bool, double);
 
         typedef OrderTicket(*ex_build_meth_ty)(const std::string&, unsigned int,
             unsigned int, unsigned int, double, double, double, double, bool,
-            OrderInstruction, OrderInstruction, size_t, size_t, bool, double);
+            size_t, size_t, bool, bool, bool, double);
 
         static OrderTicket
-        build( ARGS_RAW(outer, inner),
-                OrderInstruction instr_outer,
-                OrderInstruction instr_inner,
-                size_t quantity1,
-                size_t quantity2,
-                bool market_order = true,
+        build( ARGS_RAW(size_t quantity1, size_t quantity2),
+                bool is_market_order = true,
                 double price = 0.0 )
         {
+            auto instr_outer = op_instr(is_buy, to_open);
+            auto instr_inner = op_instr(!is_buy, to_open);
             return SpreadOrderBuilder::build( strategy,
                     {make_leg(symbol_outer1, instr_outer, quantity1),
                      make_leg(symbol_inner1, instr_inner, quantity1),
                      make_leg(symbol_inner2, instr_inner, quantity2),
                      make_leg(symbol_outer2, instr_outer, quantity2)},
-                    market_order, price );
+                    is_market_order, price );
         }
 
         static OrderTicket
-        build( ARGS(outer, inner),
-                OrderInstruction instr_outer,
-                OrderInstruction instr_inner,
-                size_t quantity1,
-                size_t quantity2,
-                bool market_order = true,
+        build( ARGS(size_t quantity1, size_t quantity2),
+                bool is_market_order = true,
                 double price = 0.0 )
         {
             return build(
@@ -4666,294 +3982,98 @@ public:
                 O(underlying, month, day, year, are_calls, strike_inner1),
                 O(underlying, month, day, year, are_calls, strike_inner2),
                 O(underlying, month, day, year, are_calls, strike_outer2),
-                instr_outer, instr_inner, quantity1, quantity2, market_order,
+                quantity1, quantity2, is_buy, to_open, is_market_order,
                 price);
         }
 
+    public:
+        Condor() = delete;
+
+        static constexpr ComplexOrderStrategyType strategy
+            = ComplexOrderStrategyType::CONDOR;
+
+        static OrderTicket
+        Build( ARGS_RAW(size_t quantity) )
+        { return build( symbol_outer1, symbol_inner1, symbol_inner2,
+                        symbol_outer2, quantity, quantity, is_buy, to_open ); }
+
+        static OrderTicket
+        Build( ARGS_RAW(size_t quantity), double price )
+        { return build( symbol_outer1, symbol_inner1, symbol_inner2,
+                        symbol_outer2, quantity, quantity, is_buy,
+                        to_open, false, price); }
+
+        static OrderTicket
+        Build( ARGS(size_t quantity) )
+        { return build( underlying, month, day, year, strike_outer1,
+                        strike_inner1, strike_inner2, strike_outer2,
+                        are_calls, quantity, quantity, is_buy, to_open ); }
+
+        static OrderTicket
+        Build( ARGS(size_t quantity), double price )
+        { return build( underlying, month, day, year, strike_outer1,
+                        strike_inner1, strike_inner2, strike_outer2,
+                        are_calls, quantity, quantity, is_buy, to_open,
+                        false, price ); }
+
         class Unbalanced{
-        public:
-            Unbalanced() = delete;
-            static constexpr ComplexOrderStrategyType strategy
-                = ComplexOrderStrategyType::UNBALANCED_CONDOR;
+            friend class PrivateBuildAccessor<Unbalanced>;
+
+            typedef typename Condor::raw_build_meth_ty raw_build_meth_ty;
+            typedef typename Condor::ex_build_meth_ty ex_build_meth_ty;
 
             template< typename... T >
             static OrderTicket
             build( T... args )
             { return Condor::build(args...)
-                        .set_complex_strategy_type(strategy); }
+                  .set_complex_strategy_type(strategy); }
+
+        public:
+            Unbalanced() = delete;
+
+            static constexpr ComplexOrderStrategyType strategy
+                = ComplexOrderStrategyType::UNBALANCED_CONDOR;
 
             static OrderTicket
-            BuyToOpen( ARGS_RAW(buy,sell),
-                        size_t quantity1,
-                        size_t quantity2 )
-            { return build( symbol_buy1, symbol_sell1, symbol_sell2,
-                                   symbol_buy2, BUY_TO_OPEN,
-                                   SELL_TO_OPEN, quantity1, quantity2); }
+            Build( ARGS_RAW(size_t quantity1, size_t quantity2) )
+            { return build( symbol_outer1, symbol_inner1, symbol_inner2,
+                            symbol_outer2, quantity1, quantity2, is_buy,
+                            to_open); }
 
             static OrderTicket
-            BuyToOpen( ARGS_RAW(buy,sell),
-                        size_t quantity1,
-                        size_t quantity2,
-                        double price )
-            { return build( symbol_buy1, symbol_sell1, symbol_sell2,
-                                  symbol_buy2, BUY_TO_OPEN, SELL_TO_OPEN,
-                                  quantity1, quantity2, false, price); }
+            Build( ARGS_RAW(size_t quantity1, size_t quantity2), double price )
+            { return build( symbol_outer1, symbol_inner1, symbol_inner2,
+                            symbol_outer2, quantity1, quantity2, is_buy,
+                            to_open, false, price); }
 
             static OrderTicket
-            BuyToOpen( ARGS(buy,sell),
-                        size_t quantity1,
-                        size_t quantity2 )
-            { return build( underlying, month, day, year, strike_buy1,
-                                   strike_sell1, strike_sell2, strike_buy2,
-                                   are_calls, BUY_TO_OPEN, SELL_TO_OPEN,
-                                   quantity1, quantity2 ); }
+            Build( ARGS(size_t quantity1, size_t quantity2) )
+            { return build( underlying, month, day, year, strike_outer1,
+                            strike_inner1, strike_inner2, strike_outer2,
+                            are_calls, quantity1, quantity2, is_buy, to_open ); }
 
             static OrderTicket
-            BuyToOpen( ARGS(buy, sell),
-                        size_t quantity1,
-                        size_t quantity2,
-                        double price )
-            { return build( underlying, month, day, year, strike_buy1,
-                                  strike_sell1, strike_sell2, strike_buy2,
-                                  are_calls, BUY_TO_OPEN, SELL_TO_OPEN,
-                                  quantity1, quantity2, false, price ); }
-
-            static OrderTicket
-            SellToOpen( ARGS_RAW(sell,buy),
-                         size_t quantity1,
-                         size_t quantity2 )
-            { return build( symbol_sell1, symbol_buy1, symbol_buy2,
-                                   symbol_sell2, SELL_TO_OPEN,
-                                   BUY_TO_OPEN, quantity1, quantity2); }
-
-            static OrderTicket
-            SellToOpen( ARGS_RAW(sell,buy),
-                        size_t quantity1,
-                        size_t quantity2,
-                        double price )
-            { return build( symbol_sell1, symbol_buy1, symbol_buy2,
-                                  symbol_sell2, SELL_TO_OPEN,
-                                  BUY_TO_OPEN, quantity1, quantity2,
-                                  false, price ); }
-
-            static OrderTicket
-            SellToOpen( ARGS(sell,buy),
-                         size_t quantity1,
-                         size_t quantity2 )
-            { return build( underlying, month, day, year, strike_sell1,
-                                   strike_buy1, strike_buy2, strike_sell2,
-                                   are_calls, SELL_TO_OPEN, BUY_TO_OPEN,
-                                   quantity1, quantity2 ); }
-
-            static OrderTicket
-            SellToOpen( ARGS(sell,buy),
-                        size_t quantity1,
-                        size_t quantity2,
-                        double price )
-            { return build( underlying, month, day, year, strike_sell1,
-                                  strike_buy1, strike_buy2, strike_sell2,
-                                  are_calls, SELL_TO_OPEN, BUY_TO_OPEN,
-                                  quantity1, quantity2, false, price ); }
-
-            static OrderTicket
-            BuyToClose( ARGS_RAW(buy,sell),
-                         size_t quantity1,
-                         size_t quantity2 )
-            { return build( symbol_buy1, symbol_sell1, symbol_sell2,
-                                   symbol_buy2, BUY_TO_CLOSE,
-                                   SELL_TO_CLOSE, quantity1, quantity2 ); }
-
-            static OrderTicket
-            BuyToClose( ARGS_RAW(buy,sell),
-                         size_t quantity1,
-                         size_t quantity2,
-                         double price )
-            { return build( symbol_buy1, symbol_sell1, symbol_sell2,
-                                  symbol_buy2, BUY_TO_CLOSE,
-                                  SELL_TO_CLOSE, quantity1, quantity2,
-                                  false, price ); }
-
-            static OrderTicket
-            BuyToClose( ARGS(buy,sell),
-                         size_t quantity1,
-                         size_t quantity2 )
-            { return build( underlying, month, day, year, strike_buy1,
-                                   strike_sell1, strike_sell2, strike_buy2,
-                                   are_calls, BUY_TO_CLOSE,
-                                   SELL_TO_CLOSE, quantity1, quantity2 ); }
-
-            static OrderTicket
-            BuyToClose( ARGS(buy,sell),
-                        size_t quantity1,
-                        size_t quantity2,
-                        double price )
-            { return build( underlying, month, day, year,
-                                   strike_buy1, strike_sell1, strike_sell2,
-                                   strike_buy2, are_calls, BUY_TO_CLOSE,
-                                   SELL_TO_CLOSE, quantity1, quantity2,
-                                   false, price ); }
-
-            static OrderTicket
-            SellToClose( ARGS_RAW(sell,buy),
-                          size_t quantity1,
-                          size_t quantity2 )
-            { return build( symbol_sell1, symbol_buy1, symbol_buy2,
-                                   symbol_sell2, SELL_TO_CLOSE,
-                                   BUY_TO_CLOSE, quantity1, quantity2 ); }
-
-            static OrderTicket
-            SellToClose( ARGS_RAW(sell,buy),
-                          size_t quantity1,
-                          size_t quantity2,
-                          double price )
-            { return build( symbol_sell1, symbol_buy1, symbol_buy2,
-                                  symbol_sell2, SELL_TO_CLOSE,
-                                  BUY_TO_CLOSE, quantity1, quantity2,
-                                  false, price ); }
-
-            static OrderTicket
-            SellToClose( ARGS(sell,buy),
-                        size_t quantity1,
-                        size_t quantity2 )
-            { return build( underlying, month, day, year,
-                                   strike_sell1, strike_buy1, strike_buy2,
-                                   strike_sell2, are_calls, SELL_TO_CLOSE,
-                                   BUY_TO_CLOSE, quantity1, quantity2 ); }
-
-            static OrderTicket
-            SellToClose( ARGS(sell,buy),
-                          size_t quantity1,
-                          size_t quantity2,
-                          double price )
-            { return build( underlying, month, day, year,
-                                  strike_sell1, strike_buy1, strike_buy2,
-                                  strike_sell2, are_calls, SELL_TO_CLOSE,
-                                  BUY_TO_CLOSE, quantity1, quantity2,
-                                  false, price ); }
+            Build( ARGS(size_t quantity1, size_t quantity2), double price )
+            { return build( underlying, month, day, year, strike_outer1,
+                            strike_inner1, strike_inner2, strike_outer2,
+                            are_calls, quantity1, quantity2, is_buy, to_open,
+                            false, price ); }
         }; /* Unbalanced */
-
-
-        static OrderTicket
-        BuyToOpen( ARGS_RAW(buy,sell), size_t quantity )
-        { return build( symbol_buy1, symbol_sell1, symbol_sell2,
-                               symbol_buy2, BUY_TO_OPEN,
-                               SELL_TO_OPEN, quantity, quantity); }
-
-        static OrderTicket
-        BuyToOpen( ARGS_RAW(buy,sell), size_t quantity, double price )
-        { return build( symbol_buy1, symbol_sell1, symbol_sell2,
-                               symbol_buy2, BUY_TO_OPEN,
-                               SELL_TO_OPEN, quantity, quantity, false, price); }
-
-        static OrderTicket
-        BuyToOpen( ARGS(buy,sell), size_t quantity )
-        { return build( underlying, month, day, year,
-                               strike_buy1, strike_sell1, strike_sell2,
-                               strike_buy2, are_calls, BUY_TO_OPEN,
-                               SELL_TO_OPEN, quantity, quantity); }
-
-        static OrderTicket
-        BuyToOpen( ARGS(buy,sell), size_t quantity, double price )
-        { return build( underlying, month, day, year,
-                               strike_buy1, strike_sell1, strike_sell2,
-                               strike_buy2, are_calls, BUY_TO_OPEN,
-                               SELL_TO_OPEN, quantity, quantity, false, price); }
-
-        static OrderTicket
-        SellToOpen( ARGS_RAW(sell,buy), size_t quantity )
-        { return build( symbol_sell1, symbol_buy1, symbol_buy2,
-                               symbol_sell2, SELL_TO_OPEN,
-                               BUY_TO_OPEN, quantity, quantity); }
-
-        static OrderTicket
-        SellToOpen( ARGS_RAW(sell,buy), size_t quantity, double price )
-        { return build( symbol_sell1, symbol_buy1, symbol_buy2,
-                               symbol_sell2, SELL_TO_OPEN,
-                               BUY_TO_OPEN, quantity, quantity, false, price); }
-
-        static OrderTicket
-        SellToOpen( ARGS(sell,buy), size_t quantity )
-        { return build( underlying, month, day, year,
-                               strike_sell1, strike_buy1, strike_buy2,
-                               strike_sell2, are_calls, SELL_TO_OPEN,
-                               BUY_TO_OPEN, quantity, quantity); }
-
-        static OrderTicket
-        SellToOpen( ARGS(sell,buy), size_t quantity, double price )
-        { return build( underlying, month, day, year,
-                               strike_sell1, strike_buy1, strike_buy2,
-                               strike_sell2, are_calls, SELL_TO_OPEN,
-                               BUY_TO_OPEN, quantity, quantity, false, price); }
-
-        static OrderTicket
-        BuyToClose( ARGS_RAW(buy,sell), size_t quantity )
-        { return build( symbol_buy1, symbol_sell1, symbol_sell2,
-                               symbol_buy2, BUY_TO_CLOSE,
-                               SELL_TO_CLOSE, quantity, quantity); }
-
-        static OrderTicket
-        BuyToClose( ARGS_RAW(buy,sell), size_t quantity, double price )
-        { return build( symbol_buy1, symbol_sell1, symbol_sell2,
-                               symbol_buy2, BUY_TO_CLOSE,
-                               SELL_TO_CLOSE, quantity, quantity, false, price); }
-
-        static OrderTicket
-        BuyToClose( ARGS(buy,sell), size_t quantity )
-        { return build( underlying, month, day, year,
-                               strike_buy1, strike_sell1, strike_sell2,
-                               strike_buy2, are_calls, BUY_TO_CLOSE,
-                               SELL_TO_CLOSE, quantity, quantity); }
-
-        static OrderTicket
-        BuyToClose( ARGS(buy,sell), size_t quantity, double price )
-        { return build( underlying, month, day, year,
-                               strike_buy1, strike_sell1, strike_sell2,
-                               strike_buy2, are_calls, BUY_TO_CLOSE,
-                               SELL_TO_CLOSE, quantity, quantity, false, price); }
-
-        static OrderTicket
-        SellToClose( ARGS_RAW(sell,buy), size_t quantity )
-        { return build( symbol_sell1, symbol_buy1, symbol_buy2,
-                               symbol_sell2, SELL_TO_CLOSE,
-                               BUY_TO_CLOSE, quantity, quantity); }
-
-        static OrderTicket
-        SellToClose( ARGS_RAW(sell,buy), size_t quantity, double price )
-        { return build( symbol_sell1, symbol_buy1, symbol_buy2,
-                               symbol_sell2, SELL_TO_CLOSE,
-                               BUY_TO_CLOSE, quantity, quantity, false, price); }
-
-        static OrderTicket
-        SellToClose( ARGS(sell,buy), size_t quantity )
-        { return build( underlying, month, day, year,
-                               strike_sell1, strike_buy1, strike_buy2,
-                               strike_sell2, are_calls, SELL_TO_CLOSE,
-                               BUY_TO_CLOSE, quantity, quantity); }
-
-        static OrderTicket
-        SellToClose( ARGS(sell,buy), size_t quantity, double price )
-        { return build( underlying, month, day, year,
-                               strike_sell1, strike_buy1, strike_buy2,
-                               strike_sell2, are_calls, SELL_TO_CLOSE,
-                               BUY_TO_CLOSE, quantity, quantity, false, price); }
 #undef ARGS_RAW
 #undef ARGS
     }; /* Condor */
 
 
     class IronCondor {
-    public:
-        IronCondor() = delete;
-        static constexpr ComplexOrderStrategyType strategy
-            = ComplexOrderStrategyType::IRON_CONDOR;
-
-#define ARGS_RAW \
+#define ARGS_RAW(...) \
         const std::string& symbol_call_buy, \
         const std::string& symbol_call_sell, \
         const std::string& symbol_put_buy, \
-        const std::string& symbol_put_sell
+        const std::string& symbol_put_sell, \
+        __VA_ARGS__, \
+        bool to_open
 
-#define ARGS \
+#define ARGS(...) \
         const std::string& underlying, \
         unsigned int month, \
         unsigned int day, \
@@ -4961,7 +4081,11 @@ public:
         double strike_call_buy, \
         double strike_call_sell, \
         double strike_put_buy, \
-        double strike_put_sell
+        double strike_put_sell, \
+        __VA_ARGS__, \
+        bool to_open
+
+        friend class PrivateBuildAccessor<IronCondor>;
 
         typedef OrderTicket(*raw_build_meth_ty)(const std::string&,
             const std::string&, const std::string&, const std::string&,
@@ -4972,29 +4096,21 @@ public:
             size_t, size_t, bool, bool, double);
 
         static OrderTicket
-        build( ARGS_RAW,
-                size_t quantity_call,
-                size_t quantity_put,
-                bool to_open,
-                bool market_order = true,
+        build( ARGS_RAW(size_t quantity_call, size_t quantity_put),
+                bool is_market_order = true,
                 double price = 0.0 )
         {
-            OrderInstruction b = to_open ? BUY_TO_OPEN : BUY_TO_CLOSE;
-            OrderInstruction s = to_open ? SELL_TO_OPEN : SELL_TO_CLOSE;
             return SpreadOrderBuilder::build( strategy,
-                    {make_leg(symbol_call_buy, b, quantity_call),
-                     make_leg(symbol_call_sell, s, quantity_call),
-                     make_leg(symbol_put_buy, b, quantity_put),
-                     make_leg(symbol_put_sell, s, quantity_put)},
-                    market_order, price );
+                {make_leg(symbol_call_buy, op_instr(true,to_open), quantity_call),
+                 make_leg(symbol_call_sell, op_instr(false,to_open), quantity_call),
+                 make_leg(symbol_put_buy, op_instr(true,to_open), quantity_put),
+                 make_leg(symbol_put_sell, op_instr(false,to_open), quantity_put)},
+                is_market_order, price );
         }
 
         static OrderTicket
-        build( ARGS,
-                size_t quantity_call,
-                size_t quantity_put,
-                bool to_open,
-                bool market_order = true,
+        build( ARGS(size_t quantity_call, size_t quantity_put),
+                bool is_market_order = true,
                 double price = 0.0 )
         {
             return build(
@@ -5002,151 +4118,96 @@ public:
                 O(underlying, month, day, year, true, strike_call_sell),
                 O(underlying, month, day, year, false, strike_put_buy),
                 O(underlying, month, day, year, false, strike_put_sell),
-                quantity_call, quantity_put, to_open, market_order, price);
+                quantity_call, quantity_put, to_open, is_market_order, price);
         }
 
+    public:
+        IronCondor() = delete;
+
+        static constexpr ComplexOrderStrategyType strategy
+            = ComplexOrderStrategyType::IRON_CONDOR;
+
+        static OrderTicket
+        Build( ARGS_RAW(size_t quantity) )
+        { return build( symbol_call_buy, symbol_call_sell, symbol_put_buy,
+                        symbol_put_sell, quantity, quantity, to_open ); }
+
+        static OrderTicket
+        Build( ARGS_RAW(size_t quantity), double price )
+        { return build( symbol_call_buy, symbol_call_sell, symbol_put_buy,
+                        symbol_put_sell, quantity, quantity, to_open, false,
+                        price ); }
+
+        static OrderTicket
+        Build( ARGS(size_t quantity) )
+        { return build( underlying, month, day, year, strike_call_buy,
+                        strike_call_sell, strike_put_buy, strike_put_sell,
+                        quantity, quantity, to_open ); }
+
+        static OrderTicket
+        Build( ARGS(size_t quantity), double price )
+        { return build( underlying, month, day, year, strike_call_buy,
+                        strike_call_sell, strike_put_buy, strike_put_sell,
+                        quantity, quantity, to_open, false, price ); }
+
         class Unbalanced{
-        public:
-            Unbalanced() = delete;
-            static constexpr ComplexOrderStrategyType strategy
-                = ComplexOrderStrategyType::UNBALANCED_IRON_CONDOR;
+            friend class PrivateBuildAccessor<Unbalanced>;
+
+            typedef typename IronCondor::raw_build_meth_ty raw_build_meth_ty;
+            typedef typename IronCondor::ex_build_meth_ty ex_build_meth_ty;
 
             template< typename... T >
             static OrderTicket
             build( T... args )
             { return IronCondor::build(args...)
-                        .set_complex_strategy_type(strategy); }
+                  .set_complex_strategy_type(strategy); }
+
+        public:
+            Unbalanced() = delete;
+
+            static constexpr ComplexOrderStrategyType strategy
+                = ComplexOrderStrategyType::UNBALANCED_IRON_CONDOR;
 
             static OrderTicket
-            Open( ARGS_RAW, size_t quantity_call, size_t quantity_put )
-            { return build( symbol_call_buy, symbol_call_sell,
-                                   symbol_put_buy, symbol_put_sell,
-                                   quantity_call, quantity_put, true ); }
+            Build( ARGS_RAW(size_t quantity_call, size_t quantity_put) )
+            { return build( symbol_call_buy, symbol_call_sell, symbol_put_buy,
+                            symbol_put_sell, quantity_call, quantity_put,
+                            to_open ); }
 
             static OrderTicket
-            Open( ARGS_RAW,
-                   size_t quantity_call,
-                   size_t quantity_put,
+            Build( ARGS_RAW(size_t quantity_call, size_t quantity_put),
                    double price )
-            { return build( symbol_call_buy, symbol_call_sell,
-                                  symbol_put_buy, symbol_put_sell,
-                                  quantity_call, quantity_put, true, false, price ); }
+            { return build( symbol_call_buy, symbol_call_sell, symbol_put_buy,
+                            symbol_put_sell, quantity_call, quantity_put,
+                            to_open, false, price ); }
 
             static OrderTicket
-            Open( ARGS, size_t quantity_call, size_t quantity_put )
-            { return build( underlying, month, day, year,
-                                   strike_call_buy, strike_call_sell,
-                                   strike_put_buy, strike_put_sell,
-                                   quantity_call, quantity_put, true); }
+            Build( ARGS(size_t quantity_call, size_t quantity_put) )
+            { return build( underlying, month, day, year, strike_call_buy,
+                            strike_call_sell, strike_put_buy, strike_put_sell,
+                            quantity_call, quantity_put, to_open ); }
 
             static OrderTicket
-            Open( ARGS,
-                  size_t quantity_call,
-                  size_t quantity_put,
+            Build( ARGS(size_t quantity_call, size_t quantity_put),
                   double price )
             { return build( underlying, month, day, year, strike_call_buy,
-                                  strike_call_sell, strike_put_buy,
-                                  strike_put_sell, quantity_call,
-                                  quantity_put, true, false, price ); }
-
-            static OrderTicket
-            Close( ARGS_RAW, size_t quantity_call, size_t quantity_put )
-            { return build( symbol_call_buy, symbol_call_sell,
-                                   symbol_put_buy, symbol_put_sell,
-                                   quantity_call, quantity_put, false ); }
-
-            static OrderTicket
-            Close( ARGS_RAW,
-                    size_t quantity_call,
-                    size_t quantity_put,
-                    double price )
-            { return build( symbol_call_buy, symbol_call_sell,
-                                  symbol_put_buy, symbol_put_sell,
-                                  quantity_call, quantity_put, false, false, price ); }
-
-            static OrderTicket
-            Close( ARGS, size_t quantity_call, size_t quantity_put )
-            { return build( underlying, month, day, year,
-                                   strike_call_buy, strike_call_sell,
-                                   strike_put_buy, strike_put_sell,
-                                   quantity_call, quantity_put, false ); }
-
-            static OrderTicket
-            Close( ARGS,
-                    size_t quantity_call,
-                    size_t quantity_put,
-                    double price )
-            { return build( underlying, month, day, year, strike_call_buy,
-                                  strike_call_sell, strike_put_buy,
-                                  strike_put_sell, quantity_call,
-                                  quantity_put, false, false, price ); }
+                            strike_call_sell, strike_put_buy, strike_put_sell,
+                            quantity_call, quantity_put, to_open, false,
+                            price ); }
         }; /* Unbalanced */
-
-
-        static OrderTicket
-        Open( ARGS_RAW, size_t quantity )
-        { return build( symbol_call_buy, symbol_call_sell,
-                               symbol_put_buy, symbol_put_sell, quantity,
-                               quantity, true ); }
-
-        static OrderTicket
-        Open( ARGS_RAW, size_t quantity, double price )
-        { return build( symbol_call_buy, symbol_call_sell,
-                              symbol_put_buy, symbol_put_sell, quantity,
-                              quantity, true, false, price ); }
-
-        static OrderTicket
-        Open( ARGS, size_t quantity )
-        { return build( underlying, month, day, year, strike_call_buy,
-                               strike_call_sell, strike_put_buy,
-                               strike_put_sell, quantity, quantity, true); }
-
-        static OrderTicket
-        Open( ARGS, size_t quantity, double price )
-        { return build( underlying, month, day, year, strike_call_buy,
-                              strike_call_sell, strike_put_buy, strike_put_sell,
-                              quantity, quantity, true, false, price ); }
-
-        static OrderTicket
-        Close( ARGS_RAW, size_t quantity )
-        { return build( symbol_call_buy, symbol_call_sell,
-                               symbol_put_buy, symbol_put_sell, quantity,
-                               quantity, false ); }
-
-        static OrderTicket
-        Close( ARGS_RAW, size_t quantity, double price )
-        { return build( symbol_call_buy, symbol_call_sell, symbol_put_buy,
-                              symbol_put_sell, quantity, quantity, false,
-                              false, price ); }
-
-        static OrderTicket
-        Close( ARGS, size_t quantity )
-        { return build( underlying, month, day, year, strike_call_buy,
-                               strike_call_sell, strike_put_buy,
-                               strike_put_sell, quantity, quantity, false); }
-
-        static OrderTicket
-        Close( ARGS, size_t quantity, double price )
-        { return build( underlying, month, day, year, strike_call_buy,
-                              strike_call_sell, strike_put_buy, strike_put_sell,
-                              quantity, quantity, false, false, price ); }
 #undef ARGS_RAW
 #undef ARGS
     }; /* IronCondor */
 
 
     class DoubleDiagonal {
-    public:
-        DoubleDiagonal() = delete;
-        static constexpr ComplexOrderStrategyType strategy
-            = ComplexOrderStrategyType::DOUBLE_DIAGONAL;
-
 #define ARGS_RAW \
         const std::string& symbol_call_buy, \
         const std::string& symbol_call_sell, \
         const std::string& symbol_put_buy, \
         const std::string& symbol_put_sell, \
-        size_t quantity
+        size_t quantity, \
+        bool to_open
 
 #define ARGS \
         const std::string& underlying, \
@@ -5160,7 +4221,10 @@ public:
         double strike_call_sell, \
         double strike_put_buy, \
         double strike_put_sell, \
-        size_t quantity
+        size_t quantity, \
+        bool to_open
+
+        friend class PrivateBuildAccessor<DoubleDiagonal>;
 
         typedef OrderTicket(*raw_build_meth_ty)(const std::string&,
             const std::string&, const std::string&, const std::string&,
@@ -5172,20 +4236,18 @@ public:
             double);
 
         static OrderTicket
-        build( ARGS_RAW, bool to_open, bool market_order = true, double price = 0.0 )
+        build( ARGS_RAW, bool is_market_order = true, double price = 0.0 )
         {
-            OrderInstruction b = to_open ? BUY_TO_OPEN : BUY_TO_CLOSE;
-            OrderInstruction s = to_open ? SELL_TO_OPEN : SELL_TO_CLOSE;
             return SpreadOrderBuilder::build( strategy,
-                    {make_leg(symbol_call_buy, b, quantity),
-                     make_leg(symbol_call_sell, s, quantity),
-                     make_leg(symbol_put_buy, b, quantity),
-                     make_leg(symbol_put_sell, s, quantity)},
-                    market_order, price );
+                {make_leg(symbol_call_buy, op_instr(true,to_open), quantity),
+                 make_leg(symbol_call_sell, op_instr(false,to_open), quantity),
+                 make_leg(symbol_put_buy, op_instr(true,to_open), quantity),
+                 make_leg(symbol_put_sell, op_instr(false,to_open), quantity)},
+                is_market_order, price );
         }
 
         static OrderTicket
-        build( ARGS, bool to_open, bool market_order = true, double price = 0.0 )
+        build( ARGS, bool is_market_order = true, double price = 0.0 )
         {
             return build(
                 O(underlying, month_buy, day_buy, year_buy, true,
@@ -5196,58 +4258,38 @@ public:
                     strike_put_buy),
                 O(underlying, month_sell, day_sell, year_sell, false,
                     strike_put_sell),
-                quantity, to_open, market_order, price);
+                quantity, to_open, is_market_order, price);
         }
 
-        static OrderTicket
-        Open( ARGS_RAW )
-        { return build( symbol_call_buy, symbol_call_sell,
-                               symbol_put_buy, symbol_put_sell, quantity,
-                               true ); }
+    public:
+        DoubleDiagonal() = delete;
+
+        static constexpr ComplexOrderStrategyType strategy
+            = ComplexOrderStrategyType::DOUBLE_DIAGONAL;
 
         static OrderTicket
-        Open( ARGS_RAW, double price )
+        Build( ARGS_RAW )
         { return build( symbol_call_buy, symbol_call_sell, symbol_put_buy,
-                              symbol_put_sell, quantity, true, false, price); }
+                        symbol_put_sell, quantity, to_open ); }
 
         static OrderTicket
-        Open( ARGS )
-        { return build( underlying, month_buy, day_buy, year_buy,
-                               month_sell, day_sell, year_sell, strike_call_buy,
-                               strike_call_sell, strike_put_buy,
-                               strike_put_sell, quantity, true); }
-
-        static OrderTicket
-        Open( ARGS, double price )
-        { return build( underlying, month_buy, day_buy, year_buy,
-                              month_sell, day_sell, year_sell, strike_call_buy,
-                              strike_call_sell, strike_put_buy, strike_put_sell,
-                              quantity, true, false, price ); }
-
-        static OrderTicket
-        Close( ARGS_RAW )
-        { return build( symbol_call_buy, symbol_call_sell,
-                               symbol_put_buy, symbol_put_sell, quantity,
-                               false ); }
-
-        static OrderTicket
-        Close( ARGS_RAW, double price )
+        Build( ARGS_RAW, double price )
         { return build( symbol_call_buy, symbol_call_sell, symbol_put_buy,
-                              symbol_put_sell, quantity, false, false, price ); }
+                        symbol_put_sell, quantity, to_open, false, price); }
 
         static OrderTicket
-        Close( ARGS )
-        { return build( underlying, month_buy, day_buy, year_buy,
-                               month_sell, day_sell, year_sell, strike_call_buy,
-                               strike_call_sell, strike_put_buy,
-                               strike_put_sell, quantity, false ); }
+        Build( ARGS )
+        { return build( underlying, month_buy, day_buy, year_buy, month_sell,
+                        day_sell, year_sell, strike_call_buy, strike_call_sell,
+                        strike_put_buy, strike_put_sell, quantity, to_open); }
 
         static OrderTicket
-        Close( ARGS, double price )
-        { return build( underlying, month_buy, day_buy, year_buy,
-                              month_sell, day_sell, year_sell, strike_call_buy,
-                              strike_call_sell, strike_put_buy, strike_put_sell,
-                              quantity, false, false, price ); }
+        Build( ARGS, double price )
+        { return build( underlying, month_buy, day_buy, year_buy, month_sell,
+                        day_sell, year_sell, strike_call_buy, strike_call_sell,
+                        strike_put_buy, strike_put_sell, quantity, to_open,
+                        false, price ); }
+
 #undef ARGS_RAW
 #undef ARGS
     }; /* DoubleDiagonal */

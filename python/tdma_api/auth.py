@@ -40,6 +40,7 @@ from ctypes import Structure as _Structure, c_char_p, c_longlong, \
                     byref as _REF
 
 from . import clib
+from .common import *
 from .clib import PCHAR
 
 class Credentials(_Structure):

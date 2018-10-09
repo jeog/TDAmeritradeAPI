@@ -314,7 +314,7 @@ BuildOptionSymbol( const char* underlying,
                      size_t *n )
 
 [Python]
-def get.build_option_symbol(underlying, month, day, year, is_call, strike):
+def common.build_option_symbol(underlying, month, day, year, is_call, strike):
 ```
 
 This is not guaranteed to work on all underlying types but generally:
@@ -330,6 +330,22 @@ QuotesGetter qg(creds, {spy_c300, spy_p250});
 qg.get();
 ```
 **If using C don't forget to call ```FreeBuffer``` on the populated 'buf' when done.**
+
+To check if a standard option symbol string is formatted properly:
+```
+[C++]
+inline void
+CheckOptionSymbol( const std::string& symbol )
+
+[C]
+inline int
+CheckOptionSymbol( const char* symbol )
+
+[Python]
+def common.check_option_symbol( symbol ):
+```
+Invalid symbols will set error state, throw ValueException(C++,Python) or return TDMA_VALUE_ERROR(C).
+
 
 ### Example Usage 
 

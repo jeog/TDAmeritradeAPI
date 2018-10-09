@@ -74,7 +74,7 @@ BuildOptionSymbolImpl( const std::string& underlying,
 }
 
 void
-OptionSymbolCheckImpl(const std::string& option) // ABC_MMDDYY[C|P]{STRIKE}
+CheckOptionSymbolImpl(const std::string& option) // ABC_MMDDYY[C|P]{STRIKE}
 {
     size_t sz = option.size();
     if( sz == 0 )
@@ -130,6 +130,23 @@ OptionSymbolCheckImpl(const std::string& option) // ABC_MMDDYY[C|P]{STRIKE}
 using namespace tdma;
 
 int
+LibraryBuildDateTime_ABI(char **buf, size_t *n, int allow_exceptions)
+{
+    static const std::string DT = __DATE__ + std::string(" - ") + __TIME__;
+
+    *n = DT.size() + 1; // NULL TERM
+    *buf = reinterpret_cast<char*>(malloc(*n));
+    if( !*buf ){
+        return HANDLE_ERROR(tdma::MemoryError,
+            "failed to allocate buffer memory", allow_exceptions
+            );
+    }
+    (*buf)[(*n)-1] = 0;
+    strncpy(*buf, DT.c_str(), (*n)-1);
+    return 0;
+}
+
+int
 BuildOptionSymbol_ABI( const char* underlying,
                          unsigned int month,
                          unsigned int day,
@@ -165,10 +182,10 @@ BuildOptionSymbol_ABI( const char* underlying,
 }
 
 int
-OptionSymbolCheck_ABI(const char* symbol, int allow_exceptions)
+CheckOptionSymbol_ABI(const char* symbol, int allow_exceptions)
 {
     CHECK_PTR(symbol, "symbol", allow_exceptions);
-    return CallImplFromABI(allow_exceptions, OptionSymbolCheckImpl, symbol);
+    return CallImplFromABI(allow_exceptions, CheckOptionSymbolImpl, symbol);
 }
 
 int

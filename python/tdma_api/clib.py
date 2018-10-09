@@ -233,3 +233,6 @@ def get_last_error_lineno():
 
 def get_last_error_filename():
     return get_str('LastErrorFilename_ABI')
+
+def lib_build_datetime():
+    return get_str('LibraryBuildDateTime_ABI')

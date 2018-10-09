@@ -12,9 +12,11 @@
 #define SleepFor(msec) usleep(msec * 1000)
 #endif
 
+void print_error(int err, const char* name);
+
 #define CHECK_AND_RETURN_ON_ERROR(err, name) \
 do{ \
-    fprintf(stderr, "error(%i): " name "\n", (err)); \
+    print_error(err, name); \
     return (err); \
 }while(0);
 
@@ -23,5 +25,7 @@ int Test_Getters(struct Credentials *creds, const char* acct, long wait);
 int Test_Streaming(struct Credentials *creds, const char* acct);
 
 int Test_Execution_Order_Objects();
+
+
 
 #endif /* TEST_H_ */

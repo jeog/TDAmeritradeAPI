@@ -53,10 +53,11 @@ OptionStrategy static methods for the Option Getters).
 """
 
 from ctypes import byref as _REF, c_int, c_ulonglong, c_double, \
-                    Union as _Union, c_uint, c_char_p, c_size_t                 
+                    Union as _Union, c_uint               
 import json
 
 from . import clib
+from .common import *
 from .clib import PCHAR
 
 MARKET_TYPE_EQUITY = 0
@@ -170,16 +171,6 @@ def set_wait_msec(msec):
 def wait_remaining():
     """milliseconds of waiting before .get() can be called without blocking"""
     return clib.get_val("APIGetter_WaitRemaining_ABI", c_ulonglong)        
-
-def build_option_symbol(underlying, month, day, year, is_call, strike):
-    c = c_char_p()
-    n = c_size_t()
-    clib.call("BuildOptionSymbol_ABI", PCHAR(underlying), c_uint(month),
-              c_uint(day), c_uint(year), c_int(1 if is_call else 0), 
-              c_double(strike), _REF(c), _REF(n)) 
-    s = c.value.decode() 
-    clib.free_buffer(c)
-    return s
 
 
 class _APIGetter( clib._ProxyBase ):

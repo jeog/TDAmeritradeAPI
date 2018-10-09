@@ -762,15 +762,15 @@ build( int allow_exceptions,
 
 
 int
-BuildOrder_Simple_ABI( int order_type,
-                         int asset_type,
-                         const char* symbol,
-                         int instruction,
-                         size_t quantity,
-                         double limit_price,
-                         double stop_price,
-                         OrderTicket_C *porder,
-                         int allow_exceptions  )
+BuildOrder_Simple_ABI( int asset_type,
+                          const char* symbol,
+                          size_t quantity,
+                          int instruction,
+                          int order_type,
+                          double limit_price,
+                          double stop_price,
+                          OrderTicket_C *porder,
+                          int allow_exceptions  )
 {
     CHECK_PTR_KILL_PROXY(symbol, "symbol", allow_exceptions, porder);
     CHECK_ENUM_KILL_PROXY(OrderType, order_type, allow_exceptions, porder);
@@ -780,18 +780,60 @@ BuildOrder_Simple_ABI( int order_type,
 
     using B = SimpleOrderBuilder;
 
-    return build( allow_exceptions, (B::build_meth_ty)(B::build), porder,
+    return build( allow_exceptions, PrivateBuildAccessor<B, false>::raw, porder,
+                  static_cast<OrderAssetType>(asset_type), symbol, quantity,
+                  static_cast<OrderInstruction>(instruction),
                   static_cast<OrderType>(order_type),
-                  static_cast<OrderAssetType>(asset_type), symbol,
-                  static_cast<OrderInstruction>(instruction), quantity,
                   limit_price, stop_price );
 }
 
+
 int
-BuildOrder_Equity_ABI( int order_type,
-                          const char* symbol,
-                          int instruction,
+SimpleOrder_CheckPrices_ABI( int order_type,
+                                 double limit_price,
+                                 double stop_price,
+                                 int allow_exceptions )
+{
+    using EXC = ValueException;
+    switch( static_cast<OrderType>(order_type) ){
+    case OrderType::MARKET:
+        if( limit_price != 0.0 )
+            return HANDLE_ERROR(EXC, "limit_price != 0.0", allow_exceptions);
+        if( stop_price != 0.0 )
+            return HANDLE_ERROR(EXC, "stop_price != 0.0", allow_exceptions);
+        break;
+    case OrderType::LIMIT:
+        if( limit_price <= 0.0 )
+            return HANDLE_ERROR(EXC, "limit_price <= 0.0", allow_exceptions);
+        if( stop_price != 0.0 )
+            return HANDLE_ERROR(EXC, "stop_price != 0.0", allow_exceptions);
+        break;
+    case OrderType::STOP:
+        if( limit_price != 0.0 )
+            return HANDLE_ERROR(EXC, "limit_price != 0.0", allow_exceptions);
+        if( stop_price <= 0.0 )
+            return HANDLE_ERROR(EXC, "stop_price <= 0.0", allow_exceptions);
+        break;
+    case OrderType::STOP_LIMIT:
+        if( limit_price <= 0.0 )
+            return HANDLE_ERROR(EXC, "limit_price <= 0.0", allow_exceptions);
+        if( stop_price <= 0.0 )
+            return HANDLE_ERROR(EXC, "stop_price <= 0.0", allow_exceptions);
+        break;
+    default:
+        throw std::runtime_error("invalid order type");
+    };
+    return 0;
+}
+
+
+
+int
+BuildOrder_Equity_ABI( const char* symbol,
                           size_t quantity,
+                          int is_buy,
+                          int to_open,
+                          int order_type,
                           double limit_price,
                           double stop_price,
                           OrderTicket_C *porder,
@@ -799,47 +841,35 @@ BuildOrder_Equity_ABI( int order_type,
 {
     CHECK_PTR_KILL_PROXY(symbol, "symbol", allow_exceptions, porder);
     CHECK_ENUM_KILL_PROXY(OrderType, order_type, allow_exceptions, porder);
-    CHECK_ENUM_KILL_PROXY(OrderInstruction, instruction, allow_exceptions,
-                          porder);
 
     using B = SimpleOrderBuilder::Equity;
 
-    return build( allow_exceptions, (B::build_meth_ty)(B::build), porder,
-                  static_cast<OrderType>(order_type), symbol,
-                  static_cast<OrderInstruction>(instruction), quantity,
-                  limit_price, stop_price );
+    return build( allow_exceptions, PrivateBuildAccessor<B,false>::raw, porder,
+                  symbol, quantity, is_buy, to_open,
+                  static_cast<OrderType>(order_type), limit_price, stop_price );
 }
 
-OrderInstruction
-op_instr(int is_buy, int to_open)
-{ return is_buy ? (to_open ? OrderInstruction::BUY_TO_OPEN
-                           : OrderInstruction::BUY_TO_CLOSE)
-                : (to_open ? OrderInstruction::SELL_TO_OPEN
-                           : OrderInstruction::SELL_TO_CLOSE); }
 
 int
-BuildOrder_Option_ABI( int order_type,
-                          const char* symbol,
+BuildOrder_Option_ABI( const char* symbol,
                           size_t quantity,
                           int is_buy,
                           int to_open,
+                          int is_market_order,
                           double price,
                           OrderTicket_C *porder,
                           int allow_exceptions )
 {
     CHECK_PTR_KILL_PROXY(symbol, "symbol", allow_exceptions, porder);
-    CHECK_ENUM_KILL_PROXY(OrderType, order_type, allow_exceptions, porder);
 
     using B = SimpleOrderBuilder::Option;
 
-    return build( allow_exceptions, (B::raw_build_meth_ty)(B::build), porder,
-                  static_cast<OrderType>(order_type), symbol,
-                  op_instr(is_buy, to_open), quantity, price);
+    return build( allow_exceptions, PrivateBuildAccessor<B>::raw, porder,
+                  symbol, quantity, is_buy, to_open, is_market_order, price);
 }
 
 int
-BuildOrder_OptionEx_ABI( int order_type,
-                            const char* underlying,
+BuildOrder_OptionEx_ABI( const char* underlying,
                             unsigned int month,
                             unsigned int day,
                             unsigned int year,
@@ -848,26 +878,25 @@ BuildOrder_OptionEx_ABI( int order_type,
                             size_t quantity,
                             int is_buy,
                             int to_open,
+                            int is_market_order,
                             double price,
                             OrderTicket_C *porder,
                             int allow_exceptions )
 {
     CHECK_PTR_KILL_PROXY(underlying, "underlying", allow_exceptions, porder);
-    CHECK_ENUM_KILL_PROXY(OrderType, order_type, allow_exceptions, porder);
 
     using B = SimpleOrderBuilder::Option;
 
-    return build( allow_exceptions, (B::ex_build_meth_ty)(B::build), porder,
-                  static_cast<OrderType>(order_type), underlying, month, day,
-                  year, is_call, strike, op_instr(is_buy, to_open), quantity,
-                  price);
+    return build( allow_exceptions,  PrivateBuildAccessor<B>::ex, porder,
+                  underlying, month, day, year, is_call, strike, quantity,
+                  is_buy, to_open, is_market_order, price);
 }
 
 int
 BuildOrder_Spread_ABI( int complex_strategy_type,
                           OrderLeg_C *plegs,
                           size_t n,
-                          int is_market,
+                          int is_market_order,
                           double price,
                           OrderTicket_C *porder,
                           int allow_exceptions )
@@ -883,9 +912,9 @@ BuildOrder_Spread_ABI( int complex_strategy_type,
         legs.emplace_back( plegs[i] );
     }
 
-    return build( allow_exceptions, (B::build_meth_ty)(B::build), porder,
+    return build( allow_exceptions, PrivateBuildAccessor<B, false>::raw, porder,
                   static_cast<ComplexOrderStrategyType>(complex_strategy_type),
-                  move(legs), is_market, price );
+                  move(legs), is_market_order, price );
 }
 
 int
@@ -893,7 +922,7 @@ BuildOrder_Spread_Vertical_ABI( const char* symbol_buy,
                                     const char* symbol_sell,
                                     size_t quantity,
                                     int to_open,
-                                    int is_market,
+                                    int is_market_order,
                                     double price,
                                     OrderTicket_C *porder,
                                     int allow_exceptions )
@@ -903,8 +932,9 @@ BuildOrder_Spread_Vertical_ABI( const char* symbol_buy,
 
     using B = SpreadOrderBuilder::Vertical;
 
-    return build( allow_exceptions, (B::raw_build_meth_ty)(B::build), porder,
-                  symbol_buy, symbol_sell, quantity, to_open, is_market, price);
+    return build( allow_exceptions, PrivateBuildAccessor<B>::raw, porder,
+                  symbol_buy, symbol_sell, quantity, to_open, is_market_order,
+                  price);
 }
 
 int
@@ -917,7 +947,7 @@ BuildOrder_Spread_VerticalEx_ABI( const char* underlying,
                                       double strike_sell,
                                       size_t quantity,
                                       int to_open,
-                                      int is_market,
+                                      int is_market_order,
                                       double price,
                                       OrderTicket_C *porder,
                                       int allow_exceptions )
@@ -926,9 +956,9 @@ BuildOrder_Spread_VerticalEx_ABI( const char* underlying,
 
     using B = SpreadOrderBuilder::Vertical;
 
-    return build( allow_exceptions, (B::ex_build_meth_ty)B::build, porder,
+    return build( allow_exceptions, PrivateBuildAccessor<B>::ex, porder,
                   underlying, month, day, year, are_calls, strike_buy,
-                  strike_sell, quantity, to_open, is_market, price );
+                  strike_sell, quantity, to_open, is_market_order, price );
 
 }
 
@@ -939,7 +969,7 @@ BuildOrder_Spread_VerticalRoll_ABI( const char* symbol_close_buy,
                                         const char* symbol_open_sell,
                                         size_t quantity_close,
                                         size_t quantity_open,
-                                        int is_market,
+                                        int is_market_order,
                                         double price,
                                         OrderTicket_C *porder,
                                         int allow_exceptions )
@@ -955,12 +985,12 @@ BuildOrder_Spread_VerticalRoll_ABI( const char* symbol_close_buy,
 
     using B = SpreadOrderBuilder::Vertical::Roll;
     auto b = (quantity_close == quantity_open )
-           ? (B::raw_build_meth_ty)(B::build)
-           : (B::raw_build_meth_ty)(B::Unbalanced::build);
+           ? (PrivateBuildAccessor<B>::raw)
+           : (PrivateBuildAccessor<B::Unbalanced>::raw);
 
     return build( allow_exceptions, b, porder, symbol_close_buy,
                   symbol_close_sell, symbol_open_buy, symbol_open_sell,
-                  quantity_close, quantity_open, is_market, price );
+                  quantity_close, quantity_open, is_market_order, price );
 }
 
 int
@@ -978,7 +1008,7 @@ BuildOrder_Spread_VerticalRollEx_ABI( const char* underlying,
                                            double strike_open_sell,
                                            size_t quantity_close,
                                            size_t quantity_open,
-                                           int is_market,
+                                           int is_market_order,
                                            double price,
                                            OrderTicket_C *porder,
                                            int allow_exceptions )
@@ -987,14 +1017,14 @@ BuildOrder_Spread_VerticalRollEx_ABI( const char* underlying,
 
     using B = SpreadOrderBuilder::Vertical::Roll;
     auto b = (quantity_close == quantity_open )
-           ? (B::ex_build_meth_ty)(B::build)
-           : (B::ex_build_meth_ty)(B::Unbalanced::build);
+           ? (PrivateBuildAccessor<B>::ex)
+           : (PrivateBuildAccessor<B::Unbalanced>::ex);
 
     return build( allow_exceptions, b, porder, underlying, month_close,
                   day_close, year_close, month_open, day_open, year_open,
                   are_calls, strike_close_buy, strike_close_sell,
                   strike_open_buy, strike_open_sell, quantity_close,
-                  quantity_open, is_market, price );
+                  quantity_open, is_market_order, price );
 }
 
 int
@@ -1005,7 +1035,7 @@ BuildOrder_Spread_Butterfly_ABI( const char* symbol_outer1,
                                      size_t quantity_outer2,
                                      int is_buy,
                                      int to_open,
-                                     int is_market,
+                                     int is_market_order,
                                      double price,
                                      OrderTicket_C *porder,
                                      int allow_exceptions )
@@ -1019,15 +1049,12 @@ BuildOrder_Spread_Butterfly_ABI( const char* symbol_outer1,
 
     using B = SpreadOrderBuilder::Butterfly;
     auto b = (quantity_outer1 == quantity_outer2 )
-           ? (B::raw_build_meth_ty)(B::build)
-           : (B::raw_build_meth_ty)(B::Unbalanced::build);
-
-    auto instr_outer = op_instr(is_buy, to_open);
-    auto instr_inner = op_instr(!is_buy, to_open);
+           ? (PrivateBuildAccessor<B>::raw)
+           : (PrivateBuildAccessor<B::Unbalanced>::raw);
 
     return build( allow_exceptions, b, porder, symbol_outer1, symbol_inner1,
-                  symbol_outer2, instr_outer, instr_inner, quantity_outer1,
-                  quantity_outer2, is_market, price );
+                  symbol_outer2, quantity_outer1, quantity_outer2, is_buy,
+                  to_open, is_market_order, price );
 }
 
 int
@@ -1043,7 +1070,7 @@ BuildOrder_Spread_ButterflyEx_ABI( const char* underlying,
                                        size_t quantity_outer2,
                                        int is_buy,
                                        int to_open,
-                                       int is_market,
+                                       int is_market_order,
                                        double price,
                                        OrderTicket_C *porder,
                                        int allow_exceptions )
@@ -1053,16 +1080,13 @@ BuildOrder_Spread_ButterflyEx_ABI( const char* underlying,
 
     using B = SpreadOrderBuilder::Butterfly;
     auto b = (quantity_outer1 == quantity_outer2 )
-           ? (B::ex_build_meth_ty)(B::build)
-           : (B::ex_build_meth_ty)(B::Unbalanced::build);
-
-    auto instr_outer = op_instr(is_buy, to_open);
-    auto instr_inner = op_instr(!is_buy, to_open);
+           ? (PrivateBuildAccessor<B>::ex)
+           : (PrivateBuildAccessor<B::Unbalanced>::ex);
 
     return build( allow_exceptions, b, porder, underlying, month, day, year,
                   are_calls, strike_outer1, strike_inner1, strike_outer2,
-                  instr_outer, instr_inner, quantity_outer1, quantity_outer2,
-                  is_market, price );
+                  quantity_outer1, quantity_outer2, is_buy, to_open,
+                  is_market_order, price );
 }
 
 
@@ -1072,7 +1096,7 @@ BuildOrder_Spread_BackRatio_ABI( const char* symbol_buy,
                                      size_t quantity_buy,
                                      size_t quantity_sell,
                                      int to_open,
-                                     int is_market,
+                                     int is_market_order,
                                      double price,
                                      OrderTicket_C *porder,
                                      int allow_exceptions )
@@ -1084,9 +1108,9 @@ BuildOrder_Spread_BackRatio_ABI( const char* symbol_buy,
 
     using B = SpreadOrderBuilder::BackRatio;
 
-    return build( allow_exceptions, (B::raw_build_meth_ty)(B::build) , porder,
+    return build( allow_exceptions, PrivateBuildAccessor<B>::raw , porder,
                   symbol_buy, symbol_sell, quantity_buy, quantity_sell, to_open,
-                  is_market, price );
+                  is_market_order, price );
 
 }
 
@@ -1101,7 +1125,7 @@ BuildOrder_Spread_BackRatioEx_ABI( const char* underlying,
                                        size_t quantity_buy,
                                        size_t quantity_sell,
                                        int to_open,
-                                       int is_market,
+                                       int is_market_order,
                                        double price,
                                        OrderTicket_C *porder,
                                        int allow_exceptions )
@@ -1111,10 +1135,10 @@ BuildOrder_Spread_BackRatioEx_ABI( const char* underlying,
 
     using B = SpreadOrderBuilder::BackRatio;
 
-    return build( allow_exceptions, (B::ex_build_meth_ty)(B::build), porder,
+    return build( allow_exceptions, PrivateBuildAccessor<B>::ex, porder,
                   underlying, month, day, year, are_calls, strike_buy,
-                  strike_sell, quantity_buy, quantity_sell, to_open, is_market,
-                  price );
+                  strike_sell, quantity_buy, quantity_sell, to_open,
+                  is_market_order, price );
 }
 
 int
@@ -1122,7 +1146,7 @@ BuildOrder_Spread_Calendar_ABI( const char* symbol_buy,
                                     const char* symbol_sell,
                                     size_t quantity,
                                     int to_open,
-                                    int is_market,
+                                    int is_market_order,
                                     double price,
                                     OrderTicket_C *porder,
                                     int allow_exceptions )
@@ -1134,8 +1158,8 @@ BuildOrder_Spread_Calendar_ABI( const char* symbol_buy,
 
     using B = SpreadOrderBuilder::Calendar;
 
-    return build( allow_exceptions, (B::raw_build_meth_ty)(B::build) , porder,
-                  symbol_buy, symbol_sell, quantity, to_open, is_market,
+    return build( allow_exceptions, PrivateBuildAccessor<B>::raw , porder,
+                  symbol_buy, symbol_sell, quantity, to_open, is_market_order,
                   price );
 }
 
@@ -1151,7 +1175,7 @@ BuildOrder_Spread_CalendarEx_ABI( const char* underlying,
                                       double strike,
                                       size_t quantity,
                                       int to_open,
-                                      int is_market,
+                                      int is_market_order,
                                       double price,
                                       OrderTicket_C *porder,
                                       int allow_exceptions )
@@ -1161,10 +1185,10 @@ BuildOrder_Spread_CalendarEx_ABI( const char* underlying,
 
     using B = SpreadOrderBuilder::Calendar;
 
-    return build( allow_exceptions, (B::ex_build_meth_ty)(B::build), porder,
+    return build( allow_exceptions, PrivateBuildAccessor<B>::ex, porder,
                   underlying, month_buy, day_buy, year_buy, month_sell,
                   day_sell, year_sell, are_calls, strike, quantity, to_open,
-                  is_market, price );
+                  is_market_order, price );
 }
 
 int
@@ -1172,7 +1196,7 @@ BuildOrder_Spread_Diagonal_ABI( const char* symbol_buy,
                                     const char* symbol_sell,
                                     size_t quantity,
                                     int to_open,
-                                    int is_market,
+                                    int is_market_order,
                                     double price,
                                     OrderTicket_C *porder,
                                     int allow_exceptions )
@@ -1184,8 +1208,8 @@ BuildOrder_Spread_Diagonal_ABI( const char* symbol_buy,
 
     using B = SpreadOrderBuilder::Diagonal;
 
-    return build( allow_exceptions, (B::raw_build_meth_ty)(B::build) , porder,
-                  symbol_buy, symbol_sell, quantity, to_open, is_market,
+    return build( allow_exceptions, PrivateBuildAccessor<B>::raw, porder,
+                  symbol_buy, symbol_sell, quantity, to_open, is_market_order,
                   price );
 }
 
@@ -1202,7 +1226,7 @@ BuildOrder_Spread_DiagonalEx_ABI( const char* underlying,
                                       double strike_sell,
                                       size_t quantity,
                                       int to_open,
-                                      int is_market,
+                                      int is_market_order,
                                       double price,
                                       OrderTicket_C *porder,
                                       int allow_exceptions )
@@ -1212,10 +1236,10 @@ BuildOrder_Spread_DiagonalEx_ABI( const char* underlying,
 
     using B = SpreadOrderBuilder::Diagonal;
 
-    return build( allow_exceptions, (B::ex_build_meth_ty)(B::build), porder,
+    return build( allow_exceptions, PrivateBuildAccessor<B>::ex, porder,
                   underlying, month_buy, day_buy, year_buy, month_sell,
                   day_sell, year_sell, are_calls, strike_buy, strike_sell,
-                  quantity, to_open, is_market, price );
+                  quantity, to_open, is_market_order, price );
 }
 
 int
@@ -1224,7 +1248,7 @@ BuildOrder_Spread_Straddle_ABI( const char* symbol_call,
                                     size_t quantity,
                                     int is_buy,
                                     int to_open,
-                                    int is_market,
+                                    int is_market_order,
                                     double price,
                                     OrderTicket_C *porder,
                                     int allow_exceptions )
@@ -1236,9 +1260,9 @@ BuildOrder_Spread_Straddle_ABI( const char* symbol_call,
 
     using B = SpreadOrderBuilder::Straddle;
 
-    return build( allow_exceptions, (B::raw_build_meth_ty)(B::build), porder,
-                  symbol_call, symbol_put, quantity, op_instr(is_buy, to_open),
-                  is_market, price );
+    return build( allow_exceptions, PrivateBuildAccessor<B>::raw, porder,
+                  symbol_call, symbol_put, quantity, is_buy, to_open,
+                  is_market_order, price );
 }
 
 int
@@ -1250,7 +1274,7 @@ BuildOrder_Spread_StraddleEx_ABI( const char* underlying,
                                       size_t quantity,
                                       int is_buy,
                                       int to_open,
-                                      int is_market,
+                                      int is_market_order,
                                       double price,
                                       OrderTicket_C *porder,
                                       int allow_exceptions )
@@ -1260,9 +1284,9 @@ BuildOrder_Spread_StraddleEx_ABI( const char* underlying,
 
     using B = SpreadOrderBuilder::Straddle;
 
-    return build( allow_exceptions, (B::ex_build_meth_ty)(B::build), porder,
+    return build( allow_exceptions, PrivateBuildAccessor<B>::ex, porder,
                   underlying, month, day, year, strike, quantity,
-                  op_instr(is_buy, to_open), is_market, price );
+                  is_buy, to_open, is_market_order, price );
 }
 
 int
@@ -1271,7 +1295,7 @@ BuildOrder_Spread_Strangle_ABI( const char* symbol_call,
                                      size_t quantity,
                                      int is_buy,
                                      int to_open,
-                                     int is_market,
+                                     int is_market_order,
                                      double price,
                                      OrderTicket_C *porder,
                                      int allow_exceptions )
@@ -1283,9 +1307,9 @@ BuildOrder_Spread_Strangle_ABI( const char* symbol_call,
 
     using B = SpreadOrderBuilder::Strangle;
 
-    return build( allow_exceptions, (B::raw_build_meth_ty)(B::build), porder,
-                  symbol_call, symbol_put, quantity, op_instr(is_buy, to_open),
-                  is_market, price );
+    return build( allow_exceptions, PrivateBuildAccessor<B>::raw, porder,
+                  symbol_call, symbol_put, quantity, is_buy, to_open,
+                  is_market_order, price );
 }
 
 int
@@ -1298,7 +1322,7 @@ BuildOrder_Spread_StrangleEx_ABI( const char* underlying,
                                       size_t quantity,
                                       int is_buy,
                                       int to_open,
-                                      int is_market,
+                                      int is_market_order,
                                       double price,
                                       OrderTicket_C *porder,
                                       int allow_exceptions )
@@ -1308,9 +1332,9 @@ BuildOrder_Spread_StrangleEx_ABI( const char* underlying,
 
     using B = SpreadOrderBuilder::Strangle;
 
-    return build( allow_exceptions, (B::ex_build_meth_ty)(B::build), porder,
+    return build( allow_exceptions, PrivateBuildAccessor<B>::ex, porder,
                   underlying, month, day, year, strike_call, strike_put,
-                  quantity, op_instr(is_buy, to_open), is_market, price );
+                  quantity, is_buy, to_open, is_market_order, price );
 }
 
 int
@@ -1318,7 +1342,7 @@ BuildOrder_Spread_CollarSynthetic_ABI( const char* symbol_buy,
                                             const char* symbol_sell,
                                             size_t quantity,
                                             int to_open,
-                                            int is_market,
+                                            int is_market_order,
                                             double price,
                                             OrderTicket_C *porder,
                                             int allow_exceptions )
@@ -1330,8 +1354,9 @@ BuildOrder_Spread_CollarSynthetic_ABI( const char* symbol_buy,
 
     using B = SpreadOrderBuilder::CollarSynthetic;
 
-    return build( allow_exceptions, (B::raw_build_meth_ty)(B::build), porder,
-                  symbol_buy, symbol_sell, quantity, to_open, is_market, price);
+    return build( allow_exceptions, PrivateBuildAccessor<B>::raw, porder,
+                  symbol_buy, symbol_sell, quantity, to_open, is_market_order,
+                  price);
 }
 
 int
@@ -1344,7 +1369,7 @@ BuildOrder_Spread_CollarSyntheticEx_ABI( const char* underlying,
                                               size_t quantity,
                                               int is_buy,
                                               int to_open,
-                                              int is_market,
+                                              int is_market_order,
                                               double price,
                                               OrderTicket_C *porder,
                                               int allow_exceptions )
@@ -1354,9 +1379,9 @@ BuildOrder_Spread_CollarSyntheticEx_ABI( const char* underlying,
 
     using B = SpreadOrderBuilder::CollarSynthetic;
 
-    return build( allow_exceptions, (B::ex_build_meth_ty)(B::build), porder,
+    return build( allow_exceptions, PrivateBuildAccessor<B>::ex, porder,
                   underlying, month, day, year, strike_call, strike_put,
-                  quantity, is_buy, to_open, is_market, price );
+                  quantity, is_buy, to_open, is_market_order, price );
 }
 
 int
@@ -1366,7 +1391,7 @@ BuildOrder_Spread_CollarWithStock_ABI( const char* symbol_buy,
                                             size_t quantity,
                                             int is_buy,
                                             int to_open,
-                                            int is_market,
+                                            int is_market_order,
                                             double price,
                                             OrderTicket_C *porder,
                                             int allow_exceptions )
@@ -1380,9 +1405,9 @@ BuildOrder_Spread_CollarWithStock_ABI( const char* symbol_buy,
 
     using B = SpreadOrderBuilder::CollarWithStock;
 
-    return build( allow_exceptions, (B::raw_build_meth_ty)(B::build), porder,
+    return build( allow_exceptions, PrivateBuildAccessor<B>::raw, porder,
                   symbol_buy, symbol_sell, symbol_stock, quantity, is_buy,
-                  to_open, is_market, price);
+                  to_open, is_market_order, price);
 }
 
 int
@@ -1395,7 +1420,7 @@ BuildOrder_Spread_CollarWithStockEx_ABI( const char* underlying,
                                               size_t quantity,
                                               int is_buy,
                                               int to_open,
-                                              int is_market,
+                                              int is_market_order,
                                               double price,
                                               OrderTicket_C *porder,
                                               int allow_exceptions )
@@ -1405,9 +1430,9 @@ BuildOrder_Spread_CollarWithStockEx_ABI( const char* underlying,
 
     using B = SpreadOrderBuilder::CollarWithStock;
 
-    return build( allow_exceptions, (B::ex_build_meth_ty)(B::build), porder,
+    return build( allow_exceptions, PrivateBuildAccessor<B>::ex, porder,
                   underlying, month, day, year, strike_call, strike_put,
-                  quantity, is_buy, to_open, is_market, price );
+                  quantity, is_buy, to_open, is_market_order, price );
 }
 
 int
@@ -1419,7 +1444,7 @@ BuildOrder_Spread_Condor_ABI( const char* symbol_outer1,
                                   size_t quantity2,
                                   int is_buy,
                                   int to_open,
-                                  int is_market,
+                                  int is_market_order,
                                   double price,
                                   OrderTicket_C *porder,
                                   int allow_exceptions )
@@ -1435,15 +1460,12 @@ BuildOrder_Spread_Condor_ABI( const char* symbol_outer1,
 
     using B = SpreadOrderBuilder::Condor;
     auto b = (quantity1 == quantity2 )
-           ? (B::raw_build_meth_ty)(B::build)
-           : (B::raw_build_meth_ty)(B::Unbalanced::build);
-
-    auto instr_outer = op_instr(is_buy, to_open);
-    auto instr_inner = op_instr(!is_buy, to_open);
+           ? PrivateBuildAccessor<B>::raw
+           : PrivateBuildAccessor<B::Unbalanced>::raw;
 
     return build( allow_exceptions, b, porder, symbol_outer1, symbol_inner1,
-                  symbol_inner2, symbol_outer2, instr_outer, instr_inner,
-                  quantity1, quantity2, is_market, price );
+                  symbol_inner2, symbol_outer2, quantity1, quantity2,
+                  is_buy, to_open, is_market_order, price );
 }
 
 int
@@ -1460,7 +1482,7 @@ BuildOrder_Spread_CondorEx_ABI( const char* underlying,
                                     size_t quantity2,
                                     int is_buy,
                                     int to_open,
-                                    int is_market,
+                                    int is_market_order,
                                     double price,
                                     OrderTicket_C *porder,
                                     int allow_exceptions )
@@ -1470,16 +1492,13 @@ BuildOrder_Spread_CondorEx_ABI( const char* underlying,
 
     using B = SpreadOrderBuilder::Condor;
     auto b = (quantity1 == quantity2 )
-           ? (B::ex_build_meth_ty)(B::build)
-           : (B::ex_build_meth_ty)(B::Unbalanced::build);
-
-    auto instr_outer = op_instr(is_buy, to_open);
-    auto instr_inner = op_instr(!is_buy, to_open);
+           ? PrivateBuildAccessor<B>::ex
+           : PrivateBuildAccessor<B::Unbalanced>::ex;
 
     return build( allow_exceptions, b, porder, underlying, month, day, year,
                   strike_outer1, strike_inner1, strike_inner2, strike_outer2,
-                  are_calls, instr_outer, instr_inner, quantity1, quantity2,
-                  is_market, price );
+                  are_calls, quantity1, quantity2, is_buy, to_open,
+                  is_market_order, price );
 }
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
@@ -1490,7 +1509,7 @@ BuildOrder_Spread_IronCondor_ABI( const char* symbol_call_buy,
                                       size_t quantity_call,
                                       size_t quantity_put,
                                       int to_open,
-                                      int is_market,
+                                      int is_market_order,
                                       double price,
                                       OrderTicket_C *porder,
                                       int allow_exceptions )
@@ -1506,12 +1525,12 @@ BuildOrder_Spread_IronCondor_ABI( const char* symbol_call_buy,
 
     using B = SpreadOrderBuilder::IronCondor;
     auto b = (quantity_call == quantity_put )
-           ? (B::raw_build_meth_ty)(B::build)
-           : (B::raw_build_meth_ty)(B::Unbalanced::build);
+           ? PrivateBuildAccessor<B>::raw
+           : PrivateBuildAccessor<B::Unbalanced>::raw;
 
     return build( allow_exceptions, b, porder, symbol_call_buy, symbol_call_sell,
                   symbol_put_buy, symbol_put_sell, quantity_call, quantity_put,
-                  to_open, is_market, price );
+                  to_open, is_market_order, price );
 }
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
@@ -1526,7 +1545,7 @@ BuildOrder_Spread_IronCondorEx_ABI( const char* underlying,
                                         size_t quantity_call,
                                         size_t quantity_put,
                                         int to_open,
-                                        int is_market,
+                                        int is_market_order,
                                         double price,
                                         OrderTicket_C *porder,
                                         int allow_exceptions )
@@ -1536,13 +1555,13 @@ BuildOrder_Spread_IronCondorEx_ABI( const char* underlying,
 
     using B = SpreadOrderBuilder::IronCondor;
     auto b = (quantity_call == quantity_put )
-           ? (B::ex_build_meth_ty)(B::build)
-           : (B::ex_build_meth_ty)(B::Unbalanced::build);
+           ? PrivateBuildAccessor<B>::ex
+           : PrivateBuildAccessor<B::Unbalanced>::ex;
 
     return build( allow_exceptions, b, porder, underlying, month, day, year,
                   strike_call_buy, strike_call_sell, strike_put_buy,
                   strike_put_sell, quantity_call, quantity_put, to_open,
-                  is_market, price );
+                  is_market_order, price );
 }
 
 int
@@ -1552,7 +1571,7 @@ BuildOrder_Spread_DoubleDiagonal_ABI( const char* symbol_call_buy,
                                            const char* symbol_put_sell,
                                            size_t quantity,
                                            int to_open,
-                                           int is_market,
+                                           int is_market_order,
                                            double price,
                                            OrderTicket_C *porder,
                                            int allow_exceptions )
@@ -1568,9 +1587,9 @@ BuildOrder_Spread_DoubleDiagonal_ABI( const char* symbol_call_buy,
 
     using B = SpreadOrderBuilder::DoubleDiagonal;
 
-    return build( allow_exceptions, (B::raw_build_meth_ty)(B::build), porder,
+    return build( allow_exceptions, PrivateBuildAccessor<B>::raw, porder,
                   symbol_call_buy, symbol_call_sell, symbol_put_buy,
-                  symbol_put_sell, quantity, to_open, is_market, price );
+                  symbol_put_sell, quantity, to_open, is_market_order, price );
 }
 
 int
@@ -1587,7 +1606,7 @@ BuildOrder_Spread_DoubleDiagonalEx_ABI( const char* underlying,
                                              double strike_put_sell,
                                              size_t quantity,
                                              int to_open,
-                                             int is_market,
+                                             int is_market_order,
                                              double price,
                                              OrderTicket_C *porder,
                                              int allow_exceptions )
@@ -1597,11 +1616,11 @@ BuildOrder_Spread_DoubleDiagonalEx_ABI( const char* underlying,
 
     using B = SpreadOrderBuilder::DoubleDiagonal;
 
-    return build( allow_exceptions, (B::ex_build_meth_ty)(B::build), porder,
+    return build( allow_exceptions, PrivateBuildAccessor<B>::ex, porder,
                   underlying, month_buy, day_buy, year_buy, month_sell,
                   day_sell, year_sell, strike_call_buy, strike_call_sell,
                   strike_put_buy, strike_put_sell, quantity, to_open,
-                  is_market, price );
+                  is_market_order, price );
 }
 
 int

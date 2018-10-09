@@ -15,7 +15,7 @@
 # along with this program.  If not, see http://www.gnu.org/licenses.
 # 
 
-from tdma_api.clib import init, LibraryNotLoaded
+from tdma_api.clib import init, LibraryNotLoaded, lib_build_datetime
 from platform import system
 
 TDMA_API_LIB_BASE = 'TDAmeritradeAPI'
@@ -29,11 +29,12 @@ TDMA_API_LIB_NAME = TDMA_API_LIB_PRE + TDMA_API_LIB_BASE + TDMA_API_LIB_EXT
 
 try:
     if init(TDMA_API_LIB_NAME):
-        print("+ Successfully loaded", TDMA_API_LIB_NAME)
+        print("+ Successfully loaded:", TDMA_API_LIB_NAME)
+        print("+ Last Build:", lib_build_datetime())
     else:
         raise LibraryNotLoaded()
 except BaseException as e:
-        print("- Failed to load", TDMA_API_LIB_NAME)
+        print("- Failed to load:", TDMA_API_LIB_NAME)
         print("-", e.__class__.__name__ + ':', str(e))
         print("- Use tdma_api.clib.init(path) to load manually")    
         

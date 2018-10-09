@@ -52,6 +52,7 @@ from inspect import signature
 import json
 
 from . import clib
+from .common import *
 from .clib import PCHAR, PCHAR_BUFFER
 
 DEF_CONNECT_TIMEOUT = 3000

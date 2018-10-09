@@ -20,7 +20,7 @@ from traceback import print_exc
 from time import strftime, perf_counter, sleep
 import argparse, gc, os, json
 
-from tdma_api import get, auth, clib, stream, execute
+from tdma_api import get, auth, clib, stream, execute, common
 
 SYSTEM = system()
 ARCH = architecture()[0]
@@ -80,7 +80,10 @@ def init():
     if not clib._lib:
         print("+ try to manually load: ", LIBRARY_PATH)
         if not clib.init(LIBRARY_PATH):        
-            raise clib.LibraryNotLoaded()   
+            raise clib.LibraryNotLoaded()  
+        else:
+            print("+ Successfully loaded: ", LIBRARY_PATH)
+            print("+ Last Build:", clib.lib_build_datetime())
       
 def test_option_symbol_builder():
     B = get.build_option_symbol          
@@ -97,7 +100,8 @@ def test_option_symbol_builder():
         try:
             B(u,m,d,y,c,s)
             return False
-        except clib.CLibException:
+        except clib.CLibException as e:
+            print("successfully caught exception building option:", str(e))
             return True
             
     assert is_bad("",1,1,2018,True,300)
@@ -114,6 +118,31 @@ def test_option_symbol_builder():
     assert is_bad("SPY",1,31,18,True,300)
     assert is_bad("SPY",1,31,2018,True,0.0)
     assert is_bad("spy",1,31,2018,True,-100.0)
+    
+    def is_bad_sym(s):
+        try:
+            common.check_option_symbol(s)
+            return False
+        except clib.CLibException as e:
+            print("successfully caught exception checking option:", str(e))
+            return True
+        
+    assert is_bad_sym("010118C300")
+    assert is_bad_sym("SpY__010118C300")
+    assert is_bad_sym("_SPY010118C300")
+    assert is_bad_sym("SP_Y010118C300")
+    assert is_bad_sym("SPY_00118C300")
+    assert is_bad_sym("SPY_000118C300")
+    assert is_bad_sym("SPY_010018C300")
+    assert is_bad_sym("SPY_01018C300")    
+    assert is_bad_sym("SPY_01010C300")
+    assert is_bad_sym("SPY_01010C300")
+    assert is_bad_sym("SPY_010118300")
+    assert is_bad_sym("SPY_010118P")
+    assert is_bad_sym("SPY_010118P-300")
+    assert is_bad_sym("SPY_010118P300.")
+    assert is_bad_sym("SPY_010118P300x")
+  
       
 def test_throttling(creds): 
     dw = get.get_def_wait_msec()  
@@ -1011,127 +1040,135 @@ def test_execute_simple_equity_builders():
         except clib.CLibException as e:
             print("+ successfully caught exception: ", str(e))
             
-    test_exc(1, B.Equity.Market.Buy, "", 1)
-    test_exc(2, B.Equity.Market.Sell, "SPY", 0)
-    test_exc(3, B.Equity.Limit.Short, "SPY", 1, 0.0)
-    test_exc(4, B.Equity.Limit.Cover, "SPY", 1, -1)
-    test_exc(5, B.Equity.Stop.Buy, "SPY", 1, 0.0, 1.00)
-    test_exc(6, B.Equity.Stop.Sell, "SPY", 1, -1.0, 0.00)
-    test_exc(7, B.Equity.Stop.Short, "SPY", 1, 1.0, -1.00)    
+    test_exc(1, B.Equity.Build, "", 1, 1,1)
+    test_exc(2, B.Equity.Build, "SPY", 0, 0,0 )
+    test_exc(3, B.Equity.Build, "SPY", 1, 0,1, 0.0)
+    test_exc(4, B.Equity.Build, "SPY", 1, 1,0, -1)
+    test_exc(5, B.Equity.Stop.Build, "SPY", 1, 1,1, 0.0, 1.00)
+    test_exc(6, B.Equity.Stop.Build, "SPY", 1, 0,0, -1.0, 0.00)
+    test_exc(7, B.Equity.Stop.Build, "SPY", 1, 0,1, 1.0, -1.00)    
     
+    def _build(order_type, asset_type, symbol, instruction, quantity, 
+              limit_price=0.0, stop_price=0.0):
+        return B._abi_build('BuildOrder_Simple_ABI', 
+             execute.c_int(asset_type), execute.PCHAR(symbol), 
+             execute.c_size_t(quantity), execute.c_int(instruction), 
+             execute.c_int(order_type),  execute.c_double(limit_price), 
+             execute.c_double(stop_price))
+        
     # MARKET
-    mb = B.Equity.Market.Buy('SPY', 100)
+    mb = B.Equity.Build('SPY', 100,1 ,1)
     print( mb.as_json() )
     check_order(mb, MARKET, 'SPY', BUY, 100)    
-    mb2 = B.build(MARKET, EQUITY, 'SPY', BUY, 100)    
+    mb2 = _build(MARKET, EQUITY, 'SPY', BUY, 100)    
     assert mb2 == mb
     assert mb2.as_json() == mb.as_json()
     
-    ms = B.Equity.Market.Sell('SPY', 200)
+    ms = B.Equity.Build('SPY', 200,0,0)
     print( ms.as_json() )
     check_order(ms, MARKET,'SPY', SELL, 200)
-    ms2 = B.build(MARKET, EQUITY, 'SPY', SELL, 200)
+    ms2 = _build(MARKET, EQUITY, 'SPY', SELL, 200)
     assert ms2 == ms
     assert ms2.as_json() == ms.as_json()
     
-    mss = B.Equity.Market.Short('QQQ', 99)
+    mss = B.Equity.Build('QQQ', 99,0,1)
     print( mss.as_json() )
     check_order(mss, MARKET,'QQQ', SHORT, 99)
-    mss2 = B.build(MARKET, EQUITY, 'QQQ', SHORT, 99)
+    mss2 = _build(MARKET, EQUITY, 'QQQ', SHORT, 99)
     assert mss2 == mss
     assert mss2.as_json() == mss.as_json()
     
-    mbc = B.Equity.Market.Cover('QQQ', 1)
+    mbc = B.Equity.Build('QQQ', 1,1,0)
     print( mbc.as_json() )
     check_order(mbc, MARKET,'QQQ', COVER, 1)
-    mbc2 = B.build(MARKET, EQUITY, 'QQQ', COVER, 1)
+    mbc2 = _build(MARKET, EQUITY, 'QQQ', COVER, 1)
     assert mbc2 == mbc    
     assert mbc2.as_json() == mbc.as_json()
     
     # LIMIT
-    lb = B.Equity.Limit.Buy('SPY', 100, 300.01)
+    lb = B.Equity.Build('SPY', 100, 1, 1, 300.01)
     print( lb.as_json() )
     check_order(lb, LIMIT, 'SPY', BUY, 100, 300.01)    
-    lb2 = B.build(LIMIT, EQUITY, 'SPY', BUY, 100, 300.01)
+    lb2 = _build(LIMIT, EQUITY, 'SPY', BUY, 100, 300.01)
     assert lb2 == lb
     assert lb2.as_json() == lb.as_json()
     
-    ls = B.Equity.Limit.Sell('SPY', 200, 299.9999)
+    ls = B.Equity.Build('SPY', 200, 0, 0, 299.9999)
     print( ls.as_json() )
     check_order(ls, LIMIT,'SPY', SELL, 200, 299.9999)
-    ls2 = B.build(LIMIT, EQUITY, 'SPY', SELL, 200, 299.9999)
+    ls2 = _build(LIMIT, EQUITY, 'SPY', SELL, 200, 299.9999)
     assert ls2 == ls
     assert ls2.as_json() == ls.as_json()
     
-    lss = B.Equity.Limit.Short('QQQ', 99, 300)
+    lss = B.Equity.Build('QQQ', 99, 0, 1, 300)
     print( lss.as_json() )
     check_order(lss, LIMIT,'QQQ', SHORT, 99, 300)
-    lss2 = B.build(LIMIT, EQUITY, 'QQQ', SHORT, 99, 300)
+    lss2 = _build(LIMIT, EQUITY, 'QQQ', SHORT, 99, 300)
     assert lss2 == lss
     assert lss2.as_json() == lss.as_json()
     
-    lbc = B.Equity.Limit.Cover('QQQ', 1, .01)
+    lbc = B.Equity.Build('QQQ', 1, 1, 0, .01)
     print( lbc.as_json() )
     check_order(lbc, LIMIT,'QQQ', COVER, 1, .01)
-    lbc2 = B.build(LIMIT, EQUITY, 'QQQ', COVER, 1, .01)
+    lbc2 = _build(LIMIT, EQUITY, 'QQQ', COVER, 1, .01)
     assert lbc2 == lbc    
     assert lbc2.as_json() == lbc.as_json()
     
     # STOP
-    sb = B.Equity.Stop.Buy('SPY', 100, 300.01)
+    sb = B.Equity.Stop.Build('SPY', 100,  1, 1, 300.01)
     print( sb.as_json() )
     check_order(sb, STOP, 'SPY', BUY, 100, 0, 300.01)    
-    sb2 = B.build(STOP, EQUITY, 'SPY', BUY, 100, 0, 300.01)
+    sb2 = _build(STOP, EQUITY, 'SPY', BUY, 100, 0, 300.01)
     assert sb2 == sb
     assert sb2.as_json() == sb.as_json()
     
-    ss = B.Equity.Stop.Sell('SPY', 200, 299.9999)
+    ss = B.Equity.Stop.Build('SPY', 200, 0, 0, 299.9999)
     print( ss.as_json() )
     check_order(ss, STOP,'SPY', SELL, 200, 0, 299.9999)
-    ss2 = B.build(STOP, EQUITY, 'SPY', SELL, 200, 0, 299.9999)
+    ss2 = _build(STOP, EQUITY, 'SPY', SELL, 200, 0, 299.9999)
     assert ss2 == ss
     assert ss2.as_json() == ss.as_json()
     
-    sss = B.Equity.Stop.Short('QQQ', 99, 300)
+    sss = B.Equity.Stop.Build('QQQ', 99, 0, 1, 300)
     print( sss.as_json() )
     check_order(sss, STOP,'QQQ', SHORT, 99, 0, 300)
-    sss2 = B.build(STOP, EQUITY, 'QQQ', SHORT, 99, 0, 300)
+    sss2 = _build(STOP, EQUITY, 'QQQ', SHORT, 99, 0, 300)
     assert sss2 == sss
     assert sss2.as_json() == sss.as_json()
     
-    sbc = B.Equity.Stop.Cover('QQQ', 1, .01)
+    sbc = B.Equity.Stop.Build('QQQ', 1, 1, 0, .01)
     print( sbc.as_json() )
     check_order(sbc, STOP,'QQQ', COVER, 1, 0, .01)
-    sbc2 = B.build(STOP, EQUITY, 'QQQ', COVER, 1, 0, .01)
+    sbc2 = _build(STOP, EQUITY, 'QQQ', COVER, 1, 0, .01)
     assert sbc2 == sbc    
     assert sbc2.as_json() == sbc.as_json()
     
     # STOP_LIMIT
-    slb = B.Equity.Stop.Buy('SPY', 100, 300.01, 300.09)
+    slb = B.Equity.Stop.Build('SPY', 100, 1, 1, 300.01, 300.09)
     print( slb.as_json() )
     check_order(slb, STOP_LIMIT, 'SPY', BUY, 100, 300.09, 300.01)    
-    slb2 = B.build(STOP_LIMIT, EQUITY, 'SPY', BUY, 100, 300.09, 300.01)
+    slb2 = _build(STOP_LIMIT, EQUITY, 'SPY', BUY, 100, 300.09, 300.01)
     assert slb2 == slb
     assert slb2.as_json() == slb.as_json()
     
-    sls = B.Equity.Stop.Sell('SPY', 200, 299.9999, 299.8888)
+    sls = B.Equity.Stop.Build('SPY', 200, 0,0, 299.9999, 299.8888)
     print( sls.as_json() )
     check_order(sls, STOP_LIMIT,'SPY', SELL, 200, 299.8888, 299.9999)
-    sls2 = B.build(STOP_LIMIT, EQUITY, 'SPY', SELL, 200, 299.8888, 299.9999)
+    sls2 = _build(STOP_LIMIT, EQUITY, 'SPY', SELL, 200, 299.8888, 299.9999)
     assert sls2 == sls
     assert sls2.as_json() == sls.as_json()
     
-    slss = B.Equity.Stop.Short('QQQ', 99, 300, 299)
+    slss = B.Equity.Stop.Build('QQQ', 99, 0, 1, 300, 299)
     print( slss.as_json() )
     check_order(slss, STOP_LIMIT,'QQQ', SHORT, 99, 299, 300)
-    slss2 = B.build(STOP_LIMIT, EQUITY, 'QQQ', SHORT, 99, 299, 300)
+    slss2 = _build(STOP_LIMIT, EQUITY, 'QQQ', SHORT, 99, 299, 300)
     assert slss2 == slss
     assert slss2.as_json() == slss.as_json()
     
-    slbc = B.Equity.Stop.Cover('QQQ', 1, .01, .0001)
+    slbc = B.Equity.Stop.Build('QQQ', 1, 1, 0, .01, .0001)
     print( slbc.as_json() )
     check_order(slbc, STOP_LIMIT,'QQQ', COVER, 1, .0001, .01)
-    slbc2 = B.build(STOP_LIMIT, EQUITY, 'QQQ', COVER, 1, .0001, .01)
+    slbc2 = _build(STOP_LIMIT, EQUITY, 'QQQ', COVER, 1, .0001, .01)
     assert slbc2 == slbc    
     assert slbc2.as_json() == slbc.as_json()
     
@@ -1168,98 +1205,106 @@ def test_execute_simple_option_builders():
         except clib.CLibException as e:
             print("+ successfully caught exception: ", str(e))
             
-    test_exc(1, B.Option.Market.BuyToOpen1, "", 1)
-    test_exc(2, B.Option.Market.SellToOpen1, "SPY_011720C300", 0)
-    test_exc(3, B.Option.Market.BuyToOpen2, "", 1, 17, 2020, True, 300, 1)
-    test_exc(4, B.Option.Market.SellToOpen2, "SPY", 0, 17, 2020, True, 300, 1)
-    test_exc(5, B.Option.Market.BuyToClose2, "SPY", 1, 0, 2020, True, 300, 1)
-    test_exc(6, B.Option.Market.SellToClose2, "SPY", 1, 17, 0, True, 300, 1)
-    test_exc(7, B.Option.Market.BuyToOpen2, "SPY", 1, 17, 0, True, 0.0, 1)
-    test_exc(8, B.Option.Market.SellToOpen2, "SPY", 1, 17, 0, True, 300, 0)
-    test_exc(9, B.Option.Limit.BuyToOpen1, "", 1, 100.00)
-    test_exc(10, B.Option.Limit.SellToOpen1, "SPY_011720C300", 0, 100)
-    test_exc(11, B.Option.Limit.BuyToClose1, "SPY_011720C300", 1, 0.0)
-    test_exc(12, B.Option.Limit.SellToClose1, "SPY_011720C300", 1, -1)
-    test_exc(13, B.Option.Limit.BuyToOpen2, "", 1, 17, 2020, True, 300, 1, 100.0)
-    test_exc(14, B.Option.Limit.SellToOpen2, "SPY", 0, 17, 2020, True, 300, 1, 100.0)
-    test_exc(15, B.Option.Limit.BuyToClose2, "SPY", 1, 0, 2020, True, 300, 1, 100.0)
-    test_exc(16, B.Option.Limit.SellToClose2, "SPY", 1, 17, 0, True, 300, 1, 100.0)
-    test_exc(17, B.Option.Limit.BuyToOpen2, "SPY", 1, 17, 0, True, 0.0, 1, 100.0)
-    test_exc(18, B.Option.Limit.SellToOpen2, "SPY", 1, 17, 0, True, 300, 0, 100.0)
-    test_exc(19, B.Option.Limit.BuyToClose2, "SPY", 1, 17, 0, True, 300, 1, .0)
-    test_exc(20, B.Option.Limit.SellToClose2, "SPY", 1, 17, 0, True, 300, 1, -100.0)
+    test_exc(1, B.Option.Build1, "", 1, 1,1)
+    test_exc(2, B.Option.Build1, "SPY_011720C300", 0, 0,1)
+    test_exc(3, B.Option.Build2, "", 1, 17, 2020, True, 300, 1, 1, 1)
+    test_exc(4, B.Option.Build2, "SPY", 0, 17, 2020, True, 300, 1, 0,1)
+    test_exc(5, B.Option.Build2, "SPY", 1, 0, 2020, True, 300, 1, 1, 0)
+    test_exc(6, B.Option.Build2, "SPY", 1, 17, 0, True, 300, 1, 0, 0)
+    test_exc(7, B.Option.Build2, "SPY", 1, 17, 0, True, 0.0, 1, 1, 1)
+    test_exc(8, B.Option.Build2, "SPY", 1, 17, 0, True, 300, 0, 0, 1)
+    test_exc(9, B.Option.Build1, "", 1, 1, 1, 100.00)
+    test_exc(10, B.Option.Build1, "SPY_011720C300", 0, 0, 1, 100)
+    test_exc(11, B.Option.Build1, "SPY_011720C300", 1, 1, 0, 0.0)
+    test_exc(12, B.Option.Build1, "SPY_011720C300", 1, 0,0, -1)
+    test_exc(13, B.Option.Build2, "", 1, 17, 2020, True, 300, 1, 1, 1, 100.0)
+    test_exc(14, B.Option.Build2, "SPY", 0, 17, 2020, True, 300, 1, 0, 1, 100.0)
+    test_exc(15, B.Option.Build2, "SPY", 1, 0, 2020, True, 300, 1, 1, 0, 100.0)
+    test_exc(16, B.Option.Build2, "SPY", 1, 17, 0, True, 300, 1, 0,0, 100.0)
+    test_exc(17, B.Option.Build2, "SPY", 1, 17, 0, True, 0.0, 1, 1,1, 100.0)
+    test_exc(18, B.Option.Build2, "SPY", 1, 17, 0, True, 300, 0, 0,1, 100.0)
+    test_exc(19, B.Option.Build2, "SPY", 1, 17, 0, True, 300, 1, 1, 0, .0)
+    test_exc(20, B.Option.Build2, "SPY", 1, 17, 0, True, 300, 1, 0, 0, -100.0)
+    
+    def _build(order_type, asset_type, symbol, instruction, quantity, 
+              limit_price=0.0, stop_price=0.0):
+        return B._abi_build('BuildOrder_Simple_ABI', 
+             execute.c_int(asset_type), execute.PCHAR(symbol), 
+             execute.c_size_t(quantity), execute.c_int(instruction), 
+             execute.c_int(order_type),  execute.c_double(limit_price), 
+             execute.c_double(stop_price))
     
     # MARKET
-    mbto = B.Option.Market.BuyToOpen1('SPY_011720C300', 1)
+    mbto = B.Option.Build1('SPY_011720C300', 1, True, True)
     print( mbto.as_json() )
     check_order(mbto, MARKET, 'SPY_011720C300', BTO, 1)   
-    mbto2 = B.Option.Market.BuyToOpen2("SPY", 1, 17, 2020, True, 300, 1)      
+    mbto2 = B.Option.Build2("SPY", 1, 17, 2020, True, 300, 1, True, True )      
     assert mbto2 == mbto
-    mbto3 = B.build(MARKET, OPTION, 'SPY_011720C300', BTO, 1)
+    mbto3 = _build(MARKET, OPTION, 'SPY_011720C300', BTO, 1)
     assert mbto3 == mbto2
     assert mbto3.as_json() == mbto2.as_json() == mbto.as_json()
     
-    msto = B.Option.Market.SellToOpen1('SPY_011720P200', 99)
+    msto = B.Option.Build1('SPY_011720P200', 99, False, True)
     print( msto.as_json() )
     check_order(msto, MARKET, 'SPY_011720P200', STO, 99)   
-    msto2 = B.Option.Market.SellToOpen2("SPY", 1, 17, 2020, False, 200, 99)      
+    msto2 = B.Option.Build2("SPY", 1, 17, 2020, False, 200, 99, False, True)      
     assert msto2 == msto
-    msto3 = B.build(MARKET, OPTION, 'SPY_011720P200', STO, 99)
+    msto3 = _build(MARKET, OPTION, 'SPY_011720P200', STO, 99)
     assert msto3 == msto2
     assert msto3.as_json() == msto2.as_json() == msto.as_json()
     
-    mbtc = B.Option.Market.BuyToClose1('SPY_011720C300', 1)
+    mbtc = B.Option.Build1('SPY_011720C300', 1, True, False)
     print( mbtc.as_json() )
     check_order(mbtc, MARKET, 'SPY_011720C300', BTC, 1)   
-    mbtc2 = B.Option.Market.BuyToClose2("SPY", 1, 17, 2020, True, 300, 1)      
+    mbtc2 = B.Option.Build2("SPY", 1, 17, 2020, True, 300, 1, True, False)      
     assert mbtc2 == mbtc
-    mbtc3 = B.build(MARKET, OPTION, 'SPY_011720C300', BTC, 1)
+    mbtc3 = _build(MARKET, OPTION, 'SPY_011720C300', BTC, 1)
     assert mbtc3 == mbtc2
     assert mbtc3.as_json() == mbtc2.as_json() == mbtc.as_json()
   
-    mstc = B.Option.Market.SellToClose1('SPY_011720C300', 1)
+    mstc = B.Option.Build1('SPY_011720C300', 1, False, False)
     print( mstc.as_json() )
     check_order(mstc, MARKET, 'SPY_011720C300', STC, 1)   
-    mstc2 = B.Option.Market.SellToClose2("SPY", 1, 17, 2020, True, 300, 1)      
+    mstc2 = B.Option.Build2("SPY", 1, 17, 2020, True, 300, 1, False, False)      
     assert mstc2 == mstc
-    mstc3 = B.build(MARKET, OPTION, 'SPY_011720C300', STC, 1)
+    mstc3 = _build(MARKET, OPTION, 'SPY_011720C300', STC, 1)
     assert mstc3 == mstc2
     assert mstc3.as_json() == mstc2.as_json() == mstc.as_json()
       
     # LIMIT
-    lbto = B.Option.Limit.BuyToOpen1('SPY_011720C300', 1, 9.99)
+    lbto = B.Option.Build1('SPY_011720C300', 1,True, True, 9.99)
     print( lbto.as_json() )
     check_order(lbto, LIMIT, 'SPY_011720C300', BTO, 1, 9.99)   
-    lbto2 = B.Option.Limit.BuyToOpen2("SPY", 1, 17, 2020, True, 300, 1, 9.99)      
+    lbto2 = B.Option.Build2("SPY", 1, 17, 2020, True, 300, 1,True, True, 9.99)      
     assert lbto2 == lbto
-    lbto3 = B.build(LIMIT, OPTION, 'SPY_011720C300', BTO, 1, 9.99)
+    lbto3 = _build(LIMIT, OPTION, 'SPY_011720C300', BTO, 1, 9.99)
     assert lbto3 == lbto2
     assert lbto3.as_json() == lbto2.as_json() == lbto.as_json()
     
-    lsto = B.Option.Limit.SellToOpen1('SPY_011720P200', 99, .009)
+    lsto = B.Option.Build1('SPY_011720P200', 99, False, True, .009)
     print( lsto.as_json() )
     check_order(lsto, LIMIT, 'SPY_011720P200', STO, 99, .009)   
-    lsto2 = B.Option.Limit.SellToOpen2("SPY", 1, 17, 2020, False, 200, 99, .009)      
+    lsto2 = B.Option.Build2("SPY", 1, 17, 2020, False, 200, 99,False, True, .009)      
     assert lsto2 == lsto
-    lsto3 = B.build(LIMIT, OPTION, 'SPY_011720P200', STO, 99, .009)
+    lsto3 = _build(LIMIT, OPTION, 'SPY_011720P200', STO, 99, .009)
     assert lsto3 == lsto2
     assert lsto3.as_json() == lsto2.as_json() == lsto.as_json()
     
-    lbtc = B.Option.Limit.BuyToClose1('SPY_011720C300', 1, 10)
+    lbtc = B.Option.Build1('SPY_011720C300', 1, True, False, 10)
     print( lbtc.as_json() )
     check_order(lbtc, LIMIT, 'SPY_011720C300', BTC, 1, 10.00)   
-    lbtc2 = B.Option.Limit.BuyToClose2("SPY", 1, 17, 2020, True, 300, 1, 10)      
+    lbtc2 = B.Option.Build2("SPY", 1, 17, 2020, True, 300, 1, True, False, 10)      
     assert lbtc2 == lbtc
-    lbtc3 = B.build(LIMIT, OPTION, 'SPY_011720C300', BTC, 1, 10)
+    lbtc3 = _build(LIMIT, OPTION, 'SPY_011720C300', BTC, 1, 10)
     assert lbtc3 == lbtc2
     assert lbtc3.as_json() == lbtc2.as_json() == lbtc.as_json()
   
-    lstc = B.Option.Limit.SellToClose1('SPY_011720C300', 1, 10.0001)
+    lstc = B.Option.Build1('SPY_011720C300', 1, False, False, 10.0001)
     print( lstc.as_json() )
     check_order(lstc, LIMIT, 'SPY_011720C300', STC, 1, 10.0001)   
-    lstc2 = B.Option.Limit.SellToClose2("SPY", 1, 17, 2020, True, 300, 1, 10.0001)      
+    lstc2 = B.Option.Build2("SPY", 1, 17, 2020, True, 300, 1, False, False, 10.0001)      
     assert lstc2 == lstc
-    lstc3 = B.build(LIMIT, OPTION, 'SPY_011720C300', STC, 1, 10.0001)
+    lstc3 = _build(LIMIT, OPTION, 'SPY_011720C300', STC, 1, 10.0001)
     assert lstc3 == lstc2
     assert lstc3.as_json() == lstc2.as_json() == lstc.as_json()
     

@@ -94,24 +94,24 @@ test_simple_exec_equity_market()
     json j;
     OrderTicket order;
 
-    using BUILDER = SimpleOrderBuilder::Equity::Market;
+    using BUILDER = SimpleOrderBuilder::Equity;
     OrderType ot = OrderType::MARKET;
     OrderAssetType oa = OrderAssetType::EQUITY;
 
-    order = BUILDER::Buy("SPY", 100);
+    order = BUILDER::Build("SPY", 100, true, true);
     j = order.as_json();
     test_simple_exec_obj_json(j, ot, OrderInstruction::BUY, oa, "SPY", 100);
 
-    order = BUILDER::Sell("QQQ", 200);
+    order = BUILDER::Build("QQQ", 200, false, false);
     j = order.as_json();
     test_simple_exec_obj_json(j, ot, OrderInstruction::SELL, oa, "QQQ", 200);
 
-    order = BUILDER::Short("SPY", 50);
+    order = BUILDER::Build("SPY", 50, false, true);
     j = order.as_json();
     test_simple_exec_obj_json(j, ot, OrderInstruction::SELL_SHORT, oa, "SPY",
                               50);
 
-    order = BUILDER::Cover("QQQ", 199);
+    order = BUILDER::Build("QQQ", 199, true, false);
     j = order.as_json();
     test_simple_exec_obj_json(j, ot, OrderInstruction::BUY_TO_COVER, oa,  "QQQ",
                               199);
@@ -123,24 +123,24 @@ test_simple_exec_equity_limit()
     json j;
     OrderTicket order;
 
-    using BUILDER = SimpleOrderBuilder::Equity::Limit;
+    using BUILDER = SimpleOrderBuilder::Equity;
     OrderType ot = OrderType::LIMIT;
     OrderAssetType oa = OrderAssetType::EQUITY;
 
-    order = BUILDER::Buy("SPY", 100, 275.00);
+    order = BUILDER::Build("SPY", 100, true, true, 275.00);
     j = order.as_json();
     test_simple_exec_obj_json(j, ot, OrderInstruction::BUY, oa, "SPY", 100);
 
-    order = BUILDER::Sell("SPY", 1, 285.9999);
+    order = BUILDER::Build("SPY", 1, false, false, 285.9999);
     j = order.as_json();
     test_simple_exec_obj_json(j, ot, OrderInstruction::SELL, oa, "SPY", 1);
 
-    order = BUILDER::Short("QQQ", 1000, 150.00);
+    order = BUILDER::Build("QQQ", 1000, false, true, 150.00);
     j = order.as_json();
     test_simple_exec_obj_json(j, ot, OrderInstruction::SELL_SHORT, oa,  "QQQ",
                               1000);
 
-    order = BUILDER::Cover("QQQ", 1000, 150.01);
+    order = BUILDER::Build("QQQ", 1000, true, false, 150.01);
     j = order.as_json();
     test_simple_exec_obj_json(j, ot, OrderInstruction::BUY_TO_COVER, oa, "QQQ",
                               1000);
@@ -156,22 +156,22 @@ test_simple_exec_equity_stop()
     OrderType ot = OrderType::STOP;
     OrderAssetType oa = OrderAssetType::EQUITY;
 
-    order = BUILDER::Buy("SPY", 100, 275.00);
+    order = BUILDER::Build("SPY", 100, true, true, 275.00);
     j = order.as_json();
     test_simple_exec_obj_json(j, ot, OrderInstruction::BUY, oa, "SPY", 100,
                               0, 275.00);
 
-    order = BUILDER::Sell("SPY", 1, 285.9999);
+    order = BUILDER::Build("SPY", 1, false, false, 285.9999);
     j = order.as_json();
     test_simple_exec_obj_json(j, ot, OrderInstruction::SELL, oa, "SPY", 1,
                               0, 285.9999);
 
-    order = BUILDER::Short("QQQ", 1000, 150.00);
+    order = BUILDER::Build("QQQ", 1000, false, true, 150.00);
     j = order.as_json();
     test_simple_exec_obj_json(j, ot, OrderInstruction::SELL_SHORT, oa,  "QQQ",
                               1000, 0, 150.00);
 
-    order = BUILDER::Cover("QQQ", 1000, 150.01);
+    order = BUILDER::Build("QQQ", 1000, true, false, 150.01);
     j = order.as_json();
     test_simple_exec_obj_json(j, ot, OrderInstruction::BUY_TO_COVER, oa, "QQQ",
                               1000, 0, 150.01);
@@ -187,22 +187,22 @@ test_simple_exec_equity_stop_limit()
     OrderType ot = OrderType::STOP_LIMIT;
     OrderAssetType oa = OrderAssetType::EQUITY;
 
-    order = BUILDER::Buy("SPY", 100, 275.00, 275.10);
+    order = BUILDER::Build("SPY", 100, true, true, 275.00, 275.10);
     j = order.as_json();
     test_simple_exec_obj_json(j, ot, OrderInstruction::BUY, oa, "SPY", 100,
                               275.10, 275.00);
 
-    order = BUILDER::Sell("SPY", 1, 285.9999, 285.9998);
+    order = BUILDER::Build("SPY", 1, false, false, 285.9999, 285.9998);
     j = order.as_json();
     test_simple_exec_obj_json(j, ot, OrderInstruction::SELL, oa, "SPY", 1,
                               285.9998, 285.9999);
 
-    order = BUILDER::Short("QQQ", 1000, 150.00, 150.00);
+    order = BUILDER::Build("QQQ", 1000, false, true, 150.00, 150.00);
     j = order.as_json();
     test_simple_exec_obj_json(j, ot, OrderInstruction::SELL_SHORT, oa,  "QQQ",
                               1000, 150.00, 150);
 
-    order = BUILDER::Cover("QQQ", 1000, 150.01, 150.00);
+    order = BUILDER::Build("QQQ", 1000, true, false, 150.01, 150.00);
     j = order.as_json();
     test_simple_exec_obj_json(j, ot, OrderInstruction::BUY_TO_COVER, oa, "QQQ",
                               1000, 150.00, 150.01);
@@ -214,33 +214,33 @@ test_simple_exec_option_market()
     json j;
     OrderTicket order;
 
-    using BUILDER = SimpleOrderBuilder::Option::Market;
+    using BUILDER = SimpleOrderBuilder::Option;
     OrderType ot = OrderType::MARKET;
     OrderAssetType oa = OrderAssetType::OPTION;
     string sym("SPY_011720C300");
 
-    order = BUILDER::BuyToOpen(sym, 1);
+    order = BUILDER::Build(sym, 1, true, true);
     j = order.as_json();
     test_simple_exec_obj_json(j, ot, OrderInstruction::BUY_TO_OPEN, oa, sym, 1);
-    if( order != BUILDER::BuyToOpen("SPY",1,17,2020,true,300, 1) )
+    if( order != BUILDER::Build("SPY",1,17,2020,true,300, 1, true, true) )
         throw runtime_error("BTO option market orders did not match: " + sym);
 
-    order = BUILDER::SellToOpen(sym, 1);
+    order = BUILDER::Build(sym, 1, false, true);
     j = order.as_json();
     test_simple_exec_obj_json(j, ot, OrderInstruction::SELL_TO_OPEN, oa, sym, 1);
-    if( order != BUILDER::SellToOpen("SPY",1,17,2020,true,300, 1) )
+    if( order != BUILDER::Build("SPY",1,17,2020,true,300, 1, false, true) )
         throw runtime_error("STO option market orders did not match: " + sym);
 
-    order = BUILDER::BuyToClose("SPY_011720C300", 1);
+    order = BUILDER::Build("SPY_011720C300", 1, true, false);
     j = order.as_json();
     test_simple_exec_obj_json(j, ot, OrderInstruction::BUY_TO_CLOSE, oa, sym, 1);
-    if( order != BUILDER::BuyToClose("SPY",1,17,2020,true,300, 1) )
+    if( order != BUILDER::Build("SPY",1,17,2020,true,300, 1, true, false) )
         throw runtime_error("BTC option market orders did not match: " + sym);
 
-    order = BUILDER::SellToClose(sym, 1);
+    order = BUILDER::Build(sym, 1, false, false);
     j = order.as_json();
     test_simple_exec_obj_json(j, ot, OrderInstruction::SELL_TO_CLOSE, oa, sym, 1);
-    if( order != BUILDER::SellToClose("SPY",1,17,2020,true,300, 1) )
+    if( order != BUILDER::Build("SPY",1,17,2020,true,300, 1, false ,false) )
         throw runtime_error("STC option market orders did not match: " + sym);
 }
 
@@ -251,33 +251,33 @@ test_simple_exec_option_limit()
     json j;
     OrderTicket order;
 
-    using BUILDER = SimpleOrderBuilder::Option::Limit;
+    using BUILDER = SimpleOrderBuilder::Option;
     OrderType ot = OrderType::LIMIT;
     OrderAssetType oa = OrderAssetType::OPTION;
     string sym("SPY_011720P200");
 
-    order = BUILDER::BuyToOpen(sym, 999, .99);
+    order = BUILDER::Build(sym, 999, true, true, .99);
     j = order.as_json();
     test_simple_exec_obj_json(j, ot, OrderInstruction::BUY_TO_OPEN, oa, sym, 999);
-    if( order != BUILDER::BuyToOpen("SPY",1,17,2020,false,200, 999,.99) )
+    if( order != BUILDER::Build("SPY",1,17,2020,false,200, 999, true, true, .99) )
         throw runtime_error("BTO option limit orders did not match: " + sym);
 
-    order = BUILDER::SellToOpen(sym, 999, .99);
+    order = BUILDER::Build(sym, 999, false, true, .99);
     j = order.as_json();
     test_simple_exec_obj_json(j, ot, OrderInstruction::SELL_TO_OPEN, oa, sym, 999);
-    if( order != BUILDER::SellToOpen("SPY",1,17,2020,false,200, 999,.99) )
+    if( order != BUILDER::Build("SPY",1,17,2020,false,200, 999, false, true, .99) )
         throw runtime_error("STO option limit orders did not match: " + sym);
 
-    order = BUILDER::BuyToClose(sym, 999, .99);
+    order = BUILDER::Build(sym, 999, true, false, .99);
     j = order.as_json();
     test_simple_exec_obj_json(j, ot, OrderInstruction::BUY_TO_CLOSE, oa, sym, 999);
-    if( order != BUILDER::BuyToClose("SPY",1,17,2020,false,200, 999,.99) )
+    if( order != BUILDER::Build("SPY",1,17,2020,false,200, 999, true, false, .99) )
         throw runtime_error("BTC option limit orders did not match: " + sym);
 
-    order = BUILDER::SellToClose(sym, 999, .99);
+    order = BUILDER::Build(sym, 999, false, false, .99);
     j = order.as_json();
     test_simple_exec_obj_json(j, ot, OrderInstruction::SELL_TO_CLOSE, oa, sym, 999);
-    if( order != BUILDER::SellToClose("SPY",1,17,2020,false,200, 999,.99) )
+    if( order != BUILDER::Build("SPY",1,17,2020,false,200, 999, false, false, .99) )
         throw runtime_error("STC option limit orders did not match: " + sym);
 }
 
@@ -387,48 +387,48 @@ test_spread_exec_vertical()
     using BUILDER = SpreadOrderBuilder::Vertical;
 
     /* MARKETS */
-    order = BUILDER::Open("SPY_011720C300", "SPY_011720C350", 1);
+    order = BUILDER::Build("SPY_011720C300", "SPY_011720C350", 1, true);
     j = order.as_json();
     legs = {
         {oa, "SPY_011720C300", OrderInstruction::BUY_TO_OPEN, 1},
         {oa, "SPY_011720C350", OrderInstruction::SELL_TO_OPEN, 1}
     };
     test_spread_exec_obj_json(j, ot, cmplx, legs);
-    order2 = BUILDER::Open("SPY", 1, 17, 2020, true, 300, 350, 1);
+    order2 = BUILDER::Build("SPY", 1, 17, 2020, true, 300, 350, 1, true);
     if( order != order2 )
         throw runtime_error("vertical open market orders did not match");
 
-    order = BUILDER::Close("SPY_011720C350", "SPY_011720C300", 1);
+    order = BUILDER::Build("SPY_011720C350", "SPY_011720C300", 1, false);
     j = order.as_json();
     legs = {
         {oa, "SPY_011720C350", OrderInstruction::BUY_TO_CLOSE, 1},
         {oa, "SPY_011720C300", OrderInstruction::SELL_TO_CLOSE, 1}
     };
     test_spread_exec_obj_json(j, ot, cmplx, legs);
-    order2 = BUILDER::Close("SPY", 1, 17, 2020, true, 350, 300, 1);
+    order2 = BUILDER::Build("SPY", 1, 17, 2020, true, 350, 300, 1, false);
     if( order != order2 )
         throw runtime_error("vertical close market orders did not match");
 
     /* LIMITS */
-    order = BUILDER::Open("SPY_011720P200", "SPY_011720P250", 999, 5.99);
+    order = BUILDER::Build("SPY_011720P200", "SPY_011720P250", 999, true, 5.99);
     j = order.as_json();
     legs = {
         {oa, "SPY_011720P200", OrderInstruction::BUY_TO_OPEN, 999},
         {oa, "SPY_011720P250", OrderInstruction::SELL_TO_OPEN, 999}
     };
     test_spread_exec_obj_json(j, OrderType::NET_DEBIT, cmplx, legs, 5.99);
-    order2 = BUILDER::Open("SPY", 1, 17, 2020, false, 200, 250, 999, 5.99);
+    order2 = BUILDER::Build("SPY", 1, 17, 2020, false, 200, 250, 999, true, 5.99);
     if( order != order2 )
         throw runtime_error("vertical open limit orders did not match");
 
-    order = BUILDER::Close("SPY_011720P250", "SPY_011720P200", 999, -5.01);
+    order = BUILDER::Build("SPY_011720P250", "SPY_011720P200", 999, false, -5.01);
     j = order.as_json();
     legs = {
         {oa, "SPY_011720P250", OrderInstruction::BUY_TO_CLOSE, 999},
         {oa, "SPY_011720P200", OrderInstruction::SELL_TO_CLOSE, 999}
     };
     test_spread_exec_obj_json(j, OrderType::NET_CREDIT, cmplx, legs, 5.01);
-    order2 = BUILDER::Close("SPY", 1, 17, 2020, false, 250, 200, 999, -5.01);
+    order2 = BUILDER::Build("SPY", 1, 17, 2020, false, 250, 200, 999, false, -5.01);
     if( order != order2 )
         throw runtime_error("vertical close limit orders did not match");
 }
@@ -445,7 +445,7 @@ test_spread_exec_vertical_roll()
     using BUILDER = SpreadOrderBuilder::Vertical::Roll;
 
     /* MARKET */
-    order = BUILDER::Raw("SPY_011720C300", "SPY_011720C350",
+    order = BUILDER::Build("SPY_011720C300", "SPY_011720C350",
                           "SPY_032020C375", "SPY_032020C325",1);
     j = order.as_json();
     legs = {
@@ -455,12 +455,12 @@ test_spread_exec_vertical_roll()
         {oa, "SPY_032020C325", OrderInstruction::SELL_TO_OPEN, 1}
     };
     test_spread_exec_obj_json(j, OrderType::MARKET, cmplx, legs);
-    order2 = BUILDER::NewExp("SPY", 1, 17, 2020, 3, 20, 2020, true,
+    order2 = BUILDER::Build("SPY", 1, 17, 2020, 3, 20, 2020, true,
                               300, 350, 375, 325, 1);
     if( order != order2 )
         throw runtime_error("NewExp Vertical Roll market orders did not match");
 
-    order = BUILDER::Raw("SPY_011720C300", "SPY_011720C350",
+    order = BUILDER::Build("SPY_011720C300", "SPY_011720C350",
                           "SPY_011720C375", "SPY_011720C325",1);
     j = order.as_json();
     legs = {
@@ -470,12 +470,12 @@ test_spread_exec_vertical_roll()
         {oa, "SPY_011720C325", OrderInstruction::SELL_TO_OPEN, 1}
     };
     test_spread_exec_obj_json(j, OrderType::MARKET, cmplx, legs);
-    order2 = BUILDER::SameExp("SPY", 1, 17, 2020, true, 300, 350, 375, 325, 1);
+    order2 = BUILDER::Build("SPY", 1, 17, 2020, true, 300, 350, 375, 325, 1);
     if( order != order2 )
         throw runtime_error("SameExp Vertical Roll market orders did not match");
 
     /* LIMIT  */
-    order = BUILDER::Raw("SPY_011720C300", "SPY_011720C350",
+    order = BUILDER::Build("SPY_011720C300", "SPY_011720C350",
                           "SPY_032020C375", "SPY_032020C325",1, .0);
     j = order.as_json();
     legs = {
@@ -485,12 +485,12 @@ test_spread_exec_vertical_roll()
         {oa, "SPY_032020C325", OrderInstruction::SELL_TO_OPEN, 1}
     };
     test_spread_exec_obj_json(j, OrderType::NET_ZERO, cmplx, legs, .0);
-    order2 = BUILDER::NewExp("SPY", 1, 17, 2020, 3, 20, 2020, true,
+    order2 = BUILDER::Build("SPY", 1, 17, 2020, 3, 20, 2020, true,
                               300, 350, 375, 325, 1, .0);
     if( order != order2 )
         throw runtime_error("NewExp Vertical Roll limit orders did not match");
 
-    order = BUILDER::Raw("SPY_011720C300", "SPY_011720C350",
+    order = BUILDER::Build("SPY_011720C300", "SPY_011720C350",
                           "SPY_011720C375", "SPY_011720C325",1, -5.55);
     j = order.as_json();
     legs = {
@@ -500,7 +500,7 @@ test_spread_exec_vertical_roll()
         {oa, "SPY_011720C325", OrderInstruction::SELL_TO_OPEN, 1}
     };
     test_spread_exec_obj_json(j, OrderType::NET_CREDIT, cmplx, legs, 5.55);
-    order2 = BUILDER::SameExp("SPY", 1, 17, 2020, true, 300, 350, 375, 325,
+    order2 = BUILDER::Build("SPY", 1, 17, 2020, true, 300, 350, 375, 325,
                               1 ,-5.55);
     if( order != order2 )
         throw runtime_error("SameExp Vertical Roll limit orders did not match");
@@ -520,7 +520,7 @@ test_spread_exec_unbalanced_vertical_roll()
     using BUILDER = SpreadOrderBuilder::Vertical::Roll::Unbalanced;
 
     /* MARKETS */
-    order = BUILDER::Raw("SPY_011720P200", "SPY_011720P250",
+    order = BUILDER::Build("SPY_011720P200", "SPY_011720P250",
                          "SPY_032020P275", "SPY_032020P200",3,2);
     j = order.as_json();
     legs = {
@@ -530,13 +530,13 @@ test_spread_exec_unbalanced_vertical_roll()
         {oa, "SPY_032020P200", OrderInstruction::SELL_TO_OPEN, 2}
     };
     test_spread_exec_obj_json(j, OrderType::MARKET, cmplx, legs);
-    order2 = BUILDER::NewExp("SPY", 1, 17, 2020, 3, 20, 2020,
+    order2 = BUILDER::Build("SPY", 1, 17, 2020, 3, 20, 2020,
                              false, 200, 250, 275, 200, 3, 2);
     if( order != order2)
         throw runtime_error("NewExp Unbalanced Vertical Roll market orders did "
                             "not match");
 
-    order = BUILDER::Raw("SPY_011720P200", "SPY_011720P250",
+    order = BUILDER::Build("SPY_011720P200", "SPY_011720P250",
                          "SPY_011720P275", "SPY_011720P200",3,2);
     j = order.as_json();
     legs = {
@@ -546,13 +546,13 @@ test_spread_exec_unbalanced_vertical_roll()
         {oa, "SPY_011720P200", OrderInstruction::SELL_TO_OPEN, 2}
     };
     test_spread_exec_obj_json(j, ot, cmplx, legs);
-    order2 = BUILDER::SameExp("SPY", 1, 17, 2020, false, 200, 250, 275, 200, 3, 2);
+    order2 = BUILDER::Build("SPY", 1, 17, 2020, false, 200, 250, 275, 200, 3, 2);
     if( order != order2 )
         throw runtime_error("SameExp Unbalanced Vertical Roll market orders "
                             "did not match");
 
     /* LIMITS*/
-    order = BUILDER::Raw("SPY_011720P200", "SPY_011720P250",
+    order = BUILDER::Build("SPY_011720P200", "SPY_011720P250",
                          "SPY_032020P275", "SPY_032020P200",3,2, .9);
     j = order.as_json();
     legs = {
@@ -562,13 +562,13 @@ test_spread_exec_unbalanced_vertical_roll()
         {oa, "SPY_032020P200", OrderInstruction::SELL_TO_OPEN, 2}
     };
     test_spread_exec_obj_json(j, OrderType::NET_DEBIT, cmplx, legs, .9);
-    order2 = BUILDER::NewExp("SPY", 1, 17, 2020, 3, 20, 2020,
+    order2 = BUILDER::Build("SPY", 1, 17, 2020, 3, 20, 2020,
                                          false, 200, 250, 275, 200, 3, 2, .9);
     if( order != order2)
         throw runtime_error("NewExp Unbalanced Vertical Roll limit orders did "
                             "not match");
 
-    order = BUILDER::Raw("SPY_011720P200", "SPY_011720P250",
+    order = BUILDER::Build("SPY_011720P200", "SPY_011720P250",
                          "SPY_011720P275", "SPY_011720P200",3,2, -1.0);
     j = order.as_json();
     legs = {
@@ -578,7 +578,7 @@ test_spread_exec_unbalanced_vertical_roll()
         {oa, "SPY_011720P200", OrderInstruction::SELL_TO_OPEN, 2}
     };
     test_spread_exec_obj_json(j, OrderType::NET_CREDIT, cmplx, legs, 1.0);
-    order2 = BUILDER::SameExp("SPY", 1, 17, 2020, false, 200, 250, 275, 200, 3,
+    order2 = BUILDER::Build("SPY", 1, 17, 2020, false, 200, 250, 275, 200, 3,
                               2, -1.0);
     if( order != order2 )
         throw runtime_error("SameExp Unbalanced Vertical Roll limit orders "
@@ -598,8 +598,8 @@ test_spread_exec_butterfly()
     using BUILDER = SpreadOrderBuilder::Butterfly;
 
     /* MARKETS */
-    order = BUILDER::BuyToOpen("SPY_011720C300", "SPY_011720C325",
-                               "SPY_011720C350", 1);
+    order = BUILDER::Build("SPY_011720C300", "SPY_011720C325",
+                               "SPY_011720C350", 1, true, true);
     j = order.as_json();
     legs = {
         {oa, "SPY_011720C300", OrderInstruction::BUY_TO_OPEN, 1},
@@ -607,12 +607,12 @@ test_spread_exec_butterfly()
         {oa, "SPY_011720C350", OrderInstruction::BUY_TO_OPEN, 1}
     };
     test_spread_exec_obj_json(j, OrderType::MARKET,cmplx, legs);
-    order2 = BUILDER::BuyToOpen("SPY", 1, 17, 2020, true, 300, 325, 350, 1);
+    order2 = BUILDER::Build("SPY", 1, 17, 2020, true, 300, 325, 350, 1, true, true);
     if( order != order2 )
         throw runtime_error("Butterfly BTO market orders did not match");
 
-    order = BUILDER::SellToClose("SPY_011720C300", "SPY_011720C325",
-                                 "SPY_011720C350", 1);
+    order = BUILDER::Build("SPY_011720C300", "SPY_011720C325",
+                                 "SPY_011720C350", 1, false, false);
     j = order.as_json();
     legs = {
         {oa, "SPY_011720C300", OrderInstruction::SELL_TO_CLOSE, 1},
@@ -620,12 +620,12 @@ test_spread_exec_butterfly()
         {oa, "SPY_011720C350", OrderInstruction::SELL_TO_CLOSE, 1}
     };
     test_spread_exec_obj_json(j, OrderType::MARKET, cmplx, legs);
-    order2 = BUILDER::SellToClose("SPY", 1, 17, 2020, true, 300, 325, 350, 1);
+    order2 = BUILDER::Build("SPY", 1, 17, 2020, true, 300, 325, 350, 1, false, false);
     if( order != order2 )
         throw runtime_error("Butterfly STC market orders did not match");
 
-    order = BUILDER::SellToOpen("SPY_011720P200", "SPY_011720P250",
-                                "SPY_011720P300", 499);
+    order = BUILDER::Build("SPY_011720P200", "SPY_011720P250",
+                                "SPY_011720P300", 499, false, true);
     j = order.as_json();
     legs = {
         {oa, "SPY_011720P200", OrderInstruction::SELL_TO_OPEN, 499},
@@ -633,12 +633,12 @@ test_spread_exec_butterfly()
         {oa, "SPY_011720P300", OrderInstruction::SELL_TO_OPEN, 499}
     };
     test_spread_exec_obj_json(j, OrderType::MARKET,cmplx, legs);
-    order2 = BUILDER::SellToOpen("SPY", 1, 17, 2020, false, 200, 250, 300, 499);
+    order2 = BUILDER::Build("SPY", 1, 17, 2020, false, 200, 250, 300, 499, false, true);
     if( order != order2 )
         throw runtime_error("Butterfly STO market orders did not match");
 
-    order = BUILDER::BuyToClose("SPY_011720P200", "SPY_011720P250",
-                                "SPY_011720P300", 499);
+    order = BUILDER::Build("SPY_011720P200", "SPY_011720P250",
+                                "SPY_011720P300", 499, true, false);
     j = order.as_json();
     legs = {
         {oa, "SPY_011720P200", OrderInstruction::BUY_TO_CLOSE, 499},
@@ -646,13 +646,13 @@ test_spread_exec_butterfly()
         {oa, "SPY_011720P300", OrderInstruction::BUY_TO_CLOSE, 499}
     };
     test_spread_exec_obj_json(j, OrderType::MARKET, cmplx, legs);
-    order2 = BUILDER::BuyToClose("SPY", 1, 17, 2020, false, 200, 250, 300, 499);
+    order2 = BUILDER::Build("SPY", 1, 17, 2020, false, 200, 250, 300, 499, true, false);
     if( order != order2 )
         throw runtime_error("Butterfly BTC market orders did not match");
 
     /* LIMITS */
-    order = BUILDER::BuyToOpen("SPY_011720C300", "SPY_011720C325",
-                               "SPY_011720C350", 1, 11.99);
+    order = BUILDER::Build("SPY_011720C300", "SPY_011720C325",
+                               "SPY_011720C350", 1, true, true, 11.99 );
     j = order.as_json();
     legs = {
         {oa, "SPY_011720C300", OrderInstruction::BUY_TO_OPEN, 1},
@@ -660,12 +660,12 @@ test_spread_exec_butterfly()
         {oa, "SPY_011720C350", OrderInstruction::BUY_TO_OPEN, 1}
     };
     test_spread_exec_obj_json(j, OrderType::NET_DEBIT,cmplx, legs, 11.99);
-    order2 = BUILDER::BuyToOpen("SPY", 1, 17, 2020, true, 300, 325, 350, 1, 11.99);
+    order2 = BUILDER::Build("SPY", 1, 17, 2020, true, 300, 325, 350, 1, true, true,11.99);
     if( order != order2 )
         throw runtime_error("Butterfly BTO limit orders did not match");
 
-    order = BUILDER::SellToClose("SPY_011720C300", "SPY_011720C325",
-                                 "SPY_011720C350", 1, -.01);
+    order = BUILDER::Build("SPY_011720C300", "SPY_011720C325",
+                                 "SPY_011720C350", 1, false, false, -.01);
     j = order.as_json();
     legs = {
         {oa, "SPY_011720C300", OrderInstruction::SELL_TO_CLOSE, 1},
@@ -673,12 +673,12 @@ test_spread_exec_butterfly()
         {oa, "SPY_011720C350", OrderInstruction::SELL_TO_CLOSE, 1}
     };
     test_spread_exec_obj_json(j, OrderType::NET_CREDIT, cmplx, legs, .01);
-    order2 = BUILDER::SellToClose("SPY", 1, 17, 2020, true, 300, 325, 350, 1, -.01);
+    order2 = BUILDER::Build("SPY", 1, 17, 2020, true, 300, 325, 350, 1,false, false, -.01);
     if( order != order2 )
         throw runtime_error("Butterfly STC limit orders did not match");
 
-    order = BUILDER::SellToOpen("SPY_011720P200", "SPY_011720P250",
-                                "SPY_011720P300", 499, -1.0);
+    order = BUILDER::Build("SPY_011720P200", "SPY_011720P250",
+                                "SPY_011720P300", 499, false, true, -1.0);
     j = order.as_json();
     legs = {
         {oa, "SPY_011720P200", OrderInstruction::SELL_TO_OPEN, 499},
@@ -686,12 +686,12 @@ test_spread_exec_butterfly()
         {oa, "SPY_011720P300", OrderInstruction::SELL_TO_OPEN, 499}
     };
     test_spread_exec_obj_json(j, OrderType::NET_CREDIT,cmplx, legs, 1.0);
-    order2 = BUILDER::SellToOpen("SPY", 1, 17, 2020, false, 200, 250, 300, 499, -1.0);
+    order2 = BUILDER::Build("SPY", 1, 17, 2020, false, 200, 250, 300, 499, false, true, -1.0);
     if( order != order2 )
         throw runtime_error("Butterfly STO limit orders did not match");
 
-    order = BUILDER::BuyToClose("SPY_011720P200", "SPY_011720P250",
-                                "SPY_011720P300", 499, .01);
+    order = BUILDER::Build("SPY_011720P200", "SPY_011720P250",
+                                "SPY_011720P300", 499, true, false, .01);
     j = order.as_json();
     legs = {
         {oa, "SPY_011720P200", OrderInstruction::BUY_TO_CLOSE, 499},
@@ -699,7 +699,7 @@ test_spread_exec_butterfly()
         {oa, "SPY_011720P300", OrderInstruction::BUY_TO_CLOSE, 499}
     };
     test_spread_exec_obj_json(j, OrderType::NET_DEBIT, cmplx, legs, .01);
-    order2 = BUILDER::BuyToClose("SPY", 1, 17, 2020, false, 200, 250, 300, 499, .01);
+    order2 = BUILDER::Build("SPY", 1, 17, 2020, false, 200, 250, 300, 499, true, false, .01);
     if( order != order2 )
         throw runtime_error("Butterfly BTC limit orders did not match");
 }
@@ -717,8 +717,8 @@ test_spread_exec_unbalanced_butterfly()
     using BUILDER = SpreadOrderBuilder::Butterfly::Unbalanced;
 
     /* MARKETS */
-    order = BUILDER::BuyToOpen("SPY_011720C300", "SPY_011720C325",
-                               "SPY_011720C350", 1, 2);
+    order = BUILDER::Build("SPY_011720C300", "SPY_011720C325",
+                               "SPY_011720C350", 1, 2, true, true);
     j = order.as_json();
     legs = {
         {oa, "SPY_011720C300", OrderInstruction::BUY_TO_OPEN, 1},
@@ -726,12 +726,12 @@ test_spread_exec_unbalanced_butterfly()
         {oa, "SPY_011720C350", OrderInstruction::BUY_TO_OPEN, 2}
     };
     test_spread_exec_obj_json(j, OrderType::MARKET,cmplx, legs);
-    order2 = BUILDER::BuyToOpen("SPY", 1, 17, 2020, true, 300, 325, 350, 1, 2);
+    order2 = BUILDER::Build("SPY", 1, 17, 2020, true, 300, 325, 350, 1, 2, true, true);
     if( order != order2 )
         throw runtime_error("Butterfly unbalanced BTO market orders did not match");
 
-    order = BUILDER::SellToClose("SPY_011720C300", "SPY_011720C325",
-                                 "SPY_011720C350", 3, 2);
+    order = BUILDER::Build("SPY_011720C300", "SPY_011720C325",
+                                 "SPY_011720C350", 3, 2, false, false);
     j = order.as_json();
     legs = {
         {oa, "SPY_011720C300", OrderInstruction::SELL_TO_CLOSE, 3},
@@ -739,12 +739,12 @@ test_spread_exec_unbalanced_butterfly()
         {oa, "SPY_011720C350", OrderInstruction::SELL_TO_CLOSE, 2}
     };
     test_spread_exec_obj_json(j, OrderType::MARKET, cmplx, legs);
-    order2 = BUILDER::SellToClose("SPY", 1, 17, 2020, true, 300, 325, 350, 3,2);
+    order2 = BUILDER::Build("SPY", 1, 17, 2020, true, 300, 325, 350, 3,2, false, false);
     if( order != order2 )
         throw runtime_error("Butterfly unbalanced STC market orders did not match");
 
-    order = BUILDER::SellToOpen("SPY_011720P200", "SPY_011720P250",
-                                "SPY_011720P300", 499, 500);
+    order = BUILDER::Build("SPY_011720P200", "SPY_011720P250",
+                                "SPY_011720P300", 499, 500, false, true);
     j = order.as_json();
     legs = {
         {oa, "SPY_011720P200", OrderInstruction::SELL_TO_OPEN, 499},
@@ -752,12 +752,12 @@ test_spread_exec_unbalanced_butterfly()
         {oa, "SPY_011720P300", OrderInstruction::SELL_TO_OPEN, 500}
     };
     test_spread_exec_obj_json(j, OrderType::MARKET,cmplx, legs);
-    order2 = BUILDER::SellToOpen("SPY", 1, 17, 2020, false, 200, 250, 300, 499, 500);
+    order2 = BUILDER::Build("SPY", 1, 17, 2020, false, 200, 250, 300, 499, 500, false, true);
     if( order != order2 )
         throw runtime_error("Butterfly unbalanced STO market orders did not match");
 
-    order = BUILDER::BuyToClose("SPY_011720P200", "SPY_011720P250",
-                                "SPY_011720P300", 499, 1);
+    order = BUILDER::Build("SPY_011720P200", "SPY_011720P250",
+                                "SPY_011720P300", 499, 1, true, false);
     j = order.as_json();
     legs = {
         {oa, "SPY_011720P200", OrderInstruction::BUY_TO_CLOSE, 499},
@@ -765,13 +765,13 @@ test_spread_exec_unbalanced_butterfly()
         {oa, "SPY_011720P300", OrderInstruction::BUY_TO_CLOSE, 1}
     };
     test_spread_exec_obj_json(j, OrderType::MARKET, cmplx, legs);
-    order2 = BUILDER::BuyToClose("SPY", 1, 17, 2020, false, 200, 250, 300, 499, 1);
+    order2 = BUILDER::Build("SPY", 1, 17, 2020, false, 200, 250, 300, 499, 1, true, false);
     if( order != order2 )
         throw runtime_error("Butterfly unbalanced BTC market orders did not match");
 
     /* LIMITS */
-    order = BUILDER::BuyToOpen("SPY_011720C300", "SPY_011720C325",
-                               "SPY_011720C350", 1, 2, 11.99);
+    order = BUILDER::Build("SPY_011720C300", "SPY_011720C325",
+                               "SPY_011720C350", 1, 2, true, true, 11.99);
     j = order.as_json();
     legs = {
         {oa, "SPY_011720C300", OrderInstruction::BUY_TO_OPEN, 1},
@@ -779,12 +779,12 @@ test_spread_exec_unbalanced_butterfly()
         {oa, "SPY_011720C350", OrderInstruction::BUY_TO_OPEN, 2}
     };
     test_spread_exec_obj_json(j, OrderType::NET_DEBIT,cmplx, legs, 11.99);
-    order2 = BUILDER::BuyToOpen("SPY", 1, 17, 2020, true, 300, 325, 350, 1, 2, 11.99);
+    order2 = BUILDER::Build("SPY", 1, 17, 2020, true, 300, 325, 350, 1, 2, true, true, 11.99);
     if( order != order2 )
         throw runtime_error("Butterfly unbalanced BTO limit orders did not match");
 
-    order = BUILDER::SellToClose("SPY_011720C300", "SPY_011720C325",
-                                 "SPY_011720C350", 3, 2, -.01);
+    order = BUILDER::Build("SPY_011720C300", "SPY_011720C325",
+                                 "SPY_011720C350", 3, 2, false, false, -.01);
     j = order.as_json();
     legs = {
         {oa, "SPY_011720C300", OrderInstruction::SELL_TO_CLOSE, 3},
@@ -792,12 +792,12 @@ test_spread_exec_unbalanced_butterfly()
         {oa, "SPY_011720C350", OrderInstruction::SELL_TO_CLOSE, 2}
     };
     test_spread_exec_obj_json(j, OrderType::NET_CREDIT, cmplx, legs, .01);
-    order2 = BUILDER::SellToClose("SPY", 1, 17, 2020, true, 300, 325, 350, 3, 2, -.01);
+    order2 = BUILDER::Build("SPY", 1, 17, 2020, true, 300, 325, 350, 3, 2, false, false, -.01);
     if( order != order2 )
         throw runtime_error("Butterfly unbalanced STC limit orders did not match");
 
-    order = BUILDER::SellToOpen("SPY_011720P200", "SPY_011720P250",
-                                "SPY_011720P300", 499, 500, -1.0);
+    order = BUILDER::Build("SPY_011720P200", "SPY_011720P250",
+                                "SPY_011720P300", 499, 500, false, true, -1.0);
     j = order.as_json();
     legs = {
         {oa, "SPY_011720P200", OrderInstruction::SELL_TO_OPEN, 499},
@@ -805,12 +805,12 @@ test_spread_exec_unbalanced_butterfly()
         {oa, "SPY_011720P300", OrderInstruction::SELL_TO_OPEN, 500}
     };
     test_spread_exec_obj_json(j, OrderType::NET_CREDIT,cmplx, legs, 1.0);
-    order2 = BUILDER::SellToOpen("SPY", 1, 17, 2020, false, 200, 250, 300, 499, 500, -1.0);
+    order2 = BUILDER::Build("SPY", 1, 17, 2020, false, 200, 250, 300, 499, 500, false, true, -1.0);
     if( order != order2 )
         throw runtime_error("Butterfly unbalanced STO limit orders did not match");
 
-    order = BUILDER::BuyToClose("SPY_011720P200", "SPY_011720P250",
-                                "SPY_011720P300", 499, 1, .01);
+    order = BUILDER::Build("SPY_011720P200", "SPY_011720P250",
+                                "SPY_011720P300", 499, 1, true, false, .01);
     j = order.as_json();
     legs = {
         {oa, "SPY_011720P200", OrderInstruction::BUY_TO_CLOSE, 499},
@@ -818,7 +818,7 @@ test_spread_exec_unbalanced_butterfly()
         {oa, "SPY_011720P300", OrderInstruction::BUY_TO_CLOSE, 1}
     };
     test_spread_exec_obj_json(j, OrderType::NET_DEBIT, cmplx, legs, .01);
-    order2 = BUILDER::BuyToClose("SPY", 1, 17, 2020, false, 200, 250, 300, 499,1, .01);
+    order2 = BUILDER::Build("SPY", 1, 17, 2020, false, 200, 250, 300, 499,1, true, false, .01);
     if( order != order2 )
         throw runtime_error("Butterfly unbalanced BTC limit orders did not match");
 }
@@ -836,48 +836,48 @@ test_spread_exec_backratio()
     using BUILDER = SpreadOrderBuilder::BackRatio;
 
     /* MARKETS */
-    order = BUILDER::Open("SPY_011720C350", "SPY_011720C300", 2, 1);
+    order = BUILDER::Build("SPY_011720C350", "SPY_011720C300", 2, 1, true);
     j = order.as_json();
     legs = {
         {oa, "SPY_011720C350", OrderInstruction::BUY_TO_OPEN, 2},
         {oa, "SPY_011720C300", OrderInstruction::SELL_TO_OPEN, 1}
     };
     test_spread_exec_obj_json(j, OrderType::MARKET,cmplx, legs);
-    order2 = BUILDER::Open("SPY", 1, 17, 2020, true, 350, 300, 2, 1);
+    order2 = BUILDER::Build("SPY", 1, 17, 2020, true, 350, 300, 2, 1, true);
     if( order != order2 )
         throw runtime_error("BackRatio ToOpen market orders did not match");
 
-    order = BUILDER::Close("SPY_011720C300", "SPY_011720C350", 1, 2);
+    order = BUILDER::Build("SPY_011720C300", "SPY_011720C350", 1, 2, false);
     j = order.as_json();
     legs = {
         {oa, "SPY_011720C300", OrderInstruction::BUY_TO_CLOSE, 1},
         {oa, "SPY_011720C350", OrderInstruction::SELL_TO_CLOSE, 2}
     };
     test_spread_exec_obj_json(j, OrderType::MARKET,cmplx, legs);
-    order2 = BUILDER::Close("SPY", 1, 17, 2020, true, 300, 350, 1, 2);
+    order2 = BUILDER::Build("SPY", 1, 17, 2020, true, 300, 350, 1, 2, false);
     if( order != order2 )
         throw runtime_error("BackRatio ToClose market orders did not match");
 
     /* LIMITS */
-    order = BUILDER::Open("SPY_011720C350", "SPY_011720C300", 2, 1, -.20);
+    order = BUILDER::Build("SPY_011720C350", "SPY_011720C300", 2, 1, true, -.20);
     j = order.as_json();
     legs = {
         {oa, "SPY_011720C350", OrderInstruction::BUY_TO_OPEN, 2},
         {oa, "SPY_011720C300", OrderInstruction::SELL_TO_OPEN, 1}
     };
     test_spread_exec_obj_json(j, OrderType::NET_CREDIT,cmplx, legs, .20);
-    order2 = BUILDER::Open("SPY", 1, 17, 2020, true, 350, 300, 2, 1, -.20);
+    order2 = BUILDER::Build("SPY", 1, 17, 2020, true, 350, 300, 2, 1, true, -.20);
     if( order != order2 )
         throw runtime_error("BackRatio ToOpen limit orders did not match");
 
-    order = BUILDER::Close("SPY_011720C300", "SPY_011720C350", 1, 2, .20);
+    order = BUILDER::Build("SPY_011720C300", "SPY_011720C350", 1, 2, false, .20);
     j = order.as_json();
     legs = {
         {oa, "SPY_011720C300", OrderInstruction::BUY_TO_CLOSE, 1},
         {oa, "SPY_011720C350", OrderInstruction::SELL_TO_CLOSE, 2}
     };
     test_spread_exec_obj_json(j, OrderType::NET_DEBIT,cmplx, legs, .20);
-    order2 = BUILDER::Close("SPY", 1, 17, 2020, true, 300, 350, 1, 2, .20);
+    order2 = BUILDER::Build("SPY", 1, 17, 2020, true, 300, 350, 1, 2, false, .20);
     if( order != order2 )
         throw runtime_error("BackRatio ToClose limit orders did not match");
 }
@@ -895,48 +895,48 @@ test_spread_exec_calendar()
     using BUILDER = SpreadOrderBuilder::Calendar;
 
     /* MARKETS */
-    order = BUILDER::Open("SPY_011720C300", "SPY_032020C300", 1);
+    order = BUILDER::Build("SPY_011720C300", "SPY_032020C300", 1, true);
     j = order.as_json();
     legs = {
         {oa, "SPY_011720C300", OrderInstruction::BUY_TO_OPEN, 1},
         {oa, "SPY_032020C300", OrderInstruction::SELL_TO_OPEN, 1}
     };
     test_spread_exec_obj_json(j, OrderType::MARKET,cmplx, legs);
-    order2 = BUILDER::Open("SPY", 1, 17, 2020, 3, 20, 2020, true, 300, 1);
+    order2 = BUILDER::Build("SPY", 1, 17, 2020, 3, 20, 2020, true, 300, 1, true);
     if( order != order2 )
         throw runtime_error("Calendar ToOpen market orders did not match");
 
-    order = BUILDER::Close("SPY_032020C300", "SPY_011720C300", 499);
+    order = BUILDER::Build("SPY_032020C300", "SPY_011720C300", 499, false);
     j = order.as_json();
     legs = {
         {oa, "SPY_032020C300", OrderInstruction::BUY_TO_CLOSE, 499},
         {oa, "SPY_011720C300", OrderInstruction::SELL_TO_CLOSE, 499}
     };
     test_spread_exec_obj_json(j, OrderType::MARKET,cmplx, legs);
-    order2 = BUILDER::Close("SPY", 3,20, 2020, 1, 17, 2020, true, 300, 499);
+    order2 = BUILDER::Build("SPY", 3,20, 2020, 1, 17, 2020, true, 300, 499, false);
     if( order != order2 )
         throw runtime_error("Calendar ToClose market orders did not match");
 
     /* LIMITS */
-    order = BUILDER::Open("SPY_032020P250", "SPY_011720P250", 1, -.20);
+    order = BUILDER::Build("SPY_032020P250", "SPY_011720P250", 1, true, -.20);
     j = order.as_json();
     legs = {
         {oa, "SPY_032020P250", OrderInstruction::BUY_TO_OPEN, 1},
         {oa, "SPY_011720P250", OrderInstruction::SELL_TO_OPEN, 1}
     };
     test_spread_exec_obj_json(j, OrderType::NET_CREDIT,cmplx, legs, .20);
-    order2 = BUILDER::Open("SPY", 3,20, 2020, 1, 17, 2020, false, 250, 1, -.20);
+    order2 = BUILDER::Build("SPY", 3,20, 2020, 1, 17, 2020, false, 250, 1, true, -.20);
     if( order != order2 )
         throw runtime_error("Calendar ToOpen limit orders did not match");
 
-    order = BUILDER::Close("SPY_011720P250", "SPY_032020P250", 999, .20);
+    order = BUILDER::Build("SPY_011720P250", "SPY_032020P250", 999, false, .20);
     j = order.as_json();
     legs = {
         {oa, "SPY_011720P250", OrderInstruction::BUY_TO_CLOSE, 999},
         {oa, "SPY_032020P250", OrderInstruction::SELL_TO_CLOSE, 999}
     };
     test_spread_exec_obj_json(j, OrderType::NET_DEBIT,cmplx, legs, .20);
-    order2 = BUILDER::Close("SPY", 1, 17, 2020, 3,20,2020, false, 250, 999, .20);
+    order2 = BUILDER::Build("SPY", 1, 17, 2020, 3,20,2020, false, 250, 999, false, .20);
     if( order != order2 )
         throw runtime_error("Calendar ToClose limit orders did not match");
 }
@@ -954,48 +954,48 @@ test_spread_exec_diagonal()
     using BUILDER = SpreadOrderBuilder::Diagonal;
 
     /* MARKETS */
-    order = BUILDER::Open("SPY_011720C300", "SPY_032020C350", 1);
+    order = BUILDER::Build("SPY_011720C300", "SPY_032020C350", 1, true);
     j = order.as_json();
     legs = {
         {oa, "SPY_011720C300", OrderInstruction::BUY_TO_OPEN, 1},
         {oa, "SPY_032020C350", OrderInstruction::SELL_TO_OPEN, 1}
     };
     test_spread_exec_obj_json(j, OrderType::MARKET,cmplx, legs);
-    order2 = BUILDER::Open("SPY", 1, 17, 2020, 3, 20, 2020, true, 300, 350, 1);
+    order2 = BUILDER::Build("SPY", 1, 17, 2020, 3, 20, 2020, true, 300, 350, 1, true);
     if( order != order2 )
         throw runtime_error("Diagonal ToOpen market orders did not match");
 
-    order = BUILDER::Close("SPY_032020C350", "SPY_011720C300", 499);
+    order = BUILDER::Build("SPY_032020C350", "SPY_011720C300", 499, false);
     j = order.as_json();
     legs = {
         {oa, "SPY_032020C350", OrderInstruction::BUY_TO_CLOSE, 499},
         {oa, "SPY_011720C300", OrderInstruction::SELL_TO_CLOSE, 499}
     };
     test_spread_exec_obj_json(j, OrderType::MARKET,cmplx, legs);
-    order2 = BUILDER::Close("SPY", 3,20, 2020, 1, 17, 2020, true, 350, 300, 499);
+    order2 = BUILDER::Build("SPY", 3,20, 2020, 1, 17, 2020, true, 350, 300, 499, false);
     if( order != order2 )
         throw runtime_error("Diagonal ToClose market orders did not match");
 
     /* LIMITS */
-    order = BUILDER::Open("SPY_032020P250", "SPY_011720P300", 1, -.20);
+    order = BUILDER::Build("SPY_032020P250", "SPY_011720P300", 1, true, -.20);
     j = order.as_json();
     legs = {
         {oa, "SPY_032020P250", OrderInstruction::BUY_TO_OPEN, 1},
         {oa, "SPY_011720P300", OrderInstruction::SELL_TO_OPEN, 1}
     };
     test_spread_exec_obj_json(j, OrderType::NET_CREDIT,cmplx, legs, .20);
-    order2 = BUILDER::Open("SPY", 3,20, 2020, 1, 17, 2020, false, 250, 300, 1, -.20);
+    order2 = BUILDER::Build("SPY", 3,20, 2020, 1, 17, 2020, false, 250, 300, 1, true, -.20);
     if( order != order2 )
         throw runtime_error("Diagonal ToOpen limit orders did not match");
 
-    order = BUILDER::Close("SPY_011720P300", "SPY_032020P250", 999, .20);
+    order = BUILDER::Build("SPY_011720P300", "SPY_032020P250", 999,  false, .20);
     j = order.as_json();
     legs = {
         {oa, "SPY_011720P300", OrderInstruction::BUY_TO_CLOSE, 999},
         {oa, "SPY_032020P250", OrderInstruction::SELL_TO_CLOSE, 999}
     };
     test_spread_exec_obj_json(j, OrderType::NET_DEBIT,cmplx, legs, .20);
-    order2 = BUILDER::Close("SPY", 1, 17, 2020, 3,20,2020, false, 300, 250, 999, .20);
+    order2 = BUILDER::Build("SPY", 1, 17, 2020, 3,20,2020, false, 300, 250, 999, false, .20);
     if( order != order2 )
         throw runtime_error("Diagonal ToClose limit orders did not match");
 }
@@ -1013,92 +1013,92 @@ test_spread_exec_straddle()
     using BUILDER = SpreadOrderBuilder::Straddle;
 
     /* MARKETS */
-    order = BUILDER::BuyToOpen("SPY_011720C300", "SPY_011720P300", 1);
+    order = BUILDER::Build("SPY_011720C300", "SPY_011720P300", 1, true, true);
     j = order.as_json();
     legs = {
         {oa, "SPY_011720C300", OrderInstruction::BUY_TO_OPEN, 1},
         {oa, "SPY_011720P300", OrderInstruction::BUY_TO_OPEN, 1}
     };
     test_spread_exec_obj_json(j, OrderType::MARKET,cmplx, legs);
-    order2 = BUILDER::BuyToOpen("SPY", 1, 17, 2020, 300, 1);
+    order2 = BUILDER::Build("SPY", 1, 17, 2020, 300, 1, true, true);
     if( order != order2 )
         throw runtime_error("Straddle BTO market orders did not match");
 
-    order = BUILDER::SellToOpen("SPY_011720C300", "SPY_011720P300", 1);
+    order = BUILDER::Build("SPY_011720C300", "SPY_011720P300", 1, false, true);
     j = order.as_json();
     legs = {
         {oa, "SPY_011720C300", OrderInstruction::SELL_TO_OPEN, 1},
         {oa, "SPY_011720P300", OrderInstruction::SELL_TO_OPEN, 1}
     };
     test_spread_exec_obj_json(j, OrderType::MARKET,cmplx, legs);
-    order2 = BUILDER::SellToOpen("SPY", 1, 17, 2020, 300, 1);
+    order2 = BUILDER::Build("SPY", 1, 17, 2020, 300, 1, false, true);
     if( order != order2 )
         throw runtime_error("Straddle STO market orders did not match");
 
-    order = BUILDER::BuyToClose("SPY_011720C300", "SPY_011720P300", 1);
+    order = BUILDER::Build("SPY_011720C300", "SPY_011720P300", 1, true, false);
     j = order.as_json();
     legs = {
         {oa, "SPY_011720C300", OrderInstruction::BUY_TO_CLOSE, 1},
         {oa, "SPY_011720P300", OrderInstruction::BUY_TO_CLOSE, 1}
     };
     test_spread_exec_obj_json(j, OrderType::MARKET,cmplx, legs);
-    order2 = BUILDER::BuyToClose("SPY", 1, 17, 2020, 300, 1);
+    order2 = BUILDER::Build("SPY", 1, 17, 2020, 300, 1, true, false);
     if( order != order2 )
         throw runtime_error("Straddle BTC market orders did not match");
 
-    order = BUILDER::SellToClose("SPY_011720C300", "SPY_011720P300", 1);
+    order = BUILDER::Build("SPY_011720C300", "SPY_011720P300", 1, false, false);
     j = order.as_json();
     legs = {
         {oa, "SPY_011720C300", OrderInstruction::SELL_TO_CLOSE, 1},
         {oa, "SPY_011720P300", OrderInstruction::SELL_TO_CLOSE, 1}
     };
     test_spread_exec_obj_json(j, OrderType::MARKET,cmplx, legs);
-    order2 = BUILDER::SellToClose("SPY", 1, 17, 2020, 300, 1);
+    order2 = BUILDER::Build("SPY", 1, 17, 2020, 300, 1, false, false);
     if( order != order2 )
         throw runtime_error("Straddle STC market orders did not match");
 
     /* LIMITS */
-    order = BUILDER::BuyToOpen("SPY_011720C275", "SPY_011720P275", 499, 10.01);
+    order = BUILDER::Build("SPY_011720C275", "SPY_011720P275", 499, true, true, 10.01);
     j = order.as_json();
     legs = {
         {oa, "SPY_011720C275", OrderInstruction::BUY_TO_OPEN, 499},
         {oa, "SPY_011720P275", OrderInstruction::BUY_TO_OPEN, 499}
     };
     test_spread_exec_obj_json(j, OrderType::NET_DEBIT, cmplx, legs, 10.01);
-    order2 = BUILDER::BuyToOpen("SPY", 1, 17, 2020, 275, 499, 10.01);
+    order2 = BUILDER::Build("SPY", 1, 17, 2020, 275, 499, true, true, 10.01);
     if( order != order2 )
         throw runtime_error("Straddle BTO limit orders did not match");
 
-    order = BUILDER::SellToOpen("SPY_011720C275", "SPY_011720P275", 499, -10.01);
+    order = BUILDER::Build("SPY_011720C275", "SPY_011720P275", 499, false, true, -10.01);
     j = order.as_json();
     legs = {
         {oa, "SPY_011720C275", OrderInstruction::SELL_TO_OPEN, 499},
         {oa, "SPY_011720P275", OrderInstruction::SELL_TO_OPEN, 499}
     };
     test_spread_exec_obj_json(j, OrderType::NET_CREDIT, cmplx, legs, 10.01);
-    order2 = BUILDER::SellToOpen("SPY", 1, 17, 2020, 275, 499, -10.01);
+    order2 = BUILDER::Build("SPY", 1, 17, 2020, 275, 499, false, true, -10.01);
     if( order != order2 )
         throw runtime_error("Straddle STO limit orders did not match");
 
-    order = BUILDER::BuyToClose("SPY_011720C275", "SPY_011720P275", 499, .99);
+    order = BUILDER::Build("SPY_011720C275", "SPY_011720P275", 499, true, false, .99);
     j = order.as_json();
     legs = {
         {oa, "SPY_011720C275", OrderInstruction::BUY_TO_CLOSE, 499},
         {oa, "SPY_011720P275", OrderInstruction::BUY_TO_CLOSE, 499}
     };
     test_spread_exec_obj_json(j, OrderType::NET_DEBIT,cmplx, legs, .99);
-    order2 = BUILDER::BuyToClose("SPY", 1, 17, 2020, 275, 499, .99);
+    order2 = BUILDER::Build("SPY", 1, 17, 2020, 275, 499, true, false, .99);
     if( order != order2 )
         throw runtime_error("Straddle BTC limit orders did not match");
 
-    order = BUILDER::SellToClose("SPY_011720C275", "SPY_011720P275", 499, 0.0);
+    order = BUILDER::Build("SPY_011720C275", "SPY_011720P275", 499, false, false, 0.0);
     j = order.as_json();
     legs = {
         {oa, "SPY_011720C275", OrderInstruction::SELL_TO_CLOSE, 499},
         {oa, "SPY_011720P275", OrderInstruction::SELL_TO_CLOSE, 499}
     };
     test_spread_exec_obj_json(j, OrderType::NET_ZERO, cmplx, legs, 0.0);
-    order2 = BUILDER::SellToClose("SPY", 1, 17, 2020, 275, 499, 0.0);
+    order2 = BUILDER::Build("SPY", 1, 17, 2020, 275, 499, false, false, 0.0);
     if( order != order2 )
         throw runtime_error("Straddle STC limit orders did not match");
 }
@@ -1116,92 +1116,92 @@ test_spread_exec_strangle()
     using BUILDER = SpreadOrderBuilder::Strangle;
 
     /* MARKETS */
-    order = BUILDER::BuyToOpen("SPY_011720C300", "SPY_011720P200", 1);
+    order = BUILDER::Build("SPY_011720C300", "SPY_011720P200", 1,true, true);
     j = order.as_json();
     legs = {
         {oa, "SPY_011720C300", OrderInstruction::BUY_TO_OPEN, 1},
         {oa, "SPY_011720P200", OrderInstruction::BUY_TO_OPEN, 1}
     };
     test_spread_exec_obj_json(j, OrderType::MARKET,cmplx, legs);
-    order2 = BUILDER::BuyToOpen("SPY", 1, 17, 2020, 300, 200, 1);
+    order2 = BUILDER::Build("SPY", 1, 17, 2020, 300, 200, 1, true, true);
     if( order != order2 )
         throw runtime_error("Strangle BTO market orders did not match");
 
-    order = BUILDER::SellToOpen("SPY_011720C300", "SPY_011720P200", 1);
+    order = BUILDER::Build("SPY_011720C300", "SPY_011720P200", 1, false, true);
     j = order.as_json();
     legs = {
         {oa, "SPY_011720C300", OrderInstruction::SELL_TO_OPEN, 1},
         {oa, "SPY_011720P200", OrderInstruction::SELL_TO_OPEN, 1}
     };
     test_spread_exec_obj_json(j, OrderType::MARKET,cmplx, legs);
-    order2 = BUILDER::SellToOpen("SPY", 1, 17, 2020, 300, 200, 1);
+    order2 = BUILDER::Build("SPY", 1, 17, 2020, 300, 200, 1, false, true);
     if( order != order2 )
         throw runtime_error("Strangle STO market orders did not match");
 
-    order = BUILDER::BuyToClose("SPY_011720C300", "SPY_011720P200", 1);
+    order = BUILDER::Build("SPY_011720C300", "SPY_011720P200", 1, true, false);
     j = order.as_json();
     legs = {
         {oa, "SPY_011720C300", OrderInstruction::BUY_TO_CLOSE, 1},
         {oa, "SPY_011720P200", OrderInstruction::BUY_TO_CLOSE, 1}
     };
     test_spread_exec_obj_json(j, OrderType::MARKET,cmplx, legs);
-    order2 = BUILDER::BuyToClose("SPY", 1, 17, 2020, 300, 200, 1);
+    order2 = BUILDER::Build("SPY", 1, 17, 2020, 300, 200, 1, true, false);
     if( order != order2 )
         throw runtime_error("Strangle BTC market orders did not match");
 
-    order = BUILDER::SellToClose("SPY_011720C300", "SPY_011720P200", 1);
+    order = BUILDER::Build("SPY_011720C300", "SPY_011720P200", 1, false, false);
     j = order.as_json();
     legs = {
         {oa, "SPY_011720C300", OrderInstruction::SELL_TO_CLOSE, 1},
         {oa, "SPY_011720P200", OrderInstruction::SELL_TO_CLOSE, 1}
     };
     test_spread_exec_obj_json(j, OrderType::MARKET,cmplx, legs);
-    order2 = BUILDER::SellToClose("SPY", 1, 17, 2020, 300, 200, 1);
+    order2 = BUILDER::Build("SPY", 1, 17, 2020, 300, 200, 1, false, false);
     if( order != order2 )
         throw runtime_error("Strangle STC market orders did not match");
 
     /* LIMITS */
-    order = BUILDER::BuyToOpen("SPY_011720C275", "SPY_011720P250", 499, 10.01);
+    order = BUILDER::Build("SPY_011720C275", "SPY_011720P250", 499, true, true, 10.01);
     j = order.as_json();
     legs = {
         {oa, "SPY_011720C275", OrderInstruction::BUY_TO_OPEN, 499},
         {oa, "SPY_011720P250", OrderInstruction::BUY_TO_OPEN, 499}
     };
     test_spread_exec_obj_json(j, OrderType::NET_DEBIT, cmplx, legs, 10.01);
-    order2 = BUILDER::BuyToOpen("SPY", 1, 17, 2020, 275, 250, 499, 10.01);
+    order2 = BUILDER::Build("SPY", 1, 17, 2020, 275, 250, 499, true, true, 10.01);
     if( order != order2 )
         throw runtime_error("Strangle BTO limit orders did not match");
 
-    order = BUILDER::SellToOpen("SPY_011720C275", "SPY_011720P250", 499, -10.01);
+    order = BUILDER::Build("SPY_011720C275", "SPY_011720P250", 499, false, true, -10.01);
     j = order.as_json();
     legs = {
         {oa, "SPY_011720C275", OrderInstruction::SELL_TO_OPEN, 499},
         {oa, "SPY_011720P250", OrderInstruction::SELL_TO_OPEN, 499}
     };
     test_spread_exec_obj_json(j, OrderType::NET_CREDIT, cmplx, legs, 10.01);
-    order2 = BUILDER::SellToOpen("SPY", 1, 17, 2020, 275, 250, 499, -10.01);
+    order2 = BUILDER::Build("SPY", 1, 17, 2020, 275, 250, 499, false, true, -10.01);
     if( order != order2 )
         throw runtime_error("Strangle STO limit orders did not match");
 
-    order = BUILDER::BuyToClose("SPY_011720C275", "SPY_011720P250", 499, .99);
+    order = BUILDER::Build("SPY_011720C275", "SPY_011720P250", 499, true, false, .99);
     j = order.as_json();
     legs = {
         {oa, "SPY_011720C275", OrderInstruction::BUY_TO_CLOSE, 499},
         {oa, "SPY_011720P250", OrderInstruction::BUY_TO_CLOSE, 499}
     };
     test_spread_exec_obj_json(j, OrderType::NET_DEBIT,cmplx, legs, .99);
-    order2 = BUILDER::BuyToClose("SPY", 1, 17, 2020, 275,250, 499, .99);
+    order2 = BUILDER::Build("SPY", 1, 17, 2020, 275,250, 499, true, false, .99);
     if( order != order2 )
         throw runtime_error("Strangle BTC limit orders did not match");
 
-    order = BUILDER::SellToClose("SPY_011720C275", "SPY_011720P250", 499, 0.0);
+    order = BUILDER::Build("SPY_011720C275", "SPY_011720P250", 499, false, false, 0.0);
     j = order.as_json();
     legs = {
         {oa, "SPY_011720C275", OrderInstruction::SELL_TO_CLOSE, 499},
         {oa, "SPY_011720P250", OrderInstruction::SELL_TO_CLOSE, 499}
     };
     test_spread_exec_obj_json(j, OrderType::NET_ZERO, cmplx, legs, 0.0);
-    order2 = BUILDER::SellToClose("SPY", 1, 17, 2020, 275,250, 499, 0.0);
+    order2 = BUILDER::Build("SPY", 1, 17, 2020, 275,250, 499, false, false, 0.0);
     if( order != order2 )
         throw runtime_error("Strangle STC limit orders did not match");
 }
@@ -1218,48 +1218,48 @@ test_spread_exec_collar_synthetic()
     using BUILDER = SpreadOrderBuilder::CollarSynthetic;
 
     /* MARKETS */
-    order = BUILDER::Open("SPY_011720C300", "SPY_011720P200", 1);
+    order = BUILDER::Build("SPY_011720C300", "SPY_011720P200", 1, true);
     j = order.as_json();
     legs = {
         {oa, "SPY_011720C300", OrderInstruction::BUY_TO_OPEN, 1},
         {oa, "SPY_011720P200", OrderInstruction::SELL_TO_OPEN, 1}
     };
     test_spread_exec_obj_json(j, OrderType::MARKET,cmplx, legs);
-    order2 = BUILDER::Open("SPY", 1, 17, 2020, 300, 200, 1, true);
+    order2 = BUILDER::Build("SPY", 1, 17, 2020, 300, 200, 1, true, true);
     if( order != order2 )
         throw runtime_error("Collar Synthetic ToOpen market orders did not match");
 
-    order = BUILDER::Close("SPY_011720P300", "SPY_011720C300", 1);
+    order = BUILDER::Build("SPY_011720P300", "SPY_011720C300", 1, false);
     j = order.as_json();
     legs = {
         {oa, "SPY_011720P300", OrderInstruction::BUY_TO_CLOSE, 1},
         {oa, "SPY_011720C300", OrderInstruction::SELL_TO_CLOSE, 1}
     };
     test_spread_exec_obj_json(j, OrderType::MARKET,cmplx, legs);
-    order2 = BUILDER::Close("SPY", 1, 17, 2020, 300, 300, 1, false);
+    order2 = BUILDER::Build("SPY", 1, 17, 2020, 300, 300, 1, false, false);
     if( order != order2 )
         throw runtime_error("Collar Synthetic ToClose market orders did not match");
 
     /* LIMITS */
-    order = BUILDER::Open("SPY_011720P200", "SPY_011720C300", 499, -.01);
+    order = BUILDER::Build("SPY_011720P200", "SPY_011720C300", 499, true, -.01);
     j = order.as_json();
     legs = {
         {oa, "SPY_011720P200", OrderInstruction::BUY_TO_OPEN, 499},
         {oa, "SPY_011720C300", OrderInstruction::SELL_TO_OPEN, 499}
     };
     test_spread_exec_obj_json(j, OrderType::NET_CREDIT,cmplx, legs, .01);
-    order2 = BUILDER::Open("SPY", 1, 17, 2020, 300, 200, 499, false,  -.01);
+    order2 = BUILDER::Build("SPY", 1, 17, 2020, 300, 200, 499, false, true,  -.01);
     if( order != order2 )
         throw runtime_error("Collar Synthetic ToOpen limit orders did not match");
 
-    order = BUILDER::Close("SPY_011720C250", "SPY_011720P200", 499, .0);
+    order = BUILDER::Build("SPY_011720C250", "SPY_011720P200", 499, false, .0);
     j = order.as_json();
     legs = {
         {oa, "SPY_011720C250", OrderInstruction::BUY_TO_CLOSE, 499},
         {oa, "SPY_011720P200", OrderInstruction::SELL_TO_CLOSE, 499}
     };
     test_spread_exec_obj_json(j, OrderType::NET_ZERO,cmplx, legs, .0);
-    order2 = BUILDER::Close("SPY", 1, 17, 2020, 250, 200, 499, true, .0);
+    order2 = BUILDER::Build("SPY", 1, 17, 2020, 250, 200, 499, true, false, .0);
     if( order != order2 )
         throw runtime_error("Collar Synthetic ToClose limit orders did not match");
 }
@@ -1277,7 +1277,7 @@ test_spread_exec_collar_with_stock()
     using BUILDER = SpreadOrderBuilder::CollarWithStock;
 
     /* MARKETS */
-    order = BUILDER::BuyToOpen("SPY_011720P200", "SPY_011720C300", "SPY", 1);
+    order = BUILDER::Build("SPY_011720P200", "SPY_011720C300", "SPY", 1, true, true);
     j = order.as_json();
     legs = {
         {oa, "SPY_011720P200", OrderInstruction::BUY_TO_OPEN, 1},
@@ -1285,11 +1285,11 @@ test_spread_exec_collar_with_stock()
         {OrderAssetType::EQUITY, "SPY", OrderInstruction::BUY, 100}
     };
     test_spread_exec_obj_json(j, OrderType::MARKET,cmplx, legs);
-    order2 = BUILDER::BuyToOpen("SPY", 1, 17, 2020, 300, 200, 1);
+    order2 = BUILDER::Build("SPY", 1, 17, 2020, 300, 200, 1, true, true);
     if( order != order2 )
         throw runtime_error("Collar With Stock BTO market orders did not match");
 
-    order = BUILDER::SellToOpen("SPY_011720C300", "SPY_011720P300", "SPY", 1);
+    order = BUILDER::Build("SPY_011720C300", "SPY_011720P300", "SPY", 1, false, true);
     j = order.as_json();
     legs = {
         {oa, "SPY_011720C300", OrderInstruction::BUY_TO_OPEN, 1},
@@ -1297,11 +1297,11 @@ test_spread_exec_collar_with_stock()
         {OrderAssetType::EQUITY, "SPY", OrderInstruction::SELL_SHORT, 100}
     };
     test_spread_exec_obj_json(j, OrderType::MARKET,cmplx, legs);
-    order2 = BUILDER::SellToOpen("SPY", 1, 17, 2020, 300, 300, 1);
+    order2 = BUILDER::Build("SPY", 1, 17, 2020, 300, 300, 1, false, true);
     if( order != order2 )
         throw runtime_error("Collar With Stock STO market orders did not match");
 
-    order = BUILDER::BuyToClose("SPY_011720P300", "SPY_011720C310", "SPY", 499);
+    order = BUILDER::Build("SPY_011720P300", "SPY_011720C310", "SPY", 499, true, false);
      j = order.as_json();
      legs = {
          {oa, "SPY_011720P300", OrderInstruction::BUY_TO_CLOSE, 499},
@@ -1309,11 +1309,11 @@ test_spread_exec_collar_with_stock()
          {OrderAssetType::EQUITY, "SPY", OrderInstruction::BUY_TO_COVER, 49900}
      };
      test_spread_exec_obj_json(j, OrderType::MARKET,cmplx, legs);
-     order2 = BUILDER::BuyToClose("SPY", 1, 17, 2020, 310, 300, 499);
+     order2 = BUILDER::Build("SPY", 1, 17, 2020, 310, 300, 499, true, false);
      if( order != order2 )
          throw runtime_error("Collar With Stock BTC market orders did not match");
 
-     order = BUILDER::SellToClose("SPY_011720C320", "SPY_011720P300", "SPY", 499);
+     order = BUILDER::Build("SPY_011720C320", "SPY_011720P300", "SPY", 499, false, false);
      j = order.as_json();
      legs = {
          {oa, "SPY_011720C320", OrderInstruction::BUY_TO_CLOSE, 499},
@@ -1321,12 +1321,12 @@ test_spread_exec_collar_with_stock()
          {OrderAssetType::EQUITY, "SPY", OrderInstruction::SELL, 49900}
      };
      test_spread_exec_obj_json(j, OrderType::MARKET,cmplx, legs);
-     order2 = BUILDER::SellToClose("SPY", 1, 17, 2020, 320, 300, 499);
+     order2 = BUILDER::Build("SPY", 1, 17, 2020, 320, 300, 499, false, false);
      if( order != order2 )
          throw runtime_error("Collar With Stock STC market orders did not match");
 
      /* LIMITS */
-     order = BUILDER::BuyToOpen("SPY_011720P300", "SPY_011720C350", "SPY",1, 310.11);
+     order = BUILDER::Build("SPY_011720P300", "SPY_011720C350", "SPY",1, true, true, 310.11);
      j = order.as_json();
      legs = {
          {oa, "SPY_011720P300", OrderInstruction::BUY_TO_OPEN, 1},
@@ -1334,11 +1334,11 @@ test_spread_exec_collar_with_stock()
          {OrderAssetType::EQUITY, "SPY", OrderInstruction::BUY, 100}
      };
      test_spread_exec_obj_json(j, OrderType::NET_DEBIT,cmplx, legs, 310.11);
-     order2 = BUILDER::BuyToOpen("SPY", 1, 17, 2020, 350, 300, 1, 310.11);
+     order2 = BUILDER::Build("SPY", 1, 17, 2020, 350, 300, 1, true, true, 310.11);
      if( order != order2 )
          throw runtime_error("Collar With Stock BTO limit orders did not match");
 
-     order = BUILDER::SellToOpen("SPY_011720C300", "SPY_011720P200", "SPY", 1, -330);
+     order = BUILDER::Build("SPY_011720C300", "SPY_011720P200", "SPY", 1, false, true, -330);
      j = order.as_json();
      legs = {
          {oa, "SPY_011720C300", OrderInstruction::BUY_TO_OPEN, 1},
@@ -1346,11 +1346,11 @@ test_spread_exec_collar_with_stock()
          {OrderAssetType::EQUITY, "SPY", OrderInstruction::SELL_SHORT, 100}
      };
      test_spread_exec_obj_json(j, OrderType::NET_CREDIT, cmplx, legs, 330);
-     order2 = BUILDER::SellToOpen("SPY", 1, 17, 2020, 300, 200, 1, -330);
+     order2 = BUILDER::Build("SPY", 1, 17, 2020, 300, 200, 1, false, true, -330);
      if( order != order2 )
          throw runtime_error("Collar With Stock STO limit orders did not match");
 
-     order = BUILDER::BuyToClose("SPY_011720P300", "SPY_011720C300", "SPY", 499, 299.99);
+     order = BUILDER::Build("SPY_011720P300", "SPY_011720C300", "SPY", 499, true, false, 299.99);
       j = order.as_json();
       legs = {
           {oa, "SPY_011720P300", OrderInstruction::BUY_TO_CLOSE, 499},
@@ -1358,19 +1358,19 @@ test_spread_exec_collar_with_stock()
           {OrderAssetType::EQUITY, "SPY", OrderInstruction::BUY_TO_COVER, 49900}
       };
       test_spread_exec_obj_json(j, OrderType::NET_DEBIT ,cmplx, legs, 299.99);
-      order2 = BUILDER::BuyToClose("SPY", 1, 17, 2020, 300, 300, 499, 299.99);
+      order2 = BUILDER::Build("SPY", 1, 17, 2020, 300, 300, 499, true, false, 299.99);
       if( order != order2 )
           throw runtime_error("Collar With Stock BTC limit orders did not match");
 
-      order = BUILDER::SellToClose("SPY_011720C400", "SPY_011720P100", "SPY", 499, 0.);
+      order = BUILDER::Build("SPY_011720C400", "SPY_011720P100", "SPY", 499, false, false, 0.);
       j = order.as_json();
       legs = {
           {oa, "SPY_011720C400", OrderInstruction::BUY_TO_CLOSE, 499},
           {oa, "SPY_011720P100", OrderInstruction::SELL_TO_CLOSE, 499},
           {OrderAssetType::EQUITY, "SPY", OrderInstruction::SELL, 49900}
       };
-      test_spread_exec_obj_json(j, OrderType::NET_ZERO,cmplx, legs, 0.);
-      order2 = BUILDER::SellToClose("SPY", 1, 17, 2020, 400, 100, 499, 0.);
+      test_spread_exec_obj_json(j, OrderType::NET_ZERO,cmplx, legs,  0.);
+      order2 = BUILDER::Build("SPY", 1, 17, 2020, 400, 100, 499, false, false, 0.);
       if( order != order2 )
           throw runtime_error("Collar With Stock STC limit orders did not match");
 }
@@ -1387,8 +1387,8 @@ test_spread_exec_condor()
     using BUILDER = SpreadOrderBuilder::Condor;
 
     /* MARKETS */
-    order = BUILDER::BuyToOpen("SPY_011720C300", "SPY_011720C325",
-                               "SPY_011720C350", "SPY_011720C375", 1);
+    order = BUILDER::Build("SPY_011720C300", "SPY_011720C325",
+                               "SPY_011720C350", "SPY_011720C375", 1, true, true);
     j = order.as_json();
     legs = {
         {oa, "SPY_011720C300", OrderInstruction::BUY_TO_OPEN, 1},
@@ -1397,12 +1397,12 @@ test_spread_exec_condor()
         {oa, "SPY_011720C375", OrderInstruction::BUY_TO_OPEN, 1}
     };
     test_spread_exec_obj_json(j, OrderType::MARKET,cmplx, legs);
-    order2 = BUILDER::BuyToOpen("SPY", 1, 17, 2020, 300, 325, 350, 375, true, 1);
+    order2 = BUILDER::Build("SPY", 1, 17, 2020, 300, 325, 350, 375, true, 1, true, true);
     if( order != order2 )
         throw runtime_error("Condor BTO market orders did not match");
 
-    order = BUILDER::SellToOpen("SPY_011720C300", "SPY_011720C325",
-                               "SPY_011720C350", "SPY_011720C375", 499);
+    order = BUILDER::Build("SPY_011720C300", "SPY_011720C325",
+                               "SPY_011720C350", "SPY_011720C375", 499, false, true);
     j = order.as_json();
     legs = {
         {oa, "SPY_011720C300", OrderInstruction::SELL_TO_OPEN, 499},
@@ -1411,12 +1411,12 @@ test_spread_exec_condor()
         {oa, "SPY_011720C375", OrderInstruction::SELL_TO_OPEN, 499}
     };
     test_spread_exec_obj_json(j, OrderType::MARKET,cmplx, legs);
-    order2 = BUILDER::SellToOpen("SPY", 1, 17, 2020, 300, 325, 350, 375, true, 499);
+    order2 = BUILDER::Build("SPY", 1, 17, 2020, 300, 325, 350, 375, true, 499, false, true);
     if( order != order2 )
         throw runtime_error("Condor  STO market orders did not match");
 
-    order = BUILDER::BuyToClose("SPY_011720P200", "SPY_011720P225",
-                                "SPY_011720P250", "SPY_011720P275", 1);
+    order = BUILDER::Build("SPY_011720P200", "SPY_011720P225",
+                                "SPY_011720P250", "SPY_011720P275", 1, true, false);
     j = order.as_json();
     legs = {
         {oa, "SPY_011720P200", OrderInstruction::BUY_TO_CLOSE, 1},
@@ -1425,12 +1425,12 @@ test_spread_exec_condor()
         {oa, "SPY_011720P275", OrderInstruction::BUY_TO_CLOSE, 1}
     };
     test_spread_exec_obj_json(j, OrderType::MARKET,cmplx, legs);
-    order2 = BUILDER::BuyToClose("SPY", 1, 17, 2020, 200, 225, 250, 275, false, 1);
+    order2 = BUILDER::Build("SPY", 1, 17, 2020, 200, 225, 250, 275, false, 1, true, false);
     if( order != order2 )
         throw runtime_error("Condor BTC market orders did not match");
 
-    order = BUILDER::SellToClose("SPY_011720P200", "SPY_011720P225",
-                               "SPY_011720P250", "SPY_011720P275", 499);
+    order = BUILDER::Build("SPY_011720P200", "SPY_011720P225",
+                               "SPY_011720P250", "SPY_011720P275", 499, false, false);
     j = order.as_json();
     legs = {
         {oa, "SPY_011720P200", OrderInstruction::SELL_TO_CLOSE, 499},
@@ -1439,13 +1439,13 @@ test_spread_exec_condor()
         {oa, "SPY_011720P275", OrderInstruction::SELL_TO_CLOSE, 499}
     };
     test_spread_exec_obj_json(j, OrderType::MARKET,cmplx, legs);
-    order2 = BUILDER::SellToClose("SPY", 1, 17, 2020, 200, 225, 250, 275, false, 499);
+    order2 = BUILDER::Build("SPY", 1, 17, 2020, 200, 225, 250, 275, false, 499, false, false);
     if( order != order2 )
         throw runtime_error("Condor STC market orders did not match");
 
     /* LIMITS */
-    order = BUILDER::BuyToOpen("SPY_011720C300", "SPY_011720C325",
-                               "SPY_011720C350", "SPY_011720C375", 1, 3.33);
+    order = BUILDER::Build("SPY_011720C300", "SPY_011720C325",
+                               "SPY_011720C350", "SPY_011720C375", 1, true, true, 3.33);
     j = order.as_json();
     legs = {
         {oa, "SPY_011720C300", OrderInstruction::BUY_TO_OPEN, 1},
@@ -1454,12 +1454,12 @@ test_spread_exec_condor()
         {oa, "SPY_011720C375", OrderInstruction::BUY_TO_OPEN, 1}
     };
     test_spread_exec_obj_json(j, OrderType::NET_DEBIT,cmplx, legs, 3.33);
-    order2 = BUILDER::BuyToOpen("SPY", 1, 17, 2020, 300, 325, 350, 375, true, 1, 3.33);
+    order2 = BUILDER::Build("SPY", 1, 17, 2020, 300, 325, 350, 375, true, 1, true, true, 3.33);
     if( order != order2 )
         throw runtime_error("Condor BTO limit orders did not match");
 
-    order = BUILDER::SellToOpen("SPY_011720C300", "SPY_011720C325",
-                               "SPY_011720C350", "SPY_011720C375", 499, -3.33);
+    order = BUILDER::Build("SPY_011720C300", "SPY_011720C325",
+                               "SPY_011720C350", "SPY_011720C375", 499, false, true, -3.33);
     j = order.as_json();
     legs = {
         {oa, "SPY_011720C300", OrderInstruction::SELL_TO_OPEN, 499},
@@ -1468,12 +1468,12 @@ test_spread_exec_condor()
         {oa, "SPY_011720C375", OrderInstruction::SELL_TO_OPEN, 499}
     };
     test_spread_exec_obj_json(j, OrderType::NET_CREDIT,cmplx, legs, 3.33);
-    order2 = BUILDER::SellToOpen("SPY", 1, 17, 2020, 300, 325, 350, 375, true, 499, -3.33);
+    order2 = BUILDER::Build("SPY", 1, 17, 2020, 300, 325, 350, 375, true, 499, false, true, -3.33);
     if( order != order2 )
         throw runtime_error("Condor  STO limit orders did not match");
 
-    order = BUILDER::BuyToClose("SPY_011720P200", "SPY_011720P225",
-                                "SPY_011720P250", "SPY_011720P275", 1, .01);
+    order = BUILDER::Build("SPY_011720P200", "SPY_011720P225",
+                                "SPY_011720P250", "SPY_011720P275", 1, true, false, .01);
     j = order.as_json();
     legs = {
         {oa, "SPY_011720P200", OrderInstruction::BUY_TO_CLOSE, 1},
@@ -1482,12 +1482,12 @@ test_spread_exec_condor()
         {oa, "SPY_011720P275", OrderInstruction::BUY_TO_CLOSE, 1}
     };
     test_spread_exec_obj_json(j, OrderType::NET_DEBIT,cmplx, legs, .01);
-    order2 = BUILDER::BuyToClose("SPY", 1, 17, 2020, 200, 225, 250, 275, false, 1, .01);
+    order2 = BUILDER::Build("SPY", 1, 17, 2020, 200, 225, 250, 275, false, 1, true, false, .01);
     if( order != order2 )
         throw runtime_error("Condor BTC limit orders did not match");
 
-    order = BUILDER::SellToClose("SPY_011720P200", "SPY_011720P225",
-                               "SPY_011720P250", "SPY_011720P275", 499, 0.0);
+    order = BUILDER::Build("SPY_011720P200", "SPY_011720P225",
+                               "SPY_011720P250", "SPY_011720P275", 499, false, false, 0.0);
     j = order.as_json();
     legs = {
         {oa, "SPY_011720P200", OrderInstruction::SELL_TO_CLOSE, 499},
@@ -1496,7 +1496,7 @@ test_spread_exec_condor()
         {oa, "SPY_011720P275", OrderInstruction::SELL_TO_CLOSE, 499}
     };
     test_spread_exec_obj_json(j, OrderType::NET_ZERO, cmplx, legs, 0.);
-    order2 = BUILDER::SellToClose("SPY", 1, 17, 2020, 200, 225, 250, 275, false, 499, 0.);
+    order2 = BUILDER::Build("SPY", 1, 17, 2020, 200, 225, 250, 275, false, 499, false, false, 0.);
     if( order != order2 )
         throw runtime_error("Condor STC limit orders did not match");
 }
@@ -1515,8 +1515,8 @@ test_spread_exec_unbalanced_condor()
     using BUILDER = SpreadOrderBuilder::Condor::Unbalanced;
 
     /* MARKETS */
-    order = BUILDER::BuyToOpen("SPY_011720C300", "SPY_011720C325",
-                               "SPY_011720C350", "SPY_011720C375", 1,2);
+    order = BUILDER::Build("SPY_011720C300", "SPY_011720C325",
+                               "SPY_011720C350", "SPY_011720C375", 1,2, true, true);
     j = order.as_json();
     legs = {
         {oa, "SPY_011720C300", OrderInstruction::BUY_TO_OPEN, 1},
@@ -1525,12 +1525,12 @@ test_spread_exec_unbalanced_condor()
         {oa, "SPY_011720C375", OrderInstruction::BUY_TO_OPEN, 2}
     };
     test_spread_exec_obj_json(j, OrderType::MARKET,cmplx, legs);
-    order2 = BUILDER::BuyToOpen("SPY", 1, 17, 2020, 300, 325, 350, 375, true, 1, 2);
+    order2 = BUILDER::Build("SPY", 1, 17, 2020, 300, 325, 350, 375, true, 1, 2, true, true);
     if( order != order2 )
         throw runtime_error("Unbalanced Condor BTO market orders did not match");
 
-    order = BUILDER::SellToOpen("SPY_011720C300", "SPY_011720C325",
-                               "SPY_011720C350", "SPY_011720C375", 499, 498);
+    order = BUILDER::Build("SPY_011720C300", "SPY_011720C325",
+                               "SPY_011720C350", "SPY_011720C375", 499, 498, false, true);
     j = order.as_json();
     legs = {
         {oa, "SPY_011720C300", OrderInstruction::SELL_TO_OPEN, 499},
@@ -1539,12 +1539,12 @@ test_spread_exec_unbalanced_condor()
         {oa, "SPY_011720C375", OrderInstruction::SELL_TO_OPEN, 498}
     };
     test_spread_exec_obj_json(j, OrderType::MARKET,cmplx, legs);
-    order2 = BUILDER::SellToOpen("SPY", 1, 17, 2020, 300, 325, 350, 375, true, 499, 498);
+    order2 = BUILDER::Build("SPY", 1, 17, 2020, 300, 325, 350, 375, true, 499, 498, false, true);
     if( order != order2 )
         throw runtime_error("Unabalanced Condor  STO market orders did not match");
 
-    order = BUILDER::BuyToClose("SPY_011720P200", "SPY_011720P225",
-                                "SPY_011720P250", "SPY_011720P275", 10, 1);
+    order = BUILDER::Build("SPY_011720P200", "SPY_011720P225",
+                                "SPY_011720P250", "SPY_011720P275", 10, 1, true, false);
     j = order.as_json();
     legs = {
         {oa, "SPY_011720P200", OrderInstruction::BUY_TO_CLOSE, 10},
@@ -1553,12 +1553,12 @@ test_spread_exec_unbalanced_condor()
         {oa, "SPY_011720P275", OrderInstruction::BUY_TO_CLOSE, 1}
     };
     test_spread_exec_obj_json(j, OrderType::MARKET,cmplx, legs);
-    order2 = BUILDER::BuyToClose("SPY", 1, 17, 2020, 200, 225, 250, 275, false, 10, 1);
+    order2 = BUILDER::Build("SPY", 1, 17, 2020, 200, 225, 250, 275, false, 10, 1, true, false);
     if( order != order2 )
         throw runtime_error("Unabalanced Condor BTC market orders did not match");
 
-    order = BUILDER::SellToClose("SPY_011720P200", "SPY_011720P225",
-                               "SPY_011720P250", "SPY_011720P275", 499, 998);
+    order = BUILDER::Build("SPY_011720P200", "SPY_011720P225",
+                               "SPY_011720P250", "SPY_011720P275", 499, 998, false, false);
     j = order.as_json();
     legs = {
         {oa, "SPY_011720P200", OrderInstruction::SELL_TO_CLOSE, 499},
@@ -1567,13 +1567,13 @@ test_spread_exec_unbalanced_condor()
         {oa, "SPY_011720P275", OrderInstruction::SELL_TO_CLOSE, 998}
     };
     test_spread_exec_obj_json(j, OrderType::MARKET,cmplx, legs);
-    order2 = BUILDER::SellToClose("SPY", 1, 17, 2020, 200, 225, 250, 275, false, 499, 998);
+    order2 = BUILDER::Build("SPY", 1, 17, 2020, 200, 225, 250, 275, false, 499, 998, false, false);
     if( order != order2 )
         throw runtime_error("Unabalanced Condor STC market orders did not match");
 
     /* LIMITS */
-    order = BUILDER::BuyToOpen("SPY_011720C300", "SPY_011720C325",
-                               "SPY_011720C350", "SPY_011720C375", 1, 2, 3.33);
+    order = BUILDER::Build("SPY_011720C300", "SPY_011720C325",
+                               "SPY_011720C350", "SPY_011720C375", 1, 2, true, true, 3.33);
     j = order.as_json();
     legs = {
         {oa, "SPY_011720C300", OrderInstruction::BUY_TO_OPEN, 1},
@@ -1582,12 +1582,12 @@ test_spread_exec_unbalanced_condor()
         {oa, "SPY_011720C375", OrderInstruction::BUY_TO_OPEN, 2}
     };
     test_spread_exec_obj_json(j, OrderType::NET_DEBIT,cmplx, legs, 3.33);
-    order2 = BUILDER::BuyToOpen("SPY", 1, 17, 2020, 300, 325, 350, 375, true, 1, 2, 3.33);
+    order2 = BUILDER::Build("SPY", 1, 17, 2020, 300, 325, 350, 375, true, 1, 2, true, true, 3.33);
     if( order != order2 )
         throw runtime_error("Unabalanced Condor BTO limit orders did not match");
 
-    order = BUILDER::SellToOpen("SPY_011720C300", "SPY_011720C325",
-                               "SPY_011720C350", "SPY_011720C375", 499, 498, -3.33);
+    order = BUILDER::Build("SPY_011720C300", "SPY_011720C325",
+                               "SPY_011720C350", "SPY_011720C375", 499, 498, false, true, -3.33);
     j = order.as_json();
     legs = {
         {oa, "SPY_011720C300", OrderInstruction::SELL_TO_OPEN, 499},
@@ -1596,12 +1596,12 @@ test_spread_exec_unbalanced_condor()
         {oa, "SPY_011720C375", OrderInstruction::SELL_TO_OPEN, 498}
     };
     test_spread_exec_obj_json(j, OrderType::NET_CREDIT,cmplx, legs, 3.33);
-    order2 = BUILDER::SellToOpen("SPY", 1, 17, 2020, 300, 325, 350, 375, true, 499, 498, -3.33);
+    order2 = BUILDER::Build("SPY", 1, 17, 2020, 300, 325, 350, 375, true, 499, 498, false, true, -3.33);
     if( order != order2 )
         throw runtime_error("Unabalanced Condor  STO limit orders did not match");
 
-    order = BUILDER::BuyToClose("SPY_011720P200", "SPY_011720P225",
-                                "SPY_011720P250", "SPY_011720P275", 10,1, .01);
+    order = BUILDER::Build("SPY_011720P200", "SPY_011720P225",
+                                "SPY_011720P250", "SPY_011720P275", 10,1, true, false, .01);
     j = order.as_json();
     legs = {
         {oa, "SPY_011720P200", OrderInstruction::BUY_TO_CLOSE, 10},
@@ -1610,12 +1610,12 @@ test_spread_exec_unbalanced_condor()
         {oa, "SPY_011720P275", OrderInstruction::BUY_TO_CLOSE, 1}
     };
     test_spread_exec_obj_json(j, OrderType::NET_DEBIT,cmplx, legs, .01);
-    order2 = BUILDER::BuyToClose("SPY", 1, 17, 2020, 200, 225, 250, 275, false, 10, 1, .01);
+    order2 = BUILDER::Build("SPY", 1, 17, 2020, 200, 225, 250, 275, false, 10, 1, true, false, .01);
     if( order != order2 )
         throw runtime_error("Unabalanced Condor BTC limit orders did not match");
 
-    order = BUILDER::SellToClose("SPY_011720P200", "SPY_011720P225",
-                               "SPY_011720P250", "SPY_011720P275", 499, 498, 0.0);
+    order = BUILDER::Build("SPY_011720P200", "SPY_011720P225",
+                               "SPY_011720P250", "SPY_011720P275", 499, 498, false, false, 0.0);
     j = order.as_json();
     legs = {
         {oa, "SPY_011720P200", OrderInstruction::SELL_TO_CLOSE, 499},
@@ -1624,7 +1624,7 @@ test_spread_exec_unbalanced_condor()
         {oa, "SPY_011720P275", OrderInstruction::SELL_TO_CLOSE, 498}
     };
     test_spread_exec_obj_json(j, OrderType::NET_ZERO, cmplx, legs, 0.);
-    order2 = BUILDER::SellToClose("SPY", 1, 17, 2020, 200, 225, 250, 275, false, 499, 498, 0.);
+    order2 = BUILDER::Build("SPY", 1, 17, 2020, 200, 225, 250, 275, false, 499, 498, false, false, 0.);
     if( order != order2 )
         throw runtime_error("Unabalanced Condor STC limit orders did not match");
 }
@@ -1641,8 +1641,8 @@ test_spread_exec_iron_condor()
     using BUILDER = SpreadOrderBuilder::IronCondor;
 
     /* MARKETS */
-    order = BUILDER::Open("SPY_011720C300", "SPY_011720C350",
-                          "SPY_011720P250", "SPY_011720P200",  1);
+    order = BUILDER::Build("SPY_011720C300", "SPY_011720C350",
+                          "SPY_011720P250", "SPY_011720P200",  1, true);
     j = order.as_json();
     legs = {
         {oa, "SPY_011720C300", OrderInstruction::BUY_TO_OPEN, 1},
@@ -1651,12 +1651,12 @@ test_spread_exec_iron_condor()
         {oa, "SPY_011720P200", OrderInstruction::SELL_TO_OPEN, 1}
     };
     test_spread_exec_obj_json(j, OrderType::MARKET,cmplx, legs);
-    order2 = BUILDER::Open("SPY", 1, 17, 2020, 300, 350, 250, 200, 1);
+    order2 = BUILDER::Build("SPY", 1, 17, 2020, 300, 350, 250, 200, 1, true);
     if( order != order2 )
         throw runtime_error("IronCondor ToOpen market orders did not match");
 
-    order = BUILDER::Close("SPY_011720C350", "SPY_011720C300",
-                          "SPY_011720P200", "SPY_011720P250",  499);
+    order = BUILDER::Build("SPY_011720C350", "SPY_011720C300",
+                          "SPY_011720P200", "SPY_011720P250",  499, false);
     j = order.as_json();
     legs = {
         {oa, "SPY_011720C350", OrderInstruction::BUY_TO_CLOSE, 499},
@@ -1665,13 +1665,13 @@ test_spread_exec_iron_condor()
         {oa, "SPY_011720P250", OrderInstruction::SELL_TO_CLOSE, 499}
     };
     test_spread_exec_obj_json(j, OrderType::MARKET,cmplx, legs);
-    order2 = BUILDER::Close("SPY", 1, 17, 2020, 350, 300, 200, 250, 499);
+    order2 = BUILDER::Build("SPY", 1, 17, 2020, 350, 300, 200, 250, 499, false);
     if( order != order2 )
         throw runtime_error("IronCondor ToClose market orders did not match");
 
     /* LIMITS */
-    order = BUILDER::Open("SPY_011720C300", "SPY_011720C350",
-                          "SPY_011720P250", "SPY_011720P200",  1, 4.44);
+    order = BUILDER::Build("SPY_011720C300", "SPY_011720C350",
+                          "SPY_011720P250", "SPY_011720P200",  1, true, 4.44);
     j = order.as_json();
     legs = {
         {oa, "SPY_011720C300", OrderInstruction::BUY_TO_OPEN, 1},
@@ -1680,12 +1680,12 @@ test_spread_exec_iron_condor()
         {oa, "SPY_011720P200", OrderInstruction::SELL_TO_OPEN, 1}
     };
     test_spread_exec_obj_json(j, OrderType::NET_DEBIT, cmplx, legs, 4.44);
-    order2 = BUILDER::Open("SPY", 1, 17, 2020, 300, 350, 250, 200, 1, 4.44);
+    order2 = BUILDER::Build("SPY", 1, 17, 2020, 300, 350, 250, 200, 1, true, 4.44);
     if( order != order2 )
         throw runtime_error("IronCondor ToOpen limit orders did not match");
 
-    order = BUILDER::Close("SPY_011720C350", "SPY_011720C300",
-                          "SPY_011720P200", "SPY_011720P250",  499, - 4.43);
+    order = BUILDER::Build("SPY_011720C350", "SPY_011720C300",
+                          "SPY_011720P200", "SPY_011720P250",  499, false, - 4.43);
     j = order.as_json();
     legs = {
         {oa, "SPY_011720C350", OrderInstruction::BUY_TO_CLOSE, 499},
@@ -1694,7 +1694,7 @@ test_spread_exec_iron_condor()
         {oa, "SPY_011720P250", OrderInstruction::SELL_TO_CLOSE, 499}
     };
     test_spread_exec_obj_json(j, OrderType::NET_CREDIT,cmplx, legs, 4.43);
-    order2 = BUILDER::Close("SPY", 1, 17, 2020, 350, 300, 200, 250, 499, -4.43);
+    order2 = BUILDER::Build("SPY", 1, 17, 2020, 350, 300, 200, 250, 499, false, -4.43);
     if( order != order2 )
         throw runtime_error("IronCondor ToClose limit orders did not match");
 }
@@ -1712,8 +1712,8 @@ test_spread_exec_unbalanced_iron_condor()
     using BUILDER = SpreadOrderBuilder::IronCondor::Unbalanced;
 
     /* MARKETS */
-    order = BUILDER::Open("SPY_011720C300", "SPY_011720C350",
-                          "SPY_011720P250", "SPY_011720P200",  1, 2);
+    order = BUILDER::Build("SPY_011720C300", "SPY_011720C350",
+                          "SPY_011720P250", "SPY_011720P200",  1, 2, true);
     j = order.as_json();
     legs = {
         {oa, "SPY_011720C300", OrderInstruction::BUY_TO_OPEN, 1},
@@ -1722,12 +1722,12 @@ test_spread_exec_unbalanced_iron_condor()
         {oa, "SPY_011720P200", OrderInstruction::SELL_TO_OPEN, 2}
     };
     test_spread_exec_obj_json(j, OrderType::MARKET,cmplx, legs);
-    order2 = BUILDER::Open("SPY", 1, 17, 2020, 300, 350, 250, 200, 1, 2);
+    order2 = BUILDER::Build("SPY", 1, 17, 2020, 300, 350, 250, 200, 1, 2,true);
     if( order != order2 )
         throw runtime_error("Unbalanced IronCondor ToOpen market orders did not match");
 
-    order = BUILDER::Close("SPY_011720C350", "SPY_011720C300",
-                          "SPY_011720P200", "SPY_011720P250",  499,1);
+    order = BUILDER::Build("SPY_011720C350", "SPY_011720C300",
+                          "SPY_011720P200", "SPY_011720P250",  499,1, false);
     j = order.as_json();
     legs = {
         {oa, "SPY_011720C350", OrderInstruction::BUY_TO_CLOSE, 499},
@@ -1736,13 +1736,13 @@ test_spread_exec_unbalanced_iron_condor()
         {oa, "SPY_011720P250", OrderInstruction::SELL_TO_CLOSE, 1}
     };
     test_spread_exec_obj_json(j, OrderType::MARKET,cmplx, legs);
-    order2 = BUILDER::Close("SPY", 1, 17, 2020, 350, 300, 200, 250, 499, 1);
+    order2 = BUILDER::Build("SPY", 1, 17, 2020, 350, 300, 200, 250, 499, 1, false);
     if( order != order2 )
         throw runtime_error("Unbalanced IronCondor ToClose market orders did not match");
 
     /* LIMITS */
-    order = BUILDER::Open("SPY_011720C300", "SPY_011720C350",
-                          "SPY_011720P250", "SPY_011720P200",  1, 2, 4.44);
+    order = BUILDER::Build("SPY_011720C300", "SPY_011720C350",
+                          "SPY_011720P250", "SPY_011720P200",  1, 2, true, 4.44);
     j = order.as_json();
     legs = {
         {oa, "SPY_011720C300", OrderInstruction::BUY_TO_OPEN, 1},
@@ -1751,12 +1751,12 @@ test_spread_exec_unbalanced_iron_condor()
         {oa, "SPY_011720P200", OrderInstruction::SELL_TO_OPEN, 2}
     };
     test_spread_exec_obj_json(j, OrderType::NET_DEBIT, cmplx, legs, 4.44);
-    order2 = BUILDER::Open("SPY", 1, 17, 2020, 300, 350, 250, 200, 1, 2, 4.44);
+    order2 = BUILDER::Build("SPY", 1, 17, 2020, 300, 350, 250, 200, 1, 2, true, 4.44);
     if( order != order2 )
         throw runtime_error("Unbalanced IronCondor ToOpen limit orders did not match");
 
-    order = BUILDER::Close("SPY_011720C350", "SPY_011720C300",
-                          "SPY_011720P200", "SPY_011720P250",  499, 499, - 4.43);
+    order = BUILDER::Build("SPY_011720C350", "SPY_011720C300",
+                          "SPY_011720P200", "SPY_011720P250",  499, 499, false, -4.43);
     j = order.as_json();
     legs = {
         {oa, "SPY_011720C350", OrderInstruction::BUY_TO_CLOSE, 499},
@@ -1765,7 +1765,7 @@ test_spread_exec_unbalanced_iron_condor()
         {oa, "SPY_011720P250", OrderInstruction::SELL_TO_CLOSE, 499}
     };
     test_spread_exec_obj_json(j, OrderType::NET_CREDIT,cmplx, legs, 4.43);
-    order2 = BUILDER::Close("SPY", 1, 17, 2020, 350, 300, 200, 250, 499, 499, -4.43);
+    order2 = BUILDER::Build("SPY", 1, 17, 2020, 350, 300, 200, 250, 499, 499, false, -4.43);
     if( order != order2 )
         throw runtime_error("Unbalanced IronCondor ToClose limit orders did not match");
 
@@ -1783,8 +1783,8 @@ test_spread_exec_double_diagonal()
     using BUILDER = SpreadOrderBuilder::DoubleDiagonal;
 
     /* MARKETS */
-    order = BUILDER::Open("SPY_011720C300", "SPY_032020C350",
-                          "SPY_011720P250", "SPY_032020P200",  1);
+    order = BUILDER::Build("SPY_011720C300", "SPY_032020C350",
+                          "SPY_011720P250", "SPY_032020P200",  1, true);
     j = order.as_json();
     legs = {
         {oa, "SPY_011720C300", OrderInstruction::BUY_TO_OPEN, 1},
@@ -1793,12 +1793,12 @@ test_spread_exec_double_diagonal()
         {oa, "SPY_032020P200", OrderInstruction::SELL_TO_OPEN, 1}
     };
     test_spread_exec_obj_json(j, OrderType::MARKET,cmplx, legs);
-    order2 = BUILDER::Open("SPY", 1, 17, 2020, 3, 20, 2020, 300, 350, 250, 200, 1);
+    order2 = BUILDER::Build("SPY", 1, 17, 2020, 3, 20, 2020, 300, 350, 250, 200, 1, true);
     if( order != order2 )
         throw runtime_error("DoubleDiagonal ToOpen market orders did not match");
 
-    order = BUILDER::Close("SPY_032020C350", "SPY_011720C300",
-                           "SPY_032020P200", "SPY_011720P250",  499);
+    order = BUILDER::Build("SPY_032020C350", "SPY_011720C300",
+                           "SPY_032020P200", "SPY_011720P250",  499, false);
     j = order.as_json();
     legs = {
         {oa, "SPY_032020C350", OrderInstruction::BUY_TO_CLOSE, 499},
@@ -1807,13 +1807,13 @@ test_spread_exec_double_diagonal()
         {oa, "SPY_011720P250", OrderInstruction::SELL_TO_CLOSE, 499}
     };
     test_spread_exec_obj_json(j, OrderType::MARKET,cmplx, legs);
-    order2 = BUILDER::Close("SPY", 3, 20, 2020, 1, 17, 2020, 350, 300, 200, 250, 499);
+    order2 = BUILDER::Build("SPY", 3, 20, 2020, 1, 17, 2020, 350, 300, 200, 250, 499, false);
     if( order != order2 )
         throw runtime_error("DoubleDiagonal ToClose market orders did not match");
 
     /* LIMITS */
-    order = BUILDER::Open("SPY_011720C300", "SPY_032020C350",
-                          "SPY_011720P250", "SPY_032020P200",  1, 10.01);
+    order = BUILDER::Build("SPY_011720C300", "SPY_032020C350",
+                          "SPY_011720P250", "SPY_032020P200",  1, true, 10.01);
     j = order.as_json();
     legs = {
         {oa, "SPY_011720C300", OrderInstruction::BUY_TO_OPEN, 1},
@@ -1822,12 +1822,12 @@ test_spread_exec_double_diagonal()
         {oa, "SPY_032020P200", OrderInstruction::SELL_TO_OPEN, 1}
     };
     test_spread_exec_obj_json(j, OrderType::NET_DEBIT,cmplx, legs, 10.01);
-    order2 = BUILDER::Open("SPY", 1, 17, 2020, 3, 20, 2020, 300, 350, 250, 200, 1, 10.01);
+    order2 = BUILDER::Build("SPY", 1, 17, 2020, 3, 20, 2020, 300, 350, 250, 200, 1, true, 10.01);
     if( order != order2 )
         throw runtime_error("DoubleDiagonal ToOpen limit orders did not match");
 
-    order = BUILDER::Close("SPY_032020C350", "SPY_011720C300",
-                           "SPY_032020P200", "SPY_011720P250",  499, 0.0);
+    order = BUILDER::Build("SPY_032020C350", "SPY_011720C300",
+                           "SPY_032020P200", "SPY_011720P250",  499, false, 0.0);
     j = order.as_json();
     legs = {
         {oa, "SPY_032020C350", OrderInstruction::BUY_TO_CLOSE, 499},
@@ -1836,7 +1836,7 @@ test_spread_exec_double_diagonal()
         {oa, "SPY_011720P250", OrderInstruction::SELL_TO_CLOSE, 499}
     };
     test_spread_exec_obj_json(j, OrderType::NET_ZERO, cmplx, legs);
-    order2 = BUILDER::Close("SPY", 3, 20, 2020, 1, 17, 2020, 350, 300, 200, 250, 499, 0.0);
+    order2 = BUILDER::Build("SPY", 3, 20, 2020, 1, 17, 2020, 350, 300, 200, 250, 499, false, 0.0);
     if( order != order2 )
         throw runtime_error("DoubleDiagonal ToClose limit orders did not match");
 }
@@ -1883,15 +1883,17 @@ test_conditional_exec_oco()
 {
     json j;
 
-    OrderTicket order1 = SimpleOrderBuilder::Equity::Limit::Buy("SPY", 100, 289.91);
-    OrderTicket order2 = SimpleOrderBuilder::Equity::Stop::Short("SPY", 100, 282.01);
+    OrderTicket order1 =
+        SimpleOrderBuilder::Equity::Build("SPY", 100, true, true, 289.91);
+    OrderTicket order2 =
+        SimpleOrderBuilder::Equity::Stop::Build("SPY", 100, false, true, 282.01);
     OrderTicket order3 = ConditionalOrderBuilder::OCO(order1, order2);
     j = order3.as_json();
     string title("OCO-[[LIMIT-BUY-EQUITY], [STOP-SELL_SHORT-EQUITY]]");
     test_oco_exec_obj_json(j, title, {order1, order2});
 
-    OrderTicket order4 = SpreadOrderBuilder::Vertical::Open("SPY_011720C300",
-        "SPY_011720C325", 1, 11.99);
+    OrderTicket order4 = SpreadOrderBuilder::Vertical::Build("SPY_011720C300",
+        "SPY_011720C325", 1, true, 11.99);
     OrderTicket order5 = ConditionalOrderBuilder::OCO(order2, order4);
     j = order5.as_json();
     title = "OCO-[[STOP-SELL_SHORT-EQUITY], "
@@ -1955,16 +1957,19 @@ test_conditional_exec_oto()
 {
     json j;
 
-    OrderTicket order1 = SimpleOrderBuilder::Equity::Limit::Buy("SPY", 100, 289.91);
-    OrderTicket order2 = SimpleOrderBuilder::Equity::Stop::Sell("SPY", 100, 282.01);
+    OrderTicket order1 =
+        SimpleOrderBuilder::Equity::Build("SPY", 100, true, true, 289.91);
+    OrderTicket order2 =
+        SimpleOrderBuilder::Equity::Stop::Build("SPY", 100, false, false, 282.01);
     OrderTicket order3 = ConditionalOrderBuilder::OTO(order1, order2);
     j = order3.as_json();
     string title("OTO-[[LIMIT-BUY-EQUITY], [STOP-SELL-EQUITY]]");
     test_oto_exec_obj_json(j, title, order1, order2);
 
-    order2 = SimpleOrderBuilder::Equity::Stop::Short("SPY", 100, 282.01);
-    OrderTicket order4 = SpreadOrderBuilder::Vertical::Open("SPY_011720C300",
-        "SPY_011720C325", 1, 11.99);
+    order2 = SimpleOrderBuilder::Equity::Stop::Build("SPY", 100, false, true,
+                                                     282.01);
+    OrderTicket order4 = SpreadOrderBuilder::Vertical::Build("SPY_011720C300",
+        "SPY_011720C325", 1, true, 11.99);
     OrderTicket order5 = ConditionalOrderBuilder::OTO(order2, order4);
     j = order5.as_json();
     title = "OTO-[[STOP-SELL_SHORT-EQUITY], "
@@ -1975,7 +1980,7 @@ test_conditional_exec_oto()
 
 void
 test_execution_order_objects()
-{
+{    
     test_simple_exec_equity_market();
     test_simple_exec_equity_limit();
     test_simple_exec_equity_stop();

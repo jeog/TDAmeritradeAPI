@@ -170,10 +170,10 @@ int test_one_cancels_other_order_builder()
 
     printf( "\nOCO-Equity-Sell-Limit-/-Equity-Sell-Stop \n");
 
-    if( (err = BuildOrder_Equity_Limit_Sell("SPY", 100, 300, &o)) )
+    if( (err = BuildOrder_Equity_Limit("SPY", 100, 0, 0, 300, &o)) )
         CHECK_AND_RETURN_ON_ERROR(err, "BuildOrder_Equity_Limit_Sell");
 
-    if( (err = BuildOrder_Equity_Stop_Sell("SPY", 100, 270, &o2)) )
+    if( (err = BuildOrder_Equity_Stop("SPY", 100, 0, 0, 270, &o2)) )
         CHECK_AND_RETURN_ON_ERROR(err, "BuildOrder_Equity_Stop_Sell");
 
     if( (err = BuildOrder_OneCancelsOther(&o, &o2, &o3)) )
@@ -268,12 +268,12 @@ int test_one_cancels_other_order_builder()
 
     // create and add new child orders
 
-    if( (err = BuildOrder_Equity_Stop_Cover("SPY", 200, 280, &o4)) ){
+    if( (err = BuildOrder_Equity_Stop("SPY", 200, 1, 0, 280, &o4)) ){
         OrderTicket_Destroy(&o3);
         CHECK_AND_RETURN_ON_ERROR(err, "BuildOrder_Equity_Stop_Cover");
     }
 
-    if( (err = BuildOrder_Equity_Limit_Cover("SPY", 200, 269.99, &o5)) ){
+    if( (err = BuildOrder_Equity_Limit("SPY", 200, 1,0, 269.99, &o5)) ){
         OrderTicket_Destroy(&o3);
         OrderTicket_Destroy(&o4);
         CHECK_AND_RETURN_ON_ERROR(err, "BuildOrder_Equity_Limit_Cover");
@@ -379,10 +379,10 @@ int test_one_triggers_other_order_builder()
 
     printf( "\nOTO-Equity-Buy-Limit-/-Equity-Sell-Stop \n");
 
-    if( (err = BuildOrder_Equity_Limit_Buy("SPY", 100, 275, &o)) )
+    if( (err = BuildOrder_Equity_Limit("SPY", 100, 1, 1, 275, &o)) )
         CHECK_AND_RETURN_ON_ERROR(err, "BuildOrder_Equity_Limit_Buy");
 
-    if( (err = BuildOrder_Equity_Stop_Sell("SPY", 100, 270, &o2)) )
+    if( (err = BuildOrder_Equity_Stop("SPY", 100, 0, 0, 270, &o2)) )
         CHECK_AND_RETURN_ON_ERROR(err, "BuildOrder_Equity_Stop_Sell");
 
     if( (err = BuildOrder_OneTriggersOther(&o, &o2, &o3)) )
@@ -455,7 +455,7 @@ int test_one_triggers_other_order_builder()
 
     printf( "\nOTO-Equity-Buy-Limit-/-Equity-StopLimit-Stop \n");
 
-    if( (err = BuildOrder_Equity_StopLimit_Sell("SPY", 200, 269.99, 269.89, &o4)) ){
+    if( (err = BuildOrder_Equity_StopLimit("SPY", 200, 0, 0, 269.99, 269.89, &o4)) ){
         OrderTicket_Destroy(&o3);
         CHECK_AND_RETURN_ON_ERROR(err, "BuildOrder_Equity_StopLimit_Sell");
     }
@@ -4667,7 +4667,7 @@ test_simple_equity_order_builder()
     const OrderAssetType ASSET_TYPE = OrderAssetType_EQUITY;
 
     /* MARKET */
-    if( (err = BuildOrder_Equity_Market_Buy("SPY", 100, &o)) )
+    if( (err = BuildOrder_Equity_Market("SPY", 100, 1, 1, &o)) )
         CHECK_AND_RETURN_ON_ERROR(err, "BuildOrder_Equity_Market_Buy");
 
     if( (err = OrderTicket_AsJsonString(&o, &buf, &n)) ){
@@ -4699,7 +4699,7 @@ test_simple_equity_order_builder()
     FreeBuffer(buf);
     buf = NULL;
 
-    if( (err = BuildOrder_Equity_Market_Sell("SPY", 100, &o)) )
+    if( (err = BuildOrder_Equity_Market("SPY", 100, 0, 0, &o)) )
         CHECK_AND_RETURN_ON_ERROR(err, "BuildOrder_Equity_Market_Sell");
 
     if( (err = OrderTicket_AsJsonString(&o, &buf, &n)) ){
@@ -4730,7 +4730,7 @@ test_simple_equity_order_builder()
     FreeBuffer(buf);
     buf = NULL;
 
-    if( (err = BuildOrder_Equity_Market_Short("SPY", 100, &o)) )
+    if( (err = BuildOrder_Equity_Market("SPY", 100, 0, 1, &o)) )
         CHECK_AND_RETURN_ON_ERROR(err, "BuildOrder_Equity_Market_Short");
 
     if( (err = OrderTicket_AsJsonString(&o, &buf, &n)) ){
@@ -4762,7 +4762,7 @@ test_simple_equity_order_builder()
     FreeBuffer(buf);
     buf = NULL;
 
-    if( (err = BuildOrder_Equity_Market_Cover("SPY", 100, &o)) )
+    if( (err = BuildOrder_Equity_Market("SPY", 100, 1, 0, &o)) )
         CHECK_AND_RETURN_ON_ERROR(err, "BuildOrder_Equity_Market_Cover");
 
     if( (err = OrderTicket_AsJsonString(&o, &buf, &n)) ){
@@ -4794,7 +4794,7 @@ test_simple_equity_order_builder()
     buf = NULL;
 
     /* LIMIT */
-    if( (err = BuildOrder_Equity_Limit_Buy("SPY", 100, 275, &o)) )
+    if( (err = BuildOrder_Equity_Limit("SPY", 100, 1, 1, 275, &o)) )
         CHECK_AND_RETURN_ON_ERROR(err, "BuildOrder_Equity_Limit_Buy");
 
     if( (err = OrderTicket_AsJsonString(&o, &buf, &n)) ){
@@ -4825,7 +4825,7 @@ test_simple_equity_order_builder()
     FreeBuffer(buf);
     buf = NULL;
 
-    if( (err = BuildOrder_Equity_Limit_Sell("SPY", 100, 274.99, &o)) )
+    if( (err = BuildOrder_Equity_Limit("SPY", 100, 0, 0, 274.99, &o)) )
         CHECK_AND_RETURN_ON_ERROR(err, "BuildOrder_Equity_Limit_Sell");
 
     if( (err = OrderTicket_AsJsonString(&o, &buf, &n)) ){
@@ -4856,7 +4856,7 @@ test_simple_equity_order_builder()
     FreeBuffer(buf);
     buf = NULL;
 
-    if( (err = BuildOrder_Equity_Limit_Short("SPY", 100, 275.0001, &o)) )
+    if( (err = BuildOrder_Equity_Limit("SPY", 100, 0, 1, 275.0001, &o)) )
         CHECK_AND_RETURN_ON_ERROR(err, "BuildOrder_Equity_Limit_Short");
 
     if( (err = OrderTicket_AsJsonString(&o, &buf, &n)) ){
@@ -4887,7 +4887,7 @@ test_simple_equity_order_builder()
     FreeBuffer(buf);
     buf = NULL;
 
-    if( (err = BuildOrder_Equity_Limit_Cover("SPY", 100, .01, &o)) )
+    if( (err = BuildOrder_Equity_Limit("SPY", 100, 1, 0, .01, &o)) )
         CHECK_AND_RETURN_ON_ERROR(err, "BuildOrder_Equity_Limit_Cover");
 
     if( (err = OrderTicket_AsJsonString(&o, &buf, &n)) ){
@@ -4919,7 +4919,7 @@ test_simple_equity_order_builder()
     buf = NULL;
 
     /* STOP */
-    if( (err = BuildOrder_Equity_Stop_Buy("SPY", 100, 275, &o)) )
+    if( (err = BuildOrder_Equity_Stop("SPY", 100, 1, 1, 275, &o)) )
         CHECK_AND_RETURN_ON_ERROR(err, "BuildOrder_Equity_Stop_Buy");
 
     if( (err = OrderTicket_AsJsonString(&o, &buf, &n)) ){
@@ -4950,7 +4950,7 @@ test_simple_equity_order_builder()
     FreeBuffer(buf);
     buf = NULL;
 
-    if( (err = BuildOrder_Equity_Stop_Sell("SPY", 100, 274.99, &o)) )
+    if( (err = BuildOrder_Equity_Stop("SPY", 100, 0, 0, 274.99, &o)) )
         CHECK_AND_RETURN_ON_ERROR(err, "BuildOrder_Equity_Stop_Sell");
 
     if( (err = OrderTicket_AsJsonString(&o, &buf, &n)) ){
@@ -4981,7 +4981,7 @@ test_simple_equity_order_builder()
     FreeBuffer(buf);
     buf = NULL;
 
-    if( (err = BuildOrder_Equity_Stop_Short("SPY", 100, 275.0001, &o)) )
+    if( (err = BuildOrder_Equity_Stop("SPY", 100, 0, 1, 275.0001, &o)) )
         CHECK_AND_RETURN_ON_ERROR(err, "BuildOrder_Equity_Stop_Short");
 
     if( (err = OrderTicket_AsJsonString(&o, &buf, &n)) ){
@@ -5012,7 +5012,7 @@ test_simple_equity_order_builder()
     FreeBuffer(buf);
     buf = NULL;
 
-    if( (err = BuildOrder_Equity_Stop_Cover("SPY", 100, .01, &o)) )
+    if( (err = BuildOrder_Equity_Stop("SPY", 100, 1, 0, .01, &o)) )
         CHECK_AND_RETURN_ON_ERROR(err, "BuildOrder_Equity_Stop_Cover");
 
     if( (err = OrderTicket_AsJsonString(&o, &buf, &n)) ){
@@ -5044,7 +5044,7 @@ test_simple_equity_order_builder()
     buf = NULL;
 
     /* STOP-LIMIT */
-    if( (err = BuildOrder_Equity_StopLimit_Buy("SPY", 100, 275, 276.01, &o)) )
+    if( (err = BuildOrder_Equity_StopLimit("SPY", 100, 1, 1, 275, 276.01, &o)) )
         CHECK_AND_RETURN_ON_ERROR(err, "BuildOrder_Equity_StopLimit_Buy");
 
     if( (err = OrderTicket_AsJsonString(&o, &buf, &n)) ){
@@ -5076,7 +5076,7 @@ test_simple_equity_order_builder()
     FreeBuffer(buf);
     buf = NULL;
 
-    if( (err = BuildOrder_Equity_StopLimit_Sell("SPY", 100, 274.99, 274, &o)) )
+    if( (err = BuildOrder_Equity_StopLimit("SPY", 100, 0, 0, 274.99, 274, &o)) )
         CHECK_AND_RETURN_ON_ERROR(err, "BuildOrder_Equity_StopLimit_Sell");
 
     if( (err = OrderTicket_AsJsonString(&o, &buf, &n)) ){
@@ -5108,7 +5108,7 @@ test_simple_equity_order_builder()
     FreeBuffer(buf);
     buf = NULL;
 
-    if( (err = BuildOrder_Equity_StopLimit_Short("SPY", 100, 275.0001, 274.999, &o)) )
+    if( (err = BuildOrder_Equity_StopLimit("SPY", 100, 0, 1, 275.0001, 274.999, &o)) )
         CHECK_AND_RETURN_ON_ERROR(err, "BuildOrder_Equity_StopLimit_Short");
 
     if( (err = OrderTicket_AsJsonString(&o, &buf, &n)) ){
@@ -5141,7 +5141,7 @@ test_simple_equity_order_builder()
     FreeBuffer(buf);
     buf = NULL;
 
-    if( (err = BuildOrder_Equity_StopLimit_Cover("SPY", 100, .01, .01, &o)) )
+    if( (err = BuildOrder_Equity_StopLimit("SPY", 100, 1, 0, .01, .01, &o)) )
         CHECK_AND_RETURN_ON_ERROR(err, "BuildOrder_Equity_StopLimit_Cover");
 
     if( (err = OrderTicket_AsJsonString(&o, &buf, &n)) ){
@@ -5183,7 +5183,7 @@ int test_order_access()
     size_t n;
     OrderTicket_C o = {0,0};
 
-    if( (err = BuildOrder_Equity_Market_Buy("SPY", 100, &o)) )
+    if( (err = BuildOrder_Equity_Market("SPY", 100, 1, 1, &o)) )
         CHECK_AND_RETURN_ON_ERROR(err, "BuildOrder_Equity_MarketBuy");
 
     struct TestLeg legs[] = {

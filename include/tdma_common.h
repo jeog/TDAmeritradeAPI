@@ -246,9 +246,10 @@ BuildOptionSymbol_ABI( const char* underlying,
                          int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
-OptionSymbolCheck_ABI(const char* symbol, int allow_exceptions);
+CheckOptionSymbol_ABI(const char* symbol, int allow_exceptions);
 
-
+EXTERN_C_SPEC_ DLL_SPEC_ int
+LibraryBuildDateTime_ABI(char **buf, size_t *n, int allow_exceptions);
 
 
 #ifndef __cplusplus
@@ -350,8 +351,8 @@ BuildOptionSymbol( const char* underlying,
                                buf, n, 0); }
 
 static inline int
-OptionSymbolCheck(const char* symbol)
-{ return OptionSymbolCheck_ABI(symbol, 0); }
+CheckOptionSymbol(const char* symbol)
+{ return CheckOptionSymbol_ABI(symbol, 0); }
 
 #else
 
@@ -621,9 +622,10 @@ BuildOptionSymbol( const std::string& underlying,
                              month, day, year, static_cast<int>(is_call),
                              strike ); }
 
+// THROWS ValueException if bad symbol
 inline void
-OptionSymbolCheck(const std::string& symbol)
-{ call_abi( OptionSymbolCheck_ABI, symbol.c_str() ); }
+CheckOptionSymbol(const std::string& symbol)
+{ call_abi( CheckOptionSymbol_ABI, symbol.c_str() ); }
 
 
 class APIException

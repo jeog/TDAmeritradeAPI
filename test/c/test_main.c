@@ -175,3 +175,17 @@ Test_BuildOptionSymbol(void)
 
     return 0;
 }
+
+void
+print_error(int err, const char* name)
+{
+    char *buf = NULL;
+    size_t n;
+    fprintf(stderr, "error(%i): %s \n", err, name);
+    int err2 = LastErrorMsg(&buf, &n);
+    if( !err2 )
+        fprintf(stderr, "last error msg: %s \n", buf);
+    if( buf )
+        FreeBuffer(buf);
+
+}

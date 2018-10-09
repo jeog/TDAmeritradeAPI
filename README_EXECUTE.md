@@ -144,7 +144,7 @@ Most users will probably only need certain basic orders, most of the time. To he
 
 /* long 100 SPY @ 285.05 or better */
 
-OrderTicket order1 = SimpleOrderBuilder::Equity::Limit::Buy("SPY", 100, 285.05);
+OrderTicket order1 = SimpleOrderBuilder::Equity::Build("SPY", 100, true, true, 285.05);
 ```
 
 ```
@@ -152,7 +152,7 @@ OrderTicket order1 = SimpleOrderBuilder::Equity::Limit::Buy("SPY", 100, 285.05);
 
 OrderTicket order1 = {0,0}
 
-int err = BuildOrder_Equity_Limit_Buy("SPY", 100, 285.05, &order1);
+int err = BuildOrder_Equity_Limit("SPY", 100, 1, 1, 285.05, &order1);
 if( err ){
     // 
 }
@@ -161,7 +161,7 @@ if( err ){
 ```
 [Python]
 
-order1 = execute.SimpleOrderBuilder.Equity.Limit.Buy("SPY", 100, 285.05)
+order1 = execute.SimpleOrderBuilder.Equity.Build("SPY", 100, True, True, 285.05)
 ```
 
 Once the user has the order they can add to it as necessary e.g:
@@ -218,20 +218,20 @@ Option Spread builders are currently only available for C and C++.
 using VB = SpreadOrderBuilder::Vertical;
 
 // add the exact options symbols
-Order order2 = VB::Open("SPY_011720C300", "SPY_011720C350", 3, 10.10);
+Order order2 = VB::Build("SPY_011720C300", "SPY_011720C350", 3, true, 10.10);
 
 // OR have the builder construct the options(s) 
 // (safer, but still assumes valid date, strikes etc.)
-order2 = VB::Open("SPY", 1, 17, 2020, true, 300, 350, 3, 10.10);
+order2 = VB::Build("SPY", 1, 17, 2020, true, 300, 350, 3, true, 10.10);
 
 
 /* sell/close 3 Jan-20 300/350 vertical SPY call spreads @ a 9.91 credit or better */
 
 // with the exact options
-Order order3 = VB::Close("SPY_011720C350", "SPY_011720C300", 3, -9.91);
+Order order3 = VB::Build("SPY_011720C350", "SPY_011720C300", 3, false, -9.91);
 
 // OR
-order3 = VB::Close("SPY", 1, 17, 2020, true, 350, 300, 3, -9.91);
+order3 = VB::Build("SPY", 1, 17, 2020, true, 350, 300, 3, false, -9.91);
 ```
 ```
 [C]

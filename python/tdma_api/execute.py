@@ -19,7 +19,9 @@ from ctypes import byref as _REF, c_int, c_size_t, c_double, c_uint, POINTER
 import json
 
 from . import clib
+from .common import *
 from .clib import PCHAR
+
 
 ORDER_SESSION_NORMAL = 1
 ORDER_SESSION_AM = 2
@@ -359,212 +361,63 @@ class SimpleOrderBuilder:
         o = _OrderTicket_C()
         clib.call(fname, *(args + (_REF(o),)) )
         return OrderTicket._init_from_cproxy(o)
-        
-    @staticmethod
-    def build(order_type, asset_type, symbol, instruction, quantity, 
-              limit_price=0.0, stop_price=0.0):
-        return SimpleOrderBuilder._abi_build('BuildOrder_Simple_ABI', 
-                    c_int(order_type), c_int(asset_type), PCHAR(symbol), 
-                    c_int(instruction), c_size_t(quantity), 
-                    c_double(limit_price), c_double(stop_price))
-    
+   
     class Equity:
         @staticmethod
-        def build(order_type, symbol, instruction, quantity, limit_price=0.0, 
-                  stop_price=0.0):
+        def Build(symbol, quantity, is_buy, to_open, limit_price=None):
+            if limit_price is None:
+                ot = ORDER_TYPE_MARKET
+                limit_price = 0.0
+            else:
+                ot = ORDER_TYPE_LIMIT   
+            ## check for float ?                            
             return SimpleOrderBuilder._abi_build('BuildOrder_Equity_ABI', 
-                        c_int(order_type), PCHAR(symbol), c_int(instruction), 
-                        c_size_t(quantity), c_double(limit_price), 
-                        c_double(stop_price))
-        
-        class Market:
-            @staticmethod
-            def Buy(symbol, quantity):
-                return SimpleOrderBuilder.Equity.build(ORDER_TYPE_MARKET, 
-                            symbol, ORDER_INSTRUCTION_BUY, quantity)
-            @staticmethod
-            def Sell(symbol, quantity):
-                return SimpleOrderBuilder.Equity.build(ORDER_TYPE_MARKET, 
-                            symbol, ORDER_INSTRUCTION_SELL, quantity)
-                
-            @staticmethod
-            def Short(symbol, quantity):
-                return SimpleOrderBuilder.Equity.build(ORDER_TYPE_MARKET, 
-                            symbol, ORDER_INSTRUCTION_SELL_SHORT, quantity)
-                
-            @staticmethod
-            def Cover(symbol, quantity):
-                return SimpleOrderBuilder.Equity.build(ORDER_TYPE_MARKET, 
-                            symbol, ORDER_INSTRUCTION_BUY_TO_COVER, quantity)
-                        
-        class Limit:
-            @staticmethod
-            def Buy(symbol, quantity, price):
-                return SimpleOrderBuilder.Equity.build(ORDER_TYPE_LIMIT, 
-                            symbol, ORDER_INSTRUCTION_BUY, quantity, price)
-            @staticmethod
-            def Sell(symbol, quantity, price):
-                return SimpleOrderBuilder.Equity.build(ORDER_TYPE_LIMIT, 
-                            symbol, ORDER_INSTRUCTION_SELL, quantity, price)
-                
-            @staticmethod
-            def Short(symbol, quantity, price):
-                return SimpleOrderBuilder.Equity.build(ORDER_TYPE_LIMIT, 
-                            symbol, ORDER_INSTRUCTION_SELL_SHORT, quantity, 
-                            price)
-                
-            @staticmethod
-            def Cover(symbol, quantity, price):
-                return SimpleOrderBuilder.Equity.build(ORDER_TYPE_LIMIT, 
-                            symbol, ORDER_INSTRUCTION_BUY_TO_COVER, quantity, 
-                            price)
+                PCHAR(symbol), c_size_t(quantity), c_int(is_buy), 
+                c_int(to_open), c_int(ot), c_double(limit_price), 
+                c_double(0.0))
         
         class Stop:
             @staticmethod
-            def _build(symbol, instruction, quantity, stop_price, limit_price):
-                ot = ORDER_TYPE_STOP_LIMIT if limit_price else ORDER_TYPE_STOP
-                return SimpleOrderBuilder.Equity.build(ot, symbol, instruction, 
-                            quantity, limit_price, stop_price)
-                
-            @staticmethod
-            def Buy(symbol, quantity, stop_price, limit_price=0.0):
-                return SimpleOrderBuilder.Equity.Stop._build(symbol,
-                            ORDER_INSTRUCTION_BUY, quantity, stop_price, 
-                            limit_price)
-                
-            @staticmethod
-            def Sell(symbol, quantity, stop_price, limit_price=0.0):
-                return SimpleOrderBuilder.Equity.Stop._build(symbol,
-                            ORDER_INSTRUCTION_SELL, quantity, stop_price, 
-                            limit_price)
-                
-            @staticmethod
-            def Short(symbol, quantity, stop_price, limit_price=0.0):
-                return SimpleOrderBuilder.Equity.Stop._build(symbol,
-                            ORDER_INSTRUCTION_SELL_SHORT, quantity, 
-                            stop_price, limit_price)
-                
-            @staticmethod
-            def Cover(symbol, quantity, stop_price, limit_price=0.0):
-                return SimpleOrderBuilder.Equity.Stop._build(symbol,
-                            ORDER_INSTRUCTION_BUY_TO_COVER, quantity, 
-                            stop_price, limit_price)
-       
+            def Build(symbol, quantity, is_buy, to_open, stop_price, 
+                      limit_price=None):
+                if limit_price is None:
+                    ot = ORDER_TYPE_STOP
+                    limit_price = 0.0
+                else:
+                    ot = ORDER_TYPE_STOP_LIMIT
+                ## check for float?
+                return SimpleOrderBuilder._abi_build('BuildOrder_Equity_ABI', 
+                    PCHAR(symbol), c_size_t(quantity), c_int(is_buy), 
+                    c_int(to_open), c_int(ot), c_double(limit_price), 
+                    c_double(stop_price))       
     
-    class Option:
+    class Option:        
         @staticmethod
-        def build1(order_type, symbol, quantity, is_buy, to_open, price=0.0):
+        def Build1(symbol, quantity, is_buy, to_open, price=None):
+            if price is None:
+                imo = True
+                price = 0.0
+            else:
+                imo = False
+            ## checkk for float ?
             return SimpleOrderBuilder._abi_build('BuildOrder_Option_ABI', 
-                        c_int(order_type), PCHAR(symbol), c_size_t(quantity), 
-                        c_int(is_buy), c_int(to_open), c_double(price))
+                PCHAR(symbol), c_size_t(quantity), c_int(is_buy), 
+                c_int(to_open), c_int(imo), c_double(price))
         
         @staticmethod
-        def build2(order_type, underlying, month, day, year, is_call, strike, 
-                   quantity, is_buy, to_open, price=0.0):
+        def Build2(underlying, month, day, year, is_call, strike, 
+                    quantity, is_buy, to_open, price=None):
+            if price is None:
+                imo = True
+                price = 0.0
+            else:
+                imo = False
+            ## checkk for float ?            
             return SimpleOrderBuilder._abi_build('BuildOrder_OptionEx_ABI', 
-                        c_int(order_type), PCHAR(underlying), c_uint(month), 
-                        c_uint(day), c_uint(year), c_int(is_call), 
-                        c_double(strike), c_size_t(quantity), c_int(is_buy),
-                        c_int(to_open), c_double(price))
-        
-        class Market:
-            @staticmethod
-            def BuyToOpen1(symbol, quantity):
-                return SimpleOrderBuilder.Option.build1(ORDER_TYPE_MARKET,
-                            symbol, quantity, True, True)
-            
-            @staticmethod
-            def BuyToOpen2(underlying, month, day, year, is_call, strike, 
-                           quantity):
-                return SimpleOrderBuilder.Option.build2(ORDER_TYPE_MARKET,
-                            underlying, month, day, year, is_call, strike, 
-                            quantity, True, True)
-
-            @staticmethod
-            def SellToOpen1(symbol, quantity):
-                return SimpleOrderBuilder.Option.build1(ORDER_TYPE_MARKET,
-                            symbol, quantity, False, True)
-            
-            @staticmethod
-            def SellToOpen2(underlying, month, day, year, is_call, strike, 
-                           quantity):
-                return SimpleOrderBuilder.Option.build2(ORDER_TYPE_MARKET,
-                            underlying, month, day, year, is_call, strike, 
-                            quantity, False, True)
-                
-            @staticmethod
-            def BuyToClose1(symbol, quantity):
-                return SimpleOrderBuilder.Option.build1(ORDER_TYPE_MARKET,
-                            symbol, quantity, True, False)
-            
-            @staticmethod
-            def BuyToClose2(underlying, month, day, year, is_call, strike, 
-                           quantity):
-                return SimpleOrderBuilder.Option.build2(ORDER_TYPE_MARKET,
-                            underlying, month, day, year, is_call, strike, 
-                            quantity, True, False)
-                
-            @staticmethod
-            def SellToClose1(symbol, quantity):
-                return SimpleOrderBuilder.Option.build1(ORDER_TYPE_MARKET,
-                            symbol, quantity, False, False)
-            
-            @staticmethod
-            def SellToClose2(underlying, month, day, year, is_call, strike, 
-                           quantity):
-                return SimpleOrderBuilder.Option.build2(ORDER_TYPE_MARKET,
-                            underlying, month, day, year, is_call, strike, 
-                            quantity, False, False)                                                                
-        
-        class Limit:
-            @staticmethod
-            def BuyToOpen1(symbol, quantity, price):
-                return SimpleOrderBuilder.Option.build1(ORDER_TYPE_LIMIT,
-                            symbol, quantity, True, True, price)
-            
-            @staticmethod
-            def BuyToOpen2(underlying, month, day, year, is_call, strike, 
-                           quantity, price):
-                return SimpleOrderBuilder.Option.build2(ORDER_TYPE_LIMIT,
-                            underlying, month, day, year, is_call, strike, 
-                            quantity, True, True, price)
-
-            @staticmethod
-            def SellToOpen1(symbol, quantity, price):
-                return SimpleOrderBuilder.Option.build1(ORDER_TYPE_LIMIT,
-                            symbol, quantity, False, True, price)
-            
-            @staticmethod
-            def SellToOpen2(underlying, month, day, year, is_call, strike, 
-                           quantity, price):
-                return SimpleOrderBuilder.Option.build2(ORDER_TYPE_LIMIT,
-                            underlying, month, day, year, is_call, strike, 
-                            quantity, False, True, price)
-                
-            @staticmethod
-            def BuyToClose1(symbol, quantity, price):
-                return SimpleOrderBuilder.Option.build1(ORDER_TYPE_LIMIT,
-                            symbol, quantity, True, False, price)
-            
-            @staticmethod
-            def BuyToClose2(underlying, month, day, year, is_call, strike, 
-                           quantity, price):
-                return SimpleOrderBuilder.Option.build2(ORDER_TYPE_LIMIT,
-                            underlying, month, day, year, is_call, strike, 
-                            quantity, True, False, price)
-                
-            @staticmethod
-            def SellToClose1(symbol, quantity, price):
-                return SimpleOrderBuilder.Option.build1(ORDER_TYPE_LIMIT,
-                            symbol, quantity, False, False, price)
-            
-            @staticmethod
-            def SellToClose2(underlying, month, day, year, is_call, strike, 
-                           quantity, price):
-                return SimpleOrderBuilder.Option.build2(ORDER_TYPE_LIMIT,
-                            underlying, month, day, year, is_call, strike, 
-                            quantity, False, False, price)  
-    
+                PCHAR(underlying), c_uint(month), c_uint(day), c_uint(year), 
+                c_int(is_call), c_double(strike), c_size_t(quantity), 
+                c_int(is_buy), c_int(to_open), c_int(imo), c_double(price))
+      
     
 # TODO class SpreadOrderBuilder    
     
