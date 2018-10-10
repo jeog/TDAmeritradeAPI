@@ -8,8 +8,6 @@
     - [C](#c-1)
     - [Python](#python)
 - [Throttling](#throttling)
-- [Utilities](#utilities)
-    - [Option Symbols](#option-symbols)
 - [Example Usage](#example-usage)
     - [C++](#c-2)
     - [C](#c-3)
@@ -285,67 +283,6 @@ To check the number of milliseconds before the next ```.get()``` call can be exe
 
 This interface should not be used for streaming data, i.e. repeatedly making getter calls -  
 use [StreamingSession](README_STREAMING.md) for that.
-
-### Utilities
-
-#### Option Symbols
-
-To construct a standard option symbol that can be used with the quote getters:
-
-```
-[C++]
-inline std::string
-BuildOptionSymbol( const std::string& underlying,
-                     unsigned int month,
-                     unsigned int day,
-                     unsigned int year,
-                     bool is_call,
-                     double strike )
-
-[C]
-inline int
-BuildOptionSymbol( const char* underlying,
-                     unsigned int month,
-                     unsigned int day,
-                     unsigned int year,
-                     int is_call,
-                     double strike,
-                     char **buf,
-                     size_t *n )
-
-[Python]
-def common.build_option_symbol(underlying, month, day, year, is_call, strike):
-```
-
-This is not guaranteed to work on all underlying types but generally:
-
-```BuildOptionSymbol("SPY", 1, 17, 2020, true, 300.00) --> "SPY_011720C300"```
-
-For Example:
-```
-string spy_c300 = BuildOptionSymbol("SPY", 1, 17, 2020, true, 300.00);
-string spy_p250 = BuildOptionSymbol("SPY", 1, 17, 2020, false, 250.00);
-
-QuotesGetter qg(creds, {spy_c300, spy_p250});
-qg.get();
-```
-**If using C don't forget to call ```FreeBuffer``` on the populated 'buf' when done.**
-
-To check if a standard option symbol string is formatted properly:
-```
-[C++]
-inline void
-CheckOptionSymbol( const std::string& symbol )
-
-[C]
-inline int
-CheckOptionSymbol( const char* symbol )
-
-[Python]
-def common.check_option_symbol( symbol ):
-```
-Invalid symbols will set error state, throw ValueException(C++,Python) or return TDMA_VALUE_ERROR(C).
-
 
 ### Example Usage 
 

@@ -106,6 +106,17 @@ printf( "%s\n", buf);
 
 FreeBuffer(buf);
 ```
+```
+[Python]
+leg1 = execute.OrderLeg(execute.ORDER_ASSET_TYPE_OPTION, "SPY_011720C300",
+                        execute.ORDER_INSTRUCTION_BUY, 10)
+order1 = execute.OrderTicket()
+order1.add_legs(leg1).set_type(execute.ORDER_TYPE_LIMIT).set_price(9.99)
+
+// json as builtin object
+print( str(order1.as_json()) )
+```
+
 In C you need to manually destroy the objects when done.
 ```
 [C]
@@ -119,16 +130,6 @@ err = OrderLeg_Destroy(&leg1);
 if( err ) {
     //
 }
-```
-```
-[Python]
-leg1 = execute.OrderLeg(execute.ORDER_ASSET_TYPE_OPTION, "SPY_011720C300",
-                        execute.ORDER_INSTRUCTION_BUY, 10)
-order1 = execute.OrderTicket()
-order1.add_legs(leg1).set_type(execute.ORDER_TYPE_LIMIT).set_price(9.99)
-
-// json as builtin object
-print( str(order1.as_json()) )
 ```
 
 If a specific order type is allowed by TDMA it *should* be possible for a motivated user to build it this way.
@@ -172,13 +173,6 @@ Once the user has the order they can add to it as necessary e.g:
 order1.set_sesion(OrderSession::GOOD_TILL_CANCEL).set_cancel_time("2019-01-01");
 ```
 ```
-[Python]
-
-order1.set_session(execute.ORDER_SESSION_GOOD_TILL_CANCEL) \
-      .set_cancel_time("2019-01-01") 
-
-```
-```
 [C]
 
 err = OrderTicket_SetSession(&order1, OrderSession_GOOD_TILL_CANCEL);
@@ -190,6 +184,13 @@ err = OrderTicket_SetCancelTime(&order1, "2019-01-01");
 if( err ){
     //
 }
+```
+```
+[Python]
+
+order1.set_session(execute.ORDER_SESSION_GOOD_TILL_CANCEL) \
+      .set_cancel_time("2019-01-01") 
+
 ```
 
 In C you need to manually destroy the object when done.

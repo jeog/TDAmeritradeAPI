@@ -48,13 +48,14 @@ and then uses the library to request an access token, which is refreshed automat
         - [Other Approaches](#other-approaches)
     - [Credentials](#credentials)
 - [Access](#access)
-    - [HTTPS Get](#https-get)
+    - [Get](#get)
     - [Streaming](#streaming)
-    - [HTTPS Update/Execute](#https-updateexecute)
+    - [Update/Execute](#updateexecute)
+- [Utilities](#utilities)
+    - [OptionSymbols](#optionsymbols)
 - [Licensing & Warranty](#licensing--warranty)
 
 <br>
-
  
 ### Dependencies
 - - -
@@ -571,6 +572,68 @@ CloseCredentials(struct Credentials* pcreds );
 - ##### *Update/Execute* 
 
     For updating your account and executing trades you'll make HTTPS Put/Post/Delete requests. ***Currently, we are waiting on a mechanism from Ameritrade to test execution outside of live trading before allowing direct access from the library***. In the meantime you can create 'OrderTicket' objects, retrieve the underlying JSON, and POST yourself. [Please review the preliminary documentation](README_EXECUTE.md).
+
+
+### Utilities
+- - -
+
+#### Option Symbols
+
+To construct a standard option symbol that can be used with the certain getter and execution objects:
+
+```
+[C++]
+inline std::string
+BuildOptionSymbol( const std::string& underlying,
+                     unsigned int month,
+                     unsigned int day,
+                     unsigned int year,
+                     bool is_call,
+                     double strike )
+
+[C]
+static inline int
+BuildOptionSymbol( const char* underlying,
+                     unsigned int month,
+                     unsigned int day,
+                     unsigned int year,
+                     int is_call,
+                     double strike,
+                     char **buf,
+                     size_t *n )
+
+[Python]
+def common.build_option_symbol(underlying, month, day, year, is_call, strike):
+```
+
+This is not guaranteed to work on all underlying types but generally:
+
+```BuildOptionSymbol("SPY", 1, 17, 2020, true, 300.00) --> "SPY_011720C300"```
+
+For Example:
+```
+string spy_c300 = BuildOptionSymbol("SPY", 1, 17, 2020, true, 300.00);
+string spy_p250 = BuildOptionSymbol("SPY", 1, 17, 2020, false, 250.00);
+
+QuotesGetter qg(creds, {spy_c300, spy_p250});
+qg.get();
+```
+**If using C don't forget to call ```FreeBuffer``` on the populated 'buf' when done.**
+
+To check if a standard option symbol string is formatted properly:
+```
+[C++]
+inline void
+CheckOptionSymbol( const std::string& symbol )
+
+[C]
+static inline int
+CheckOptionSymbol( const char* symbol )
+
+[Python]
+def common.check_option_symbol( symbol ):
+```
+Invalid symbols will throw ```ValueException```(C++,Python) or return ```TDMA_API_VALUE_ERROR```(C). C code can use ```LastErrorMsg``` to get a description of the issue.
 
 
 #### LICENSING & WARRANTY
