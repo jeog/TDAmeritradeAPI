@@ -96,6 +96,34 @@ class _OrderTicket_C(clib._CProxy2):
     """C struct representing OrderTicket_C type."""
     pass   
 
+def order_session_to_str(session):
+    """Converts ORDER_SESSION_[] constant to str."""
+    return clib.to_str("OrderSession_to_string_ABI", c_int, session)
+
+def order_duration_to_str(duration):
+    """Converts ORDER_DURATION_[] constant to str."""
+    return clib.to_str("OrderDuration_to_string_ABI", c_int, duration)
+
+def order_asset_type_to_str(asset_type):
+    """Converts ORDER_ASSET_TYPE_[] constant to str."""
+    return clib.to_str("OrderAssetType_to_string_ABI", c_int, asset_type)
+
+def order_instruction_to_str(instruction):
+    """Converts ORDER_INSTRUCTION_[] constant to str."""
+    return clib.to_str("OrderInstruction_to_string_ABI", c_int, instruction)
+
+def order_type_to_str(order_type):
+    """Converts ORDER_TYPE_[] constant to str."""
+    return clib.to_str("OrderType_to_string_ABI", c_int, order_type)
+
+def complex_order_strategy_type_to_str(complex_strategy_type):
+    """Converts COMPLEX_ORDER_STRATEGY_TYPE_[] constant to str."""
+    return clib.to_str("ComplexOrderStrategyType_to_string_ABI", c_int, 
+                       complex_strategy_type)
+
+def order_strategy_type_to_str(strategy):
+    """Converts ORDER_STRATEGY_TYPE_[] constant to str."""
+    return clib.to_str("OrderStrategyType_to_string_ABI", c_int, strategy)
 
 # 
 # Careful - this is a shared base, unlike our C++ 'OrderObjectProxy'
@@ -355,23 +383,25 @@ class OrderTicket( _OrderObjectBase ):
         return self
 
 
-class SimpleOrderBuilder:
+class _OrderBuilder:
     @staticmethod
     def _abi_build(fname, *args):
         o = _OrderTicket_C()
         clib.call(fname, *(args + (_REF(o),)) )
         return OrderTicket._init_from_cproxy(o)
-   
+        
+        
+class SimpleOrderBuilder( _OrderBuilder ):  
+     
     class Equity:
         @staticmethod
         def Build(symbol, quantity, is_buy, to_open, limit_price=None):
+            ot = ORDER_TYPE_LIMIT 
             if limit_price is None:
                 ot = ORDER_TYPE_MARKET
-                limit_price = 0.0
-            else:
-                ot = ORDER_TYPE_LIMIT   
+                limit_price = 0.0                           
             ## check for float ?                            
-            return SimpleOrderBuilder._abi_build('BuildOrder_Equity_ABI', 
+            return _OrderBuilder._abi_build('BuildOrder_Equity_ABI', 
                 PCHAR(symbol), c_size_t(quantity), c_int(is_buy), 
                 c_int(to_open), c_int(ot), c_double(limit_price), 
                 c_double(0.0))
@@ -380,48 +410,486 @@ class SimpleOrderBuilder:
             @staticmethod
             def Build(symbol, quantity, is_buy, to_open, stop_price, 
                       limit_price=None):
+                ot = ORDER_TYPE_STOP_LIMIT
                 if limit_price is None:
                     ot = ORDER_TYPE_STOP
-                    limit_price = 0.0
-                else:
-                    ot = ORDER_TYPE_STOP_LIMIT
+                    limit_price = 0.0                                   
                 ## check for float?
-                return SimpleOrderBuilder._abi_build('BuildOrder_Equity_ABI', 
+                return _OrderBuilder._abi_build('BuildOrder_Equity_ABI', 
                     PCHAR(symbol), c_size_t(quantity), c_int(is_buy), 
                     c_int(to_open), c_int(ot), c_double(limit_price), 
                     c_double(stop_price))       
     
     class Option:        
         @staticmethod
-        def Build1(symbol, quantity, is_buy, to_open, price=None):
-            if price is None:
-                imo = True
-                price = 0.0
-            else:
-                imo = False
-            ## checkk for float ?
-            return SimpleOrderBuilder._abi_build('BuildOrder_Option_ABI', 
+        def Build1(symbol, quantity, is_buy, to_open, price=None):     
+            return _OrderBuilder._abi_build('BuildOrder_Option_ABI', 
                 PCHAR(symbol), c_size_t(quantity), c_int(is_buy), 
-                c_int(to_open), c_int(imo), c_double(price))
+                c_int(to_open), c_int(price is None), 
+                c_double(0.0 if price is None else price))
         
         @staticmethod
         def Build2(underlying, month, day, year, is_call, strike, 
-                    quantity, is_buy, to_open, price=None):
-            if price is None:
-                imo = True
-                price = 0.0
-            else:
-                imo = False
-            ## checkk for float ?            
-            return SimpleOrderBuilder._abi_build('BuildOrder_OptionEx_ABI', 
+                    quantity, is_buy, to_open, price=None):                      
+            return _OrderBuilder._abi_build('BuildOrder_OptionEx_ABI', 
                 PCHAR(underlying), c_uint(month), c_uint(day), c_uint(year), 
                 c_int(is_call), c_double(strike), c_size_t(quantity), 
-                c_int(is_buy), c_int(to_open), c_int(imo), c_double(price))
+                c_int(is_buy), c_int(to_open), c_int(price is None), 
+                c_double(0.0 if price is None else price))
       
     
-# TODO class SpreadOrderBuilder    
+class SpreadOrderBuilder( _OrderBuilder ): 
+     
+    class Vertical:
+        @staticmethod
+        def Build1(symbol_buy, symbol_sell, quantity, to_open, price=None):
+            return _OrderBuilder._abi_build('BuildOrder_Spread_Vertical_ABI',
+                PCHAR(symbol_buy), PCHAR(symbol_sell), c_size_t(quantity),
+                c_int(to_open), c_int(price is None), 
+                c_double(0.0 if price is None else price))
+        
+        @staticmethod
+        def Build2(underlying, month, day, year, are_calls, strike_buy, 
+                    strike_sell, quantity, to_open, price=None):
+            return _OrderBuilder._abi_build('BuildOrder_Spread_VerticalEx_ABI',
+                PCHAR(underlying), c_uint(month), c_uint(day), c_uint(year),
+                c_int(are_calls), c_double(strike_buy), c_double(strike_sell),
+                c_size_t(quantity), c_int(to_open), c_int(price is None), 
+                c_double(0.0 if price is None else price))
+                
+        class Roll:
+            @staticmethod
+            def Build1(symbol_close_buy, symbol_close_sell, symbol_open_buy,
+                      symbol_open_sell, quantity, price=None):
+                return _OrderBuilder._abi_build(
+                    'BuildOrder_Spread_VerticalRoll_ABI',
+                    PCHAR(symbol_close_buy), PCHAR(symbol_close_sell), 
+                    PCHAR(symbol_open_buy), PCHAR(symbol_open_sell),
+                    c_size_t(quantity), c_size_t(quantity), 
+                    c_int(price is None), 
+                    c_double(0.0 if price is None else price))
+            
+            @staticmethod
+            def Build2(underlying, month, day, year, are_calls, 
+                       strike_close_buy, strike_close_sell, strike_open_buy, 
+                       strike_open_sell, quantity, price=None):
+                return _OrderBuilder._abi_build(
+                    'BuildOrder_Spread_VerticalRollEx_ABI',
+                    PCHAR(underlying), c_uint(month), c_uint(day), c_uint(year),
+                    c_uint(month), c_uint(day), c_uint(year), c_int(are_calls), 
+                    c_double(strike_close_buy), c_double(strike_close_sell), 
+                    c_double(strike_open_buy), c_double(strike_open_sell), 
+                    c_size_t(quantity), c_size_t(quantity), 
+                    c_int(price is None), 
+                    c_double(0.0 if price is None else price))      
+                
+            @staticmethod
+            def Build3(underlying, month_close, day_close, year_close, 
+                       month_open, day_open, year_open, are_calls,  
+                       strike_close_buy, strike_close_sell, strike_open_buy, 
+                       strike_open_sell, quantity, price=None):
+                return _OrderBuilder._abi_build(
+                    'BuildOrder_Spread_VerticalRollEx_ABI',
+                    PCHAR(underlying), c_uint(month_close), c_uint(day_close), 
+                    c_uint(year_close), c_uint(month_open), c_uint(day_open), 
+                    c_uint(year_open), c_int(are_calls), 
+                    c_double(strike_close_buy), c_double(strike_close_sell), 
+                    c_double(strike_open_buy), c_double(strike_open_sell), 
+                    c_size_t(quantity), c_size_t(quantity), 
+                    c_int(price is None), 
+                    c_double(0.0 if price is None else price))                                              
+                        
+            class Unbalanced:
+                @staticmethod
+                def Build1(symbol_close_buy, symbol_close_sell, symbol_open_buy,
+                          symbol_open_sell, quantity_close, quantity_open, 
+                          price=None):
+                    return _OrderBuilder._abi_build(
+                        'BuildOrder_Spread_VerticalRoll_ABI',
+                        PCHAR(symbol_close_buy), PCHAR(symbol_close_sell), 
+                        PCHAR(symbol_open_buy), PCHAR(symbol_open_sell),
+                        c_size_t(quantity_close), c_size_t(quantity_open),
+                        c_int(price is None), 
+                        c_double(0.0 if price is None else price))
+                
+                @staticmethod
+                def Build2(underlying, month, day, year, are_calls, 
+                           strike_close_buy, strike_close_sell, strike_open_buy, 
+                           strike_open_sell, quantity_close, quantity_open, 
+                           price=None):
+                    return _OrderBuilder._abi_build(
+                        'BuildOrder_Spread_VerticalRollEx_ABI',
+                        PCHAR(underlying), c_uint(month), c_uint(day), 
+                        c_uint(year), c_uint(month), c_uint(day), c_uint(year), 
+                        c_int(are_calls), c_double(strike_close_buy), 
+                        c_double(strike_close_sell), c_double(strike_open_buy), 
+                        c_double(strike_open_sell),  
+                        c_size_t(quantity_close), c_size_t(quantity_open), 
+                        c_int(price is None), 
+                        c_double(0.0 if price is None else price))      
+                    
+                @staticmethod
+                def Build3(underlying, month_close, day_close, year_close, 
+                           month_open, day_open, year_open, are_calls,  
+                           strike_close_buy, strike_close_sell, strike_open_buy, 
+                           strike_open_sell, quantity_close, quantity_open,
+                            price=None):
+                    return _OrderBuilder._abi_build(
+                        'BuildOrder_Spread_VerticalRollEx_ABI',
+                        PCHAR(underlying), c_uint(month_close), 
+                        c_uint(day_close), c_uint(year_close), 
+                        c_uint(month_open), c_uint(day_open), c_uint(year_open), 
+                        c_int(are_calls), c_double(strike_close_buy), 
+                        c_double(strike_close_sell), c_double(strike_open_buy), 
+                        c_double(strike_open_sell), c_size_t(quantity_close), 
+                        c_size_t(quantity_open), c_int(price is None), 
+                        c_double(0.0 if price is None else price))   
+            # Unbalanced
+            
+        # Roll
+        
+    # Vertical
+
+    class Butterfly:
+        @staticmethod
+        def Build1(symbol_outer1, symbol_inner, symbol_outer2, quantity, is_buy,
+                  to_open, price=None):
+            return _OrderBuilder._abi_build('BuildOrder_Spread_Butterfly_ABI',
+                PCHAR(symbol_outer1), PCHAR(symbol_inner), 
+                PCHAR(symbol_outer2), c_size_t(quantity), c_size_t(quantity),
+                c_int(is_buy), c_int(to_open), c_int(price is None), 
+                c_double(0.0 if price is None else price))
+        
+        @staticmethod
+        def Build2(underlying, month, day, year, are_calls, strike_outer1, 
+                   strike_inner, strike_outer2, quantity, is_buy, to_open,
+                   price=None):
+            return _OrderBuilder._abi_build('BuildOrder_Spread_ButterflyEx_ABI',
+                PCHAR(underlying), c_uint(month), c_uint(day), c_uint(year),     
+                c_int(are_calls), c_double(strike_outer1), c_double(strike_inner), 
+                c_double(strike_outer2), c_size_t(quantity), c_size_t(quantity), 
+                c_int(is_buy), c_int(to_open), c_int(price is None), 
+                c_double(0.0 if price is None else price))
+                        
+        class Unbalanced:
+            @staticmethod
+            def Build1(symbol_outer1, symbol_inner, symbol_outer2, quantity1, 
+                      quantity2, is_buy,
+                      to_open, price=None):
+                return _OrderBuilder._abi_build('BuildOrder_Spread_Butterfly_ABI',
+                    PCHAR(symbol_outer1), PCHAR(symbol_inner), 
+                    PCHAR(symbol_outer2), c_size_t(quantity1), c_size_t(quantity2),
+                    c_int(is_buy), c_int(to_open), c_int(price is None), 
+                    c_double(0.0 if price is None else price))
+            
+            @staticmethod
+            def Build2(underlying, month, day, year, are_calls, strike_outer1, 
+                       strike_inner, strike_outer2, quantity1, quantity2, is_buy, 
+                       to_open, price=None):
+                return _OrderBuilder._abi_build('BuildOrder_Spread_ButterflyEx_ABI',
+                    PCHAR(underlying), c_uint(month), c_uint(day), c_uint(year), 
+                    c_int(are_calls), c_double(strike_outer1),  
+                    c_double(strike_inner), c_double(strike_outer2),                  
+                    c_size_t(quantity1), c_size_t(quantity2), c_int(is_buy), 
+                    c_int(to_open), c_int(price is None), 
+                    c_double(0.0 if price is None else price))                             
+        # Unbalanced
+        
+    # Butterfly
+                  
+    class BackRatio:
+        @staticmethod
+        def Build1(symbol_buy, symbol_sell, quantity_buy, quantity_sell, 
+                  to_open, price=None):
+            return _OrderBuilder._abi_build('BuildOrder_Spread_BackRatio_ABI',
+                PCHAR(symbol_buy), PCHAR(symbol_sell), c_size_t(quantity_buy), 
+                c_size_t(quantity_sell), c_int(to_open), c_int(price is None), 
+                c_double(0.0 if price is None else price))
+        
+        @staticmethod
+        def Build2(underlying, month, day, year, are_calls, strike_buy, 
+                   strike_sell, quantity_buy, quantity_sell, to_open, 
+                   price=None):
+            return _OrderBuilder._abi_build('BuildOrder_Spread_BackRatioEx_ABI',
+                PCHAR(underlying), c_uint(month), c_uint(day), c_uint(year),  
+                c_int(are_calls), c_double(strike_buy), c_double(strike_sell),                  
+                c_size_t(quantity_buy), c_size_t(quantity_sell), 
+                c_int(to_open), c_int(price is None), 
+                c_double(0.0 if price is None else price))          
+    # BackRatio
+                    
+    class Calendar:
+        @staticmethod
+        def Build1(symbol_buy, symbol_sell, quantity, to_open, price=None):
+            return _OrderBuilder._abi_build('BuildOrder_Spread_Calendar_ABI',
+                PCHAR(symbol_buy), PCHAR(symbol_sell), c_size_t(quantity), 
+                c_int(to_open), c_int(price is None), 
+                c_double(0.0 if price is None else price))
+        
+        @staticmethod
+        def Build2(underlying, month_buy, day_buy, year_buy, month_sell,
+                   day_sell, year_sell, are_calls, strike, quantity, to_open, 
+                   price=None):
+            return _OrderBuilder._abi_build('BuildOrder_Spread_CalendarEx_ABI',
+                PCHAR(underlying), c_uint(month_buy), c_uint(day_buy), 
+                c_uint(year_buy), c_uint(month_sell), c_uint(day_sell), 
+                c_uint(year_sell), c_int(are_calls), c_double(strike), 
+                c_size_t(quantity), c_int(to_open), c_int(price is None), 
+                c_double(0.0 if price is None else price))   
+    # Calendar        
+            
+    class Diagonal:
+        @staticmethod
+        def Build1(symbol_buy, symbol_sell, quantity, to_open, price=None):
+            return _OrderBuilder._abi_build('BuildOrder_Spread_Diagonal_ABI',
+                PCHAR(symbol_buy), PCHAR(symbol_sell), c_size_t(quantity), 
+                c_int(to_open), c_int(price is None), 
+                c_double(0.0 if price is None else price))
+        
+        @staticmethod
+        def Build2(underlying, month_buy, day_buy, year_buy, month_sell,
+                   day_sell, year_sell, are_calls, strike_buy, strike_sell, 
+                   quantity, to_open, price=None):
+            return _OrderBuilder._abi_build('BuildOrder_Spread_DiagonalEx_ABI',
+                PCHAR(underlying), c_uint(month_buy), c_uint(day_buy), 
+                c_uint(year_buy), c_uint(month_sell), c_uint(day_sell), 
+                c_uint(year_sell), c_int(are_calls), c_double(strike_buy), 
+                c_double(strike_sell), c_size_t(quantity), c_int(to_open), 
+                c_int(price is None), 
+                c_double(0.0 if price is None else price))   
+    # Diagonal
+
+    class Straddle:
+        @staticmethod
+        def Build1(symbol_call, symbol_put, quantity, is_buy, to_open, 
+                  price=None):
+            return _OrderBuilder._abi_build('BuildOrder_Spread_Straddle_ABI',
+                PCHAR(symbol_call), PCHAR(symbol_put), c_size_t(quantity), 
+                c_int(is_buy), c_int(to_open), c_int(price is None), 
+                c_double(0.0 if price is None else price))
+        
+        @staticmethod
+        def Build2(underlying, month, day, year, strike, quantity, is_buy, 
+                   to_open, price=None):
+            return _OrderBuilder._abi_build('BuildOrder_Spread_StraddleEx_ABI',
+                PCHAR(underlying), c_uint(month), c_uint(day), c_uint(year), 
+                c_double(strike), c_size_t(quantity), c_int(is_buy), 
+                c_int(to_open), c_int(price is None), 
+                c_double(0.0 if price is None else price))   
+    # Straddle    
+
+    class Strangle:
+        @staticmethod
+        def Build1(symbol_call, symbol_put, quantity, is_buy, to_open, 
+                  price=None):
+            return _OrderBuilder._abi_build('BuildOrder_Spread_Strangle_ABI',
+                PCHAR(symbol_call), PCHAR(symbol_put), c_size_t(quantity), 
+                c_int(is_buy), c_int(to_open), c_int(price is None), 
+                c_double(0.0 if price is None else price))
+        
+        @staticmethod
+        def Build2(underlying, month, day, year, strike_call, strike_put, 
+                   quantity, is_buy, to_open, price=None):
+            return _OrderBuilder._abi_build('BuildOrder_Spread_StrangleEx_ABI',
+                PCHAR(underlying), c_uint(month), c_uint(day), c_uint(year), 
+                c_double(strike_call), c_double(strike_put), c_size_t(quantity), 
+                c_int(is_buy), c_int(to_open), c_int(price is None), 
+                c_double(0.0 if price is None else price))   
+    # Strangle            
+ 
+    class CollarSynthetic:
+        @staticmethod
+        def Build1(symbol_buy, symbol_sell, quantity, to_open, price=None):
+            return _OrderBuilder._abi_build(
+                'BuildOrder_Spread_CollarSynthetic_ABI',
+                PCHAR(symbol_buy), PCHAR(symbol_sell), c_size_t(quantity), 
+                c_int(to_open), c_int(price is None), 
+                c_double(0.0 if price is None else price))
+        
+        @staticmethod
+        def Build2(underlying, month, day, year, strike_call, strike_put, 
+                   quantity, is_buy, to_open, price=None):
+            return _OrderBuilder._abi_build(
+                'BuildOrder_Spread_CollarSyntheticEx_ABI',
+                PCHAR(underlying), c_uint(month), c_uint(day), c_uint(year),  
+                c_double(strike_call), c_double(strike_put), c_size_t(quantity), 
+                c_int(is_buy), c_int(to_open), c_int(price is None), 
+                c_double(0.0 if price is None else price))   
+    # CollarSynthetic           
+       
+    class CollarWithStock:
+        @staticmethod
+        def Build1(symbol_option_buy, symbol_option_sell, symbol_stock,
+                  quantity, is_buy, to_open, price=None):
+            return _OrderBuilder._abi_build(
+                'BuildOrder_Spread_CollarWithStock_ABI',
+                PCHAR(symbol_option_buy), PCHAR(symbol_option_sell), 
+                PCHAR(symbol_stock), c_size_t(quantity), c_int(is_buy),
+                c_int(to_open), c_int(price is None), 
+                c_double(0.0 if price is None else price))
+        
+        @staticmethod
+        def Build2(underlying, month, day, year, strike_call, strike_put, 
+                   quantity, is_buy, to_open, price=None):
+            return _OrderBuilder._abi_build(
+                'BuildOrder_Spread_CollarWithStockEx_ABI',
+                PCHAR(underlying), c_uint(month), c_uint(day), c_uint(year),  
+                c_double(strike_call), c_double(strike_put), 
+                c_size_t(quantity), c_int(is_buy), c_int(to_open), 
+                c_int(price is None), 
+                c_double(0.0 if price is None else price))   
+    # CollarWithStock 
+      
+    class Condor:
+        @staticmethod
+        def Build1(symbol_outer1, symbol_inner1, symbol_inner2, symbol_outer2,
+                  quantity, is_buy, to_open, price=None):
+            return _OrderBuilder._abi_build('BuildOrder_Spread_Condor_ABI',
+                PCHAR(symbol_outer1), PCHAR(symbol_inner1), 
+                PCHAR(symbol_inner2), PCHAR(symbol_outer2), 
+                c_size_t(quantity), c_size_t(quantity), 
+                c_int(is_buy), c_int(to_open), c_int(price is None), 
+                c_double(0.0 if price is None else price))
+        
+        @staticmethod
+        def Build2(underlying, month, day, year, strike_outer1, strike_inner1, 
+                   strike_inner2, strike_outer2, are_calls, quantity, is_buy, 
+                   to_open, price=None):
+            return _OrderBuilder._abi_build(
+                'BuildOrder_Spread_CondorEx_ABI',
+                PCHAR(underlying), c_uint(month), c_uint(day), c_uint(year),  
+                c_double(strike_outer1), c_double(strike_inner1),
+                c_double(strike_inner2), c_double(strike_outer2), 
+                c_int(are_calls), c_size_t(quantity), c_size_t(quantity),
+                c_int(is_buy), c_int(to_open), c_int(price is None), 
+                c_double(0.0 if price is None else price))   
+            
+        class Unbalanced:
+            @staticmethod
+            def Build1(symbol_outer1, symbol_inner1, symbol_inner2, 
+                      symbol_outer2, quantity1, quantity2, is_buy, to_open, 
+                      price=None):
+                return _OrderBuilder._abi_build('BuildOrder_Spread_Condor_ABI',
+                    PCHAR(symbol_outer1), PCHAR(symbol_inner1), 
+                    PCHAR(symbol_inner2), PCHAR(symbol_outer2), 
+                    c_size_t(quantity1), c_size_t(quantity2), 
+                    c_int(is_buy), c_int(to_open), c_int(price is None), 
+                    c_double(0.0 if price is None else price))
+            
+            @staticmethod
+            def Build2(underlying, month, day, year, strike_outer1, 
+                       strike_inner1, strike_inner2, strike_outer2, are_calls, 
+                       quantity1, quantity2, is_buy, to_open, price=None):
+                return _OrderBuilder._abi_build(
+                    'BuildOrder_Spread_CondorEx_ABI',
+                    PCHAR(underlying), c_uint(month), c_uint(day), c_uint(year), 
+                    c_double(strike_outer1), c_double(strike_inner1),
+                    c_double(strike_inner2), c_double(strike_outer2), 
+                    c_int(are_calls), c_size_t(quantity1), c_size_t(quantity2),
+                    c_int(is_buy), c_int(to_open), c_int(price is None), 
+                    c_double(0.0 if price is None else price))   
+        # Unbalanced
+        
+    # Condor 
     
-# TODO class ConditionalOrderBuilder
+    class IronCondor:
+        @staticmethod
+        def Build1(symbol_call_buy, symbol_call_sell, symbol_put_buy, 
+                  symbol_put_sell, quantity, to_open, price=None):
+            return _OrderBuilder._abi_build(
+                'BuildOrder_Spread_IronCondor_ABI',
+                PCHAR(symbol_call_buy), PCHAR(symbol_call_sell), 
+                PCHAR(symbol_put_buy), PCHAR(symbol_put_sell), 
+                c_size_t(quantity), c_size_t(quantity), 
+                c_int(to_open), c_int(price is None), 
+                c_double(0.0 if price is None else price))
+        
+        @staticmethod
+        def Build2(underlying, month, day, year, strike_call_buy, 
+                   strike_call_sell, strike_put_buy, strike_put_sell, 
+                   quantity, to_open, price=None):
+            return _OrderBuilder._abi_build(
+                'BuildOrder_Spread_IronCondorEx_ABI',
+                PCHAR(underlying), c_uint(month), c_uint(day), c_uint(year),
+                c_double(strike_call_buy), c_double(strike_call_sell),
+                c_double(strike_put_buy), c_double(strike_put_sell), 
+                c_size_t(quantity), c_size_t(quantity),
+                c_int(to_open), c_int(price is None), 
+                c_double(0.0 if price is None else price))   
+            
+        class Unbalanced:
+            @staticmethod
+            def Build1(symbol_call_buy, symbol_call_sell, symbol_put_buy, 
+                      symbol_put_sell, quantity_call, quantity_put, to_open, 
+                      price=None):
+                return _OrderBuilder._abi_build(
+                    'BuildOrder_Spread_IronCondor_ABI',
+                    PCHAR(symbol_call_buy), PCHAR(symbol_call_sell), 
+                    PCHAR(symbol_put_buy), PCHAR(symbol_put_sell), 
+                    c_size_t(quantity_call), c_size_t(quantity_put), 
+                    c_int(to_open), c_int(price is None), 
+                    c_double(0.0 if price is None else price))
+            
+            @staticmethod
+            def Build2(underlying, month, day, year, strike_call_buy, 
+                       strike_call_sell, strike_put_buy, strike_put_sell, 
+                       quantity_call, quantity_put, to_open, price=None):
+                return _OrderBuilder._abi_build(
+                    'BuildOrder_Spread_IronCondorEx_ABI',
+                    PCHAR(underlying), c_uint(month), c_uint(day), 
+                    c_uint(year), c_double(strike_call_buy), 
+                    c_double(strike_call_sell), c_double(strike_put_buy), 
+                    c_double(strike_put_sell), c_size_t(quantity_call), 
+                    c_size_t(quantity_put), c_int(to_open), 
+                    c_int(price is None), 
+                    c_double(0.0 if price is None else price))     
+        # Unbalanced
+        
+    # IronCondor    
+    
+    class DoubleDiagonal:
+        @staticmethod
+        def Build1(symbol_call_buy, symbol_call_sell, symbol_put_buy, 
+                  symbol_put_sell, quantity, to_open, price=None):
+            return _OrderBuilder._abi_build(
+                'BuildOrder_Spread_DoubleDiagonal_ABI',
+                PCHAR(symbol_call_buy), PCHAR(symbol_call_sell), 
+                PCHAR(symbol_put_buy), PCHAR(symbol_put_sell), 
+                c_size_t(quantity), c_int(to_open), c_int(price is None), 
+                c_double(0.0 if price is None else price))
+        
+        @staticmethod
+        def Build2(underlying, month_buy, day_buy, year_buy, month_sell, 
+                   day_sell, year_sell, strike_call_buy, strike_call_sell, 
+                   strike_put_buy, strike_put_sell, quantity, to_open, 
+                   price=None):
+            return _OrderBuilder._abi_build(
+                'BuildOrder_Spread_DoubleDiagonalEx_ABI',
+                PCHAR(underlying), c_uint(month_buy), c_uint(day_buy), 
+                c_uint(year_buy), c_uint(month_sell), c_uint(day_sell), 
+                c_uint(year_sell), c_double(strike_call_buy), 
+                c_double(strike_call_sell), c_double(strike_put_buy), 
+                c_double(strike_put_sell), c_size_t(quantity), 
+                c_int(to_open), c_int(price is None), 
+                c_double(0.0 if price is None else price))        
+    # DoubleDiagonal 
+    
+
+class ConditionalOrderBuilder( _OrderBuilder ):
+    @staticmethod
+    def OTO(order_primary, order_conditional):
+        #check obj are of OrderTicket
+        return _OrderBuilder._abi_build("BuildOrder_OneTriggersOther_ABI",
+            _REF(order_primary._obj), _REF(order_conditional._obj) )
+        
+    @staticmethod
+    def OCO(order1, order2):
+        #check obj are of OrderTicket
+        return _OrderBuilder._abi_build("BuildOrder_OneCancelsOther_ABI",
+            _REF(order1._obj), _REF(order2._obj))
+
+                                                
+
     
     
     

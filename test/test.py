@@ -810,9 +810,9 @@ def test_streaming(creds):
     session2 = None
     _pause(.5)
     gc.collect()
-    _pause(1)
-                
-                
+    _pause(1)                    
+          
+                    
 def test_execute_order_objects():
     def test_exc(n, func, *args):
         try:    
@@ -992,8 +992,8 @@ def test_execute_order_objects():
     
     order3.clear_children()
     assert not order3.get_children()
-          
-          
+    
+    
 #TODO check exceptions  
 def test_execute_order_builders():
     print('*** Simple-Equity ***')
@@ -1003,8 +1003,8 @@ def test_execute_order_builders():
     print('\n*** Spread-Option ***')
     test_execute_spread_option_builders()
     print('\n*** OCO / OTO ***')
-    test_execute_oco_oto_builders()
-            
+    test_execute_oco_oto_builders()            
+  
   
 def test_execute_simple_equity_builders():
     B = execute.SimpleOrderBuilder    
@@ -1309,12 +1309,1127 @@ def test_execute_simple_option_builders():
     assert lstc3.as_json() == lstc2.as_json() == lstc.as_json()
     
 
-def test_execute_spread_option_builders():
-    pass
+
+BUY_TO_OPEN = execute.ORDER_INSTRUCTION_BUY_TO_OPEN
+BUY_TO_CLOSE = execute.ORDER_INSTRUCTION_BUY_TO_CLOSE
+SELL_TO_OPEN = execute.ORDER_INSTRUCTION_SELL_TO_OPEN
+SELL_TO_CLOSE = execute.ORDER_INSTRUCTION_SELL_TO_CLOSE
+OPTION = execute.ORDER_ASSET_TYPE_OPTION
+EQUITY = execute.ORDER_ASSET_TYPE_EQUITY
+MARKET = execute.ORDER_TYPE_MARKET
+NET_CREDIT = execute.ORDER_TYPE_NET_CREDIT
+NET_DEBIT = execute.ORDER_TYPE_NET_DEBIT
+NET_ZERO = execute.ORDER_TYPE_NET_ZERO
+DURATION_DAY = execute.ORDER_DURATION_DAY
+STRATEGY_SINGLE = execute.ORDER_STRATEGY_TYPE_SINGLE
+SESSION_NORMAL = execute.ORDER_SESSION_NORMAL
+LEG = execute.OrderLeg
+
+def check_spread_order_ticket(order, otype, cmplx, legs, price=0.0, opt=""):
+    E = execute
+    cmplx_str = E.complex_order_strategy_type_to_str(cmplx)    
+    otype_str = E.order_type_to_str(otype)
     
-def test_execute_oco_oto_builders():
-    pass
+    opt = '-' + opt if opt else opt
+    title = cmplx_str + opt + '-' + otype_str + '-('
+    for l in legs:
+        title += E.order_instruction_to_str(l.get_instruction()) + '/'
+    title = title[:-1] + ')'                    
+    print("+ CHECK SPREAD TICKET:", title )
+    
+    #object
+    assert order.get_duration() == DURATION_DAY
+    assert order.get_complex_strategy_type() == cmplx
+    assert order.get_strategy_type() == STRATEGY_SINGLE
+    assert order.get_type() == otype 
+    assert order.get_session() == SESSION_NORMAL
+    assert order.get_price() == price
+    assert not order.get_children()
+    
+    olegs = order.get_legs()
+    assert olegs
+    print("+   CHECK LEG (OBJECT)...", end='  ')
+    for i in range(len(olegs)):
+        print(str(i), end='  ')
+        assert legs[i] == olegs[i]
+        assert legs[i] is not olegs[i]        
+    print()
+    
+    #json
+    j = order.as_json()
+    assert j
+    assert j["duration"] == E.order_duration_to_str(DURATION_DAY)
+    assert j["complexOrderStrategyType"] == cmplx_str
+    assert j["orderStrategyType"] == \
+        E.order_strategy_type_to_str(STRATEGY_SINGLE)
+    assert j["orderType"] == otype_str
+    assert j["session"] == E.order_session_to_str(SESSION_NORMAL)
+    if price:
+        assert float(j["price"]) == price
+    assert "childOrderStrategies" not in j
+    
+    print("+   CHECK LEG (JSON)...", end='  ')
+    for i in range(len(legs)):
+        print(str(i), end='  ')
+        jj = j["orderLegCollection"][i]
+        assert jj["instruction"] == \
+            E.order_instruction_to_str(legs[i].get_instruction())
+        assert jj["quantity"] == legs[i].get_quantity()
+        assert jj["instrument"]["assetType"] == \
+            E.order_asset_type_to_str(legs[i].get_asset_type())
+        assert jj["instrument"]["symbol"] == legs[i].get_symbol()
+    print()
+            
+
+def test_execute_spread_option_builders():
+    print('\n  *** Vertical ***')
+    test_execute_spread_vertical_builders()
+    print('\n  *** Vertical Roll***')   
+    test_execute_spread_vertical_roll_builders()
+    print('\n  *** Vertical Roll (Unbalanced)***')
+    test_execute_spread_vertical_roll_unbalanced_builders()
+    print('\n  *** Butterfly ***')
+    test_execute_spread_butterfly_builders()
+    print('\n  *** Butterfly (Unbalanced) ***')
+    test_execute_spread_butterfly_unbalanced_builders()
+    print('\n  *** BackRatio ***')
+    test_execute_spread_backratio_builders() 
+    print('\n  *** Calendar ***')
+    test_execute_spread_calendar_builders() 
+    print('\n  *** Diagonal ***')
+    test_execute_spread_diagonal_builders()
+    print('\n  *** Straddle ***')
+    test_execute_spread_straddle_builders()  
+    print('\n  *** Strangle ***')
+    test_execute_spread_strangle_builders()   
+    print('\n  *** Collar Synthetic ***')
+    test_execute_spread_collar_synthetic_builders()
+    print('\n  *** Collar With Stock ***')
+    test_execute_spread_collar_with_stock_builders()
+    print('\n  *** Condor ***')   
+    test_execute_spread_condor_builders();
+    print('\n  *** Condor (Unbalanced) ***')   
+    test_execute_spread_condor_unbalanced_builders(); 
+    print('\n  *** Iron Condor ***')   
+    test_execute_spread_iron_condor_builders();
+    print('\n  *** Iron Condor (Unbalanced) ***')   
+    test_execute_spread_iron_condor_unbalanced_builders();
+    print('\n  *** Double Diagonal ***') 
+    test_execute_spread_double_diagonal_builders()
+        
+        
+def test_execute_spread_vertical_builders():
+    CMPLX = execute.COMPLEX_ORDER_STRATEGY_TYPE_VERTICAL    
+    B = execute.SpreadOrderBuilder.Vertical
+        
+    # MARKET
+    order = B.Build1("SPY_011720C300", "SPY_011720C350", 1, True)
+    legs = [ LEG(OPTION,"SPY_011720C300", BUY_TO_OPEN, 1 ),
+             LEG(OPTION,"SPY_011720C350", SELL_TO_OPEN, 1 ) ]
+    check_spread_order_ticket(order, MARKET, CMPLX, legs)    
+    order2 = B.Build2("SPY", 1, 17, 2020, True, 300, 350, 1, True)
+    assert order == order2    
+
+    order = B.Build1("SPY_011720P200", "SPY_011720P250", 99, False)
+    legs = [ LEG(OPTION,"SPY_011720P200", BUY_TO_CLOSE, 99 ),
+             LEG(OPTION,"SPY_011720P250", SELL_TO_CLOSE, 99 ) ]
+    check_spread_order_ticket(order, MARKET, CMPLX, legs)    
+    order2 = B.Build2("SPY", 1, 17, 2020, False, 200, 250, 99, False)
+    assert order == order2   
+    
+    # LIMIT
+    order = B.Build1("SPY_011720C300", "SPY_011720C350", 1, True, 4.99)
+    legs = [ LEG(OPTION,"SPY_011720C300", BUY_TO_OPEN, 1 ),
+             LEG(OPTION,"SPY_011720C350", SELL_TO_OPEN, 1 ) ]
+    check_spread_order_ticket(order, NET_DEBIT, CMPLX, legs, 4.99)    
+    order2 = B.Build2("SPY", 1, 17, 2020, True, 300, 350, 1, True, 4.99)
+    assert order == order2    
+
+    order = B.Build1("SPY_011720P200", "SPY_011720P250", 99, False, -.99)
+    legs = [ LEG(OPTION,"SPY_011720P200", BUY_TO_CLOSE, 99 ),
+             LEG(OPTION,"SPY_011720P250", SELL_TO_CLOSE, 99 ) ]
+    check_spread_order_ticket(order, NET_CREDIT, CMPLX, legs, .99)    
+    order2 = B.Build2("SPY", 1, 17, 2020, False, 200, 250, 99, False, -.99)
+    assert order == order2    
+
+    order = B.Build1("SPY_011720P200", "SPY_011720P250", 99, False, 0)
+    legs = [ LEG(OPTION,"SPY_011720P200", BUY_TO_CLOSE, 99 ),
+             LEG(OPTION,"SPY_011720P250", SELL_TO_CLOSE, 99 ) ]
+    check_spread_order_ticket(order, NET_ZERO, CMPLX, legs, 0)    
+    order2 = B.Build2("SPY", 1, 17, 2020, False, 200, 250, 99, False, 0)
+    assert order == order2    
+    
+    
+def _test_execute_spread_vertical_roll_builders(CMPLX, B1, Q, unbalanced):
+
+    # MARKET - NEW EXP
+    q = Q[0] if unbalanced else [Q[0][0]]    
+    order = B1.Build1("SPY_011720C300", "SPY_011720C350",
+                           "SPY_032020C375", "SPY_032020C325", *q)
+    legs = [ LEG(OPTION,"SPY_011720C300", BUY_TO_CLOSE, Q[0][0] ),
+             LEG(OPTION,"SPY_011720C350", SELL_TO_CLOSE, Q[0][0] ),
+             LEG(OPTION,"SPY_032020C375", BUY_TO_OPEN, Q[0][1] ),
+             LEG(OPTION,"SPY_032020C325", SELL_TO_OPEN, Q[0][1] ) ]
+    check_spread_order_ticket(order, MARKET, CMPLX, legs, 0, "Build3 (New Exp)")    
+    order2 = B1.Build3("SPY", 1, 17, 2020, 3, 20, 2020, True, 300, 
+                             350, 375, 325, *q)
+    assert order == order2    
+
+    # MARKET - SAME EXP
+    q = Q[1] if unbalanced else [Q[1][0]]    
+    order = B1.Build1("SPY_011720P200", "SPY_011720P250",
+                           "SPY_011720P250", "SPY_011720P225", *q)
+    legs = [ LEG(OPTION,"SPY_011720P200", BUY_TO_CLOSE, Q[1][0] ),
+             LEG(OPTION,"SPY_011720P250", SELL_TO_CLOSE, Q[1][0] ),
+             LEG(OPTION,"SPY_011720P250", BUY_TO_OPEN, Q[1][1] ),
+             LEG(OPTION,"SPY_011720P225", SELL_TO_OPEN, Q[1][1] ) ]
+    check_spread_order_ticket(order, MARKET, CMPLX, legs, 0, 
+                              "Build2 (Same Exp)")    
+    order2 = B1.Build2("SPY", 1, 17, 2020, False, 200, 250, 250, 225, *q)
+    assert order == order2    
+
+    # NET_CREDIT - NEW EXP
+    q = Q[2] if unbalanced else [Q[2][0]]
+    order = B1.Build1("SPY_011720C300", "SPY_011720C350",
+                           "SPY_032020C375", "SPY_032020C325", *q, price=-.01)
+    legs = [ LEG(OPTION,"SPY_011720C300", BUY_TO_CLOSE, Q[2][0] ),
+             LEG(OPTION,"SPY_011720C350", SELL_TO_CLOSE, Q[2][0] ),
+             LEG(OPTION,"SPY_032020C375", BUY_TO_OPEN, Q[2][1] ),
+             LEG(OPTION,"SPY_032020C325", SELL_TO_OPEN, Q[2][1] ) ]
+    check_spread_order_ticket(order, NET_CREDIT, CMPLX, legs, .01, 
+                              "Build3 (New Exp)")    
+    order2 = B1.Build3("SPY", 1, 17, 2020, 3, 20, 2020, True, 300, 
+                             350, 375, 325, *q, price=-.01)
+    assert order == order2    
+    
+    # NET_DEBIT - SAME EXP
+    q = Q[3] if unbalanced else [Q[3][0]]
+    order = B1.Build1("SPY_011720P200", "SPY_011720P250",
+                           "SPY_011720P250", "SPY_011720P225", *q, price=.01)
+    legs = [ LEG(OPTION,"SPY_011720P200", BUY_TO_CLOSE, Q[3][0] ),
+             LEG(OPTION,"SPY_011720P250", SELL_TO_CLOSE, Q[3][0] ),
+             LEG(OPTION,"SPY_011720P250", BUY_TO_OPEN, Q[3][1] ),
+             LEG(OPTION,"SPY_011720P225", SELL_TO_OPEN, Q[3][1] ) ]
+    check_spread_order_ticket(order, NET_DEBIT, CMPLX, legs, .01, 
+                              "Build2 (Same Exp)")    
+    order2 = B1.Build2("SPY", 1, 17, 2020, False, 200, 250, 250, 225, *q, 
+                      price=.01)
+    assert order == order2    
+    
+    # NET_ZERO - SAME EXP
+    q = Q[4] if unbalanced else [Q[4][0]]
+    order = B1.Build1("SPY_011720P200", "SPY_011720P250",
+                           "SPY_011720P250", "SPY_011720P225", *q, price=.0)
+    legs = [ LEG(OPTION,"SPY_011720P200", BUY_TO_CLOSE, Q[4][0] ),
+             LEG(OPTION,"SPY_011720P250", SELL_TO_CLOSE, Q[4][0] ),
+             LEG(OPTION,"SPY_011720P250", BUY_TO_OPEN, Q[4][1] ),
+             LEG(OPTION,"SPY_011720P225", SELL_TO_OPEN, Q[4][1] ) ]
+    check_spread_order_ticket(order, NET_ZERO, CMPLX, legs, 0, 
+                              "Build2 (Same Exp)")    
+    order2 = B1.Build2("SPY", 1, 17, 2020, False, 
+                              200, 250, 250, 225, *q, price=0)
+    assert order == order2    
+    
+    
+def test_execute_spread_vertical_roll_builders():       
+    _test_execute_spread_vertical_roll_builders(
+        execute.COMPLEX_ORDER_STRATEGY_TYPE_VERTICAL_ROLL, 
+        execute.SpreadOrderBuilder.Vertical.Roll,    
+        [(1,1),(99,99),(1,1),(99,99),(99999,99999)], 
+        False)
+    
+def test_execute_spread_vertical_roll_unbalanced_builders():      
+    _test_execute_spread_vertical_roll_builders(
+        execute.COMPLEX_ORDER_STRATEGY_TYPE_UNBALANCED_VERTICAL_ROLL, 
+        execute.SpreadOrderBuilder.Vertical.Roll.Unbalanced,       
+        [(1,2),(99,1),(1,2),(99,1),(99998,99999)], 
+        True)
+
+
+def _test_execute_spread_butterfly_builders(CMPLX, B1,Q, unbalanced):
+
+    # MARKET - BUY_TO_OPEN
+    q = Q[0] if unbalanced else [Q[0][0]]    
+    order = B1.Build1("SPY_011720C300", "SPY_011720C325", "SPY_011720C350", *q,
+                      is_buy=True, to_open=True)
+    legs = [ LEG(OPTION,"SPY_011720C300", BUY_TO_OPEN, Q[0][0] ),
+             LEG(OPTION,"SPY_011720C325", SELL_TO_OPEN, Q[0][0] + Q[0][1] ),   
+             LEG(OPTION,"SPY_011720C350", BUY_TO_OPEN, Q[0][1] ) ]
+    check_spread_order_ticket(order, MARKET, CMPLX, legs, 0)    
+    order2 = B1.Build2("SPY", 1, 17, 2020, True, 300, 325, 350, *q, 
+                       is_buy=True, to_open=True)
+    assert order == order2    
+    
+    # MARKET - SELL_TO_OPEN
+    q = Q[1] if unbalanced else [Q[1][0]]    
+    order = B1.Build1("SPY_011720P200", "SPY_011720P250", "SPY_011720P300", *q,
+                      is_buy=False, to_open=True)
+    legs = [ LEG(OPTION,"SPY_011720P200", SELL_TO_OPEN, Q[1][0] ),
+             LEG(OPTION,"SPY_011720P250", BUY_TO_OPEN, Q[1][0] + Q[1][1] ),   
+             LEG(OPTION,"SPY_011720P300", SELL_TO_OPEN, Q[1][1] ) ]
+    check_spread_order_ticket(order, MARKET, CMPLX, legs, 0)    
+    order2 = B1.Build2("SPY", 1, 17, 2020, False, 200, 250, 300, *q,
+                       is_buy=False, to_open=True)
+    assert order == order2    
+   
+    # MARKET - BUY_TO_CLOSE
+    q = Q[2] if unbalanced else [Q[2][0]]    
+    order = B1.Build1("SPY_011720C300", "SPY_011720C325", "SPY_011720C350", *q,
+                      is_buy=True, to_open=False)
+    legs = [ LEG(OPTION,"SPY_011720C300", BUY_TO_CLOSE, Q[2][0] ),
+             LEG(OPTION,"SPY_011720C325", SELL_TO_CLOSE, Q[2][0] + Q[2][1] ),   
+             LEG(OPTION,"SPY_011720C350", BUY_TO_CLOSE, Q[2][1] ) ]
+    check_spread_order_ticket(order, MARKET, CMPLX, legs, 0)    
+    order2 = B1.Build2("SPY", 1, 17, 2020, True, 300, 325, 350, *q,
+                       is_buy=True, to_open=False)
+    assert order == order2    
+      
+    # MARKET - SELL_TO_CLOSE
+    q = Q[3] if unbalanced else [Q[3][0]]    
+    order = B1.Build1("SPY_011720P200", "SPY_011720P250", "SPY_011720P300", *q,
+                      is_buy=False, to_open=False)
+    legs = [ LEG(OPTION,"SPY_011720P200", SELL_TO_CLOSE, Q[3][0] ),
+             LEG(OPTION,"SPY_011720P250", BUY_TO_CLOSE, Q[3][0] + Q[3][1] ),   
+             LEG(OPTION,"SPY_011720P300", SELL_TO_CLOSE, Q[3][1] ) ]
+    check_spread_order_ticket(order, MARKET, CMPLX, legs, 0)    
+    order2 = B1.Build2("SPY", 1, 17, 2020, False, 200, 250, 300, *q,
+                       is_buy=False, to_open=False)
+    assert order == order2    
+
+    # NET_DEBIT - BUY_TO_OPEN
+    q = Q[0] if unbalanced else [Q[0][0]]    
+    order = B1.Build1("SPY_011720C300", "SPY_011720C325", "SPY_011720C350", *q, 
+                      is_buy=True, to_open=True, price=4.99)
+    legs = [ LEG(OPTION,"SPY_011720C300", BUY_TO_OPEN, Q[0][0] ),
+             LEG(OPTION,"SPY_011720C325", SELL_TO_OPEN, Q[0][0] + Q[0][1] ),   
+             LEG(OPTION,"SPY_011720C350", BUY_TO_OPEN, Q[0][1] ) ]
+    check_spread_order_ticket(order, NET_DEBIT, CMPLX, legs, 4.99)    
+    order2 = B1.Build2("SPY", 1, 17, 2020, True, 300, 325, 350, *q,
+                       is_buy=True, to_open=True, price=4.99)
+    assert order == order2    
+     
+    # NET_CREDIT - SELL_TO_OPEN
+    q = Q[1] if unbalanced else [Q[1][0]]    
+    order = B1.Build1("SPY_011720P200", "SPY_011720P250", "SPY_011720P300", *q, 
+                      is_buy=False, to_open=True, price=-.999)
+    legs = [ LEG(OPTION,"SPY_011720P200", SELL_TO_OPEN, Q[1][0] ),
+             LEG(OPTION,"SPY_011720P250", BUY_TO_OPEN, Q[1][0] + Q[1][1] ),   
+             LEG(OPTION,"SPY_011720P300", SELL_TO_OPEN, Q[1][1] ) ]
+    check_spread_order_ticket(order, NET_CREDIT, CMPLX, legs, .999)    
+    order2 = B1.Build2("SPY", 1, 17, 2020, False, 200, 250, 300, *q,
+                        is_buy=False, to_open=True, price=-.999)
+    assert order == order2    
+
+    # NET_ZERO - BUY_TO_CLOSE
+    q = Q[2] if unbalanced else [Q[2][0]]    
+    order = B1.Build1("SPY_011720C300", "SPY_011720C325", "SPY_011720C350", 
+                      is_buy=True, to_open=False, *q, price=0.0)
+    legs = [ LEG(OPTION,"SPY_011720C300", BUY_TO_CLOSE, Q[2][0] ),
+             LEG(OPTION,"SPY_011720C325", SELL_TO_CLOSE, Q[2][0] + Q[2][1] ),   
+             LEG(OPTION,"SPY_011720C350", BUY_TO_CLOSE, Q[2][1] ) ]
+    check_spread_order_ticket(order, NET_ZERO, CMPLX, legs, 0)    
+    order2 = B1.Build2("SPY", 1, 17, 2020, True, 300, 325, 350, *q,
+                        is_buy=True, to_open=False,  price=0.0)
+    assert order == order2    
+    
+    # NET_CREDIT - SELL_TO_CLOSE
+    q = Q[3] if unbalanced else [Q[3][0]]    
+    order = B1.Build1("SPY_011720P200", "SPY_011720P250", "SPY_011720P300", 
+                      is_buy=False, to_open=False, *q, price=-.01)
+    legs = [ LEG(OPTION,"SPY_011720P200", SELL_TO_CLOSE, Q[3][0] ),
+             LEG(OPTION,"SPY_011720P250", BUY_TO_CLOSE, Q[3][0] + Q[3][1] ),   
+             LEG(OPTION,"SPY_011720P300", SELL_TO_CLOSE, Q[3][1] ) ]
+    check_spread_order_ticket(order, NET_CREDIT, CMPLX, legs, .01)    
+    order2 = B1.Build2("SPY", 1, 17, 2020, False, 200, 250, 300, 
+                       is_buy=False, to_open=False, *q, price=-.01)
+    assert order == order2    
+
+    
+def test_execute_spread_butterfly_builders():      
+    _test_execute_spread_butterfly_builders(
+        execute.COMPLEX_ORDER_STRATEGY_TYPE_BUTTERFLY, 
+        execute.SpreadOrderBuilder.Butterfly,   
+        [(1,1),(99,99),(1,1),(99999,99999)],
+        False)
+
+
+def test_execute_spread_butterfly_unbalanced_builders():  
+    _test_execute_spread_butterfly_builders(
+        execute.COMPLEX_ORDER_STRATEGY_TYPE_UNBALANCED_BUTTERFLY,
+        execute.SpreadOrderBuilder.Butterfly.Unbalanced,      
+        [(1,2),(49,99),(10,1),(99998,99999)],
+        True )
+
+def test_execute_spread_backratio_builders():
+    CMPLX = execute.COMPLEX_ORDER_STRATEGY_TYPE_BACK_RATIO    
+    B = execute.SpreadOrderBuilder.BackRatio
+        
+    # MARKET
+    order = B.Build1("SPY_011720C300", "SPY_011720C350", 1,2, True)
+    legs = [ LEG(OPTION,"SPY_011720C300", BUY_TO_OPEN, 1 ),
+             LEG(OPTION,"SPY_011720C350", SELL_TO_OPEN, 2 ) ]
+    check_spread_order_ticket(order, MARKET, CMPLX, legs)    
+    order2 = B.Build2("SPY", 1, 17, 2020, True, 300, 350, 1, 2, True)
+    assert order == order2    
+
+    order = B.Build1("SPY_011720P200", "SPY_011720P250", 99,98, False)
+    legs = [ LEG(OPTION,"SPY_011720P200", BUY_TO_CLOSE, 99 ),
+             LEG(OPTION,"SPY_011720P250", SELL_TO_CLOSE, 98 ) ]
+    check_spread_order_ticket(order, MARKET, CMPLX, legs)    
+    order2 = B.Build2("SPY", 1, 17, 2020, False, 200, 250, 99, 98, False)
+    assert order == order2   
+    
+    # LIMIT
+    order = B.Build1("SPY_011720C300", "SPY_011720C350", 1, 2, True, 4.99)
+    legs = [ LEG(OPTION,"SPY_011720C300", BUY_TO_OPEN, 1 ),
+             LEG(OPTION,"SPY_011720C350", SELL_TO_OPEN, 2 ) ]
+    check_spread_order_ticket(order, NET_DEBIT, CMPLX, legs, 4.99)    
+    order2 = B.Build2("SPY", 1, 17, 2020, True, 300, 350, 1,2, True, 4.99)
+    assert order == order2    
+
+    order = B.Build1("SPY_011720P200", "SPY_011720P250", 99,98, False, -.99)
+    legs = [ LEG(OPTION,"SPY_011720P200", BUY_TO_CLOSE, 99 ),
+             LEG(OPTION,"SPY_011720P250", SELL_TO_CLOSE, 98 ) ]
+    check_spread_order_ticket(order, NET_CREDIT, CMPLX, legs, .99)    
+    order2 = B.Build2("SPY", 1, 17, 2020, False, 200, 250, 99,98, False, -.99)
+    assert order == order2    
+
+    order = B.Build1("SPY_011720P200", "SPY_011720P250", 1000,1, False, 0)
+    legs = [ LEG(OPTION,"SPY_011720P200", BUY_TO_CLOSE, 1000 ),
+             LEG(OPTION,"SPY_011720P250", SELL_TO_CLOSE, 1 ) ]
+    check_spread_order_ticket(order, NET_ZERO, CMPLX, legs, 0)    
+    order2 = B.Build2("SPY", 1, 17, 2020, False, 200, 250, 1000,1, False, 0)
+    assert order == order2  
+
+
+def test_execute_spread_calendar_builders():
+    CMPLX = execute.COMPLEX_ORDER_STRATEGY_TYPE_CALENDAR    
+    B = execute.SpreadOrderBuilder.Calendar
+        
+    # MARKET
+    order = B.Build1("SPY_011720C300", "SPY_032020C300", 1, True)
+    legs = [ LEG(OPTION,"SPY_011720C300", BUY_TO_OPEN, 1 ),
+             LEG(OPTION,"SPY_032020C300", SELL_TO_OPEN, 1 ) ]
+    check_spread_order_ticket(order, MARKET, CMPLX, legs)    
+    order2 = B.Build2("SPY", 1, 17, 2020, 3, 20, 2020, True, 300, 1,  True)
+    assert order == order2    
+
+    order = B.Build1("SPY_011720P200", "SPY_032020P200", 99, False)
+    legs = [ LEG(OPTION,"SPY_011720P200", BUY_TO_CLOSE, 99 ),
+             LEG(OPTION,"SPY_032020P200", SELL_TO_CLOSE, 99 ) ]
+    check_spread_order_ticket(order, MARKET, CMPLX, legs)    
+    order2 = B.Build2("SPY", 1, 17, 2020, 3, 20, 2020, False, 200, 99,  False)
+    assert order == order2   
+    
+    # LIMIT
+    order = B.Build1("SPY_011720C300", "SPY_032020C300", 1,  True, 4.99)
+    legs = [ LEG(OPTION,"SPY_011720C300", BUY_TO_OPEN, 1 ),
+             LEG(OPTION,"SPY_032020C300", SELL_TO_OPEN, 1 ) ]
+    check_spread_order_ticket(order, NET_DEBIT, CMPLX, legs, 4.99)    
+    order2 = B.Build2("SPY", 1, 17, 2020, 3, 20, 2020, True, 300, 1, 
+                      True, 4.99)
+    assert order == order2    
+
+    order = B.Build1("SPY_032020P200", "SPY_011720P200", 99, False, -.99)
+    legs = [ LEG(OPTION,"SPY_032020P200", BUY_TO_CLOSE, 99 ),
+             LEG(OPTION,"SPY_011720P200", SELL_TO_CLOSE, 99 ) ]
+    check_spread_order_ticket(order, NET_CREDIT, CMPLX, legs, .99)    
+    order2 = B.Build2("SPY", 3, 20, 2020, 1, 17, 2020, False, 200, 99, 
+                      False, -.99)
+    assert order == order2    
+
+    order = B.Build1("SPY_032020P200", "SPY_011720P200", 1000, False, 0)
+    legs = [ LEG(OPTION,"SPY_032020P200", BUY_TO_CLOSE, 1000 ),
+             LEG(OPTION,"SPY_011720P200", SELL_TO_CLOSE, 1000 ) ]
+    check_spread_order_ticket(order, NET_ZERO, CMPLX, legs, 0)    
+    order2 = B.Build2("SPY", 3, 20, 2020, 1, 17, 2020, False, 200, 1000, 
+                      False, 0)
+    assert order == order2 
+    
+    
+def test_execute_spread_diagonal_builders():
+    CMPLX = execute.COMPLEX_ORDER_STRATEGY_TYPE_DIAGONAL    
+    B = execute.SpreadOrderBuilder.Diagonal
+        
+    # MARKET
+    order = B.Build1("SPY_011720C300", "SPY_032020C350", 1, True)
+    legs = [ LEG(OPTION,"SPY_011720C300", BUY_TO_OPEN, 1 ),
+             LEG(OPTION,"SPY_032020C350", SELL_TO_OPEN, 1 ) ]
+    check_spread_order_ticket(order, MARKET, CMPLX, legs)    
+    order2 = B.Build2("SPY", 1, 17, 2020, 3, 20, 2020, True, 300, 350, 1,  
+                      True)
+    assert order == order2    
+
+    order = B.Build1("SPY_011720P200", "SPY_032020P250", 99, False)
+    legs = [ LEG(OPTION,"SPY_011720P200", BUY_TO_CLOSE, 99 ),
+             LEG(OPTION,"SPY_032020P250", SELL_TO_CLOSE, 99 ) ]
+    check_spread_order_ticket(order, MARKET, CMPLX, legs)    
+    order2 = B.Build2("SPY", 1, 17, 2020, 3, 20, 2020,False, 200, 250, 
+                      99,  False)
+    assert order == order2   
+    
+    # LIMIT
+    order = B.Build1("SPY_011720C300", "SPY_032020C350", 1,  True, 4.99)
+    legs = [ LEG(OPTION,"SPY_011720C300", BUY_TO_OPEN, 1 ),
+             LEG(OPTION,"SPY_032020C350", SELL_TO_OPEN, 1 ) ]
+    check_spread_order_ticket(order, NET_DEBIT, CMPLX, legs, 4.99)    
+    order2 = B.Build2("SPY", 1, 17, 2020, 3, 20, 2020,True, 300, 350, 1, 
+                      True, 4.99)
+    assert order == order2    
+
+    order = B.Build1("SPY_032020P200", "SPY_011720P250", 99, False, -.99)
+    legs = [ LEG(OPTION,"SPY_032020P200", BUY_TO_CLOSE, 99 ),
+             LEG(OPTION,"SPY_011720P250", SELL_TO_CLOSE, 99 ) ]
+    check_spread_order_ticket(order, NET_CREDIT, CMPLX, legs, .99)    
+    order2 = B.Build2("SPY",3, 20, 2020,1, 17, 2020, False, 200, 250, 99, 
+                      False, -.99)
+    assert order == order2    
+
+    order = B.Build1("SPY_032020P200", "SPY_011720P250", 1000, False, 0)
+    legs = [ LEG(OPTION,"SPY_032020P200", BUY_TO_CLOSE, 1000 ),
+             LEG(OPTION,"SPY_011720P250", SELL_TO_CLOSE, 1000 ) ]
+    check_spread_order_ticket(order, NET_ZERO, CMPLX, legs, 0)    
+    order2 = B.Build2("SPY", 3, 20, 2020,1, 17, 2020, False, 200, 250, 1000, 
+                      False, 0)
+    assert order == order2     
+    
+    
+def test_execute_spread_straddle_builders():
+    CMPLX = execute.COMPLEX_ORDER_STRATEGY_TYPE_STRADDLE   
+    B = execute.SpreadOrderBuilder.Straddle
+    
+    # MARKET - BUY_TO_OPEN   
+    order = B.Build1("SPY_011720C300",  "SPY_011720P300", 1,
+                      is_buy=True, to_open=True)
+    legs = [ LEG(OPTION,"SPY_011720C300", BUY_TO_OPEN, 1 ),
+             LEG(OPTION,"SPY_011720P300", BUY_TO_OPEN, 1) ]
+    check_spread_order_ticket(order, MARKET, CMPLX, legs, 0)    
+    order2 = B.Build2("SPY", 1, 17, 2020, 300, 1, 
+                       is_buy=True, to_open=True)
+    assert order == order2    
+    
+    # MARKET - SELL_TO_OPEN
+    order = B.Build1("SPY_011720C300",  "SPY_011720P300", 99,
+                      is_buy=False, to_open=True)
+    legs = [ LEG(OPTION,"SPY_011720C300", SELL_TO_OPEN, 99 ),
+             LEG(OPTION,"SPY_011720P300", SELL_TO_OPEN, 99) ]
+    check_spread_order_ticket(order, MARKET, CMPLX, legs, 0)    
+    order2 = B.Build2("SPY", 1, 17, 2020, 300, 99, 
+                       is_buy=False, to_open=True)
+    assert order == order2      
+   
+    # MARKET - BUY_TO_CLOSE
+    order = B.Build1("SPY_011720C300",  "SPY_011720P300", 1,
+                      is_buy=True, to_open=False)
+    legs = [ LEG(OPTION,"SPY_011720C300", BUY_TO_CLOSE, 1 ),
+             LEG(OPTION,"SPY_011720P300", BUY_TO_CLOSE, 1) ]
+    check_spread_order_ticket(order, MARKET, CMPLX, legs, 0)    
+    order2 = B.Build2("SPY", 1, 17, 2020, 300, 1, 
+                       is_buy=True, to_open=False)
+    assert order == order2    
+      
+    # MARKET - SELL_TO_CLOSE
+    order = B.Build1("SPY_011720C300",  "SPY_011720P300", 99,
+                      is_buy=False, to_open=False)
+    legs = [ LEG(OPTION,"SPY_011720C300", SELL_TO_CLOSE, 99 ),
+             LEG(OPTION,"SPY_011720P300", SELL_TO_CLOSE, 99) ]
+    check_spread_order_ticket(order, MARKET, CMPLX, legs, 0)    
+    order2 = B.Build2("SPY", 1, 17, 2020, 300, 99, 
+                       is_buy=False, to_open=False)
+    assert order == order2         
+
+    # NET_DEBIT - BUY_TO_OPEN   
+    order = B.Build1("SPY_011720C300",  "SPY_011720P300", 1,
+                      is_buy=True, to_open=True, price=4.99)
+    legs = [ LEG(OPTION,"SPY_011720C300", BUY_TO_OPEN, 1 ),
+             LEG(OPTION,"SPY_011720P300", BUY_TO_OPEN, 1) ]
+    check_spread_order_ticket(order, NET_DEBIT, CMPLX, legs, 4.99)    
+    order2 = B.Build2("SPY", 1, 17, 2020,  300, 1, 
+                       is_buy=True, to_open=True, price=4.99)
+    assert order == order2    
+    
+    # NET_CREDIT - SELL_TO_OPEN
+    order = B.Build1("SPY_011720C300",  "SPY_011720P300", 99,
+                      is_buy=False, to_open=True, price=-.999)
+    legs = [ LEG(OPTION,"SPY_011720C300", SELL_TO_OPEN, 99 ),
+             LEG(OPTION,"SPY_011720P300", SELL_TO_OPEN, 99) ]
+    check_spread_order_ticket(order, NET_CREDIT, CMPLX, legs, .999)    
+    order2 = B.Build2("SPY", 1, 17, 2020, 300, 99, 
+                       is_buy=False, to_open=True, price=-.999)
+    assert order == order2      
+   
+    # NET_ZERO - BUY_TO_CLOSE
+    order = B.Build1("SPY_011720C300",  "SPY_011720P300", 1,
+                      is_buy=True, to_open=False, price=0)
+    legs = [ LEG(OPTION,"SPY_011720C300", BUY_TO_CLOSE, 1 ),
+             LEG(OPTION,"SPY_011720P300", BUY_TO_CLOSE, 1) ]
+    check_spread_order_ticket(order, NET_ZERO, CMPLX, legs, 0)    
+    order2 = B.Build2("SPY", 1, 17, 2020, 300, 1, 
+                       is_buy=True, to_open=False, price=0.0)
+    assert order == order2    
+      
+    # NET_CREDIT - SELL_TO_CLOSE
+    order = B.Build1("SPY_011720C300",  "SPY_011720P300", 99,
+                      is_buy=False, to_open=False, price=-.01)
+    legs = [ LEG(OPTION,"SPY_011720C300", SELL_TO_CLOSE, 99 ),
+             LEG(OPTION,"SPY_011720P300", SELL_TO_CLOSE, 99) ]
+    check_spread_order_ticket(order, NET_CREDIT, CMPLX, legs, .01)    
+    order2 = B.Build2("SPY", 1, 17, 2020, 300, 99, 
+                       is_buy=False, to_open=False, price=-.01)
+    assert order == order2 
+
+    
+def test_execute_spread_strangle_builders():
+    CMPLX = execute.COMPLEX_ORDER_STRATEGY_TYPE_STRANGLE   
+    B = execute.SpreadOrderBuilder.Strangle
+    
+    # MARKET - BUY_TO_OPEN   
+    order = B.Build1("SPY_011720C300",  "SPY_011720P250", 1,
+                      is_buy=True, to_open=True)
+    legs = [ LEG(OPTION,"SPY_011720C300", BUY_TO_OPEN, 1 ),
+             LEG(OPTION,"SPY_011720P250", BUY_TO_OPEN, 1) ]
+    check_spread_order_ticket(order, MARKET, CMPLX, legs, 0)    
+    order2 = B.Build2("SPY", 1, 17, 2020, 300, 250, 1, 
+                       is_buy=True, to_open=True)
+    assert order == order2    
+    
+    # MARKET - SELL_TO_OPEN
+    order = B.Build1("SPY_011720C300",  "SPY_011720P250", 99,
+                      is_buy=False, to_open=True)
+    legs = [ LEG(OPTION,"SPY_011720C300", SELL_TO_OPEN, 99 ),
+             LEG(OPTION,"SPY_011720P250", SELL_TO_OPEN, 99) ]
+    check_spread_order_ticket(order, MARKET, CMPLX, legs, 0)    
+    order2 = B.Build2("SPY", 1, 17, 2020,  300, 250,99, 
+                       is_buy=False, to_open=True)
+    assert order == order2      
+   
+    # MARKET - BUY_TO_CLOSE
+    order = B.Build1("SPY_011720C300",  "SPY_011720P250", 1,
+                      is_buy=True, to_open=False)
+    legs = [ LEG(OPTION,"SPY_011720C300", BUY_TO_CLOSE, 1 ),
+             LEG(OPTION,"SPY_011720P250", BUY_TO_CLOSE, 1) ]
+    check_spread_order_ticket(order, MARKET, CMPLX, legs, 0)    
+    order2 = B.Build2("SPY", 1, 17, 2020, 300,250, 1, 
+                       is_buy=True, to_open=False)
+    assert order == order2    
+      
+    # MARKET - SELL_TO_CLOSE
+    order = B.Build1("SPY_011720C300",  "SPY_011720P250", 99,
+                      is_buy=False, to_open=False)
+    legs = [ LEG(OPTION,"SPY_011720C300", SELL_TO_CLOSE, 99 ),
+             LEG(OPTION,"SPY_011720P250", SELL_TO_CLOSE, 99) ]
+    check_spread_order_ticket(order, MARKET, CMPLX, legs, 0)    
+    order2 = B.Build2("SPY", 1, 17, 2020, 300,250, 99, 
+                       is_buy=False, to_open=False)
+    assert order == order2         
+
+    # NET_DEBIT - BUY_TO_OPEN   
+    order = B.Build1("SPY_011720C300",  "SPY_011720P250", 1,
+                      is_buy=True, to_open=True, price=4.99)
+    legs = [ LEG(OPTION,"SPY_011720C300", BUY_TO_OPEN, 1 ),
+             LEG(OPTION,"SPY_011720P250", BUY_TO_OPEN, 1) ]
+    check_spread_order_ticket(order, NET_DEBIT, CMPLX, legs, 4.99)    
+    order2 = B.Build2("SPY", 1, 17, 2020, 300, 250,1, 
+                       is_buy=True, to_open=True, price=4.99)
+    assert order == order2    
+    
+    # NET_CREDIT - SELL_TO_OPEN
+    order = B.Build1("SPY_011720C300",  "SPY_011720P250", 99,
+                      is_buy=False, to_open=True, price=-.999)
+    legs = [ LEG(OPTION,"SPY_011720C300", SELL_TO_OPEN, 99 ),
+             LEG(OPTION,"SPY_011720P250", SELL_TO_OPEN, 99) ]
+    check_spread_order_ticket(order, NET_CREDIT, CMPLX, legs, .999)    
+    order2 = B.Build2("SPY", 1, 17, 2020,  300, 250,99, 
+                       is_buy=False, to_open=True, price=-.999)
+    assert order == order2      
+   
+    # NET_ZERO - BUY_TO_CLOSE
+    order = B.Build1("SPY_011720C300",  "SPY_011720P250", 1,
+                      is_buy=True, to_open=False, price=0)
+    legs = [ LEG(OPTION,"SPY_011720C300", BUY_TO_CLOSE, 1 ),
+             LEG(OPTION,"SPY_011720P250", BUY_TO_CLOSE, 1) ]
+    check_spread_order_ticket(order, NET_ZERO, CMPLX, legs, 0)    
+    order2 = B.Build2("SPY", 1, 17, 2020, 300, 250,1, 
+                       is_buy=True, to_open=False, price=0.0)
+    assert order == order2    
+      
+    # NET_CREDIT - SELL_TO_CLOSE
+    order = B.Build1("SPY_011720C300",  "SPY_011720P250", 99,
+                      is_buy=False, to_open=False, price=-.01)
+    legs = [ LEG(OPTION,"SPY_011720C300", SELL_TO_CLOSE, 99 ),
+             LEG(OPTION,"SPY_011720P250", SELL_TO_CLOSE, 99) ]
+    check_spread_order_ticket(order, NET_CREDIT, CMPLX, legs, .01)    
+    order2 = B.Build2("SPY", 1, 17, 2020,  300, 250,99, 
+                       is_buy=False, to_open=False, price=-.01)
+    assert order == order2 
+
+
+def test_execute_spread_collar_synthetic_builders():
+    CMPLX = execute.COMPLEX_ORDER_STRATEGY_TYPE_COLLAR_SYNTHETIC  
+    B = execute.SpreadOrderBuilder.CollarSynthetic
+        
+    # MARKET
+    order = B.Build1("SPY_011720C300", "SPY_011720P300", 1, True)
+    legs = [ LEG(OPTION,"SPY_011720C300", BUY_TO_OPEN, 1 ),
+             LEG(OPTION,"SPY_011720P300", SELL_TO_OPEN, 1 ) ]
+    check_spread_order_ticket(order, MARKET, CMPLX, legs)    
+    order2 = B.Build2("SPY", 1, 17, 2020, 300, 300, 1, True, True)
+    assert order == order2    
+
+    order = B.Build1("SPY_011720P250", "SPY_011720C300", 99, False)
+    legs = [ LEG(OPTION,"SPY_011720P250", BUY_TO_CLOSE, 99 ),
+             LEG(OPTION,"SPY_011720C300", SELL_TO_CLOSE, 99 ) ]
+    check_spread_order_ticket(order, MARKET, CMPLX, legs)    
+    order2 = B.Build2("SPY", 1, 17, 2020, 300, 250, 99, False, False)
+    assert order == order2   
+    
+    # LIMIT
+    order = B.Build1("SPY_011720C300", "SPY_011720P300", 1, True, -1.99)
+    legs = [ LEG(OPTION,"SPY_011720C300", BUY_TO_OPEN, 1 ),
+             LEG(OPTION,"SPY_011720P300", SELL_TO_OPEN, 1 ) ]
+    check_spread_order_ticket(order, NET_CREDIT, CMPLX, legs, 1.99)    
+    order2 = B.Build2("SPY", 1, 17, 2020, 300, 300, 1, True, True, -1.99)
+    assert order == order2    
+
+    order = B.Build1("SPY_011720P250", "SPY_011720C300", 99, False, .01)
+    legs = [ LEG(OPTION,"SPY_011720P250", BUY_TO_CLOSE, 99 ),
+             LEG(OPTION,"SPY_011720C300", SELL_TO_CLOSE, 99 ) ]
+    check_spread_order_ticket(order, NET_DEBIT, CMPLX, legs, .01)    
+    order2 = B.Build2("SPY", 1, 17, 2020, 300, 250, 99, False, False, .01)
+    assert order == order2  
+    
+    order = B.Build1("SPY_011720P250", "SPY_011720C300", 99, True, .0)
+    legs = [ LEG(OPTION,"SPY_011720P250", BUY_TO_OPEN, 99 ),
+             LEG(OPTION,"SPY_011720C300", SELL_TO_OPEN, 99 ) ]
+    check_spread_order_ticket(order, NET_ZERO, CMPLX, legs, .0)    
+    order2 = B.Build2("SPY", 1, 17, 2020, 300, 250, 99, False, True, .0)
+    assert order == order2  
+    
+    
+def test_execute_spread_collar_with_stock_builders():
+    CMPLX = execute.COMPLEX_ORDER_STRATEGY_TYPE_COLLAR_WITH_STOCK   
+    B = execute.SpreadOrderBuilder.CollarWithStock
+    
+    # MARKET - SHORT STOCK TO OPEN   
+    order = B.Build1("SPY_011720C300",  "SPY_011720P250", "SPY", 1,
+                      is_buy=False, to_open=True)
+    legs = [ LEG(OPTION,"SPY_011720C300", BUY_TO_OPEN, 1 ),
+             LEG(OPTION,"SPY_011720P250", SELL_TO_OPEN, 1),
+             LEG(EQUITY, "SPY", execute.ORDER_INSTRUCTION_SELL_SHORT, 100) ]
+    check_spread_order_ticket(order, MARKET, CMPLX, legs, 0)    
+    order2 = B.Build2("SPY", 1, 17, 2020, 300, 250, 1,  
+                       is_buy=False, to_open=True)
+    assert order == order2    
+    
+    # MARKET - BUY STOCK TO OPEN   
+    order = B.Build1("SPY_011720P250",  "SPY_011720C300", "SPY", 99,
+                      is_buy=True, to_open=True)
+    legs = [ LEG(OPTION,"SPY_011720P250", BUY_TO_OPEN, 99 ),
+             LEG(OPTION,"SPY_011720C300", SELL_TO_OPEN, 99),
+             LEG(EQUITY, "SPY", execute.ORDER_INSTRUCTION_BUY, 9900) ]
+    check_spread_order_ticket(order, MARKET, CMPLX, legs, 0)    
+    order2 = B.Build2("SPY", 1, 17, 2020, 300, 250, 99,  
+                       is_buy=True, to_open=True)
+    assert order == order2   
+    
+    # MARKET - SELL STOCK TO CLOSE   
+    order = B.Build1("SPY_011720C300",  "SPY_011720P250", "SPY", 1,
+                      is_buy=False, to_open=False)
+    legs = [ LEG(OPTION,"SPY_011720C300", BUY_TO_CLOSE, 1 ),
+             LEG(OPTION,"SPY_011720P250", SELL_TO_CLOSE, 1),
+             LEG(EQUITY, "SPY", execute.ORDER_INSTRUCTION_SELL, 100) ]
+    check_spread_order_ticket(order, MARKET, CMPLX, legs, 0)    
+    order2 = B.Build2("SPY", 1, 17, 2020, 300, 250, 1,  
+                       is_buy=False, to_open=False)
+    assert order == order2    
+    
+    # MARKET - COVER STOCK TO CLOSE  
+    order = B.Build1("SPY_011720P250",  "SPY_011720C300", "SPY", 99,
+                      is_buy=True, to_open=False)
+    legs = [ LEG(OPTION,"SPY_011720P250", BUY_TO_CLOSE, 99 ),
+             LEG(OPTION,"SPY_011720C300", SELL_TO_CLOSE, 99),
+             LEG(EQUITY, "SPY", execute.ORDER_INSTRUCTION_BUY_TO_COVER, 9900) ]
+    check_spread_order_ticket(order, MARKET, CMPLX, legs, 0)    
+    order2 = B.Build2("SPY", 1, 17, 2020, 300, 250, 99,  
+                       is_buy=True, to_open=False)
+    assert order == order2   
+    
+    # NET_CREDIT - SHORT STOCK TO OPEN   
+    order = B.Build1("SPY_011720C300",  "SPY_011720P250", "SPY", 1,
+                      is_buy=False, to_open=True, price=-250.01 )
+    legs = [ LEG(OPTION,"SPY_011720C300", BUY_TO_OPEN, 1 ),
+             LEG(OPTION,"SPY_011720P250", SELL_TO_OPEN, 1),
+             LEG(EQUITY, "SPY", execute.ORDER_INSTRUCTION_SELL_SHORT, 100) ]
+    check_spread_order_ticket(order, NET_CREDIT, CMPLX, legs, 250.01)    
+    order2 = B.Build2("SPY", 1, 17, 2020, 300, 250, 1,  
+                       is_buy=False, to_open=True, price=-250.01)
+    assert order == order2    
+    
+    # NET_DEBIT - BUY STOCK TO OPEN   
+    order = B.Build1("SPY_011720P250",  "SPY_011720C300", "SPY", 99,
+                      is_buy=True, to_open=True, price=299.999)
+    legs = [ LEG(OPTION,"SPY_011720P250", BUY_TO_OPEN, 99 ),
+             LEG(OPTION,"SPY_011720C300", SELL_TO_OPEN, 99),
+             LEG(EQUITY, "SPY", execute.ORDER_INSTRUCTION_BUY, 9900) ]
+    check_spread_order_ticket(order, NET_DEBIT, CMPLX, legs, 299.999)    
+    order2 = B.Build2("SPY", 1, 17, 2020, 300, 250, 99,  
+                       is_buy=True, to_open=True, price=299.999)
+    assert order == order2   
+    
+    # NET_CREDIT - SELL STOCK TO CLOSE   
+    order = B.Build1("SPY_011720C300",  "SPY_011720P250", "SPY", 1,
+                      is_buy=False, to_open=False, price=-300)
+    legs = [ LEG(OPTION,"SPY_011720C300", BUY_TO_CLOSE, 1 ),
+             LEG(OPTION,"SPY_011720P250", SELL_TO_CLOSE, 1),
+             LEG(EQUITY, "SPY", execute.ORDER_INSTRUCTION_SELL, 100) ]
+    check_spread_order_ticket(order, NET_CREDIT, CMPLX, legs, 300)    
+    order2 = B.Build2("SPY", 1, 17, 2020, 300, 250, 1,  
+                       is_buy=False, to_open=False, price=-300)
+    assert order == order2    
+    
+    # NET_DEBIT - COVER STOCK TO CLOSE  
+    order = B.Build1("SPY_011720P250",  "SPY_011720C300", "SPY", 99,
+                      is_buy=True, to_open=False, price=300)
+    legs = [ LEG(OPTION,"SPY_011720P250", BUY_TO_CLOSE, 99 ),
+             LEG(OPTION,"SPY_011720C300", SELL_TO_CLOSE, 99),
+             LEG(EQUITY, "SPY", execute.ORDER_INSTRUCTION_BUY_TO_COVER, 9900) ]
+    check_spread_order_ticket(order, NET_DEBIT, CMPLX, legs, 300)    
+    order2 = B.Build2("SPY", 1, 17, 2020, 300, 250, 99,  
+                       is_buy=True, to_open=False, price=300)
+    assert order == order2   
+    
+    
+def _test_execute_spread_condor_builders(CMPLX, B1,Q, unbalanced):
+
+    # MARKET - BUY_TO_OPEN
+    q = Q[0] if unbalanced else [Q[0][0]]    
+    order = B1.Build1("SPY_011720C300", "SPY_011720C325", "SPY_011720C350",
+                      "SPY_011720C375", *q, is_buy=True, to_open=True)
+    legs = [ LEG(OPTION,"SPY_011720C300", BUY_TO_OPEN, Q[0][0] ),
+             LEG(OPTION,"SPY_011720C325", SELL_TO_OPEN, Q[0][0] ),   
+             LEG(OPTION,"SPY_011720C350", SELL_TO_OPEN, Q[0][1] ),
+             LEG(OPTION,"SPY_011720C375", BUY_TO_OPEN, Q[0][1] ) ]
+    check_spread_order_ticket(order, MARKET, CMPLX, legs, 0)    
+    order2 = B1.Build2("SPY", 1, 17, 2020, 300, 325, 350, 375, True,  *q, 
+                       is_buy=True, to_open=True)
+    assert order == order2    
+    
+    # MARKET - SELL_TO_OPEN
+    q = Q[1] if unbalanced else [Q[1][0]]    
+    order = B1.Build1("SPY_011720P300", "SPY_011720P275", "SPY_011720P250",
+                      "SPY_011720P225", *q, is_buy=False, to_open=True)
+    legs = [ LEG(OPTION,"SPY_011720P300", SELL_TO_OPEN, Q[1][0] ),
+             LEG(OPTION,"SPY_011720P275", BUY_TO_OPEN, Q[1][0] ),   
+             LEG(OPTION,"SPY_011720P250", BUY_TO_OPEN, Q[1][1] ),
+             LEG(OPTION,"SPY_011720P225", SELL_TO_OPEN, Q[1][1] ) ]
+    check_spread_order_ticket(order, MARKET, CMPLX, legs, 0)    
+    order2 = B1.Build2("SPY", 1, 17, 2020,  300, 275, 250, 225, False, *q, 
+                       is_buy=False, to_open=True)
+    assert order == order2             
+    
+    # MARKET - BUY_TO_CLOSE
+    q = Q[2] if unbalanced else [Q[2][0]]    
+    order = B1.Build1("SPY_011720C300", "SPY_011720C325", "SPY_011720C350",
+                      "SPY_011720C375", *q, is_buy=True, to_open=False)
+    legs = [ LEG(OPTION,"SPY_011720C300", BUY_TO_CLOSE, Q[2][0] ),
+             LEG(OPTION,"SPY_011720C325", SELL_TO_CLOSE, Q[2][0] ),   
+             LEG(OPTION,"SPY_011720C350", SELL_TO_CLOSE, Q[2][1] ),
+             LEG(OPTION,"SPY_011720C375", BUY_TO_CLOSE, Q[2][1] ) ]
+    check_spread_order_ticket(order, MARKET, CMPLX, legs, 0)    
+    order2 = B1.Build2("SPY", 1, 17, 2020, 300, 325, 350, 375, True,  *q, 
+                       is_buy=True, to_open=False)
+    assert order == order2    
+    
+    # MARKET - SELL_TO_CLOSE
+    q = Q[3] if unbalanced else [Q[3][0]]    
+    order = B1.Build1("SPY_011720P300", "SPY_011720P275", "SPY_011720P250",
+                      "SPY_011720P225", *q, is_buy=False, to_open=False)
+    legs = [ LEG(OPTION,"SPY_011720P300", SELL_TO_CLOSE, Q[3][0] ),
+             LEG(OPTION,"SPY_011720P275", BUY_TO_CLOSE, Q[3][0] ),   
+             LEG(OPTION,"SPY_011720P250", BUY_TO_CLOSE, Q[3][1] ),
+             LEG(OPTION,"SPY_011720P225", SELL_TO_CLOSE, Q[3][1] ) ]
+    check_spread_order_ticket(order, MARKET, CMPLX, legs, 0)    
+    order2 = B1.Build2("SPY", 1, 17, 2020,  300, 275, 250, 225, False, *q, 
+                       is_buy=False, to_open=False)
+    assert order == order2   
+    
+    # NET_DEBIT - BUY_TO_OPEN
+    q = Q[0] if unbalanced else [Q[0][0]]    
+    order = B1.Build1("SPY_011720C300", "SPY_011720C325", "SPY_011720C350",
+                      "SPY_011720C375", *q, is_buy=True, to_open=True, 
+                      price=4.99)
+    legs = [ LEG(OPTION,"SPY_011720C300", BUY_TO_OPEN, Q[0][0] ),
+             LEG(OPTION,"SPY_011720C325", SELL_TO_OPEN, Q[0][0] ),   
+             LEG(OPTION,"SPY_011720C350", SELL_TO_OPEN, Q[0][1] ),
+             LEG(OPTION,"SPY_011720C375", BUY_TO_OPEN, Q[0][1] ) ]
+    check_spread_order_ticket(order, NET_DEBIT, CMPLX, legs, 4.99)    
+    order2 = B1.Build2("SPY", 1, 17, 2020, 300, 325, 350, 375, True,  *q, 
+                       is_buy=True, to_open=True, price=4.99)
+    assert order == order2    
+    
+    # NET_CREDIT - SELL_TO_OPEN
+    q = Q[1] if unbalanced else [Q[1][0]]    
+    order = B1.Build1("SPY_011720P300", "SPY_011720P275", "SPY_011720P250",
+                      "SPY_011720P225", *q, is_buy=False, to_open=True,
+                      price=-.999)
+    legs = [ LEG(OPTION,"SPY_011720P300", SELL_TO_OPEN, Q[1][0] ),
+             LEG(OPTION,"SPY_011720P275", BUY_TO_OPEN, Q[1][0] ),   
+             LEG(OPTION,"SPY_011720P250", BUY_TO_OPEN, Q[1][1] ),
+             LEG(OPTION,"SPY_011720P225", SELL_TO_OPEN, Q[1][1] ) ]
+    check_spread_order_ticket(order, NET_CREDIT, CMPLX, legs, .999)    
+    order2 = B1.Build2("SPY", 1, 17, 2020,  300, 275, 250, 225, False, *q, 
+                       is_buy=False, to_open=True, price=-.999)
+    assert order == order2             
+    
+    # NET_ZERO - BUY_TO_CLOSE
+    q = Q[2] if unbalanced else [Q[2][0]]    
+    order = B1.Build1("SPY_011720C300", "SPY_011720C325", "SPY_011720C350",
+                      "SPY_011720C375", *q, is_buy=True, to_open=False,
+                      price=0)
+    legs = [ LEG(OPTION,"SPY_011720C300", BUY_TO_CLOSE, Q[2][0] ),
+             LEG(OPTION,"SPY_011720C325", SELL_TO_CLOSE, Q[2][0] ),   
+             LEG(OPTION,"SPY_011720C350", SELL_TO_CLOSE, Q[2][1] ),
+             LEG(OPTION,"SPY_011720C375", BUY_TO_CLOSE, Q[2][1] ) ]
+    check_spread_order_ticket(order, NET_ZERO, CMPLX, legs, 0)    
+    order2 = B1.Build2("SPY", 1, 17, 2020, 300, 325, 350, 375, True,  *q, 
+                       is_buy=True, to_open=False, price=0.0)
+    assert order == order2    
+    
+    # NET_CREDIT - SELL_TO_CLOSE
+    q = Q[3] if unbalanced else [Q[3][0]]    
+    order = B1.Build1("SPY_011720P300", "SPY_011720P275", "SPY_011720P250",
+                      "SPY_011720P225", *q, is_buy=False, to_open=False,
+                      price=-.01)
+    legs = [ LEG(OPTION,"SPY_011720P300", SELL_TO_CLOSE, Q[3][0] ),
+             LEG(OPTION,"SPY_011720P275", BUY_TO_CLOSE, Q[3][0] ),   
+             LEG(OPTION,"SPY_011720P250", BUY_TO_CLOSE, Q[3][1] ),
+             LEG(OPTION,"SPY_011720P225", SELL_TO_CLOSE, Q[3][1] ) ]
+    check_spread_order_ticket(order, NET_CREDIT, CMPLX, legs, .01)    
+    order2 = B1.Build2("SPY", 1, 17, 2020,  300, 275, 250, 225, False, *q, 
+                       is_buy=False, to_open=False, price=-.01)
+    assert order == order2   
+    
+def test_execute_spread_condor_builders():      
+    _test_execute_spread_condor_builders(
+        execute.COMPLEX_ORDER_STRATEGY_TYPE_CONDOR, 
+        execute.SpreadOrderBuilder.Condor,   
+        [(1,1),(99,99),(1,1),(99999,99999)],
+        False)
+
+
+def test_execute_spread_condor_unbalanced_builders():  
+    _test_execute_spread_condor_builders(
+        execute.COMPLEX_ORDER_STRATEGY_TYPE_UNBALANCED_CONDOR,
+        execute.SpreadOrderBuilder.Condor.Unbalanced,      
+        [(1,2),(49,99),(10,1),(99998,99999)],
+        True )
+    
+    
+def _test_execute_spread_iron_condor_builders(CMPLX, B1,Q, unbalanced):
+
+    # MARKET - TO OPEN
+    q = Q[0] if unbalanced else [Q[0][0]]    
+    order = B1.Build1("SPY_011720C300", "SPY_011720C325", "SPY_011720P250",
+                      "SPY_011720P225", *q, to_open=True)
+    legs = [ LEG(OPTION,"SPY_011720C300", BUY_TO_OPEN, Q[0][0] ),
+             LEG(OPTION,"SPY_011720C325", SELL_TO_OPEN, Q[0][0] ),   
+             LEG(OPTION,"SPY_011720P250", BUY_TO_OPEN, Q[0][1] ),
+             LEG(OPTION,"SPY_011720P225", SELL_TO_OPEN, Q[0][1] ) ]
+    check_spread_order_ticket(order, MARKET, CMPLX, legs, 0)    
+    order2 = B1.Build2("SPY", 1, 17, 2020, 300, 325, 250, 225, *q, 
+                       to_open=True)    
+    assert order == order2   
+    
+    # MARKET - TO CLOSE
+    q = Q[1] if unbalanced else [Q[1][0]]    
+    order = B1.Build1("SPY_011720C325", "SPY_011720C300", "SPY_011720P225",
+                      "SPY_011720P250", *q, to_open=False)
+    legs = [ LEG(OPTION,"SPY_011720C325", BUY_TO_CLOSE, Q[1][0] ),
+             LEG(OPTION,"SPY_011720C300", SELL_TO_CLOSE, Q[1][0] ),   
+             LEG(OPTION,"SPY_011720P225", BUY_TO_CLOSE, Q[1][1] ),
+             LEG(OPTION,"SPY_011720P250", SELL_TO_CLOSE, Q[1][1] ) ]
+    check_spread_order_ticket(order, MARKET, CMPLX, legs, 0)    
+    order2 = B1.Build2("SPY", 1, 17, 2020, 325, 300, 225, 250, *q, 
+                       to_open=False)
+    assert order == order2   
+
+    # NET_DEBIT - TO OPEN
+    q = Q[0] if unbalanced else [Q[0][0]]    
+    order = B1.Build1("SPY_011720C300", "SPY_011720C325", "SPY_011720P250",
+                      "SPY_011720P225", *q, to_open=True, price=4.99)
+    legs = [ LEG(OPTION,"SPY_011720C300", BUY_TO_OPEN, Q[0][0] ),
+             LEG(OPTION,"SPY_011720C325", SELL_TO_OPEN, Q[0][0] ),   
+             LEG(OPTION,"SPY_011720P250", BUY_TO_OPEN, Q[0][1] ),
+             LEG(OPTION,"SPY_011720P225", SELL_TO_OPEN, Q[0][1] ) ]
+    check_spread_order_ticket(order, NET_DEBIT, CMPLX, legs, 4.99)    
+    order2 = B1.Build2("SPY", 1, 17, 2020, 300, 325, 250, 225, *q, 
+                       to_open=True, price=4.99)
+    assert order == order2   
+    
+    # NET_CREDIT - TO CLOSE
+    q = Q[1] if unbalanced else [Q[1][0]]    
+    order = B1.Build1("SPY_011720C325", "SPY_011720C300", "SPY_011720P225",
+                      "SPY_011720P250", *q, to_open=False, price=-.99)
+    legs = [ LEG(OPTION,"SPY_011720C325", BUY_TO_CLOSE, Q[1][0] ),
+             LEG(OPTION,"SPY_011720C300", SELL_TO_CLOSE, Q[1][0] ),   
+             LEG(OPTION,"SPY_011720P225", BUY_TO_CLOSE, Q[1][1] ),
+             LEG(OPTION,"SPY_011720P250", SELL_TO_CLOSE, Q[1][1] ) ]
+    check_spread_order_ticket(order, NET_CREDIT, CMPLX, legs, .99)    
+    order2 = B1.Build2("SPY", 1, 17, 2020, 325, 300, 225, 250, *q, 
+                       to_open=False, price=-.99)
+    assert order == order2      
+    
+    
+def test_execute_spread_iron_condor_builders():      
+    _test_execute_spread_iron_condor_builders(
+        execute.COMPLEX_ORDER_STRATEGY_TYPE_IRON_CONDOR, 
+        execute.SpreadOrderBuilder.IronCondor,   
+        [(1,1),(99,99),(1,1),(99999,99999)],
+        False)
+
+def test_execute_spread_iron_condor_unbalanced_builders():  
+    _test_execute_spread_iron_condor_builders(
+        execute.COMPLEX_ORDER_STRATEGY_TYPE_UNBALANCED_IRON_CONDOR,
+        execute.SpreadOrderBuilder.IronCondor.Unbalanced,      
+        [(1,2),(49,99),(10,1),(99998,99999)],
+        True )
+    
+    
+def test_execute_spread_double_diagonal_builders():
+    CMPLX = execute.COMPLEX_ORDER_STRATEGY_TYPE_DOUBLE_DIAGONAL  
+    B = execute.SpreadOrderBuilder.DoubleDiagonal    
+   
+    # MARKET - TO OPEN    
+    order = B.Build1("SPY_011720C300", "SPY_032020C325", "SPY_011720P250",
+                      "SPY_032020P225", 1, to_open=True)
+    legs = [ LEG(OPTION,"SPY_011720C300", BUY_TO_OPEN, 1 ),
+             LEG(OPTION,"SPY_032020C325", SELL_TO_OPEN, 1 ),   
+             LEG(OPTION,"SPY_011720P250", BUY_TO_OPEN, 1 ),
+             LEG(OPTION,"SPY_032020P225", SELL_TO_OPEN, 1 ) ]
+    check_spread_order_ticket(order, MARKET, CMPLX, legs, 0)    
+    order2 = B.Build2("SPY", 1, 17, 2020, 3, 20, 2020, 300, 325, 250, 225, 1, 
+                       to_open=True)    
+    assert order == order2  
+        
+    # MARKET - TO CLOSE    
+    order = B.Build1("SPY_011720C325", "SPY_032020C300", "SPY_011720P225",
+                      "SPY_032020P250", 99, to_open=False)
+    legs = [ LEG(OPTION,"SPY_011720C325", BUY_TO_CLOSE, 99 ),
+             LEG(OPTION,"SPY_032020C300", SELL_TO_CLOSE, 99 ),   
+             LEG(OPTION,"SPY_011720P225", BUY_TO_CLOSE, 99 ),
+             LEG(OPTION,"SPY_032020P250", SELL_TO_CLOSE, 99 ) ]
+    check_spread_order_ticket(order, MARKET, CMPLX, legs, 0)    
+    order2 = B.Build2("SPY", 1, 17, 2020, 3, 20, 2020, 325, 300, 225, 250, 99, 
+                       to_open=False)    
+    assert order == order2  
+    
+    # NET_DEBIT - TO OPEN    
+    order = B.Build1("SPY_011720C300", "SPY_032020C325", "SPY_011720P250",
+                      "SPY_032020P225", 1, to_open=True, price=5.01)
+    legs = [ LEG(OPTION,"SPY_011720C300", BUY_TO_OPEN, 1 ),
+             LEG(OPTION,"SPY_032020C325", SELL_TO_OPEN, 1 ),   
+             LEG(OPTION,"SPY_011720P250", BUY_TO_OPEN, 1 ),
+             LEG(OPTION,"SPY_032020P225", SELL_TO_OPEN, 1 ) ]
+    check_spread_order_ticket(order, NET_DEBIT, CMPLX, legs, 5.01)    
+    order2 = B.Build2("SPY", 1, 17, 2020, 3, 20, 2020, 300, 325, 250, 225, 1, 
+                       to_open=True, price=5.01)    
+    assert order == order2  
+        
+    # NET_CREDIT - TO CLOSE    
+    order = B.Build1("SPY_011720C325", "SPY_032020C300", "SPY_011720P225",
+                      "SPY_032020P250", 99, to_open=False, price=-.99)
+    legs = [ LEG(OPTION,"SPY_011720C325", BUY_TO_CLOSE, 99 ),
+             LEG(OPTION,"SPY_032020C300", SELL_TO_CLOSE, 99 ),   
+             LEG(OPTION,"SPY_011720P225", BUY_TO_CLOSE, 99 ),
+             LEG(OPTION,"SPY_032020P250", SELL_TO_CLOSE, 99 ) ]
+    check_spread_order_ticket(order, NET_CREDIT, CMPLX, legs, .99)    
+    order2 = B.Build2("SPY", 1, 17, 2020, 3, 20, 2020, 325, 300, 225, 250, 99, 
+                       to_open=False, price=-.99)    
+    assert order == order2  
+    
+    # NET_ZERO - TO CLOSE    
+    order = B.Build1("SPY_011720C325", "SPY_032020C300", "SPY_011720P225",
+                      "SPY_032020P250", 99, to_open=False, price=0)
+    legs = [ LEG(OPTION,"SPY_011720C325", BUY_TO_CLOSE, 99 ),
+             LEG(OPTION,"SPY_032020C300", SELL_TO_CLOSE, 99 ),   
+             LEG(OPTION,"SPY_011720P225", BUY_TO_CLOSE, 99 ),
+             LEG(OPTION,"SPY_032020P250", SELL_TO_CLOSE, 99 ) ]
+    check_spread_order_ticket(order, NET_ZERO, CMPLX, legs, 0)    
+    order2 = B.Build2("SPY", 1, 17, 2020, 3, 20, 2020, 325, 300, 225, 250, 99, 
+                       to_open=False, price=0)    
+    assert order == order2  
           
+             
+def test_execute_oco_oto_builders(): 
+    #EXIT     
+    #stop
+    co1 = execute.SimpleOrderBuilder.Equity.Stop.Build("SPY", 100, False, False, 
+                                                  stop_price=250.00)
+    
+    #target
+    to1 = execute.SimpleOrderBuilder.Equity.Build("SPY", 100, False, False, 
+                                                  limit_price= 300.00)
+    
+    oco1 = execute.ConditionalOrderBuilder.OCO(co1, to1)
+    
+    #ENTRY    
+    #buy
+    b1 = execute.SimpleOrderBuilder.Equity.Build("SPY", 100, True, True)
+    
+    #COMPLETE#    
+    oto1 = execute.ConditionalOrderBuilder.OTO(b1, oco1)
+    print("FULL ORDER:")
+    print( oto1.as_json() )
+    
+    # primary (buy/market)
+    assert oto1.get_strategy_type() == execute.ORDER_STRATEGY_TYPE_TRIGGER            
+    assert oto1.get_type() == execute.ORDER_TYPE_MARKET
+    leg = oto1.get_leg(0)  
+    assert leg.get_symbol() == "SPY"
+    assert leg.get_quantity() == 100 
+    assert leg.get_asset_type() == execute.ORDER_ASSET_TYPE_EQUITY
+    assert leg.get_instruction() == execute.ORDER_INSTRUCTION_BUY
+    
+    kids = oto1.get_children()    
+    assert len(kids) == 1   
+        
+    # secondary (OCO)
+    assert oco1 == kids[0]
+    assert oco1 is not kids[0]
+    oco1 = None
+    assert kids[0]._alive
+    assert kids[0].get_strategy_type() == execute.ORDER_STRATEGY_TYPE_OCO           
+    kids2 = kids[0].get_children()
+    assert len(kids2) == 2        
+    
+    # secondary 1 (sell-stop)
+    assert co1 == kids2[0]
+    assert co1 is not kids2[0]
+    assert kids2[0].get_strategy_type() == execute.ORDER_STRATEGY_TYPE_SINGLE
+    assert kids2[0].get_type() == execute.ORDER_TYPE_STOP
+    leg = kids2[0].get_leg(0)   
+    assert leg.get_symbol() == "SPY"
+    assert leg.get_quantity() == 100 
+    assert leg.get_asset_type() == execute.ORDER_ASSET_TYPE_EQUITY
+    assert leg.get_instruction() == execute.ORDER_INSTRUCTION_SELL    
+    
+    # secondary 2 (sell-limit)    
+    assert to1 == kids2[1]
+    assert to1 is not kids2[1]
+    assert kids2[1].get_strategy_type() == execute.ORDER_STRATEGY_TYPE_SINGLE
+    assert kids2[1].get_type() == execute.ORDER_TYPE_LIMIT
+    leg = kids2[1].get_leg(0)   
+    assert leg.get_symbol() == "SPY"
+    assert leg.get_quantity() == 100 
+    assert leg.get_asset_type() == execute.ORDER_ASSET_TYPE_EQUITY
+    assert leg.get_instruction() == execute.ORDER_INSTRUCTION_SELL
+    
+    oto1.clear_children()
+    assert not oto1.get_children()
+    print("STRIPPED ORDER:")
+    print(oto1.as_json())
+     
+
                     
 if __name__ == '__main__':    
     print("\n*** TDAmeritradeAPI test.py ***")

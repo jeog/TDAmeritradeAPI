@@ -1468,6 +1468,7 @@ BuildOrder_Spread_Condor_ABI( const char* symbol_outer1,
                   is_buy, to_open, is_market_order, price );
 }
 
+// position or are_calls not consistent w/ rest of ABI
 int
 BuildOrder_Spread_CondorEx_ABI( const char* underlying,
                                     unsigned int month,

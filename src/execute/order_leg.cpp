@@ -28,7 +28,7 @@ OrderLegImpl::OrderLegImpl( OrderAssetType asset_type,
                                size_t quantity )
     :
         _asset_type(asset_type),
-        _symbol(symbol),
+        _symbol( util::toupper(symbol) ),
         _instruction(instruction),
         _quantity(quantity)
     {
