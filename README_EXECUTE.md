@@ -2,10 +2,11 @@
 - - -
 - [Overview](#overview)
 - [Using OrderTicket Objects](#using-orderticket-objects)
-   - [Raw Orders](#raw-orders)
-   - [Managed Orders](#managed-orders)
-      - [Equity](#equity)
-      - [Option Spreads](#option-spreads)
+- [Raw Orders](#raw-orders)
+- [Managed Orders](#managed-orders)
+   - [SimpleOrderBuilder](#simpleorderbuilder)
+   - [SpreadOrderBuilder](#spreadorderbuilder)
+   - [ConditionalOrderBuilder](#conditionalorderbuilder)
 - [Design Ideas](#design-ideas)
    - [Higher Level Features](#higher-level-features)
    - [Order Hub](#order-hub)
@@ -35,7 +36,7 @@ Below we provide some basics of the proposed interface. Feel free to comment via
 
 **IF YOU CHOOSE TO SEND THESE ORDERS BE VERY VERY CAREFUL - MAKE SURE YOU KNOW EXACTLY WHAT IS BEING SENT!** 
 
-1. Build an ```OrderTicket``` (see tdma_api_execute.h, tdma_api.execute.py, or examples below)
+1. Build an ```OrderTicket``` directly or use one of the builders. (see below)
 2. Check that the ```OrderTicket``` is accurately representing the JSON you intend to POST.
     - because of the number of builders and accessors expect bugs 
     - triple check quantities, prices, order types etc. **of the raw json** 
@@ -43,7 +44,7 @@ Below we provide some basics of the proposed interface. Feel free to comment via
 3. Review the [offical docs](https://developer.tdameritrade.com/account-access/apis/post/accounts/{accountId}/orders-0).
 4. Build your own mechanism to send the order - take a look at ```HttpsPostConnection``` in curl_connect.h/cpp
 
-#### Raw Orders
+### Raw Orders
 
 The full order schema will be represented by ```OrderTicket``` and ```OrderLeg``` objects the user has complete control over. The user is responsible for building the order from scratch i.e setting the order type, adding the order legs etc.
 
@@ -135,132 +136,225 @@ if( err ) {
 If a specific order type is allowed by TDMA it *should* be possible for a motivated user to build it this way.
 
 
-#### Managed Orders
+### Managed Orders
 
-Most users will probably only need certain basic orders, most of the time. To help (safely) build, use the nested static builders/factories:
+Most users will probably only need certain basic orders, most of the time. To help (safely) build, use the nested static builders/factories. Once you have the order ticket you can add to it using the 'set' methods described above.
 
-##### Equity 
+#### SimpleOrderBuilder 
+
+Equity and Option OrderTickets can be constructed with the static builders of the relevant nested classes inside the SimpleOrderBuilder class(C++, Python) or the similarly name static methods(C) for:
+
+- Equities
+    - Buy / Sell / Short / Cover
+    - Market 
+    - Limit
+    - Stop
+    - Stop-Limit
+
+- Options
+    - Buy / Sell
+    - Open / Close
+    - Market 
+    - Limit
+
+##### Example Usage
+
+**BUY LONG (TO OPEN) 100 SPY @ 285.05 or better**
+
 ```
 [C++]
 
-/* long 100 SPY @ 285.05 or better */
-
-OrderTicket order1 = SimpleOrderBuilder::Equity::Build("SPY", 100, true, true, 285.05);
+OrderTicket order = SimpleOrderBuilder::Equity::Build("SPY", 100, true, true, 285.05);
 ```
-
 ```
 [C]
 
-OrderTicket order1 = {0,0}
+OrderTicket order = {0,0};
 
-int err = BuildOrder_Equity_Limit("SPY", 100, 1, 1, 285.05, &order1);
+int err = BuildOrder_Equity_Limit("SPY", 100, 1, 1, 285.05, &order);
 if( err ){
     // 
 }
-```
 
-```
-[Python]
-
-order1 = execute.SimpleOrderBuilder.Equity.Build("SPY", 100, True, True, 285.05)
-```
-
-Once the user has the order they can add to it as necessary e.g:
-```
-[C++]
-
-// defaults to OrderSession::DAY so...
-order1.set_sesion(OrderSession::GOOD_TILL_CANCEL).set_cancel_time("2019-01-01");
-```
-```
-[C]
-
-err = OrderTicket_SetSession(&order1, OrderSession_GOOD_TILL_CANCEL);
-if( err ){
-    //
-}
-
-err = OrderTicket_SetCancelTime(&order1, "2019-01-01");
-if( err ){
-    //
-}
+OrderTicket_Destroy(&order);
 ```
 ```
 [Python]
 
-order1.set_session(execute.ORDER_SESSION_GOOD_TILL_CANCEL) \
-      .set_cancel_time("2019-01-01") 
-
+order = execute.SimpleOrderBuilder.Equity.Build("SPY", 100, True, True, 285.05)
 ```
 
-In C you need to manually destroy the object when done.
-```
-[C]
+#### SpreadOrderBuilder
 
-err = OrderTicket_Destroy(&order1);
-if( err ){
-    //
-}
-```
+Option spread OrderTickets can be constructed with the static builders of the relevant nested classes inside the SpreadOrderBuilder class(C++, Python) or the similarly name static methods(C) for:
 
-##### Option Spreads
-Option Spread builders are currently only available for C and C++.
+- Vertical
+- Vertical Roll
+- Unbalanced Vertical Roll
+- Butterfly
+- Unbalanced Butterfly
+- BackRatio
+- Calendar
+- Diagonal
+- Straddle
+- Strangle
+- Synthetic Collar
+- Collar With Stock
+- Condor
+- Unbalanced Condor
+- Iron Condor
+- Unbalanced Iron Condor
+- Double Diagonal
+
+IMPORTANT - negative(-) prices for NET_CREDIT, positive prices for NET_DEBIT
+
+##### Example Usage
+
+**BUY (TO OPEN) 3 Jan-20 300/350 VERTICAL SPY CALL spreads @ a 10.10 DEBIT or better**
+
 ```
 [C++]
-
-/* 
- * buy/open 3 Jan-20 300/350 vertical SPY call spreads @ a 10.10 debit or better 
- *
- * NOTE - negative(-) prices represent CREDITS, positive prices DEBITS 
- *        *** FOR SPREADS ONLY ***
- */
 
 // the builder/factory
 using VB = SpreadOrderBuilder::Vertical;
 
 // add the exact options symbols
-Order order2 = VB::Build("SPY_011720C300", "SPY_011720C350", 3, true, 10.10);
+Order order = VB::Build("SPY_011720C300", "SPY_011720C350", 3, true, 10.10);
 
 // OR have the builder construct the options(s) 
-// (safer, but still assumes valid date, strikes etc.)
-order2 = VB::Build("SPY", 1, 17, 2020, true, 300, 350, 3, true, 10.10);
-
-
-/* sell/close 3 Jan-20 300/350 vertical SPY call spreads @ a 9.91 credit or better */
-
-// with the exact options
-Order order3 = VB::Build("SPY_011720C350", "SPY_011720C300", 3, false, -9.91);
-
-// OR
-order3 = VB::Build("SPY", 1, 17, 2020, true, 350, 300, 3, false, -9.91);
+order = VB::Build("SPY", 1, 17, 2020, true, 300, 350, 3, true, 10.10);
 ```
 ```
 [C]
 
-Order_Ticket_C order2 = {0,0};
+Order_Ticket_C order = {0,0};
 
 int err = BuildOrder_Spread_Vertical_Limit("SPY_011720C300", "SPY_011720C350",
-                                           3, 1, 10.10, &order2);
+                                           3, 1, 10.10, &order);
 if( err ){
     //
 }
 
-err = OrderTicket_Destroy(&order2);
-if( err ){
-    //
-}
+OrderTicket_Destroy(&order);
 
 // OR
 err = BuildOrder_Spread_Vertical_LimitEx("SPY", 1, 17, 2020, 1, 300, 350, 3, 1, 
-                                         10.10, &order2);
+                                         10.10, &order);
 if( err ){
     //
 }
 
-err = OrderTicket_Desgtroy(&order2);
+OrderTicket_Desgtroy(&order);
+```
+```
+[Python]
+
+VB = execute.SpreadOrderBuilder.Vertical
+
+order = VB.Build1("SPY_011720C300", "SPY_011720C350", 3, True, 10.10)
+
+# OR
+order = VB.Build2("SPY", 1, 17, 2020, 1, 300, 350, 3, 1, 10.10)
+```
+
+**SELL (TO CLOSE) 10 1-3-2 UNBALANCED Jan-20 300/325/350 SPY CALL BUTTERFLIES @ 1.05 CREDIT or better**
+```
+[C++]
+
+using BB = SpreadOrderBuilder::Butterfly::Unbalanced;
+
+Order order = BB::Build("SPY_011720C300", "SPY_011720C325", "SPY_011720C350", 
+                         10, 20, false, false, -1.05);
+
+// OR 
+order = BB::Build("SPY", 1, 17, 2020, true, 300, 325, 350, 10, 20, 
+                  false, false, -1.05);
+```
+```
+[C]
+
+Order_Ticket_C order = {0,0};
+
+int err = BuildOrder_Spread_ButterflyUnbalanced_Limit(
+            "SPY_011720C300", "SPY_011720C325", "SPY_011720C350", 10, 20, 0, 0, -1.05
+            );
 if( err ){
     //
 }
+
+OrderTicket_Destroy(&order);
+
+// OR
+err = BuildOrder_Spread_ButterflyUnbalanced_LimitEx(
+            "SPY", 1, 17, 2020, 1, 300, 325, 350, 10, 20, 0, 0, -1.05, &order
+            );
+if( err ){
+    //
+}
+
+OrderTicket_Desgtroy(&order);
+```
+```
+[Python]
+
+BB = execute.SpreadOrderBuilder.Butterfly.Unbalanced
+
+order = BB.Build1("SPY_011720C300", "SPY_011720C325", "SPY_011720C350", 
+                  10, 20, False, False, -1.05)
+
+# OR
+order = BB.Build2("SPY", 1, 17, 2020, True, 300, 325, 350, 10, 20, 
+                  False, False, -1.05)
+```
+
+#### ConditionalOrderBuilder
+
+One-Cancels-Other(OCO) and One-Triggers-Other(OTO) OrderTickets can be constructed with the static builders of the relevant nested classes inside the ConditionalOrderBuilder class(C++, Python) or the similarly name static methods(C).
+
+**OCO Exit Bracket: SELL (TO CLOSE) 100 SPY @ 299.95 or better -OR- SELL (TO CLOSE) 100 SPY on trade below 289.95 @ 289.45 or better**
+```
+[C++]
+
+using SB = SimpleOrderBuilder::Equity;
+
+OrderTicket order1 = SB::Build("SPY", 100, false, false, 299.95);
+OrderTicket order2 = SB::Stop::Build("SPY", 100, false, false, 289.95, 289.45);
+OrderTicket order3 = ConditionalOrderBuilder::OCO(order1, order2);
+```
+```
+[C]
+
+OrderTicket order1 = {0,0};
+OrderTicket order2 = {0,0};
+OrderTicket order3 = {0,0};
+
+int err = BuildOrder_Equity_Limit("SPY", 100, 0, 0, 299.95, &order1);
+if( err ){
+    // 
+}
+
+err = BuildOrder_Equity_StopLimit("SPY", 100, 0, 0, 289.95, 289.45, &order2);
+if( err ){
+    //
+}
+
+err = BuildOrder_OneCancelsOther(&order1, &order2, &order3);
+if( err ){
+    //
+}
+
+OrderTicket_Destroy(&order1);
+OrderTicket_Destroy(&order2);
+OrderTicket_Destroy(&order3);
+```
+```
+[Python]
+
+SB = execute.SimpleOrderBuilder.Equity
+
+order1 = SB.Build("SPY", 100, false, false, 299.95)
+order2 = SB.Stop.Build("SPY", 100, false, false, 289.95, 289.45)
+order3 = execute.ConditionalOrderBuilder.OCO(order1, order2);
 ```
 
 ### Design Ideas
