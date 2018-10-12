@@ -73,9 +73,9 @@ This project would not be possible without some of the great open-source project
 - - -
 | | Get Interface  |  Streaming Interface  |  Execute Interface 
 -------------------|---------------|---------------------|--------------------
-**C**              | *Working*     | *Working*   | *OrderTicket/Builders Only*
-**C++**            | *Working*     | *Working*   | *OrderTicket/Builders Only*
-**Python**         | *Working*     | *Working*   | *OrderTicket Only*
+**C**              | *Working*     | *Working*   | *OrderTicket, Builders*
+**C++**            | *Working*     | *Working*   | *OrderTicket, Builders*
+**Python**         | *Working*     | *Working*   | *OrderTicket, Builders*
 
 *Note: 'Working' does not necessarily mean 'Stable'*
 

@@ -274,10 +274,11 @@ order = BB::Build("SPY", 1, 17, 2020, true, 300, 325, 350, 10, 20,
 [C]
 
 Order_Ticket_C order = {0,0};
+int err;
 
-int err = BuildOrder_Spread_ButterflyUnbalanced_Limit(
-            "SPY_011720C300", "SPY_011720C325", "SPY_011720C350", 10, 20, 0, 0, -1.05
-            );
+err = BuildOrder_Spread_ButterflyUnbalanced_Limit(
+        "SPY_011720C300", "SPY_011720C325", "SPY_011720C350", 10, 20, 0, 0, -1.05, &order
+        );
 if( err ){
     //
 }
@@ -286,8 +287,8 @@ OrderTicket_Destroy(&order);
 
 // OR
 err = BuildOrder_Spread_ButterflyUnbalanced_LimitEx(
-            "SPY", 1, 17, 2020, 1, 300, 325, 350, 10, 20, 0, 0, -1.05, &order
-            );
+        "SPY", 1, 17, 2020, 1, 300, 325, 350, 10, 20, 0, 0, -1.05, &order
+        );
 if( err ){
     //
 }
@@ -310,6 +311,8 @@ order = BB.Build2("SPY", 1, 17, 2020, True, 300, 325, 350, 10, 20,
 #### ConditionalOrderBuilder
 
 One-Cancels-Other(OCO) and One-Triggers-Other(OTO) OrderTickets can be constructed with the static builders of the relevant nested classes inside the ConditionalOrderBuilder class(C++, Python) or the similarly name static methods(C).
+
+##### Example Usage
 
 **OCO Exit Bracket: SELL (TO CLOSE) 100 SPY @ 299.95 or better -OR- SELL (TO CLOSE) 100 SPY on trade below 289.95 @ 289.45 or better**
 ```
