@@ -26,9 +26,6 @@ along with this program.  If not, see http://www.gnu.org/licenses.
 #include <unordered_map>
 #include <iostream>
 
-#include "json.hpp"
-
-using json = nlohmann::json;
 #endif /* __cplusplus */
 
 DECL_C_CPP_TDMA_ENUM(PeriodType, 0, 3,

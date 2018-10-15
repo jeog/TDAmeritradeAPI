@@ -25,14 +25,10 @@ along with this program.  If not, see http://www.gnu.org/licenses.
 #include <string>
 #include <functional>
 #include <sstream>
-#include <chrono>
 
 #include "util.h"
-#include "tdma_api_get.h"
-#include "tdma_api_streaming.h"
-#include "tdma_api_execute.h"
+#include "tdma_common.h"
 #include "curl_connect.h"
-
 
 void
 set_error_state(int code,
@@ -48,31 +44,29 @@ namespace tdma{
 
 const std::string URL_BASE = "https://api.tdameritrade.com/v1/";
 const std::string URL_MARKETDATA = URL_BASE + "marketdata/";
-const std::string URL_ACCOUNT_INFO = URL_BASE + "accounts/";
+const std::string URL_ACCOUNTS = URL_BASE + "accounts/";
 const std::string URL_INSTRUMENTS = URL_BASE + "instruments";
 
 typedef std::function<void(long, const std::string&)> api_on_error_cb_ty;
 
 json
-get_user_principals_for_streaming(Credentials& creds);
-
-StreamerInfo
-get_streamer_info(Credentials& creds);
+connect_auth( conn::HTTPSPostConnection& connection, std::string fname);
 
 std::pair<std::string, conn::clock_ty::time_point>
-api_execute( conn::HTTPSConnection& connection,
+connect_get( conn::HTTPSConnection& connection,
               Credentials& creds,
-              api_on_error_cb_ty on_error_cb );//= default_api_on_error_callback );
+              api_on_error_cb_ty on_error_cb );
 
+std::pair<std::string, conn::clock_ty::time_point>
+connect_order_send( conn::HTTPSPostConnection& connection,
+                      Credentials& creds );
+
+std::pair<bool, conn::clock_ty::time_point>
+connect_order_cancel( conn::HTTPSDeleteConnection& connection,
+                        Credentials& creds );
 
 json
-api_auth_execute( conn::HTTPSPostConnection& connection, std::string fname);
-
-bool
-error_msg_about_token_expiration(const std::string& msg);
-
-std::string
-unescape_returned_post_data(const std::string& s);
+get_user_principals_for_streaming(Credentials& creds);
 
 void
 data_api_on_error_callback(long code, const std::string& data);
@@ -83,72 +77,8 @@ account_api_on_error_callback(long code, const std::string& data);
 void
 query_api_on_error_callback(long code, const std::string& data);
 
-class APIGetterImpl{
-    static std::chrono::milliseconds wait_msec; // DEF_WAIT_MSEC
-    static std::chrono::milliseconds last_get_msec; // 0
-    static std::mutex get_mtx;
-
-    static std::string
-    throttled_get(APIGetterImpl& getter);
-
-    static std::chrono::milliseconds
-    throttled_wait_remaining();
-
-    api_on_error_cb_ty _on_error_callback;
-    std::reference_wrapper<Credentials> _credentials;
-    conn::HTTPSGetConnection _connection;
-
-protected:
-    APIGetterImpl(Credentials& creds, api_on_error_cb_ty on_error_callback);
-
-    /*
-     * restrict copy and assign (for now at least):
-     *
-     *   1) should there ever be more than one of the same exact getter?
-     *   2) want to restrict copy/assign of the underlying connection
-     *      object to simplify things so if we share refs to it:
-     *         a) one ref can close() on another
-     *         b) destruction becomes more complicated
-     *
-     * allow move (consistent w/ underlying connection objects)
-     */
-
-    APIGetterImpl( APIGetterImpl&& ) = default;
-
-    APIGetterImpl&
-    operator=( APIGetterImpl&& ) = default;
-
-    virtual
-    ~APIGetterImpl(){}
-
-    void
-    set_url(std::string url);
-
-public:
-    typedef APIGetter ProxyType;
-    static const int TYPE_ID_LOW = 1;
-    static const int TYPE_ID_HIGH = 16;
-
-    static const std::chrono::milliseconds DEF_WAIT_MSEC;
-
-    static std::chrono::milliseconds
-    get_wait_msec();
-
-    static void
-    set_wait_msec(std::chrono::milliseconds msec);
-
-    static std::chrono::milliseconds
-    wait_remaining();
-
-    virtual std::string
-    get();
-
-    void
-    close();
-
-    bool
-    is_closed() const;
-};
+int
+alloc_C_str(const std::string& s, char** buf, size_t* n, bool raise_exception);
 
 
 template<typename RetTy>
@@ -543,7 +473,8 @@ struct ImplAccessor<char**>{
             };
 
         std::string r;
-        std::tie(r,err) = CallImplFromABI(allow_exceptions, mwrap, pgetter->obj, method);
+        std::tie(r,err) = CallImplFromABI(allow_exceptions, mwrap, pgetter->obj,
+                                          method);
         if( err )
             return err;
 

@@ -4,35 +4,38 @@
 
 # Add inputs and outputs from these tool invocations to the build variables 
 CPP_SRCS += \
-../src/getters/account.cpp \
-../src/getters/historical.cpp \
-../src/getters/instrument_info.cpp \
-../src/getters/market_hours.cpp \
-../src/getters/movers.cpp \
-../src/getters/options.cpp \
-../src/getters/quotes.cpp 
+../src/get/account.cpp \
+../src/get/get.cpp \
+../src/get/historical.cpp \
+../src/get/instrument_info.cpp \
+../src/get/market_hours.cpp \
+../src/get/movers.cpp \
+../src/get/options.cpp \
+../src/get/quotes.cpp 
 
 OBJS += \
-./src/getters/account.o \
-./src/getters/historical.o \
-./src/getters/instrument_info.o \
-./src/getters/market_hours.o \
-./src/getters/movers.o \
-./src/getters/options.o \
-./src/getters/quotes.o 
+./src/get/account.o \
+./src/get/get.o \
+./src/get/historical.o \
+./src/get/instrument_info.o \
+./src/get/market_hours.o \
+./src/get/movers.o \
+./src/get/options.o \
+./src/get/quotes.o 
 
 CPP_DEPS += \
-./src/getters/account.d \
-./src/getters/historical.d \
-./src/getters/instrument_info.d \
-./src/getters/market_hours.d \
-./src/getters/movers.d \
-./src/getters/options.d \
-./src/getters/quotes.d 
+./src/get/account.d \
+./src/get/get.d \
+./src/get/historical.d \
+./src/get/instrument_info.d \
+./src/get/market_hours.d \
+./src/get/movers.d \
+./src/get/options.d \
+./src/get/quotes.d 
 
 
 # Each subdirectory must supply rules for building sources it contributes
-src/getters/%.o: ../src/getters/%.cpp
+src/get/%.o: ../src/get/%.cpp
 	@echo 'Building file: $<'
 	@echo 'Invoking: GCC C++ Compiler'
 	g++ -std=c++0x -DTHIS_EXPORTS_INTERFACE -O0 -g3 -Wall -c -fmessage-length=0 -DDEBUG -fPIC -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@)" -o "$@" "$<"

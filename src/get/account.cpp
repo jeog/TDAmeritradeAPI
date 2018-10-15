@@ -18,6 +18,7 @@ along with this program.  If not, see http://www.gnu.org/licenses.
 #include <iostream>
 
 #include "../../include/_tdma_api.h"
+#include "../../include/_get.h"
 
 namespace tdma {
 
@@ -78,7 +79,7 @@ class AccountInfoGetterImpl
             fields = "?fields=orders";
         }
 
-        string url = URL_ACCOUNT_INFO + util::url_encode(get_account_id()) + fields;
+        string url = URL_ACCOUNTS + util::url_encode(get_account_id()) + fields;
         APIGetterImpl::set_url(url);
     }
 
@@ -131,7 +132,7 @@ class PreferencesGetterImpl
     void
     _build()
     {
-        string url = URL_ACCOUNT_INFO + util::url_encode(get_account_id())
+        string url = URL_ACCOUNTS + util::url_encode(get_account_id())
                      + "/preferences";
         APIGetterImpl::set_url(url);
     }
@@ -207,7 +208,7 @@ class TransactionHistoryGetterImpl
             params.emplace_back("endDate", _end_date);
 
         string qstr = util::build_encoded_query_str(params);
-        string url = URL_ACCOUNT_INFO + util::url_encode(get_account_id())
+        string url = URL_ACCOUNTS + util::url_encode(get_account_id())
                      + "/transactions?" + qstr;
         APIGetterImpl::set_url(url);
     }
@@ -305,7 +306,7 @@ class IndividualTransactionHistoryGetterImpl
     _build()
     {
 
-        string url = URL_ACCOUNT_INFO + util::url_encode(get_account_id())
+        string url = URL_ACCOUNTS + util::url_encode(get_account_id())
                      + "/transactions/" + util::url_encode(_transaction_id);
         APIGetterImpl::set_url(url);
     }
@@ -1054,7 +1055,7 @@ UserPrincipalsGetter_ReturnSurrogateIds_ABI(
             TDMA_API_THROW(ValueException,"account_id is empty");
         }
 
-        string url = URL_ACCOUNT_INFO + account_id + "/preferences";
+        string url = URL_ACCOUNTS + account_id + "/preferences";
 
         // TODO
 

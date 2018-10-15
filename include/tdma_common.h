@@ -24,6 +24,11 @@ along with this program.  If not, see http://www.gnu.org/licenses.
 #include <string.h>
 
 #ifdef __cplusplus
+
+#include "json.hpp"
+
+using json = nlohmann::json;
+
 /*
  * if C++ DECL_C_CPP_TDMA_ENUM expands to:
  *
@@ -761,8 +766,8 @@ public:
                          int status_code,
                          int lineno,
                          const std::string& filename )
-        : APIException(what + '(' + std::to_string(status_code) + ')',
-                       lineno, filename)
+        : APIException( what + "(response code =" + std::to_string(status_code)
+                        + ')', lineno, filename)
         {}
 
     virtual const char*

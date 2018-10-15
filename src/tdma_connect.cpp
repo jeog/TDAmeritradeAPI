@@ -23,10 +23,11 @@ along with this program.  If not, see http://www.gnu.org/licenses.
 #include <string.h>
 
 #include "../include/_tdma_api.h"
+#include "../include/curl_connect.h"
 
 using namespace std;
 using namespace chrono;
-
+using namespace conn;
 
 #ifdef USE_SIGNAL_BLOCKER_
 namespace{
@@ -34,10 +35,19 @@ util::SignalBlocker signal_blocker({SIGPIPE});
 };
 #endif
 
-
 namespace tdma{
 
-using namespace conn;
+bool
+error_msg_about_token_expiration(const string& msg)
+{
+    using namespace regex_constants;
+
+    static const regex ACCESS_TOKEN_RX("Access Token", ECMAScript | icase);
+    static const regex EXPIRE_RX("Expire", ECMAScript | icase);
+
+    return regex_search(msg, ACCESS_TOKEN_RX) && regex_search(msg, EXPIRE_RX);
+}
+
 
 bool
 base_on_error_callback(long code, const string& data, bool allow_refresh)
@@ -64,34 +74,32 @@ base_on_error_callback(long code, const string& data, bool allow_refresh)
      *
      *  RETURN TRUE IF WE CAN REFRESH, FALSE IF WE DONT THROW FROM HERE
      */
-    json data_json;
-    string data_uesc, err_msg;
-
     switch(code){
     case 401:
-        if( !allow_refresh ){
-            TDMA_API_THROW(ConnectException,"not allowed to refresh token", code);
-        }
-        data_json = json::parse(data);
-        err_msg = data_json["error"];
-        if( !error_msg_about_token_expiration(err_msg) ){
-            TDMA_API_THROW(ConnectException,"unknow exception: " + err_msg, code);
-        }
+        if( !error_msg_about_token_expiration(data) )
+            TDMA_API_THROW( ConnectException,
+                            "unknown exception: " + data, code );
+
+        if( !allow_refresh )
+            TDMA_API_THROW( ConnectException,
+                            "not allowed to refresh token: " + data, code );
+
         return true ; /* REFRESH TOKEN */
     case 403:
-        TDMA_API_THROW(InvalidRequest,"forbidden", code);
+        TDMA_API_THROW( InvalidRequest,
+                        "forbidden: " + data, code );
     case 404:
-        TDMA_API_THROW(InvalidRequest,"not found", code);
+        TDMA_API_THROW( InvalidRequest,
+                        "not found: " + data, code );
     case 500:
-        // do we still need to unescape this ??
-        data_uesc = unescape_returned_post_data(data);
-        data_json = json::parse(data_uesc);
-        err_msg = data_json["error"];
-        TDMA_API_THROW(ServerError,"unexpected server error: " + err_msg, code);
+        TDMA_API_THROW( ServerError,
+                        "unexpected server error: " + data, code);
     case 503:
-        TDMA_API_THROW(ServerError,"server (temporarily) unavailable", code);
+        TDMA_API_THROW( ServerError,
+                        "server (temporarily) unavailable: " + data, code );
     case 504:
-        TDMA_API_THROW(ServerError,"unknown server error: " + data, code);
+        TDMA_API_THROW( ServerError,
+                        "unknown server error: " + data, code);
     };
     return false;
 }
@@ -99,48 +107,81 @@ base_on_error_callback(long code, const string& data, bool allow_refresh)
 void
 data_api_on_error_callback(long code, const string& data)
 {
-    /*
-     *  codes 500, 503, 401, 403, 404 handled by base callback
-     */
     switch(code){
     case 400:
-        TDMA_API_THROW(InvalidRequest,"bad/malformed request", code);
+        TDMA_API_THROW( InvalidRequest,
+                        "bad/malformed request: " + data, code );
     case 406:
-        TDMA_API_THROW(InvalidRequest,"invalid regex or excessive requests", code);
+        TDMA_API_THROW( InvalidRequest,
+                        "invalid regex or excessive requests: " + data, code );
     };
 }
 
 void
 account_api_on_error_callback(long code, const string& data)
 {
-    /*
-     *  codes 500, 503, 401, 403, 404 handled by base callback
-     */
     if( code == 400 )
-        TDMA_API_THROW(InvalidRequest,"validation problem", code);
+        TDMA_API_THROW( InvalidRequest,
+                        "validation problem: " + data, code );
 }
 
 void
 query_api_on_error_callback(long code, const string& data)
 {
-    /*
-     *  codes 500, 503, 401, 403, 404 handled by base callback
-     */
     switch(code){
     case 400:
-        TDMA_API_THROW(InvalidRequest,"validation problem", code);
+        TDMA_API_THROW( InvalidRequest,
+                        "validation problem: " + data, code );
     case 406:
-        TDMA_API_THROW(InvalidRequest,"invalid regex or excessive requests", code);
+        TDMA_API_THROW( InvalidRequest,
+                        "invalid regex or excessive requests: " + data, code );
     };
 }
 
-bool
-on_api_return( long code,
-                 const string& data,
-                 bool allow_refresh,
-                 api_on_error_cb_ty on_error_cb )
+
+tuple<long, string, string, conn::clock_ty::time_point>
+curl_execute(HTTPSConnection& connection, bool return_header_data)
+{   /*
+     * Curl exceptions are not exposed publicly so we catch and wrap
+     */
+    try{
+        return connection.execute(return_header_data);
+    }catch( CurlConnectionError& e ){
+        cerr<< "CurlConnectionError --> ConnectionException" << endl;
+        string msg = e.what() + string("(curl code=") + to_string(e.code) + ')';
+        TDMA_API_THROW( ConnectException, msg );
+    }
+}
+
+
+json
+connect_auth(HTTPSPostConnection& connection, std::string fname)
 {
-    if( code == HTTP_RESPONSE_OK )
+    assert(connection);
+
+    long r_code;
+    string r_data, h_data;
+    conn::clock_ty::time_point r_tp;
+    tie(r_code, r_data, h_data, r_tp) = curl_execute(connection, false);
+
+    if( r_code != HTTP_RESPONSE_OK ){
+        cerr<< "error response: " << r_code << endl;
+        TDMA_API_THROW( AuthenticationException,
+                        fname + " failed: " + r_data, r_code );
+    }
+
+    return json::parse(r_data);
+}
+
+
+bool
+on_return( long code,
+            long code_success,
+            const string& data,
+            bool allow_refresh,
+            api_on_error_cb_ty on_error_cb )
+{
+    if( code == code_success )
         return true;
 
     cerr<< "error response: " << code << endl;
@@ -156,308 +197,213 @@ on_api_return( long code,
          *      passed off to the appropriate callback
          */
         on_error_cb(code, data);
+
         /* callback may not handle the error and throw so... */
         TDMA_API_THROW(ConnectException,"unknown exception", code);
     }
-
-    cerr<< "access token expired; try to refresh..." << endl;
     return false;
 }
 
 
-tuple<long, string, conn::clock_ty::time_point>
-curl_execute(HTTPSConnection& connection)
+vector<pair<string,string>>
+build_auth_headers( const vector<pair<string,string>>& headers,
+                      const string& access_token )
 {
+    vector<pair<string,string>> tmp(headers);
+    tmp.emplace_back( "Authorization", "Bearer " + access_token);
+    return tmp;
+}
+
+
+tuple<string, string, conn::clock_ty::time_point>
+connect( HTTPSConnection& connection,
+          Credentials& creds,
+          const vector<pair<string,string>>& static_headers,
+          api_on_error_cb_ty on_error_cb,
+          bool return_headers,
+          long code_success )
+{
+    if( !creds.access_token || !creds.client_id )
+        TDMA_API_THROW( LocalCredentialException, "invalid credentials" );
+
+    if( creds.access_token[0] == '\0' )
+        TDMA_API_THROW( LocalCredentialException, "empty access_token" );
+
+    if( creds.client_id[0] == '\0' )
+        TDMA_API_THROW( LocalCredentialException, "empty client_id");
+
     /*
-     * Curl exceptions are not exposed publicly so we catch and wrap
+     * cache access tokens across calls by client_id so all cred structs
+     * of the same account are linked but different client_ids aren't
+     *
+     * NOTE - the cached token takes priority to avoid refresh 'thrashing'
+     *        between unsynced callers
      */
-    try{
-        return connection.execute();
-    }catch( CurlConnectionError& e ){
-        cerr<< "CurlConnectionError --> APIExecutionException" << endl;
-        TDMA_API_THROW(ConnectException,e.what(), e.code);
+    static unordered_map<string, string> token_cache;
+    string& cached_token = token_cache.insert(
+        {creds.client_id, creds.access_token}
+    ).first->second;
+
+    /* only add headers if we don't already have them */
+    if( !connection.has_headers() ){
+        auto headers = build_auth_headers(static_headers, cached_token);
+        connection.ADD_headers(headers);
     }
+
+    long r_code;
+    string r_data, r_head;
+    conn::clock_ty::time_point r_tp;
+    tie(r_code, r_data, r_head, r_tp) = curl_execute(connection, return_headers);
+
+    if( !on_return(r_code, code_success, r_data, true, on_error_cb) ){
+        /*
+         * if 'on_return' returns FALSE initially we have an expired token
+         * IN THE HEADER (or in the header AND cache):
+         *
+         * 1) if current token in the header is different than cache:
+         *     a) update the cred struct w/ the cache token (if different)
+         *     b) reset auth header w/ the cache token
+         *     c) try the call again
+         *     d) if 'on_return' returns TRUE, return, else...
+         * 2) refresh the token (automatically updates 'creds.access_token')
+         * 3) update the cache
+         * 4) update the header
+         * 5) try again (this should either return true or THROW)
+         */
+
+        auto old_headers = connection.GET_headers();
+        assert( old_headers.back().first == "Authorization");
+
+        /* first check that header token is same as cached version */
+        if( old_headers.back().second != ("Bearer " + cached_token) ){
+
+            /* overwrite the token in creds w/ cached */
+            if( strcmp(creds.access_token, cached_token.c_str()) ){
+                /*
+                 * should only get in here if client is using references
+                 * to different cred structs (not recommended)
+                 */
+                delete[] creds.access_token;
+                creds.access_token = new char[cached_token.size() + 1];
+                creds.access_token[cached_token.size()] = 0;
+                strcpy(creds.access_token, cached_token.c_str());
+            }
+
+            /* update headers w/ cached */
+            connection.RESET_headers();
+            auto new_headers = build_auth_headers(static_headers, cached_token);
+            connection.ADD_headers(new_headers);
+
+            /* try again */
+            tie(r_code, r_data, r_head, r_tp) =
+                curl_execute(connection, return_headers);
+
+            /* if still FALSE, expired token IN CACHE, continue to refresh */
+            if( on_return(r_code, code_success, r_data, true, on_error_cb) )
+                return make_tuple(r_data, r_head, r_tp);
+        }
+
+        cerr<< "access token expired; try to refresh..." << endl;
+        RefreshAccessToken(creds); // updates creds.access_token
+
+        /* update the cache */
+        cached_token = creds.access_token;
+
+        /* update the header */
+        connection.RESET_headers();
+        auto new_headers = build_auth_headers(static_headers, cached_token);
+        connection.ADD_headers(new_headers);
+
+        /* try again */
+        tie(r_code, r_data, r_head, r_tp) =
+            curl_execute(connection, return_headers);
+
+        bool r = on_return(r_code, code_success, r_data, false, on_error_cb);
+        assert(r); /* should either be true or have thrown */
+        cerr<< "...successfully refreshed access token" << endl;
+    } 
+
+    return make_tuple(r_data, r_head, r_tp);
 }
 
 
 pair<string, conn::clock_ty::time_point>
-api_execute( HTTPSConnection& connection,
+connect_get( HTTPSConnection& connection,
               Credentials& creds,
               api_on_error_cb_ty on_error_cb )
 {
-    if( !creds.access_token || string(creds.access_token).empty() )
-        TDMA_API_THROW(LocalCredentialException,"creds.access_token is empty");
+    static const vector<pair<string,string>> STATIC_HEADERS = {
+        {"Accept", "application/json"}
+    };
 
-    if( !connection.has_headers() ){
-        /* 
-         * IMPORTANT - don't add the headers if this is a repeat call to avoid
-         *             a malformed request
-         */
-        connection.ADD_headers(
-            { {"Accept", "application/json"},
-              {"Authorization", "Bearer " + string(creds.access_token)} }
-            );
-    }
+    auto r = connect(connection, creds, STATIC_HEADERS, on_error_cb, false,
+                     HTTP_RESPONSE_OK);
 
-    long r_code;
-    string r_data;
+    return make_pair( get<0>(r), get<2>(r) );
+}
+
+
+std::string
+order_id_from_header(const std::string& header)
+{
+    static const regex ID_RX(
+        "Location:[ ]*https://api\\.tdameritrade\\.com/.+/[0-9]+/orders/"
+        "([0-9]+)[ ]*[\r\n]+"
+    );
+
+    smatch m;
+    regex_search(header, m, ID_RX);
+    if( m.ready() && m.size() == 2 )
+        return m[1];
+
+    cerr<< "failed to find order ID in header" << endl;
+    return "";
+}
+
+
+pair<string, conn::clock_ty::time_point>
+connect_order( HTTPSConnection& connection,
+                Credentials& creds,
+                long code_success )
+{
+    static const vector<pair<string,string>> STATIC_HEADERS = {
+        {"Accept", "*/*"},
+        {"Content-Type", "application/json"}
+    };
+
+    string r_data, r_head;
     conn::clock_ty::time_point r_tp;
-    tie(r_code, r_data, r_tp) = curl_execute(connection);
-    
-    if( !on_api_return(r_code, r_data, true, on_error_cb) ){
-        /* 
-         * if response callback returns false we have an expired token 
-         */        
-        RefreshAccessToken(creds);
+    tie(r_data, r_head, r_tp) = connect( connection, creds, STATIC_HEADERS,
+                                         account_api_on_error_callback,
+                                         true, code_success );
 
-        /* update the header */
-        connection.RESET_headers();
-        connection.ADD_headers(
-            { {"Accept", "application/json"},
-              {"Authorization", "Bearer " + string(creds.access_token)} }
-            );
-
-        /* try again */
-        tie(r_code, r_data, r_tp) = curl_execute(connection);
-        on_api_return(r_code, r_data, false, on_error_cb);
-    } 
-
-    return make_pair( r_data, r_tp );
+    return make_pair(r_head, r_tp);
 }
 
 
-json
-api_auth_execute(HTTPSPostConnection& connection, std::string fname)
+pair<string, conn::clock_ty::time_point>
+connect_order_send( HTTPSPostConnection& connection,
+                      Credentials& creds )
 {
-    assert(connection); 
-
-    long r_code;
-    string r_data;
+    string r_head;
     conn::clock_ty::time_point r_tp;
-    tie(r_code, r_data, r_tp) = curl_execute(connection);
-
-    if( r_code != HTTP_RESPONSE_OK ){
-        cerr<< "error response: " << r_code << endl;
-        TDMA_API_THROW( AuthenticationException,
-                        fname + " failed " + r_data, r_code );
-    }
-
-    string r_esc = unescape_returned_post_data(r_data); // REMOVE ????
-    json r_json = json::parse(r_esc);
-    return r_json;
+    tie(r_head, r_tp) = connect_order(connection, creds, HTTP_RESPONSE_CREATED);
+    string order_id = order_id_from_header(r_head);
+    return make_pair(order_id, r_tp);
 }
 
 
-const milliseconds APIGetterImpl::DEF_WAIT_MSEC(500);
-
-milliseconds APIGetterImpl::wait_msec(APIGetterImpl::DEF_WAIT_MSEC);
-milliseconds APIGetterImpl::last_get_msec(util::get_msec_since_epoch<conn::clock_ty>());
-
-mutex APIGetterImpl::get_mtx;
-
-
-APIGetterImpl::APIGetterImpl(Credentials& creds, api_on_error_cb_ty on_error_callback)
-    :       
-        _on_error_callback(on_error_callback),
-        _credentials(creds),
-        _connection()
-    {}
-
-void
-APIGetterImpl::set_url(string url)
-{ _connection.SET_url(url); }
-
-string
-APIGetterImpl::get()
+// TODO  CATCH EXCEPTIONS ??
+pair<bool, conn::clock_ty::time_point>
+connect_order_cancel( HTTPSDeleteConnection& connection,
+                        Credentials& creds )
 {
-    if( is_closed() )
-        TDMA_API_THROW(APIException, "connection is closed");
-
-    assert( !_connection.is_closed() );
-    return APIGetterImpl::throttled_get(*this);
+    string r_head;
+    conn::clock_ty::time_point r_tp;
+    tie(r_head, r_tp) = connect_order(connection, creds, HTTP_RESPONSE_OK);
+    return make_pair(true, r_tp);
 }
 
-void
-APIGetterImpl::close()
-{ _connection.close(); }
-
-bool
-APIGetterImpl::is_closed() const
-{ return !_connection; }
-
-string
-APIGetterImpl::throttled_get(APIGetterImpl& getter)
-{
-    using namespace chrono;
-
-    /* 
-     * get_mtx allows threaded api execution from different getters in
-     * different threads AND the same getter in different threads.
-     *
-     * IT DOESN'T HANDLE OTHER OTHER SYNC ISSUES INSIDE THE CurlConnection
-     * CLASSES.
-     */
-    lock_guard<mutex> _(get_mtx);
-    auto remaining = throttled_wait_remaining();
-    if( remaining.count() > 0 ){
-        /*
-         * wait_msec and last_get_msec provide a global throttling mechanism
-         * for ALL get requests to avoid excessive calls to TDMA servers
-         */
-        assert( remaining <= wait_msec );
-        this_thread::sleep_for( remaining );
-    }
-
-    string s;
-    conn::clock_ty::time_point tp;
-    tie(s, tp) = api_execute( getter._connection, getter._credentials,
-                              getter._on_error_callback );
-
-    last_get_msec = duration_cast<milliseconds>(tp.time_since_epoch());
-    return s;
-}
-
-std::chrono::milliseconds
-APIGetterImpl::throttled_wait_remaining()
-{
-    auto elapsed = util::get_msec_since_epoch<conn::clock_ty>() - last_get_msec;
-    assert( elapsed.count() >= 0 );
-    return wait_msec - elapsed;
-}
-
-std::chrono::milliseconds
-APIGetterImpl::wait_remaining()
-{
-    static const std::chrono::milliseconds ms0(0);
-    return std::max(throttled_wait_remaining(), ms0);
-}
-
-void
-APIGetterImpl::set_wait_msec(milliseconds msec)
-{
-    lock_guard<mutex> _(get_mtx);
-    wait_msec = msec;
-}
-
-milliseconds
-APIGetterImpl::get_wait_msec()
-{ return wait_msec; }
-
-
-bool
-error_msg_about_token_expiration(const string& msg)
-{
-    using namespace regex_constants;
-
-    static const regex ACCESS_TOKEN_RX("Access Token", ECMAScript | icase);
-    static const regex EXPIRE_RX("Expire", ECMAScript | icase);
-
-    return regex_search(msg, ACCESS_TOKEN_RX) && regex_search(msg, EXPIRE_RX);
-}
-
-
-string
-unescape_returned_post_data(const string& s)
-{
-    stringstream ss;
-
-    for(auto i = s.begin(); i < s.end(); ++i){
-        if( *i != '\\'){
-            ss << *i ;
-        }
-    }
-    return ss.str();
-}
 
 } /* tdma */
-
-using namespace tdma;
-
-int
-APIGetter_Get_ABI( Getter_C *pgetter,
-                     char **buf,
-                     size_t *n,
-                     int allow_exceptions )
-{
-    return ImplAccessor<char**>::template
-        get<APIGetterImpl>(
-            pgetter, &APIGetterImpl::get, buf, n, allow_exceptions
-        );
-}
-
-int
-APIGetter_Close_ABI(Getter_C *pgetter, int allow_exceptions)
-{
-    int err = proxy_is_callable<APIGetterImpl>(pgetter, allow_exceptions);
-    if( err )
-        return err;
-
-    static auto meth = +[](void* obj){
-        reinterpret_cast<APIGetterImpl*>(obj)->close();
-    };
-
-    return CallImplFromABI(allow_exceptions, meth, pgetter->obj);
-}
-
-int
-APIGetter_IsClosed_ABI(Getter_C *pgetter, int*b, int allow_exceptions)
-{
-    int err = proxy_is_callable<APIGetterImpl>(pgetter, allow_exceptions);
-    if( err )
-        return err;
-
-    CHECK_PTR(b, "b", allow_exceptions);
-
-    static auto meth = +[](void* obj){
-        return reinterpret_cast<APIGetterImpl*>(obj)->is_closed();
-    };
-
-    tie(*b, err) = CallImplFromABI(allow_exceptions, meth, pgetter->obj);
-    return err;
-}
-
-int
-APIGetter_SetWaitMSec_ABI(unsigned long long msec, int allow_exceptions)
-{
-    return CallImplFromABI( allow_exceptions, APIGetterImpl::set_wait_msec,
-                            milliseconds(msec) );
-}
-
-int
-APIGetter_GetWaitMSec_ABI(unsigned long long *msec, int allow_exceptions)
-{
-    CHECK_PTR(msec, "msec", allow_exceptions);
-
-    milliseconds ms;
-    int err;
-    tie(ms, err) = CallImplFromABI( allow_exceptions,
-                                          APIGetterImpl::get_wait_msec );
-    if(err)
-        return err;
-
-    *msec = static_cast<unsigned long long>(ms.count());
-    return 0;
-}
-
-int
-APIGetter_GetDefWaitMSec_ABI(unsigned long long *msec, int allow_exceptions)
-{
-    CHECK_PTR(msec, "msec", allow_exceptions);
-
-    *msec = static_cast<unsigned long long>(
-        APIGetterImpl::DEF_WAIT_MSEC.count()
-        );
-    return 0;
-}
-
-int
-APIGetter_WaitRemaining_ABI(unsigned long long *msec, int allow_exceptions)
-{
-    CHECK_PTR(msec, "msec", allow_exceptions);
-
-    *msec = static_cast<unsigned long long>(
-        APIGetterImpl::wait_remaining().count()
-        );
-    return 0;
-}
 

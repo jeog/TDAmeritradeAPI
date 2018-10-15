@@ -156,31 +156,41 @@ public:
         _options[option] = to<T>::str(param);
     }
     
-    // <status code, data, time>
-    tuple<long, string, clock_ty::time_point>
-    execute()
+    // <status code, data, header, time>
+    tuple<long, string, string, clock_ty::time_point>
+    execute( bool return_header_data )
     {
         if (!_handle)
             throw CurlException("connection/handle has been closed");
 
-        WriteCallback cb;
+        WriteCallback cb_data, cb_header;
         set_option(CURLOPT_WRITEFUNCTION, &WriteCallback::write);
-        set_option(CURLOPT_WRITEDATA, &cb);
+        set_option(CURLOPT_WRITEDATA, &cb_data);
+
+        if( return_header_data ){
+            set_option(CURLOPT_HEADERFUNCTION, &WriteCallback::write);
+            set_option(CURLOPT_HEADERDATA, &cb_header);
+        }
 
         CURLcode ccode = curl_easy_perform(_handle);
         auto tp = clock_ty::now();
-        if (ccode != CURLE_OK) {
+        if (ccode != CURLE_OK)
             throw CurlConnectionError(ccode);
-        }
 
-        string res = cb.str();
-        cb.clear();
+        string res = cb_data.str();
+        cb_data.clear();
         long c;
         curl_easy_getinfo(_handle, CURLINFO_RESPONSE_CODE, &c);
 
-        return make_tuple(c, res, tp);
+        string head;
+        if( return_header_data ){
+            head = cb_header.str();
+            cb_data.clear();
+        }
+
+        return make_tuple(c, res, head, tp);
     }
-    
+
     void
     close()
     {
@@ -235,7 +245,6 @@ public:
     SET_keepalive()
     { set_option(CURLOPT_TCP_KEEPALIVE, 1L); }
 
-    /* CAREFUL */
     void
     ADD_headers(const vector<pair<string, string>>& headers)
     {
@@ -250,13 +259,31 @@ public:
             _header = curl_slist_append(_header, s.c_str());
             if (!_header) {
                 throw CurlOptionException("curl_slist_append failed trying to "
-                    "add header", CURLOPT_HEADER, s);
+                    "add header", CURLOPT_HTTPHEADER, s);
             }
         }
 
         return set_option(CURLOPT_HTTPHEADER, _header);
     }
     
+    vector<pair<string,string>>
+    GET_headers() const
+    {
+        struct curl_slist * tmp = _header;
+
+        vector<pair<string,string>> headers;
+        while( tmp ){
+             string h(tmp->data);
+             size_t pos = h.find(": ");
+             if( pos == string::npos )
+                 throw CurlException("malformed header");
+             headers.emplace_back( string(h.begin(), h.begin() + pos),
+                                   string(h.begin() + pos + 2, h.end()) );
+             tmp = tmp->next;
+        }
+        return headers;
+    }
+
     void
     RESET_headers()
     {
@@ -270,7 +297,8 @@ public:
     {
         return _header != nullptr;
     }
-    
+
+
     void
     SET_fields(const vector<pair<string, string>>& fields)
     {
@@ -391,9 +419,9 @@ CurlConnection::set_option(CURLoption option, T param)
 { _pimpl->set_option(option, param); }
 
 // <status code, data, time>
-tuple<long, string, clock_ty::time_point>
-CurlConnection::execute()
-{ return _pimpl->execute(); }
+tuple<long, string, string, clock_ty::time_point>
+CurlConnection::execute( bool return_header_data )
+{ return _pimpl->execute(return_header_data); }
 
 void
 CurlConnection::close()
@@ -435,6 +463,10 @@ void
 CurlConnection::ADD_headers(const vector<pair<string,string>>& headers)
 { _pimpl->ADD_headers(headers); }
 
+vector<pair<string,string>>
+CurlConnection::GET_headers() const
+{ return _pimpl->GET_headers(); }
+
 void
 CurlConnection::RESET_headers()
 { _pimpl->RESET_headers(); }
@@ -443,11 +475,9 @@ bool
 CurlConnection::has_headers()
 { return _pimpl->has_headers(); }
 
-
 void
 CurlConnection::RESET_options()
 { _pimpl->RESET_options(); }
-
 
 const string HTTPSConnection::DEFAULT_ENCODING("gzip");
 
@@ -515,6 +545,24 @@ void
 HTTPSPostConnection::SET_fields(const string& fields)
 { _pimpl->SET_fields(fields); }
 
+
+HTTPSDeleteConnection::HTTPSDeleteConnection()
+    : HTTPSConnection()
+    { _set(); }
+
+
+HTTPSDeleteConnection::HTTPSDeleteConnection(string url)
+    : HTTPSConnection(url)
+    { _set(); }
+
+void
+HTTPSDeleteConnection::_set()
+{
+    set_option(CURLOPT_CUSTOMREQUEST, "DELETE");
+    SET_encoding(DEFAULT_ENCODING);
+}
+
+
 CurlException::CurlException(string what)
     : _what(what)
     {}
@@ -543,7 +591,7 @@ CurlOptionException::CurlOptionException(string what, CURLoption opt, string val
 
 CurlConnectionError::CurlConnectionError(CURLcode code)
     :
-        CurlException("connection error"),
+        CurlException("curl connection error"),
         code(code)
     {}
 

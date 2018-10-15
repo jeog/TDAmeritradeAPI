@@ -28,11 +28,9 @@ along with this program.  If not, see http://www.gnu.org/licenses.
 #include <thread>
 #include <string>
 
-#include "json.hpp"
 #include "websocket_connect.h"
 #include "threadsafe_hashmap.h"
 
-using json = nlohmann::json;
 #endif /* __cplusplus */
 
 
@@ -1686,8 +1684,9 @@ public:
     }
 };
 
+using std::to_string;
 
-} /* amtd */
+} /* tdma */
 
 #endif /* __cplusplus */
 

@@ -24,9 +24,7 @@ along with this program.  If not, see http://www.gnu.org/licenses.
 #ifdef __cplusplus
 
 #include <regex>
-#include "json.hpp"
 
-using json = nlohmann::json;
 #endif /* __cplusplus */
 
 // TODO check Builders for correct input
@@ -4317,6 +4315,49 @@ public:
     }
 };
 
+} /* tdma */
+
+#endif /* __cplusplus */
+
+
+EXTERN_C_SPEC_ DLL_SPEC_ int
+Execute_SendOrder_ABI( struct Credentials *creds,
+                           const char* account_id,
+                           OrderTicket_C *porder,
+                           char** buf,
+                           size_t *n,
+                           int allow_exceptions );
+
+EXTERN_C_SPEC_ DLL_SPEC_ int
+Execute_CancelOrder_ABI( struct Credentials *creds,
+                             const char* account_id,
+                             const char* order_id,
+                             int *success,
+                             int allow_exceptions );
+
+
+#ifdef __cplusplus
+
+namespace tdma {
+
+inline std::string
+Execute_SendOrder( Credentials& creds,
+                      const std::string& account_id,
+                      const OrderTicket& order )
+{ return str_from_abi_vargs( Execute_SendOrder_ABI, ALLOW_EXCEPTIONS,
+                             &creds, account_id.c_str(),order.get_cproxy() ); }
+
+inline bool
+Execute_CancelOrder( Credentials& creds,
+                        const std::string& account_id,
+                        const std::string& order_id )
+{
+    int success;
+    call_abi( Execute_CancelOrder_ABI, &creds, account_id.c_str(),
+              order_id.c_str(), &success );
+    return static_cast<bool>(success);
+}
+
 /*
 {
     "session": "'NORMAL' or 'AM' or 'PM' or 'SEAMLESS'",
@@ -4472,6 +4513,8 @@ public:
   ]
 }
  */
+
+using std::to_string;
 
 } /* tdma */
 

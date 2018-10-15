@@ -17,7 +17,7 @@ along with this program.  If not, see http://www.gnu.org/licenses.
 
 #include <string>
 
-#include "_tdma_api.h"
+#include "tdma_api_execute.h"
 
 namespace tdma {
 

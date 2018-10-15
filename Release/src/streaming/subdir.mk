@@ -4,17 +4,17 @@
 
 # Add inputs and outputs from these tool invocations to the build variables 
 CPP_SRCS += \
-../src/streaming/streaming_info.cpp \
+../src/streaming/streaming.cpp \
 ../src/streaming/streaming_session.cpp \
 ../src/streaming/streaming_subscriptions.cpp 
 
 OBJS += \
-./src/streaming/streaming_info.o \
+./src/streaming/streaming.o \
 ./src/streaming/streaming_session.o \
 ./src/streaming/streaming_subscriptions.o 
 
 CPP_DEPS += \
-./src/streaming/streaming_info.d \
+./src/streaming/streaming.d \
 ./src/streaming/streaming_session.d \
 ./src/streaming/streaming_subscriptions.d 
 

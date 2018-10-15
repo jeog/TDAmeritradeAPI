@@ -26,7 +26,6 @@ along with this program.  If not, see http://www.gnu.org/licenses.
 
 #include "../../include/_streaming.h"
 #include "../../include/util.h"
-#include "../../include/_tdma_api.h"
 #include "../../include/websocket_connect.h"
 
 

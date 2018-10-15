@@ -20,6 +20,7 @@ along with this program.  If not, see http://www.gnu.org/licenses.
 #include <unordered_map>
 
 #include "_tdma_api.h"
+#include "tdma_api_streaming.h"
 
 namespace tdma {
 
@@ -27,6 +28,10 @@ using namespace std;
 
 StreamerServiceType
 streamer_service_from_str(string service_name);
+
+
+StreamerInfo
+get_streamer_info(Credentials& creds);
 
 class StreamingSubscriptionImpl{
     StreamerServiceType _service;

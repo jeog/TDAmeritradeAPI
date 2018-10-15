@@ -33,6 +33,7 @@ along with this program.  If not, see http://www.gnu.org/licenses.
 namespace conn{
 
 const long HTTP_RESPONSE_OK = 200;
+const long HTTP_RESPONSE_CREATED = 201;
 
 typedef std::chrono::steady_clock clock_ty;
 static_assert( static_cast<double>(clock_ty::period::num)
@@ -79,8 +80,8 @@ public:
     set_option(CURLoption option, T param);
 
     // <status code, data, time>
-    std::tuple<long, std::string, clock_ty::time_point>
-    execute();
+    std::tuple<long, std::string, std::string, clock_ty::time_point>
+    execute(bool return_header_data);
 
     void
     close();
@@ -110,6 +111,9 @@ public:
 
     void
     ADD_headers(const std::vector<std::pair<std::string,std::string>>& headers);
+
+    std::vector<std::pair<std::string,std::string>>
+    GET_headers() const;
 
     void
     RESET_headers();
@@ -153,6 +157,15 @@ public:
 
     void
     SET_fields(const std::string& fields);
+};
+
+
+class HTTPSDeleteConnection
+        : public HTTPSConnection{
+    void _set();
+public:
+    HTTPSDeleteConnection();
+    HTTPSDeleteConnection(std::string url);
 };
 
 

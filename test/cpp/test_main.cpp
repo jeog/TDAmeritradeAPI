@@ -11,7 +11,7 @@ using namespace std;
 
 void test_option_symbol_builder();
 
-bool use_live_connection = false;
+bool use_live_connection = true;
 
 int main(int argc, char* argv[])
 {
@@ -43,7 +43,7 @@ int main(int argc, char* argv[])
 
         ccc2 = move(ccc);
         Credentials ccc4( move(ccc2 ));
-        
+
         cout<< "*** [BEGIN] TEST OPTION SYMBOL BUILDER [BEGIN] ***" << endl;
         test_option_symbol_builder();
         cout<< "*** [END] TEST OPTION SYMBOL BUILDER [END] ***" << endl << endl;
@@ -52,6 +52,12 @@ int main(int argc, char* argv[])
         test_execution_order_objects();
         cout<< "*** [END] TEST EXECUTION ORDER OBJECTS [END] ***" << endl << endl;
       
+        /* THIS SENDS LIVE ORDERS */
+        //cout<< "*** [BEGIN] TEST EXECUTION TRANSACTIONS [BEGIN] ***" << endl;
+        //test_execute_transactions(account_id, cmanager.credentials);
+        //cout<< "*** [END] TEST EXECUTION TRANSACTIONS [END] ***" << endl << endl;
+        /* THIS SENDS LIVE ORDERS */
+
         cout<< "*** [BEGIN] TEST GETTERS [BEGIN] ***" << endl;
         test_getters(account_id, cmanager.credentials);
         cout<< "*** [END] TEST GETTERS [END] ***" << endl << endl;

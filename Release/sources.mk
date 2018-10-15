@@ -25,7 +25,7 @@ C_DEPS :=
 SUBDIRS := \
 src \
 src/execute \
-src/getters \
+src/get \
 src/streaming \
 uWebSockets \
 
