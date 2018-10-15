@@ -183,6 +183,7 @@
     <ClInclude Include="..\..\include\websocket_connect.h" />
     <ClInclude Include="..\..\include\_common.h" />
     <ClInclude Include="..\..\include\_execute.h" />
+    <ClInclude Include="..\..\include\_get.h" />
     <ClInclude Include="..\..\include\_streaming.h" />
     <ClInclude Include="..\..\include\_tdma_api.h" />
     <ClInclude Include="..\..\uWebSockets\Asio.h" />
@@ -203,20 +204,21 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\src\auth.cpp" />
+    <ClCompile Include="..\..\src\common.cpp" />
     <ClCompile Include="..\..\src\curl_connect.cpp" />
     <ClCompile Include="..\..\src\error.cpp" />
-    <ClCompile Include="..\..\src\execute\order_hub.cpp" />
+    <ClCompile Include="..\..\src\execute\execute.cpp" />
     <ClCompile Include="..\..\src\execute\order_leg.cpp" />
     <ClCompile Include="..\..\src\execute\order_ticket.cpp" />
-    <ClCompile Include="..\..\src\getters\account.cpp" />
-    <ClCompile Include="..\..\src\getters\historical.cpp" />
-    <ClCompile Include="..\..\src\getters\instrument_info.cpp" />
-    <ClCompile Include="..\..\src\getters\market_hours.cpp" />
-    <ClCompile Include="..\..\src\getters\movers.cpp" />
-    <ClCompile Include="..\..\src\getters\options.cpp" />
-    <ClCompile Include="..\..\src\getters\quotes.cpp" />
-    <ClCompile Include="..\..\src\params.cpp" />
-    <ClCompile Include="..\..\src\streaming\streaming_info.cpp" />
+    <ClCompile Include="..\..\src\get\account.cpp" />
+    <ClCompile Include="..\..\src\get\get.cpp" />
+    <ClCompile Include="..\..\src\get\historical.cpp" />
+    <ClCompile Include="..\..\src\get\instrument_info.cpp" />
+    <ClCompile Include="..\..\src\get\market_hours.cpp" />
+    <ClCompile Include="..\..\src\get\movers.cpp" />
+    <ClCompile Include="..\..\src\get\options.cpp" />
+    <ClCompile Include="..\..\src\get\quotes.cpp" />
+    <ClCompile Include="..\..\src\streaming\streaming.cpp" />
     <ClCompile Include="..\..\src\streaming\streaming_session.cpp" />
     <ClCompile Include="..\..\src\streaming\streaming_subscriptions.cpp" />
     <ClCompile Include="..\..\src\tdma_connect.cpp" />

@@ -1,19 +1,19 @@
-compilation date: 10-09-2018
+compilation date: 10-15-2018
 
-previous commit: cc8f075 (built using source of commit *after* this one)
+previous commit: 6abe64c (built using source of commit *after* this one)
 
 sha256 checksums:
 
-e5ef299db7d6d45136a19a3c78080b054aa9fe3edcf2e7cf3b74923dc302a26c *debian-3.20--x86_64--gcc/libTDAmeritradeAPI.so
-ee803115186a943436c128161fd673a15416295346e31fd8a97e78f90ad3858b *debian-3.16--i386--gcc/libTDAmeritradeAPI.so
-9ab523adf4b126aebf4364946bb54c33e8556a8757cdbf23cdf88f259bc915be *windows-msvc/Win32/TDAmeritradeAPI.dll
-5f0e7ff7a38bbc602edd06f4fc9a203b1b51aeef89c093c06a8ffbc47085a7f8 *windows-msvc/Win32/TDAmeritradeAPI.exp
-3edbfa702d390d13006af366f1ab66a7f91854112cc234f730cbe8907db985b7 *windows-msvc/Win32/TDAmeritradeAPI.lib
-12b2349cdaedb113c81439c7dc9901932c7bfc83ba3b68377258e42b0421ffdc *windows-msvc/Win32/TDAmeritradeAPI.pdb
-bfde98c78a9e56f5a61c92c6d8f99fe83dff8e4899938bcfe03a7aee1dc263a6 *windows-msvc/x64/TDAmeritradeAPI.dll
-428cba659f33fc7dbe5a17baa576aa7134d508c458934db0c43de44eb8a4c104 *windows-msvc/x64/TDAmeritradeAPI.exp
-d132c1d96acf8c9f675964de5d02f783175007c6a05ed684ae5cdf722293ad05 *windows-msvc/x64/TDAmeritradeAPI.lib
-c4cb67ac84730b8571ea7bbd8dedf29223a50e337f0ecf6f384e533188a81f3c *windows-msvc/x64/TDAmeritradeAPI.pdb
+a479cc12f6ff7f7158334916f0625b7f9e8da3962dac9ab55c3022f264b2300f  debian-3.16--i386--gcc/libTDAmeritradeAPI.so
+f5884be933259b0e6a712cb018aaf24e3b349e67d308d8913203414b869361f1  debian-3.20--x86_64--gcc/libTDAmeritradeAPI.so
+1c531d16c1ab4b51f40f61d30d548bd677b161083b9c9e85c54ff6b359642541  windows-msvc/Win32/TDAmeritradeAPI.dll
+df1b46d23fcbbf73b1c365fb211ab0be522c849c9000c544e58aef5eae3bbe3b  windows-msvc/Win32/TDAmeritradeAPI.exp
+007108c827adaf171bb776fafe452713a7e8e1de330bf952a417c5865276a724  windows-msvc/Win32/TDAmeritradeAPI.lib
+667d0a5a389a2c91ddd686afcf198a2a482a1f5853e5d0474cf4892edf583c8b  windows-msvc/Win32/TDAmeritradeAPI.pdb
+9763ee2d7d2598a2f474bb07800f3b56d84a78fb018215ff959ffeb7b8115840  windows-msvc/x64/TDAmeritradeAPI.dll
+e9070b88cb5d776c3d028774e86750cdd8f66cefe0e315a4ba702f6ed40d16b0  windows-msvc/x64/TDAmeritradeAPI.exp
+4590dc281c4699020e1bdfdd6fc553ccdfc48db40da11208743fbd606bf60943  windows-msvc/x64/TDAmeritradeAPI.lib
+05b6824efe0f5e155703cfc90b9a17ae3f41d3f466e7d50c14b51205a8eab255  windows-msvc/x64/TDAmeritradeAPI.pdb
 
 
 Dependency Info:
