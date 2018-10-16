@@ -45,7 +45,7 @@ protected:
 public:
     typedef AccountGetterBase ProxyType;
     static const int TYPE_ID_LOW = TYPE_ID_GETTER_ACCOUNT_INFO;
-    static const int TYPE_ID_HIGH = TYPE_ID_GETTER_IND_TRANSACTION_HISTORY;
+    static const int TYPE_ID_HIGH = TYPE_ID_GETTER_ORDERS;
 
     std::string
     get_account_id() const
@@ -321,9 +321,9 @@ public:
     static const int TYPE_ID_HIGH = TYPE_ID_GETTER_IND_TRANSACTION_HISTORY;
 
     IndividualTransactionHistoryGetterImpl(
-        Credentials& creds,
-        const std::string& account_id,
-        const std::string& transaction_id)
+            Credentials& creds,
+            const std::string& account_id,
+            const std::string& transaction_id)
         :
             AccountGetterBaseImpl(creds, account_id),
             _transaction_id(transaction_id)
@@ -456,6 +456,171 @@ get_user_principals_for_streaming(Credentials& creds)
     return s.empty() ? json() : json::parse(s);
 }
 
+
+class OrderGetterImpl
+        : public AccountGetterBaseImpl {
+    string _order_id;
+
+    void
+    _build()
+    {
+        string url = URL_ACCOUNTS + util::url_encode(get_account_id())
+                    + "/orders/" + util::url_encode(_order_id);
+        APIGetterImpl::set_url(url);
+    }
+
+    virtual void
+    build()
+    { _build(); }
+
+public:
+    typedef OrderGetter ProxyType;
+    static const int TYPE_ID_LOW = TYPE_ID_GETTER_ORDER;
+    static const int TYPE_ID_HIGH = TYPE_ID_GETTER_ORDER;
+
+    OrderGetterImpl( Credentials& creds,
+                       const string& account_id,
+                       const string& order_id )
+        :
+            AccountGetterBaseImpl(creds, account_id),
+            _order_id(order_id)
+        {
+            if( order_id.empty() )
+                TDMA_API_THROW(ValueException,"empty order ID");
+
+            _build();
+        }
+
+    string
+    get_order_id() const
+    { return _order_id; }
+
+    void
+    set_order_id(const string& order_id)
+    {
+        if( order_id.empty() )
+            TDMA_API_THROW(ValueException,"empty order ID");
+
+        _order_id = order_id;
+        build();
+    }
+};
+
+
+class OrdersGetterImpl
+        : public AccountGetterBaseImpl {
+    unsigned int _nmax_results;
+    std::string _from_entered_time;
+    std::string _to_entered_time;
+    OrderStatusType _order_status_type;
+
+    void
+    _build()
+    {
+        vector<pair<string,string>> params{
+            {"maxResults", to_string(_nmax_results)},
+            {"fromEnteredTime", _from_entered_time},
+            {"toEnteredTime", _to_entered_time},
+            {"status", to_string(_order_status_type)}
+        };
+
+        string qstr = util::build_encoded_query_str(params);
+        string url = URL_ACCOUNTS + util::url_encode(get_account_id())
+                    + "/orders?" + qstr;
+
+        APIGetterImpl::set_url(url);
+    }
+
+    virtual void
+    build()
+    { _build(); }
+
+public:
+    typedef OrdersGetter ProxyType;
+    static const int TYPE_ID_LOW = TYPE_ID_GETTER_ORDERS;
+    static const int TYPE_ID_HIGH = TYPE_ID_GETTER_ORDERS;
+
+    OrdersGetterImpl( Credentials& creds,
+                        const string& account_id,
+                        unsigned int nmax_results,
+                        const std::string& from_entered_time,
+                        const std::string& to_entered_time,
+                        OrderStatusType order_status_type )
+        :
+            AccountGetterBaseImpl(creds, account_id),
+            _nmax_results(nmax_results),
+            _from_entered_time(from_entered_time),
+            _to_entered_time(to_entered_time),
+            _order_status_type(order_status_type)
+        {
+            if( nmax_results < 1 ){
+                TDMA_API_THROW(ValueException,"nmax_results < 1");
+            }
+            if( !util::is_valid_iso8601_datetime(from_entered_time) ){
+                TDMA_API_THROW( ValueException,
+                    "invalid ISO-8601 date/time: " + from_entered_time );
+            }
+            if( !util::is_valid_iso8601_datetime(to_entered_time) ){
+                    TDMA_API_THROW( ValueException,
+                        "invalid ISO-8601 date/time: " + to_entered_time );
+            }
+            _build();
+        }
+
+    unsigned int
+    get_nmax_results() const
+    { return _nmax_results; }
+
+    std::string
+    get_from_entered_time() const
+    { return _from_entered_time; }
+
+    std::string
+    get_to_entered_time() const
+    { return _to_entered_time; }
+
+    OrderStatusType
+    get_order_status_type() const
+    { return _order_status_type; }
+
+    void
+    set_nmax_results(unsigned int nmax_results)
+    {
+        if( nmax_results < 1 )
+            TDMA_API_THROW(ValueException,"nmax_results < 1");
+        _nmax_results = nmax_results;
+        build();
+    }
+
+    void
+    set_from_entered_time(const std::string& from_entered_time)
+    {
+        _from_entered_time = from_entered_time;
+        if( !util::is_valid_iso8601_datetime(from_entered_time) ){
+            TDMA_API_THROW( ValueException,
+                "invalid ISO-8601 date/time: " + from_entered_time );
+        }
+        build();
+    }
+
+    void
+    set_to_entered_time(const std::string& to_entered_time)
+    {
+        _to_entered_time = to_entered_time;
+        if( !util::is_valid_iso8601_datetime(to_entered_time) ){
+                TDMA_API_THROW( ValueException,
+                    "invalid ISO-8601 date/time: " + to_entered_time );
+        }
+        build();
+    }
+
+    void
+    set_order_status_type(OrderStatusType order_status_type)
+    {
+        _order_status_type = order_status_type;
+        build();
+    }
+};
 
 } /* tdma */
 
@@ -1047,18 +1212,217 @@ UserPrincipalsGetter_ReturnSurrogateIds_ABI(
         );
 }
 
-/*
-    void
-    UpdatePreferences( Credentials& creds, string account_id)
-    {
-        if( account_id.empty() ){
-            TDMA_API_THROW(ValueException,"account_id is empty");
-        }
+int
+OrderGetter_Create_ABI( Credentials *pcreds,
+                           const char* account_id,
+                           const char* order_id,
+                           OrderGetter_C *pgetter,
+                           int allow_exceptions )
+{
+    using ImplTy = OrderGetterImpl;
 
-        string url = URL_ACCOUNTS + account_id + "/preferences";
+    int err = getter_is_creatable<ImplTy>(pcreds, pgetter, allow_exceptions);
+    if( err )
+        return err;
 
-        // TODO
+    CHECK_PTR_KILL_PROXY(account_id, "account id", allow_exceptions, pgetter);
+    CHECK_PTR_KILL_PROXY(order_id, "order id", allow_exceptions, pgetter);
 
-        throw runtime_error("NOT IMPLEMENTED");
+    static auto meth = +[](Credentials *c, const char* aid, const char* oid){
+        return new ImplTy(*c, aid, oid);
+    };
+
+    ImplTy *obj;
+    tie(obj, err) = CallImplFromABI(allow_exceptions, meth, pcreds,
+                                    account_id, order_id);
+    if( err ){
+        kill_proxy(pgetter);
+        return err;
     }
- */
+
+    pgetter->obj = reinterpret_cast<void*>(obj);
+    pgetter->type_id = ImplTy::TYPE_ID_LOW;
+    return 0;
+}
+
+
+int
+OrderGetter_Destroy_ABI(OrderGetter_C *pgetter, int allow_exceptions)
+{
+    return destroy_proxy<OrderGetterImpl>(pgetter, allow_exceptions);
+}
+
+
+int
+OrderGetter_GetOrderId_ABI( OrderGetter_C *pgetter,
+                               char **buf,
+                               size_t *n,
+                               int allow_exceptions)
+{
+    return ImplAccessor<char**>::template get<OrderGetterImpl>(
+        pgetter, &OrderGetterImpl::get_order_id, buf, n, allow_exceptions
+        );
+}
+
+
+int
+OrderGetter_SetOrderId_ABI( OrderGetter_C *pgetter,
+                               const char *order_id,
+                               int allow_exceptions )
+{
+    return ImplAccessor<char**>::template set<OrderGetterImpl>(
+        pgetter, &OrderGetterImpl::set_order_id, order_id, allow_exceptions
+        );
+}
+
+
+int
+OrdersGetter_Create_ABI( struct Credentials *pcreds,
+                            const char* account_id,
+                            unsigned int nmax_results,
+                            const char* from_entered_time,
+                            const char* to_entered_time,
+                            int order_status_type,
+                            OrdersGetter_C *pgetter,
+                            int allow_exceptions )
+{
+    using ImplTy = OrdersGetterImpl;
+
+    int err = getter_is_creatable<ImplTy>(pcreds, pgetter, allow_exceptions);
+    if( err )
+        return err;
+
+    CHECK_PTR_KILL_PROXY(account_id, "account id", allow_exceptions, pgetter);
+    CHECK_PTR_KILL_PROXY(from_entered_time, "from entered time",
+                         allow_exceptions, pgetter);
+    CHECK_PTR_KILL_PROXY(to_entered_time, "to entered time",
+                         allow_exceptions, pgetter);
+    CHECK_ENUM_KILL_PROXY(OrderStatusType, order_status_type,
+                          allow_exceptions, pgetter);
+
+    static auto meth = +[](Credentials *c, const char* aid, unsigned int n,
+                           const char* from, const char* to, int os){
+        return new ImplTy( *c, aid, n, from, to,
+                           static_cast<OrderStatusType>(os) );
+    };
+
+    ImplTy *obj;
+    tie(obj, err) = CallImplFromABI(allow_exceptions, meth, pcreds, account_id,
+                                    nmax_results, from_entered_time,
+                                    to_entered_time, order_status_type);
+    if( err ){
+        kill_proxy(pgetter);
+        return err;
+    }
+
+    pgetter->obj = reinterpret_cast<void*>(obj);
+    pgetter->type_id = ImplTy::TYPE_ID_LOW;
+    return 0;
+}
+
+int
+OrdersGetter_Destroy_ABI(OrdersGetter_C *pgetter, int allow_exceptions)
+{
+    return destroy_proxy<OrdersGetterImpl>(pgetter, allow_exceptions);
+}
+
+int
+OrdersGetter_GetNMaxResults_ABI( OrdersGetter_C *pgetter,
+                                     unsigned int *nmax_results,
+                                    int allow_exceptions)
+{
+    return ImplAccessor<unsigned int>::template
+        get<OrdersGetterImpl>(
+            pgetter, &OrdersGetterImpl::get_nmax_results,
+            nmax_results, "nmax_results", allow_exceptions
+        );
+}
+
+int
+OrdersGetter_SetNMaxResults_ABI( OrdersGetter_C *pgetter,
+                                     unsigned int nmax_results,
+                                     int allow_exceptions )
+{
+    return ImplAccessor<unsigned int>::template
+        set<OrdersGetterImpl>(
+            pgetter, &OrdersGetterImpl::set_nmax_results,
+            nmax_results, allow_exceptions
+        );
+}
+
+int
+OrdersGetter_GetFromEnteredTime_ABI( OrdersGetter_C *pgetter,
+                                         char** buf,
+                                         size_t *n,
+                                         int allow_exceptions )
+{
+    return ImplAccessor<char**>::template
+        get<OrdersGetterImpl>(
+            pgetter, &OrdersGetterImpl::get_from_entered_time, buf, n,
+            allow_exceptions
+        );
+}
+
+int
+OrdersGetter_SetFromEnteredTime_ABI( OrdersGetter_C *pgetter,
+                                          const char* from_entered_time,
+                                          int allow_exceptions )
+{
+    return ImplAccessor<char**>::template
+        set<OrdersGetterImpl>(
+            pgetter, &OrdersGetterImpl::set_from_entered_time,
+            from_entered_time, allow_exceptions
+        );
+}
+
+int
+OrdersGetter_GetToEnteredTime_ABI( OrdersGetter_C *pgetter,
+                                       char** buf,
+                                       size_t *n,
+                                       int allow_exceptions )
+{
+    return ImplAccessor<char**>::template
+        get<OrdersGetterImpl>(
+            pgetter, &OrdersGetterImpl::get_to_entered_time, buf, n,
+            allow_exceptions
+        );
+}
+
+int
+OrdersGetter_SetToEnteredTime_ABI( OrdersGetter_C *pgetter,
+                                        const char* to_entered_time,
+                                        int allow_exceptions )
+{
+    return ImplAccessor<char**>::template
+        set<OrdersGetterImpl>(
+            pgetter, &OrdersGetterImpl::set_to_entered_time,
+            to_entered_time, allow_exceptions
+        );
+}
+
+int
+OrdersGetter_GetOrderStatusType_ABI( OrdersGetter_C *pgetter,
+                                         int *order_status_type,
+                                         int allow_exceptions )
+{
+    return ImplAccessor<int>::template
+        get<OrdersGetterImpl, OrderStatusType>(
+            pgetter, &OrdersGetterImpl::get_order_status_type,
+            order_status_type, "order_status_type", allow_exceptions
+        );
+}
+
+int
+OrdersGetter_SetOrderStatusType_ABI( OrdersGetter_C *pgetter,
+                                         int order_status_type,
+                                         int allow_exceptions )
+{
+    CHECK_ENUM(OrderStatusType, order_status_type, allow_exceptions);
+
+    return ImplAccessor<int>::template
+        set<OrdersGetterImpl, OrderStatusType>(
+            pgetter, &OrdersGetterImpl::set_order_status_type,
+            order_status_type, allow_exceptions
+        );
+}
+

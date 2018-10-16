@@ -405,26 +405,6 @@ DECL_C_CPP_TDMA_ENUM(StreamingCallbackType, 0, 6,
 static const int SUBSCRIPTION_MAX_FIELDS = 100;
 static const int SUBSCRIPTION_MAX_SYMBOLS = 5000;
 
-static const int TYPE_ID_SUB_QUOTES = 1;
-static const int TYPE_ID_SUB_OPTIONS = 2;
-static const int TYPE_ID_SUB_LEVEL_ONE_FUTURES = 3;
-static const int TYPE_ID_SUB_LEVEL_ONE_FOREX = 4;
-static const int TYPE_ID_SUB_LEVEL_ONE_FUTURES_OPTIONS = 5;
-static const int TYPE_ID_SUB_NEWS_HEADLINE = 6;
-static const int TYPE_ID_SUB_CHART_EQUITY = 7;
-static const int TYPE_ID_SUB_CHART_FOREX = 8; // not working
-static const int TYPE_ID_SUB_CHART_FUTURES = 9;
-static const int TYPE_ID_SUB_CHART_OPTIONS = 10;
-static const int TYPE_ID_SUB_TIMESALE_EQUITY = 11;
-static const int TYPE_ID_SUB_TIMESALE_FOREX = 12; // not working
-static const int TYPE_ID_SUB_TIMESALE_FUTURES = 13;
-static const int TYPE_ID_SUB_TIMESALE_OPTIONS = 14;
-static const int TYPE_ID_SUB_ACTIVES_NASDAQ = 15;
-static const int TYPE_ID_SUB_ACTIVES_NYSE = 16;
-static const int TYPE_ID_SUB_ACTIVES_OTCBB = 17;
-static const int TYPE_ID_SUB_ACTIVES_OPTION = 18;
-
-
 #define DECL_CSUB_STRUCT(name) typedef struct{ void *obj; int type_id; } name
 
 DECL_CSUB_STRUCT(QuotesSubscription_C);
@@ -797,7 +777,6 @@ OptionActivesSubscription_GetVenue(OptionActivesSubscription_C *psub,
 
 namespace tdma{
 
-
 struct StreamerCredentials{
     std::string user_id;
     std::string token;
@@ -939,7 +918,6 @@ public:
                                       symbols,
                                       fields )
         {
-            assert( csub<>()->type_id == TYPE_ID_SUB_QUOTES );
         }
 
     std::set<FieldType>
@@ -966,7 +944,6 @@ public:
                                       symbols,
                                       fields )
         {
-            assert( csub<>()->type_id == TYPE_ID_SUB_OPTIONS);
         }
 
     std::set<FieldType>
@@ -992,7 +969,6 @@ public:
                                       symbols,
                                       fields )
         {
-            assert( csub<>()->type_id == TYPE_ID_SUB_LEVEL_ONE_FUTURES);
         }
 
     std::set<FieldType>
@@ -1022,7 +998,6 @@ public:
                                       symbols,
                                       fields )
         {
-            assert( csub<>()->type_id == TYPE_ID_SUB_LEVEL_ONE_FOREX);
         }
 
     std::set<FieldType>
@@ -1054,7 +1029,6 @@ public:
                 fields
                 )
         {
-            assert( csub<>()->type_id == TYPE_ID_SUB_LEVEL_ONE_FUTURES_OPTIONS);
         }
 
     std::set<FieldType>
@@ -1084,7 +1058,6 @@ public:
                                       symbols,
                                       fields )
         {
-            assert( csub<>()->type_id == TYPE_ID_SUB_NEWS_HEADLINE );
         }
 
     std::set<FieldType>
@@ -1115,7 +1088,6 @@ public:
                                       symbols,
                                       fields )
         {
-            assert( csub<>()->type_id == TYPE_ID_SUB_CHART_EQUITY );
         }
 
     std::set<FieldType>
@@ -1183,7 +1155,6 @@ public:
                                    ChartFuturesSubscription_Create_ABI,
                                    symbols, fields )
         {
-            assert( csub<>()->type_id == TYPE_ID_SUB_CHART_FUTURES );
         }
 };
 
@@ -1203,7 +1174,6 @@ public:
                                    ChartOptionsSubscription_Create_ABI,
                                    symbols, fields )
         {
-            assert( csub<>()->type_id == TYPE_ID_SUB_CHART_OPTIONS );
         }
 };
 
@@ -1250,7 +1220,6 @@ public:
                                       TimesaleEquitySubscription_Create_ABI,
                                      symbols, fields)
         {
-            assert( csub<>()->type_id == TYPE_ID_SUB_TIMESALE_EQUITY );
         }
 };
 
@@ -1284,7 +1253,6 @@ public:
                                       TimesaleFuturesSubscription_Create_ABI,
                                       symbols, fields)
         {
-            assert( csub<>()->type_id == TYPE_ID_SUB_TIMESALE_FUTURES );
         }
 };
 
@@ -1303,7 +1271,6 @@ public:
                                       TimesaleOptionsSubscription_Create_ABI,
                                       symbols, fields)
         {
-            assert( csub<>()->type_id == TYPE_ID_SUB_TIMESALE_OPTIONS );
         }
 };
 
@@ -1344,7 +1311,6 @@ public:
                                      NasdaqActivesSubscription_Create_ABI,
                                      static_cast<int>(duration) )
         {
-            assert( csub<>()->type_id == TYPE_ID_SUB_ACTIVES_NASDAQ );
         }
 };
 
@@ -1362,7 +1328,6 @@ public:
                                      NYSEActivesSubscription_Create_ABI,
                                      static_cast<int>(duration) )
         {
-            assert( csub<>()->type_id == TYPE_ID_SUB_ACTIVES_NYSE );
         }
 };
 
@@ -1380,7 +1345,6 @@ public:
                                      OTCBBActivesSubscription_Create_ABI,
                                      static_cast<int>(duration) )
         {
-            assert( csub<>()->type_id == TYPE_ID_SUB_ACTIVES_OTCBB );
         }
 };
 
@@ -1399,7 +1363,6 @@ public:
                                      static_cast<int>(venue),
                                      static_cast<int>(duration) )
         {
-            assert( csub<>()->type_id == TYPE_ID_SUB_ACTIVES_OPTION );
         }
 
     VenueType
@@ -1424,8 +1387,6 @@ public:
 #define STREAMING_DEF_LISTENING_TIMEOUT 30000
 #define STREAMING_DEF_SUBSCRIBE_TIMEOUT 1500
 #define STREAMING_MAX_SUBSCRIPTIONS 50
-
-static const int TYPE_ID_STREAMING_SESSION = 100;
 
 
 typedef void(*streaming_cb_ty)(int, int, unsigned long long, const char*);
@@ -1620,7 +1581,6 @@ public:
             call_abi( StreamingSession_Create_ABI, &creds, callback,
                       connect_timeout.count(), listening_timeout.count(),
                       subscribe_timeout.count(), ss->_obj.get() );
-            assert( ss->_obj.get()->type_id == TYPE_ID_STREAMING_SESSION );
         }catch(...){
             if( ss ) delete ss;
             throw;

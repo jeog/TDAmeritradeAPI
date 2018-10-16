@@ -1,5 +1,6 @@
 
 #include <iostream>
+#include <iomanip>
 #include <chrono>
 
 #include "test.h"
@@ -22,12 +23,13 @@ void market_hours_getter(Credentials& c);
 
 void movers_getter(Credentials& c);
 
-void account_info_getter(std::string id, Credentials& c);
-void preferences_getter(std::string id, Credentials& c);
+void account_info_getter(string id, Credentials& c);
+void preferences_getter(string id, Credentials& c);
 void user_principals_getter(Credentials& c);
-void subscription_keys_getter(std::string id, Credentials& c);
-void transaction_history_getter(std::string id, Credentials& c);
-void individual_transaction_history_getter(std::string id, Credentials& c);
+void subscription_keys_getter(string id, Credentials& c);
+void transaction_history_getter(string id, Credentials& c);
+void individual_transaction_history_getter(string id, Credentials& c);
+void order_getters(string id, Credentials& c);
 
 void
 test_getters(const string& account_id, Credentials& creds)
@@ -64,6 +66,7 @@ test_getters(const string& account_id, Credentials& creds)
     preferences_getter(account_id, creds);
     user_principals_getter(creds);
     subscription_keys_getter(account_id, creds);
+    order_getters(account_id, creds);
     this_thread::sleep_for( seconds(3) );
 
 
@@ -74,16 +77,216 @@ test_getters(const string& account_id, Credentials& creds)
     }catch( ServerError& e){
         cout<<"caught server error: " << e << endl;
     }
+    this_thread::sleep_for( seconds(3) );
+
+    cout<< endl << """*** ORDERS DATA ***" << endl;
+    order_getters(account_id, creds);
+
 }
 
 void
-Get(APIGetter& getter)
+Get(APIGetter& getter, bool test_exc = false, string test_exc_msg="")
 {
-    if( use_live_connection )
+    if( use_live_connection ){
         cout<< getter.get() << endl << endl;
-    else
+        if(test_exc)
+            throw runtime_error(test_exc_msg);
+    }else
         cout<< "CAN NOT TEST GET WITHOUT USING LIVE CONNECTION" << endl;
 }
+
+json
+GetJson(APIGetter& getter, bool test_exc = false, string test_exc_msg="")
+{
+    json j;
+    if( use_live_connection ){
+        j = getter.get();
+        if(test_exc)
+            throw runtime_error(test_exc_msg);
+        cout<< j << endl << endl;
+    }
+    else{
+        cout<< "CAN NOT TEST GET WITHOUT USING LIVE CONNECTION" << endl;
+    }
+    return j;
+}
+
+string
+build_order_date(tm* t)
+{
+    stringstream ss;
+    ss << (t->tm_year + 1900) << setfill('0') << '-' << setw(2)
+       << (t->tm_mon + 1) << '-' << setw(2) << t->tm_mday;
+    return ss.str();
+}
+
+void
+order_getters(string id, Credentials& c)
+{
+    std::vector<string> orders;
+
+    auto tp_now = chrono::system_clock::now() - chrono::hours(5);
+    auto tp_1ago = tp_now - chrono::hours(24);
+    auto tp_20ago = tp_now - chrono::hours(20 * 24);
+    auto tp_59ago = tp_now - chrono::hours(59 * 24);
+
+    time_t tt_now = chrono::system_clock::to_time_t(tp_now);
+    time_t tt_1ago = chrono::system_clock::to_time_t(tp_1ago);
+    time_t tt_20ago = chrono::system_clock::to_time_t(tp_20ago);
+    time_t tt_59ago = chrono::system_clock::to_time_t(tp_59ago);
+
+    tm tm_now = *gmtime(&tt_now);
+    tm tm_1ago = *gmtime(&tt_1ago);
+    tm tm_20ago = *gmtime(&tt_20ago);
+    tm tm_59ago = *gmtime(&tt_59ago);
+
+    string fromdate1 = build_order_date(&tm_59ago);
+    string todate1 = build_order_date(&tm_now);
+    string fromdate2 = build_order_date(&tm_20ago);
+    string todate2 = build_order_date(&tm_1ago);
+
+    OrdersGetter os(c, id, 10, fromdate1, todate1, OrderStatusType::CANCELED);
+
+    cout<< os.get_account_id() << ' ' << os.get_nmax_results() << ' '
+        << os.get_from_entered_time() << ' ' << os.get_to_entered_time() << ' '
+        << os.get_order_status_type() << endl;
+
+    if( os.get_account_id() != id )
+        throw runtime_error("invalid account id");
+    if( os.get_nmax_results() != 10 )
+        throw runtime_error("invalid nmax results");
+    if( os.get_from_entered_time() != fromdate1)
+        throw runtime_error("invalid from_entered_time");
+    if( os.get_to_entered_time() != todate1)
+        throw runtime_error("invalid to_entered_time");
+    if( os.get_order_status_type() != OrderStatusType::CANCELED )
+        throw runtime_error("invalid order_status_type");
+
+    json orders_j = GetJson(os);
+
+    for(auto& o : orders_j){
+        orders.push_back( to_string((unsigned long long)o["orderId"]) );
+    }
+
+    os.set_order_status_type(OrderStatusType::WORKING);
+    if( os.get_order_status_type() != OrderStatusType::WORKING )
+        throw runtime_error("invalid order_status_type");
+
+    orders_j = GetJson(os);
+
+    for(auto& o : orders_j){
+        orders.push_back( to_string((unsigned long long)o["orderId"]) );
+    }
+
+    os.set_order_status_type(OrderStatusType::QUEUED);
+    if( os.get_order_status_type() != OrderStatusType::QUEUED )
+        throw runtime_error("invalid order_status_type");
+
+    orders_j = GetJson(os);
+
+    for(auto& o : orders_j){
+        orders.push_back( to_string((unsigned long long)o["orderId"]) );
+    }
+
+    os.set_nmax_results(1);
+    os.set_from_entered_time(fromdate2);
+    os.set_to_entered_time(todate2);
+    os.set_order_status_type(OrderStatusType::REJECTED);
+
+    cout<< os.get_account_id() << ' ' << os.get_nmax_results() << ' '
+        << os.get_from_entered_time() << ' ' << os.get_to_entered_time() << ' '
+        << os.get_order_status_type() << endl;
+
+    if( os.get_account_id() != id )
+        throw runtime_error("invalid account id");
+    if( os.get_nmax_results() != 1 )
+        throw runtime_error("invalid nmax results");
+    if( os.get_from_entered_time() != fromdate2 )
+        throw runtime_error("invalid from_entered_time");
+    if( os.get_to_entered_time() != todate2 )
+        throw runtime_error("invalid to_entered_time");
+    if( os.get_order_status_type() != OrderStatusType::REJECTED )
+        throw runtime_error("invalid order_status_type");
+
+    try{
+        os.set_account_id("");
+        throw runtime_error("failed to catch .set_account_id() exc");
+    }catch(APIException& e){
+        cout<< "successfully caught: " << e << endl << endl;
+    }
+    try{
+        os.set_from_entered_time("");
+        throw runtime_error("failed to catch .set_from_entered_time() exc");
+    }catch(APIException& e){
+        cout<< "successfully caught: " << e << endl << endl;
+    }
+    try{
+        os.set_to_entered_time("");
+        throw runtime_error("failed to catch .set_to_entered_time() exc");
+    }catch(APIException& e){
+        cout<< "successfully caught: " << e << endl << endl;
+    }
+    try{
+        os.set_nmax_results(0);
+        throw runtime_error("failed to catch .set_from_nmax_results() exc");
+    }catch(APIException& e){
+        cout<< "successfully caught: " << e << endl << endl;
+    }
+
+    if( orders.empty() ){
+        cout<< "NO CANCELED/QUEUED/WORKING ORDERS OVER LAST 59 DAYS"
+            << " - SKIP OrderGetter (non-exception) tests" << endl;
+
+        OrderGetter o(c, id, "000000000");
+        try{
+            Get(o, true, "failed to catch .get() w/ bad order id exc");
+        }catch(InvalidRequest& e){
+            cout<< "successfully caught: " << e << endl << endl;
+        }
+    }else{
+        string order = orders[0];
+        OrderGetter o(c, id, order);
+        cout<< o.get_account_id() << ' ' << o.get_order_id() << endl;
+
+        if( o.get_order_id() != order)
+            throw runtime_error("invalid order_id");
+        if( o.get_account_id() != id )
+            throw runtime_error("invalid account id");
+
+        Get(o);
+
+        order = orders.size() > 1 ? orders[1] : orders[0];
+        o.set_order_id(order);
+        cout<< o.get_account_id() << ' ' << o.get_order_id() << endl;
+
+        if( o.get_order_id() != order)
+            throw runtime_error("invalid order_id");
+        if( o.get_account_id() != id )
+            throw runtime_error("invalid account id");
+
+        Get(o);
+
+        o.set_order_id("000000000");
+        try{
+            Get(o, true, "failed to catch .get() with bad order id exc");
+        }catch(InvalidRequest& e){
+            cout<< "successfully caught: " << e << endl << endl;
+        }
+        try{
+            o.set_account_id("");
+            throw runtime_error("failed to catch .set_account_id() exc");
+        }catch(APIException& e){
+            cout<< "successfully caught: " << e << endl << endl;
+        }
+        try{
+            o.set_order_id("");
+            throw runtime_error("failed to catch .set_account_id() exc");
+        }catch(APIException& e){
+            cout<< "successfully caught: " << e << endl << endl;
+        }
+    }
+}
+
 
 void
 transaction_history_getter(string id, Credentials& c)
@@ -94,15 +297,15 @@ transaction_history_getter(string id, Credentials& c)
         << o.get_end_date() << endl;
 
     if( o.get_symbol() != "SPY")
-        throw std::runtime_error("invalid symbol");
+        throw runtime_error("invalid symbol");
     if( o.get_account_id() != id )
-        throw std::runtime_error("invalid account id");
+        throw runtime_error("invalid account id");
     if( o.get_transaction_type() != TransactionType::all )
-        throw std::runtime_error("invalid transaction type");
+        throw runtime_error("invalid transaction type");
     if( o.get_start_date() != "" )
-        throw std::runtime_error("invalid start date");
+        throw runtime_error("invalid start date");
     if( o.get_end_date() != "" )
-        throw std::runtime_error("invalid end date");
+        throw runtime_error("invalid end date");
 
     Get(o);
 
@@ -114,15 +317,15 @@ transaction_history_getter(string id, Credentials& c)
         << o.get_end_date() << endl;
 
     if( o.get_symbol() != "")
-        throw std::runtime_error("invalid symbol");
+        throw runtime_error("invalid symbol");
     if( o.get_account_id() != id )
-        throw std::runtime_error("invalid account id");
+        throw runtime_error("invalid account id");
     if( o.get_transaction_type() != TransactionType::trade )
-        throw std::runtime_error("invalid transaction type");
+        throw runtime_error("invalid transaction type");
     if( o.get_start_date() != "2018-01-01" )
-        throw std::runtime_error("invalid start date");
+        throw runtime_error("invalid start date");
     if( o.get_end_date() != "" )
-        throw std::runtime_error("invalid end date");
+        throw runtime_error("invalid end date");
 
     Get(o);
 }
@@ -133,9 +336,9 @@ individual_transaction_history_getter(string id, Credentials& c)
     IndividualTransactionHistoryGetter o(c, id, "093432432"); // bad id
     cout<< o.get_account_id() << ' ' << o.get_transaction_id() << endl;
     if( o.get_account_id() != id )
-        throw std::runtime_error("invalid account id");
+        throw runtime_error("invalid account id");
     if( o.get_transaction_id() != "093432432" )
-        throw std::runtime_error("invalid transaction id");
+        throw runtime_error("invalid transaction id");
 
     try{
         Get(o);
@@ -152,11 +355,11 @@ account_info_getter(string id, Credentials& c)
         << o.returns_orders() << endl;
 
     if( o.get_account_id() != id )
-        throw std::runtime_error("invalid account id");
+        throw runtime_error("invalid account id");
     if( o.returns_positions() != false )
-        throw std::runtime_error("invalid returns positions");
+        throw runtime_error("invalid returns positions");
     if( o.returns_orders() != false )
-        throw std::runtime_error("invalid returns orders");
+        throw runtime_error("invalid returns orders");
 
     Get(o);
 
@@ -166,11 +369,11 @@ account_info_getter(string id, Credentials& c)
         << o.returns_orders() << endl;
 
     if( o.get_account_id() != id )
-        throw std::runtime_error("invalid account id");
+        throw runtime_error("invalid account id");
     if( o.returns_positions() != true )
-        throw std::runtime_error("invalid returns positions");
+        throw runtime_error("invalid returns positions");
     if( o.returns_orders() != true )
-        throw std::runtime_error("invalid returns orders");
+        throw runtime_error("invalid returns orders");
 
     Get(o);
 
@@ -179,11 +382,11 @@ account_info_getter(string id, Credentials& c)
         << o.returns_orders() << endl;
 
     if( o.get_account_id() != "BAD_ACCOUNT_ID" )
-        throw std::runtime_error("invalid account id");
+        throw runtime_error("invalid account id");
     if( o.returns_positions() != true )
-        throw std::runtime_error("invalid returns positions");
+        throw runtime_error("invalid returns positions");
     if( o.returns_orders() != true )
-        throw std::runtime_error("invalid returns orders");
+        throw runtime_error("invalid returns orders");
 
     try{
         Get(o);
@@ -200,7 +403,7 @@ preferences_getter(string id, Credentials& c)
     cout<< o.get_account_id() << endl;
 
     if( o.get_account_id() != id )
-        throw std::runtime_error("invalid account id");
+        throw runtime_error("invalid account id");
 
     Get(o);
 }
@@ -215,13 +418,13 @@ user_principals_getter(Credentials& c)
         << o.returns_preferences() << ' ' << o.returns_surrogate_ids() << endl;
 
     if( o.returns_streamer_subscription_keys() != false )
-        throw std::runtime_error("invalid returns streamer subscription keys");
+        throw runtime_error("invalid returns streamer subscription keys");
     if( o.returns_streamer_connection_info() != false )
-        throw std::runtime_error("invalid returns streamer connection info");
+        throw runtime_error("invalid returns streamer connection info");
     if( o.returns_preferences() != false )
-        throw std::runtime_error("invalid returns preferences");
+        throw runtime_error("invalid returns preferences");
     if( o.returns_surrogate_ids() != false )
-        throw std::runtime_error("invalid returns surrogate_ids");
+        throw runtime_error("invalid returns surrogate_ids");
 
     Get(o);
 
@@ -234,13 +437,13 @@ user_principals_getter(Credentials& c)
         << o.returns_preferences() << ' ' << o.returns_surrogate_ids() << endl;
 
     if( o.returns_streamer_subscription_keys() != true )
-        throw std::runtime_error("invalid returns streamer subscription keys");
+        throw runtime_error("invalid returns streamer subscription keys");
     if( o.returns_streamer_connection_info() != true )
-        throw std::runtime_error("invalid returns streamer connection info");
+        throw runtime_error("invalid returns streamer connection info");
     if( o.returns_preferences() != true )
-        throw std::runtime_error("invalid returns preferences");
+        throw runtime_error("invalid returns preferences");
     if( o.returns_surrogate_ids() != true )
-        throw std::runtime_error("invalid returns surrogate_ids");
+        throw runtime_error("invalid returns surrogate_ids");
 
     Get(o);
 }
@@ -252,7 +455,7 @@ subscription_keys_getter(string id, Credentials& c)
     cout<< o.get_account_id() << endl;
 
     if( o.get_account_id() != id )
-        throw std::runtime_error("invalid account id");
+        throw runtime_error("invalid account id");
 
     Get(o);
 }
@@ -267,11 +470,11 @@ movers_getter(Credentials& c)
         << o.get_change_type() << endl;
 
     if( o.get_index() != MoversIndex::compx )
-        throw std::runtime_error("invalid index");
+        throw runtime_error("invalid index");
     if( o.get_direction_type() != MoversDirectionType::up )
-        throw std::runtime_error("invalid direction type");
+        throw runtime_error("invalid direction type");
     if( o.get_change_type() != MoversChangeType::value )
-        throw std::runtime_error("invalid change type");
+        throw runtime_error("invalid change type");
 
     Get(o);
 
@@ -282,11 +485,11 @@ movers_getter(Credentials& c)
         << o.get_change_type() << endl;
 
     if( o.get_index() != MoversIndex::dji )
-        throw std::runtime_error("invalid index");
+        throw runtime_error("invalid index");
     if( o.get_direction_type() != MoversDirectionType::up_and_down )
-        throw std::runtime_error("invalid direction type");
+        throw runtime_error("invalid direction type");
     if( o.get_change_type() != MoversChangeType::percent )
-        throw std::runtime_error("invalid change type");
+        throw runtime_error("invalid change type");
 
     Get(o);
 }
@@ -299,9 +502,9 @@ market_hours_getter(Credentials& c)
     cout<< o.get_date() << ' ' << o.get_market_type() << endl;
 
     if( o.get_date() != "2019-07-04" )
-        throw std::runtime_error("invalid date");
+        throw runtime_error("invalid date");
     if( o.get_market_type() != MarketType::bond )
-        throw std::runtime_error("invalid market type");
+        throw runtime_error("invalid market type");
 
     Get(o);
 
@@ -310,9 +513,9 @@ market_hours_getter(Credentials& c)
     cout<< o.get_date() << ' ' << o.get_market_type() << endl;
 
     if( o.get_date() != "2019-07-05" )
-        throw std::runtime_error("invalid date");
+        throw runtime_error("invalid date");
     if( o.get_market_type() != MarketType::equity )
-        throw std::runtime_error("invalid market type");
+        throw runtime_error("invalid market type");
 
     Get(o);
 }
@@ -325,9 +528,9 @@ instrument_info_getter(Credentials& c)
     cout<< o.get_query_string() << ' ' << o.get_search_type() << endl;
 
     if( o.get_query_string() != "SPY" )
-        throw std::runtime_error("invalid query string");
+        throw runtime_error("invalid query string");
     if( o.get_search_type() != InstrumentSearchType::symbol_exact )
-        throw std::runtime_error("invalid search type");
+        throw runtime_error("invalid search type");
 
     Get(o);
 
@@ -335,9 +538,9 @@ instrument_info_getter(Credentials& c)
     cout<< o.get_query_string() << ' ' << o.get_search_type() << endl;
 
     if( o.get_query_string() != "GOOGL?" )
-        throw std::runtime_error("invalid query string");
+        throw runtime_error("invalid query string");
     if( o.get_search_type() != InstrumentSearchType::symbol_regex)
-        throw std::runtime_error("invalid search type");
+        throw runtime_error("invalid search type");
 
     Get(o);
 
@@ -345,9 +548,9 @@ instrument_info_getter(Credentials& c)
     cout<< o.get_query_string() << ' ' << o.get_search_type() << endl;
 
     if( o.get_query_string() != "SPDR S.+P 500.*" )
-        throw std::runtime_error("invalid query string");
+        throw runtime_error("invalid query string");
     if( o.get_search_type() != InstrumentSearchType::description_regex)
-        throw std::runtime_error("invalid search type");
+        throw runtime_error("invalid search type");
 
     Get(o);
 
@@ -355,9 +558,9 @@ instrument_info_getter(Credentials& c)
     cout<< o.get_query_string() << ' ' << o.get_search_type() << endl;
 
     if( o.get_query_string() != "78462F103" )
-        throw std::runtime_error("invalid query string");
+        throw runtime_error("invalid query string");
     if( o.get_search_type() != InstrumentSearchType::cusip)
-        throw std::runtime_error("invalid search type");
+        throw runtime_error("invalid search type");
 
     Get(o);
 }
@@ -392,31 +595,31 @@ operator<<(ostream& out, const OptionChainAnalyticalGetter &ocag)
 
 void
 check_option_chain_getter( const OptionChainGetter& o,
-                               const std::string& symbol,
+                               const string& symbol,
                                const OptionStrikes& strikes,
                                OptionContractType contract_type,
                                bool include_quotes,
-                               const std::string& from_date,
-                               const std::string& to_date,
+                               const string& from_date,
+                               const string& to_date,
                                OptionExpMonth exp_month,
                                OptionType option_type)
 {
     if( o.get_symbol() != symbol )
-        throw std::runtime_error("invalid symbol");
+        throw runtime_error("invalid symbol");
     if( o.get_strikes() != strikes )
-        throw std::runtime_error("invalid strikes");
+        throw runtime_error("invalid strikes");
     if( o.get_contract_type() != contract_type )
-        throw std::runtime_error("invalid contract type");
+        throw runtime_error("invalid contract type");
     if( o.includes_quotes() != include_quotes )
-        throw std::runtime_error("invalid include quotes");
+        throw runtime_error("invalid include quotes");
     if( o.get_from_date() != from_date )
-        throw std::runtime_error("invalid from date");
+        throw runtime_error("invalid from date");
     if( o.get_to_date() != to_date )
-        throw std::runtime_error("invalid to date");
+        throw runtime_error("invalid to date");
     if( o.get_exp_month() != exp_month )
-        throw std::runtime_error("invalid exp month");
+        throw runtime_error("invalid exp month");
     if( o.get_option_type() != option_type )
-        throw std::runtime_error("invalid option type");
+        throw runtime_error("invalid option type");
 }
 
 
@@ -431,13 +634,13 @@ void option_chain_analytical_getter(Credentials& c)
     check_option_chain_getter(ocg, "KORS", strikes, OptionContractType::call,
                               true, "", "", OptionExpMonth::jan, OptionType::all);
     if( ocg.get_volatility() != 30.00 )
-        throw std::runtime_error("invalid volatility");
+        throw runtime_error("invalid volatility");
     if( ocg.get_underlying_price() != 65.00 )
-            throw std::runtime_error("invalid underlying price");
+            throw runtime_error("invalid underlying price");
     if( ocg.get_interest_rate() != 3.0 )
-            throw std::runtime_error("invalid interest rate");
+            throw runtime_error("invalid interest rate");
     if( ocg.get_days_to_exp() != 100 )
-            throw std::runtime_error("invalid days to exp");
+            throw runtime_error("invalid days to exp");
 
     Get(ocg);
 
@@ -455,13 +658,13 @@ void option_chain_analytical_getter(Credentials& c)
                               true, "", "2020-01-01", OptionExpMonth::jan,
                               OptionType::all);
     if( ocg.get_volatility() != 40.00 )
-        throw std::runtime_error("invalid volatility");
+        throw runtime_error("invalid volatility");
     if( ocg.get_underlying_price() != 70.00 )
-            throw std::runtime_error("invalid underlying price");
+            throw runtime_error("invalid underlying price");
     if( ocg.get_interest_rate() != 1.0 )
-            throw std::runtime_error("invalid interest rate");
+            throw runtime_error("invalid interest rate");
     if( ocg.get_days_to_exp() != 1 )
-            throw std::runtime_error("invalid days to exp");
+            throw runtime_error("invalid days to exp");
 
     Get(ocg);
 }
@@ -480,7 +683,7 @@ void option_chain_strategy_getter(Credentials& c)
                               false, "", "", OptionExpMonth::jan,
                               OptionType::all);
     if( ocg.get_strategy() != strategy )
-        throw std::runtime_error("invalid strategy");
+        throw runtime_error("invalid strategy");
 
     Get(ocg);
 
@@ -498,7 +701,7 @@ void option_chain_strategy_getter(Credentials& c)
                               false, "", "", OptionExpMonth::jan,
                               OptionType::all);
     if( ocg.get_strategy() != strategy )
-        throw std::runtime_error("invalid strategy");
+        throw runtime_error("invalid strategy");
 
     Get(ocg);
 
@@ -517,7 +720,7 @@ void option_chain_strategy_getter(Credentials& c)
                               true, "2019-01-18", "2019-02-15",
                               OptionExpMonth::all, OptionType::s);
     if( ocg.get_strategy() != strategy )
-        throw std::runtime_error("invalid strategy");
+        throw runtime_error("invalid strategy");
 
     Get(ocg);
 }
@@ -595,22 +798,22 @@ historical_getters(Credentials& c)
     cout<< hpg<< endl;
 
     if( hpg.get_symbol() != "SPY" ){
-        throw std::runtime_error("invalid symbol");
+        throw runtime_error("invalid symbol");
     }
     if( hpg.get_period_type() != PeriodType::month ){
-        throw std::runtime_error("invalid period type");
+        throw runtime_error("invalid period type");
     }
     if( hpg.get_period() != 1 ){
-        throw std::runtime_error("invalid period");
+        throw runtime_error("invalid period");
     }
     if( hpg.get_frequency_type() != FrequencyType::daily ){
-        throw std::runtime_error("invalid frequency type");
+        throw runtime_error("invalid frequency type");
     }
     if( hpg.get_frequency() != 1 ){
-        throw std::runtime_error("invalid frequency");
+        throw runtime_error("invalid frequency");
     }
     if( hpg.is_extended_hours() != true ){
-        throw std::runtime_error("invalid is extended hours");
+        throw runtime_error("invalid is extended hours");
     }
 
     Get(hpg);
@@ -621,22 +824,22 @@ historical_getters(Credentials& c)
     hpg.set_extended_hours(false);
     cout<< hpg;
     if( hpg.get_symbol() != "QQQ" ){
-        throw std::runtime_error("invalid symbol");
+        throw runtime_error("invalid symbol");
     }
     if( hpg.get_period_type() != PeriodType::day ){
-        throw std::runtime_error("invalid period type");
+        throw runtime_error("invalid period type");
     }
     if( hpg.get_period() != 3 ){
-        throw std::runtime_error("invalid period");
+        throw runtime_error("invalid period");
     }
     if( hpg.get_frequency_type() != FrequencyType::minute ){
-        throw std::runtime_error("invalid frequency type");
+        throw runtime_error("invalid frequency type");
     }
     if( hpg.get_frequency() != 30 ){
-        throw std::runtime_error("invalid frequency");
+        throw runtime_error("invalid frequency");
     }
     if( hpg.is_extended_hours() != false ){
-        throw std::runtime_error("invalid is extended hours");
+        throw runtime_error("invalid is extended hours");
     }
 
     Get(hpg);
@@ -645,7 +848,7 @@ historical_getters(Credentials& c)
     try{
         if( use_live_connection ){
             cout<< hpg.get() << endl << endl;
-            throw std::runtime_error("failed to catch exception for bad frequency type");
+            throw runtime_error("failed to catch exception for bad frequency type");
         }else{
             cout<< "CAN NOT TEST GET WITHOUT USING LIVE CONNECTION" << endl;
         }
@@ -655,7 +858,7 @@ historical_getters(Credentials& c)
 
     try{
         hpg.set_period(PeriodType::month, 99);
-        throw std::runtime_error("failed to catch exception for bad period");
+        throw runtime_error("failed to catch exception for bad period");
     }catch(ValueException& e){
         cout<< "succesfully caught: " << e << endl;
     }
@@ -668,51 +871,51 @@ historical_getters(Credentials& c)
     cout<< hrg << endl;
 
     if( hrg.get_symbol() != "SPY" ){
-        throw std::runtime_error("invalid symbol");
+        throw runtime_error("invalid symbol");
     }
     if( hrg.get_frequency_type() != FrequencyType::minute ){
-        throw std::runtime_error("invalid frequency type");
+        throw runtime_error("invalid frequency type");
     }
     if( hrg.get_frequency() != 30 ){
-        throw std::runtime_error("invalid frequency");
+        throw runtime_error("invalid frequency");
     }
     if( hrg.get_start_msec_since_epoch() != start ){
-        throw std::runtime_error("invalid start msec since epoch");
+        throw runtime_error("invalid start msec since epoch");
     }
     if( hrg.get_end_msec_since_epoch() != end ){
-        throw std::runtime_error("invalid end msec since epoch");
+        throw runtime_error("invalid end msec since epoch");
     }
     if( hrg.is_extended_hours() != true ){
-        throw std::runtime_error("invalid is extended hours");
+        throw runtime_error("invalid is extended hours");
     }
 
     Get(hrg);
 
     try{
         hrg.set_frequency(FrequencyType::minute, 31);
-        throw std::runtime_error("failed to catch exception for bad frequency");
+        throw runtime_error("failed to catch exception for bad frequency");
     }catch(ValueException& e){
         cout<< "succesfully caught: " << e << endl;
     }
 
     hrg.set_frequency(FrequencyType::monthly, 1);
     if( hrg.get_symbol() != "SPY" ){
-        throw std::runtime_error("invalid symbol");
+        throw runtime_error("invalid symbol");
     }
     if( hrg.get_frequency_type() != FrequencyType::monthly){
-        throw std::runtime_error("invalid frequency type");
+        throw runtime_error("invalid frequency type");
     }
     if( hrg.get_frequency() != 1 ){
-        throw std::runtime_error("invalid frequency");
+        throw runtime_error("invalid frequency");
     }
     if( hrg.get_start_msec_since_epoch() != start ){
-        throw std::runtime_error("invalid start msec since epoch");
+        throw runtime_error("invalid start msec since epoch");
     }
     if( hrg.get_end_msec_since_epoch() != end ){
-        throw std::runtime_error("invalid end msec since epoch");
+        throw runtime_error("invalid end msec since epoch");
     }
     if( hrg.is_extended_hours() != true ){
-        throw std::runtime_error("invalid is extended hours");
+        throw runtime_error("invalid is extended hours");
     }
 }
 
@@ -723,7 +926,7 @@ quote_getters(Credentials& c)
     cout<< qg.get_symbol() << endl;
 
     if( qg.get_symbol() != "SPY")
-        throw std::runtime_error("invalid symbol");
+        throw runtime_error("invalid symbol");
 
     Get(qg);
 
@@ -732,7 +935,7 @@ quote_getters(Credentials& c)
     cout<< qg2.get_symbol() << endl;
 
     if( qg2.get_symbol() != "QQQ")
-        throw std::runtime_error("invalid symbol");
+        throw runtime_error("invalid symbol");
 
     Get(qg2);
 
@@ -742,7 +945,7 @@ quote_getters(Credentials& c)
     }
     cout<< endl;
     if( qsg.get_symbols() != set<string>{"SPY","QQQ"} )
-        throw std::runtime_error("invalid symbol");
+        throw runtime_error("invalid symbol");
 
     Get(qsg);
 
@@ -753,7 +956,7 @@ quote_getters(Credentials& c)
     cout<< endl;
 
     if( qsg.get_symbols() != set<string>{"/ES","SPY_081718C276"}  )
-        throw std::runtime_error("invalid symbol");
+        throw runtime_error("invalid symbol");
 
     Get(qsg);
 
@@ -764,7 +967,7 @@ quote_getters(Credentials& c)
     cout<< endl;
 
     if( qsg.get_symbols() != set<string>{"/ES","SPY_081718C276", "IWM"})
-        throw std::runtime_error("invalid symbols in quotes getter");
+        throw runtime_error("invalid symbols in quotes getter");
 
     Get(qsg);
 
@@ -776,7 +979,7 @@ quote_getters(Credentials& c)
     cout<< endl;
 
     if( qsg.get_symbols() != set<string>{"IWM"})
-        throw std::runtime_error("invalid symbols in quotes getter");
+        throw runtime_error("invalid symbols in quotes getter");
 
     Get(qsg);
 
@@ -784,42 +987,42 @@ quote_getters(Credentials& c)
     qsg.remove_symbol("BAD_SYMBOL");
 
     if( !qsg.get_symbols().empty() )
-        throw std::runtime_error("invalid symbols in quotes getter");
+        throw runtime_error("invalid symbols in quotes getter");
     if( use_live_connection ){
         if( qsg.get() != json() )
-            throw std::runtime_error("empty quotes getter did not return {}");
+            throw runtime_error("empty quotes getter did not return {}");
     }
 
     qsg.add_symbols( {"xlf","XLY", "XLE"} );
     if( qsg.get_symbols() != set<string>{"XLF","XLY", "XLE"} )
-        throw std::runtime_error("invalid symbols in quotes getter");
+        throw runtime_error("invalid symbols in quotes getter");
 
     qsg.add_symbol( "XLK" );
     qsg.remove_symbols( {"XLF","XLY", "XLK"} );
     if( qsg.get_symbols() != set<string>{"XLE"} )
-        throw std::runtime_error("invalid symbols in quotes getter");
+        throw runtime_error("invalid symbols in quotes getter");
 
     qsg.remove_symbols( {"A","B", "XLE"});
     if( !qsg.get_symbols().empty() )
-        throw std::runtime_error("invalid symbols in quotes getter");
+        throw runtime_error("invalid symbols in quotes getter");
 
     try{
         qsg.add_symbols( {"","SPY"} );
-        throw std::runtime_error("failed to catch exception, add_symbols");
+        throw runtime_error("failed to catch exception, add_symbols");
     }catch( ValueException& e){
         cout<< "successfully caught exception: " << e << endl;
     }
 
     try{
         qsg.add_symbols( {} );
-        throw std::runtime_error("failed to catch exception, add_symbols");
+        throw runtime_error("failed to catch exception, add_symbols");
     }catch( ValueException& e){
         cout<< "successfully caught exception: " << e << endl;
     }
 
     try{
         qsg.add_symbol( {""} );
-        throw std::runtime_error("failed to catch exception, add_symbol");
+        throw runtime_error("failed to catch exception, add_symbol");
     }catch( ValueException& e){
         cout<< "successfully caught exception: " << e << endl;
     }
@@ -831,7 +1034,7 @@ quote_getters(Credentials& c)
     cout<< endl;
 
     if( qsg.get_symbols() != set<string> {"XLF","XLY", "XLE"})
-        throw std::runtime_error("invalid symbols in quotes getter");
+        throw runtime_error("invalid symbols in quotes getter");
 
     Get(qsg);
 }

@@ -150,6 +150,24 @@ DECL_C_CPP_TDMA_ENUM(OptionStrikesType, 0, 2,
     BUILD_C_CPP_TDMA_ENUM_NAME(OptionStrikesType, none) // dont use
 );
 
+DECL_C_CPP_TDMA_ENUM(OrderStatusType, 0, 14,
+    BUILD_C_CPP_TDMA_ENUM_NAME(OrderStatusType, AWAITING_PARENT_ORDER),
+    BUILD_C_CPP_TDMA_ENUM_NAME(OrderStatusType, AWAITING_CONDITION),
+    BUILD_C_CPP_TDMA_ENUM_NAME(OrderStatusType, AWAITING_MANUAL_REVIEW),
+    BUILD_C_CPP_TDMA_ENUM_NAME(OrderStatusType, ACCEPTED),
+    BUILD_C_CPP_TDMA_ENUM_NAME(OrderStatusType, AWAITING_UR_OUT),
+    BUILD_C_CPP_TDMA_ENUM_NAME(OrderStatusType, PENDING_ACTIVATION),
+    BUILD_C_CPP_TDMA_ENUM_NAME(OrderStatusType, QUEUED),
+    BUILD_C_CPP_TDMA_ENUM_NAME(OrderStatusType, WORKING),
+    BUILD_C_CPP_TDMA_ENUM_NAME(OrderStatusType, REJECTED),
+    BUILD_C_CPP_TDMA_ENUM_NAME(OrderStatusType, PENDING_CANCEL),
+    BUILD_C_CPP_TDMA_ENUM_NAME(OrderStatusType, CANCELED),
+    BUILD_C_CPP_TDMA_ENUM_NAME(OrderStatusType, PENDING_REPLACE),
+    BUILD_C_CPP_TDMA_ENUM_NAME(OrderStatusType, REPLACED),
+    BUILD_C_CPP_TDMA_ENUM_NAME(OrderStatusType, FILLED),
+    BUILD_C_CPP_TDMA_ENUM_NAME(OrderStatusType, EXPIRED)
+);
+
 typedef union {
     unsigned int n_atm;
     double single;
@@ -262,25 +280,6 @@ VALID_FREQUENCIES_BY_FREQUENCY_TYPE[FrequencyType_monthly + 1][5] = {
  *        using new) and SHOULD NOT be dealloced by the client
  */
 
-static const int TYPE_ID_GETTER_QUOTE = 1;
-static const int TYPE_ID_GETTER_QUOTES = 2;
-static const int TYPE_ID_GETTER_MARKET_HOURS = 3;
-static const int TYPE_ID_GETTER_MOVERS = 4;
-static const int TYPE_ID_GETTER_HISTORICAL_PERIOD = 5;
-static const int TYPE_ID_GETTER_HISTORICAL_RANGE = 6;
-static const int TYPE_ID_GETTER_OPTION_CHAIN = 7;
-static const int TYPE_ID_GETTER_OPTION_CHAIN_STRATEGY = 8;
-static const int TYPE_ID_GETTER_OPTION_CHAIN_ANALYTICAL = 9;
-static const int TYPE_ID_GETTER_ACCOUNT_INFO = 10;
-static const int TYPE_ID_GETTER_PREFERENCES = 11;
-static const int TYPE_ID_GETTER_SUBSCRIPTION_KEYS = 12;
-static const int TYPE_ID_GETTER_TRANSACTION_HISTORY = 13;
-static const int TYPE_ID_GETTER_IND_TRANSACTION_HISTORY = 14;
-static const int TYPE_ID_GETTER_USER_PRINCIPALS = 15;
-static const int TYPE_ID_GETTER_INSTRUMENT_INFO = 16;
-
-
-
 #define DECL_CGETTER_STRUCT(name) typedef struct {void *obj; int type_id; } name
 
 DECL_CGETTER_STRUCT(QuoteGetter_C);
@@ -299,6 +298,8 @@ DECL_CGETTER_STRUCT(StreamerSubscriptionKeysGetter_C);
 DECL_CGETTER_STRUCT(TransactionHistoryGetter_C);
 DECL_CGETTER_STRUCT(IndividualTransactionHistoryGetter_C);
 DECL_CGETTER_STRUCT(InstrumentInfoGetter_C);
+DECL_CGETTER_STRUCT(OrderGetter_C);
+DECL_CGETTER_STRUCT(OrdersGetter_C);
 
 #undef DECL_CGETTER_STRUCT
 
@@ -1073,6 +1074,84 @@ InstrumentInfoGetter_SetQuery_ABI( InstrumentInfoGetter_C *pgetter,
                                        const char* query_string,
                                        int allow_exceptions );
 
+/* OrderGetter */
+EXTERN_C_SPEC_ DLL_SPEC_ int
+OrderGetter_Create_ABI( struct Credentials *pcreds,
+                           const char* account_id,
+                           const char* order_id,
+                           OrderGetter_C *pgetter,
+                           int allow_exceptions );
+
+EXTERN_C_SPEC_ DLL_SPEC_ int
+OrderGetter_Destroy_ABI(OrderGetter_C *pgetter, int allow_exceptions);
+
+EXTERN_C_SPEC_ DLL_SPEC_ int
+OrderGetter_GetOrderId_ABI( OrderGetter_C *pgetter,
+                                char **buf,
+                                size_t *n,
+                                int allow_exceptions);
+
+EXTERN_C_SPEC_ DLL_SPEC_ int
+OrderGetter_SetOrderId_ABI( OrderGetter_C *pgetter,
+                                const char *order_id,
+                                int allow_exceptions );
+
+
+/* OrdersGetter */
+EXTERN_C_SPEC_ DLL_SPEC_ int
+OrdersGetter_Create_ABI( struct Credentials *pcreds,
+                           const char* account_id,
+                           unsigned int nmax_results,
+                           const char* from_entered_time,
+                           const char* to_entered_time,
+                           int order_status_type,
+                           OrdersGetter_C *pgetter,
+                           int allow_exceptions );
+
+EXTERN_C_SPEC_ DLL_SPEC_ int
+OrdersGetter_Destroy_ABI(OrdersGetter_C *pgetter, int allow_exceptions);
+
+EXTERN_C_SPEC_ DLL_SPEC_ int
+OrdersGetter_GetNMaxResults_ABI( OrdersGetter_C *pgetter,
+                                     unsigned int *nmax_results,
+                                    int allow_exceptions);
+
+EXTERN_C_SPEC_ DLL_SPEC_ int
+OrdersGetter_SetNMaxResults_ABI( OrdersGetter_C *pgetter,
+                                     unsigned int nmax_results,
+                                    int allow_exceptions );
+
+EXTERN_C_SPEC_ DLL_SPEC_ int
+OrdersGetter_GetFromEnteredTime_ABI( OrdersGetter_C *pgetter,
+                                         char** buf,
+                                         size_t *n,
+                                         int allow_exceptions );
+
+EXTERN_C_SPEC_ DLL_SPEC_ int
+OrdersGetter_SetFromEnteredTime_ABI( OrdersGetter_C *pgetter,
+                                          const char* from_entered_time,
+                                          int allow_exceptions );
+
+EXTERN_C_SPEC_ DLL_SPEC_ int
+OrdersGetter_GetToEnteredTime_ABI( OrdersGetter_C *pgetter,
+                                       char** buf,
+                                       size_t *n,
+                                       int allow_exceptions );
+
+EXTERN_C_SPEC_ DLL_SPEC_ int
+OrdersGetter_SetToEnteredTime_ABI( OrdersGetter_C *pgetter,
+                                        const char* to_entered_time,
+                                        int allow_exceptions );
+
+EXTERN_C_SPEC_ DLL_SPEC_ int
+OrdersGetter_GetOrderStatusType_ABI( OrdersGetter_C *pgetter,
+                                         int *order_status_type,
+                                         int allow_exceptions );
+
+EXTERN_C_SPEC_ DLL_SPEC_ int
+OrdersGetter_SetOrderStatusType_ABI( OrdersGetter_C *pgetter,
+                                         int order_status_type,
+                                         int allow_exceptions );
 
 #ifndef __cplusplus
 
@@ -2049,6 +2128,87 @@ InstrumentInfoGetter_SetQuery( InstrumentInfoGetter_C *pgetter,
                                const char* query_string )
 { return InstrumentInfoGetter_SetQuery_ABI(pgetter, (int)search_type,
                                            query_string, 0); }
+
+/* OrderGetter */
+static inline int
+OrderGetter_Create( struct Credentials *pcreds,
+                    const char* account_id,
+                    const char* order_id,
+                    OrderGetter_C *pgetter )
+{ return OrderGetter_Create_ABI( pcreds, account_id, order_id, pgetter, 0); }
+
+static inline int
+OrderGetter_Destroy(OrderGetter_C *pgetter)
+{ return OrderGetter_Destroy_ABI( pgetter, 0); }
+
+DECL_WRAPPED_API_GETTER_BASE_FUNCS(OrderGetter)
+
+DECL_WRAPPED_ACCOUNT_GETTER_BASE_FUNCS(OrderGetter)
+
+static inline int
+OrderGetter_GetOrderId( OrderGetter_C *pgetter, char **buf, size_t *n )
+{ return OrderGetter_GetOrderId_ABI( pgetter, buf, n, 0 ); }
+
+static inline int
+OrderGetter_SetOrderId( OrderGetter_C *pgetter, const char *order_id )
+{ return OrderGetter_SetOrderId_ABI( pgetter, order_id, 0 ); }
+
+/* OrdersGetter */
+static inline int
+OrdersGetter_Create( struct Credentials *pcreds,
+                     const char* account_id,
+                     unsigned int nmax_results,
+                     const char* from_entered_time,
+                     const char* to_entered_time,
+                     OrderStatusType order_status_type,
+                     OrdersGetter_C *pgetter )
+{ return OrdersGetter_Create_ABI(pcreds, account_id, nmax_results,
+                                 from_entered_time, to_entered_time,
+                                 (int)order_status_type, pgetter, 0); }
+
+static inline int
+OrdersGetter_Destroy(OrdersGetter_C *pgetter )
+{ return OrdersGetter_Destroy_ABI(pgetter, 0); }
+
+DECL_WRAPPED_API_GETTER_BASE_FUNCS(OrdersGetter)
+
+DECL_WRAPPED_ACCOUNT_GETTER_BASE_FUNCS(OrdersGetter)
+
+static inline int
+OrdersGetter_GetNMaxResults( OrdersGetter_C *pgetter, unsigned int *nmax_results )
+{ return OrdersGetter_GetNMaxResults_ABI(pgetter, nmax_results, 0); }
+
+static inline int
+OrdersGetter_SetNMaxResults( OrdersGetter_C *pgetter, unsigned int nmax_results )
+{ return OrdersGetter_SetNMaxResults_ABI(pgetter, nmax_results, 0); }
+
+static inline int
+OrdersGetter_GetFromEnteredTime( OrdersGetter_C *pgetter, char** buf, size_t *n )
+{ return OrdersGetter_GetFromEnteredTime_ABI(pgetter, buf, n, 0); }
+
+static inline int
+OrdersGetter_SetFromEnteredTime( OrdersGetter_C *pgetter,
+                                 const char* from_entered_time )
+{ return OrdersGetter_SetFromEnteredTime_ABI(pgetter, from_entered_time, 0); }
+
+static inline int
+OrdersGetter_GetToEnteredTime( OrdersGetter_C *pgetter, char** buf, size_t *n )
+{ return OrdersGetter_GetToEnteredTime_ABI(pgetter, buf, n, 0); }
+
+static inline int
+OrdersGetter_SetToEnteredTime( OrdersGetter_C *pgetter,
+                               const char* to_entered_time )
+{ return OrdersGetter_SetToEnteredTime_ABI(pgetter, to_entered_time, 0); }
+
+static inline int
+OrdersGetter_GetOrderStatusType( OrdersGetter_C *pgetter,
+                                 OrderStatusType *order_status_type )
+{ return OrdersGetter_GetOrderStatusType_ABI(pgetter, (int*)order_status_type, 0); }
+
+static inline int
+OrdersGetter_SetOrderStatusType( OrdersGetter_C *pgetter,
+                                 OrderStatusType order_status_type )
+{ return OrdersGetter_SetOrderStatusType_ABI(pgetter, (int)order_status_type, 0); }
 
 
 #else
@@ -3585,6 +3745,7 @@ GetUserPrincipals( Credentials& creds,
                                  surrogate_ids ).get();
 }
 
+
 class InstrumentInfoGetter
         : public APIGetter {
 public:
@@ -3633,6 +3794,124 @@ GetInstrumentInfo( Credentials& creds,
                    InstrumentSearchType search_type,
                    const std::string& query_string )
 { return InstrumentInfoGetter(creds, search_type, query_string).get(); }
+
+
+/* NEW */
+class OrderGetter
+        : public AccountGetterBase{
+public:
+    typedef OrderGetter_C CType;
+
+    OrderGetter( Credentials& creds,
+                  const std::string& account_id,
+                  const std::string& order_id )
+        :
+            AccountGetterBase( OrderGetter_C{},
+                               OrderGetter_Create_ABI,
+                               OrderGetter_Destroy_ABI,
+                               creds,
+                               account_id,
+                               order_id.c_str() )
+        {
+        }
+
+    std::string
+    get_order_id() const
+    { return str_from_abi(OrderGetter_GetOrderId_ABI, cgetter<CType>()); }
+
+    void
+    set_order_id(const std::string& order_id)
+    { call_abi(OrderGetter_SetOrderId_ABI, cgetter<CType>(), order_id.c_str()); }
+};
+
+inline json
+GetOrder( Credentials& creds,
+          const std::string& account_id,
+          const std::string& order_id )
+{ return OrderGetter(creds, account_id, order_id). get(); }
+
+
+class OrdersGetter
+        : public AccountGetterBase{
+public:
+    typedef OrdersGetter_C CType;
+
+    OrdersGetter( Credentials& creds,
+                    const std::string& account_id,
+                    unsigned int nmax_results,
+                    const std::string& from_entered_time,
+                    const std::string& to_entered_time,
+                    OrderStatusType order_status_type )
+        :
+            AccountGetterBase( OrdersGetter_C{},
+                               OrdersGetter_Create_ABI,
+                               OrdersGetter_Destroy_ABI,
+                               creds,
+                               account_id,
+                               nmax_results,
+                               from_entered_time.c_str(),
+                               to_entered_time.c_str(),
+                               static_cast<int>(order_status_type) )
+        {
+        }
+
+    unsigned int
+    get_nmax_results() const
+    {
+        unsigned int m;
+        call_abi( OrdersGetter_GetNMaxResults_ABI, cgetter<CType>(),
+                  &m );
+        return m;
+    }
+
+    std::string
+    get_from_entered_time() const
+    { return str_from_abi( OrdersGetter_GetFromEnteredTime_ABI,
+                           cgetter<CType>() ); }
+
+    std::string
+    get_to_entered_time() const
+    { return str_from_abi( OrdersGetter_GetToEnteredTime_ABI,
+                           cgetter<CType>() ); }
+
+    OrderStatusType
+    get_order_status_type() const
+    {
+        int os;
+        call_abi( OrdersGetter_GetOrderStatusType_ABI, cgetter<CType>(), &os );
+        return static_cast<OrderStatusType>(os);
+    }
+
+    void
+    set_nmax_results(unsigned int nmax_results)
+    { call_abi( OrdersGetter_SetNMaxResults_ABI, cgetter<CType>(), nmax_results); }
+
+    void
+    set_from_entered_time(const std::string& from_entered_time)
+    { call_abi( OrdersGetter_SetFromEnteredTime_ABI, cgetter<CType>(),
+                from_entered_time.c_str() ); }
+
+    void
+    set_to_entered_time(const std::string& to_entered_time)
+    { call_abi( OrdersGetter_SetToEnteredTime_ABI, cgetter<CType>(),
+                to_entered_time.c_str() ); }
+
+    void
+    set_order_status_type(OrderStatusType order_status_type)
+    { call_abi( OrdersGetter_SetOrderStatusType_ABI, cgetter<CType>(),
+                static_cast<int>(order_status_type) ); }
+};
+
+inline json
+GetOrders( Credentials& creds,
+            const std::string& account_id,
+            size_t nmax_results,
+            const std::string& from_entered_time,
+            const std::string& to_entered_time,
+            OrderStatusType order_status_type  )
+{ return OrdersGetter(creds, account_id, nmax_results, from_entered_time,
+                      to_entered_time, order_status_type). get(); }
+/* NEW */
 
 using std::to_string;
 

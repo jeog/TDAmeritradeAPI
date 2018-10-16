@@ -4335,6 +4335,22 @@ Execute_CancelOrder_ABI( struct Credentials *creds,
                              int *success,
                              int allow_exceptions );
 
+static inline int
+Execute_SendOrder( struct Credentials *creds,
+                     const char* account_id,
+                     OrderTicket_C *porder,
+                     char** buf,
+                     size_t *n )
+{ return Execute_SendOrder_ABI(creds, account_id, porder, buf, n, 0); }
+
+
+static inline int
+Execute_CancelOrder( struct Credentials *creds,
+                        const char* account_id,
+                        const char* order_id,
+                       int *success )
+{ return Execute_CancelOrder_ABI(creds, account_id, order_id, success, 0); }
+
 
 #ifdef __cplusplus
 

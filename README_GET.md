@@ -29,6 +29,8 @@
     - [TransactionHistoryGetter](#transactionhistorygetter)  
     - [IndividualTransactionHistoryGetter](#individualtransactionhistorygetter)  
     - [InstrumentInfoGetter](#instrumentinfogetter)  
+    - [OrderGetter](#ordergetter)  ***\*NEW\****
+    - [OrdersGetter](#ordersgetter)  ***\*NEW\****
 
 *UPDATES*
 
@@ -2240,7 +2242,7 @@ AccountGetterBase::set_account_id(const string& account_id);
 ```
 ```
 void
-IndividualTransactionHistoryGetter::set_transaction_type(const string& transaction_id);
+IndividualTransactionHistoryGetter::set_transaction_id(const string& transaction_id);
 ```
 
 
@@ -2315,3 +2317,173 @@ GetInstrumentInfo( Credentials& creds,
                    const string& query_string );
 ```
 
+<br>
+
+#### OrderGetter
+
+Order information by order id. [TDAmeritrade docs.](https://developer.tdameritrade.com/account-access/apis/get/accounts/{accountId}/orders/{orderId}-0)
+
+**constructors**
+```
+OrderGetter::OrderGetter( Credentials& creds, 
+                          const string& account_id 
+                          const string& order_id  );
+
+    creds       ::  credentials struct received from RequestAccessToken 
+                    / LoadCredentials / CredentialsManager.credentials
+    account_id  ::  id string of account to get order for
+    order_id    ::  id string of order
+```
+
+**methods**
+```
+json 
+APIGetter::get();
+```
+```
+void 
+APIGetter::close();
+```
+```
+bool 
+APIGetter::is_closed() const;
+```
+```
+string
+AccountGetterBase::get_account_id() const;
+```
+```
+string
+OrderGetter::get_order_id() const;
+```
+```
+void
+AccountGetterBase::set_account_id(const string& account_id);
+```
+```
+void
+OrderGetter::set_order_id(const string& order_id);
+```
+
+
+**convenience function**
+```
+inline json
+GetOrder( Credentials& creds, 
+          const string& account_id 
+          const string& transaction_id );
+```
+
+<br>
+
+#### OrdersGetter
+
+Search for orders of a certain type, within a date/time range. [TDAmeritrade docs.](https://developer.tdameritrade.com/account-access/apis/get/accounts/{accountId}/orders-0)
+
+**constructors**
+```
+OrdersGetter::OrdersGetter( Credentials& creds, 
+                            const string& account_id 
+                            unsigned int nmax_results,
+                            const std::string& from_entered_time,
+                            const std::string& to_entered_time,
+                            OrderStatusType order_status_type );
+
+    creds             :: credentials struct received from RequestAccessToken 
+                          / LoadCredentials / CredentialsManager.credentials
+    account_id        :: id string of account to get orders for
+    nmax_results      :: max number of (order) results to return
+    from_entered_time :: date/time(<= 60 days ago) before which no orders will be
+                         returned (yyyy-MM-dd or yyyy-MM-dd'T'HH:mm:ssz)
+    to_entered_time   :: date/time(<= 60 days ago) after which no orders will be
+                         returned (yyyy-MM-dd or yyyy-MM-dd'T'HH:mm:ssz)
+    order_status_type :: status type of orders to return
+```
+
+**types**
+```
+enum class OrderStatusType : int{
+    AWAITING_PARENT_ORDER,
+    AWAITING_CONDITION,
+    AWAITING_MANUAL_REVIEW,
+    ACCEPTED,
+    AWAITING_UR_OUT,
+    PENDING_ACTIVATION,
+    QUEUED,
+    WORKING,
+    REJECTED,
+    PENDING_CANCEL,
+    CANCELED,
+    PENDING_REPLACE,
+    REPLACED,
+    FILLED,
+    EXPIRED
+};
+
+```
+
+
+**methods**
+```
+json 
+APIGetter::get();
+```
+```
+void 
+APIGetter::close();
+```
+```
+bool 
+APIGetter::is_closed() const;
+```
+```
+string
+AccountGetterBase::get_account_id() const;
+```
+```
+unsigned int
+OrdersGetter::get_nmax_results() const;
+```
+```
+string
+OrdersGetter::get_from_entered_time() const;
+```
+```
+string
+OrdersGetter::get_to_entered_time() const;
+```
+```
+OrderStatusType
+OrdersGetter::get_order_status_type() const;
+```
+```
+void
+AccountGetterBase::set_account_id(const string& account_id);
+```
+```
+void
+OrdersGetter::set_nmax_results(unsigned int nmax_results);
+```
+```
+void
+OrdersGetter::set_from_entered_time(const std::string& from_entered_time);
+```
+```
+void
+OrdersGetter::set_to_entered_time(const std::string& to_entered_time);
+```
+```
+void
+OrdersGetter::set_order_status_type(OrderStatusType order_status_type);
+```
+
+**convenience function**
+```
+inline json
+GetOrders( Credentials& creds, 
+            const string& account_id 
+            unsigned int nmax_results,
+            const std::string& from_entered_time,
+            const std::string& to_entered_time,
+            OrderStatusType order_status_type );
+```

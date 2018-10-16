@@ -234,12 +234,15 @@ PeriodType_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
     case PeriodType::ytd:
         return alloc_C_str("ytd", buf, n, allow_exceptions);
     default:
-        throw std::runtime_error("invalid PeriodType");
+        throw runtime_error("invalid PeriodType");
     }
 }
 
 int
-FrequencyType_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
+FrequencyType_to_string_ABI( int v,
+                                char** buf,
+                                size_t* n,
+                                int allow_exceptions )
 {
     CHECK_ENUM(FrequencyType, v, allow_exceptions);
 
@@ -253,12 +256,15 @@ FrequencyType_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
     case FrequencyType::monthly:
         return alloc_C_str("monthly", buf, n, allow_exceptions);
     default:
-        throw std::runtime_error("invalid FrequencyType");
+        throw runtime_error("invalid FrequencyType");
     }
 }
 
 int
-OptionContractType_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
+OptionContractType_to_string_ABI( int v,
+                                      char** buf,
+                                      size_t* n,
+                                      int allow_exceptions )
 {
     CHECK_ENUM(OptionContractType, v, allow_exceptions);
 
@@ -270,12 +276,15 @@ OptionContractType_to_string_ABI(int v, char** buf, size_t* n, int allow_excepti
     case OptionContractType::all:
         return alloc_C_str("ALL", buf, n, allow_exceptions);
     default:
-        throw std::runtime_error("invalid OptionContractType");
+        throw runtime_error("invalid OptionContractType");
     }
 }
 
 int
-OptionStrategyType_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
+OptionStrategyType_to_string_ABI( int v,
+                                      char** buf,
+                                      size_t* n,
+                                      int allow_exceptions )
 {
     CHECK_ENUM(OptionStrategyType, v, allow_exceptions);
 
@@ -303,13 +312,16 @@ OptionStrategyType_to_string_ABI(int v, char** buf, size_t* n, int allow_excepti
     case  OptionStrategyType::roll:
         return alloc_C_str("ROLL", buf, n, allow_exceptions);
     default:
-        throw std::runtime_error("invalid OptionStrategyType");
+        throw runtime_error("invalid OptionStrategyType");
     }
 }
 
 
 int
-OptionRangeType_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
+OptionRangeType_to_string_ABI( int v,
+                                    char** buf,
+                                    size_t* n,
+                                    int allow_exceptions )
 {
     CHECK_ENUM(OptionRangeType, v, allow_exceptions);
 
@@ -331,13 +343,16 @@ OptionRangeType_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions
     case OptionRangeType::all:
         return alloc_C_str("ALL", buf, n, allow_exceptions);
     default:
-        throw std::runtime_error("invalid OptionRangeType");
+        throw runtime_error("invalid OptionRangeType");
     }
 }
 
 
 int
-OptionExpMonth_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
+OptionExpMonth_to_string_ABI( int v,
+                                  char** buf,
+                                  size_t* n,
+                                  int allow_exceptions )
 {
     CHECK_ENUM(OptionExpMonth, v, allow_exceptions);
 
@@ -369,7 +384,7 @@ OptionExpMonth_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
     case OptionExpMonth::all:
         return alloc_C_str("ALL", buf, n, allow_exceptions);
     default:
-        throw std::runtime_error("invalid OptionExpMonth");
+        throw runtime_error("invalid OptionExpMonth");
     }
 }
 
@@ -386,13 +401,16 @@ OptionType_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
         return alloc_C_str("NS", buf, n, allow_exceptions);
     case OptionType::all:
         return alloc_C_str("ALL", buf, n, allow_exceptions);
-    default: throw std::runtime_error("invalid OptionType");
+    default: throw runtime_error("invalid OptionType");
     }
 }
 
 
 int
-TransactionType_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
+TransactionType_to_string_ABI( int v,
+                                    char** buf,
+                                    size_t* n,
+                                    int allow_exceptions )
 {
     CHECK_ENUM(TransactionType, v, allow_exceptions);
 
@@ -418,12 +436,15 @@ TransactionType_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions
     case TransactionType::advisor_fees:
         return alloc_C_str("ADVISOR_FEES", buf, n, allow_exceptions);
     default:
-        throw std::runtime_error("invliad TransactionType");
+        throw runtime_error("invliad TransactionType");
     }
 }
 
 int
-InstrumentSearchType_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
+InstrumentSearchType_to_string_ABI( int v,
+                                        char** buf,
+                                        size_t* n,
+                                        int allow_exceptions )
 {
     CHECK_ENUM(InstrumentSearchType, v, allow_exceptions);
 
@@ -441,7 +462,7 @@ InstrumentSearchType_to_string_ABI(int v, char** buf, size_t* n, int allow_excep
     case InstrumentSearchType::cusip:
         return alloc_C_str("cusip", buf, n, allow_exceptions);
     default:
-        throw std::runtime_error("invalid InstrumentSearchType");
+        throw runtime_error("invalid InstrumentSearchType");
     }
 }
 
@@ -463,7 +484,7 @@ MarketType_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
     case MarketType::forex:
         return alloc_C_str("FOREX", buf, n, allow_exceptions);
     default:
-        throw std::runtime_error("Invalid MarketType");
+        throw runtime_error("Invalid MarketType");
     }
 }
 
@@ -480,13 +501,16 @@ MoversIndex_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
     case MoversIndex::spx:
         return alloc_C_str("$SPX.X", buf, n, allow_exceptions);
     default:
-        throw std::runtime_error("invalid MoversIndex");
+        throw runtime_error("invalid MoversIndex");
     }
 }
 
 
 int
-MoversDirectionType_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
+MoversDirectionType_to_string_ABI( int v,
+                                        char** buf,
+                                        size_t* n,
+                                        int allow_exceptions )
 {
     CHECK_ENUM(MoversDirectionType, v, allow_exceptions);
 
@@ -498,12 +522,15 @@ MoversDirectionType_to_string_ABI(int v, char** buf, size_t* n, int allow_except
     case MoversDirectionType::up_and_down:
         return alloc_C_str("up_and_down", buf, n, allow_exceptions);
     default:
-        throw std::runtime_error("invalid MoversDirectionType");
+        throw runtime_error("invalid MoversDirectionType");
     }
 }
 
 int
-MoversChangeType_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
+MoversChangeType_to_string_ABI( int v,
+                                    char** buf,
+                                    size_t* n,
+                                    int allow_exceptions )
 {
     CHECK_ENUM(MoversChangeType, v, allow_exceptions);
 
@@ -513,12 +540,15 @@ MoversChangeType_to_string_ABI(int v, char** buf, size_t* n, int allow_exception
     case MoversChangeType::value:
         return alloc_C_str("value", buf, n, allow_exceptions);
     default:
-        throw std::runtime_error("invalid MoversChangeType");
+        throw runtime_error("invalid MoversChangeType");
     }
 }
 
 int
-OptionStrikesType_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
+OptionStrikesType_to_string_ABI( int v,
+                                     char** buf,
+                                     size_t* n,
+                                     int allow_exceptions )
 {
     CHECK_ENUM(OptionStrikesType, v, allow_exceptions);
 
@@ -532,7 +562,50 @@ OptionStrikesType_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptio
     case OptionStrikesType::none:
         return alloc_C_str("none", buf, n, allow_exceptions);
     default:
-        throw std::runtime_error("invalid OptionStrikesType");
+        throw runtime_error("invalid OptionStrikesType");
     }
 }
 
+int
+OrderStatusType_to_string_ABI( int v,
+                                   char** buf,
+                                   size_t *n,
+                                   int allow_exceptions )
+{
+    CHECK_ENUM(OrderStatusType, v, allow_exceptions);
+
+    switch(static_cast<OrderStatusType>(v) ){
+    case OrderStatusType::AWAITING_PARENT_ORDER:
+        return alloc_C_str("AWAITING_PARENT_ORDER", buf, n, allow_exceptions);
+    case OrderStatusType::AWAITING_CONDITION:
+        return alloc_C_str("AWAITING_CONDITION", buf, n, allow_exceptions);
+    case OrderStatusType::AWAITING_MANUAL_REVIEW:
+        return alloc_C_str("AWAITING_MANUAL_REVIEW", buf, n, allow_exceptions);
+    case OrderStatusType::ACCEPTED:
+        return alloc_C_str("ACCEPTED", buf, n, allow_exceptions);
+    case OrderStatusType::AWAITING_UR_OUT:
+        return alloc_C_str("AWAITING_UR_OUT", buf, n, allow_exceptions);
+    case OrderStatusType::PENDING_ACTIVATION:
+        return alloc_C_str("PENDING_ACTIVATION", buf, n, allow_exceptions);
+    case OrderStatusType::QUEUED:
+        return alloc_C_str("QUEUED", buf, n, allow_exceptions);
+    case OrderStatusType::WORKING:
+        return alloc_C_str("WORKING", buf, n, allow_exceptions);
+    case OrderStatusType::REJECTED:
+        return alloc_C_str("REJECTED", buf, n, allow_exceptions);
+    case OrderStatusType::PENDING_CANCEL:
+        return alloc_C_str("PENDING_CANCE", buf, n, allow_exceptions);
+    case OrderStatusType::CANCELED:
+        return alloc_C_str("CANCELED", buf, n, allow_exceptions);
+    case OrderStatusType::PENDING_REPLACE:
+        return alloc_C_str("PENDING_REPLACE", buf, n, allow_exceptions);
+    case OrderStatusType::REPLACED:
+        return alloc_C_str("REPLACED", buf, n, allow_exceptions);
+    case OrderStatusType::FILLED:
+        return alloc_C_str("FILLED", buf, n, allow_exceptions);
+    case OrderStatusType::EXPIRED:
+        return alloc_C_str("EXPIRED", buf, n, allow_exceptions);
+    default:
+        throw runtime_error("invalid OrderStatusType");
+    }
+}

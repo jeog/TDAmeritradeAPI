@@ -2,6 +2,8 @@
 
 #include "test.h"
 
+#include <time.h>
+
 int
 Test_QuoteGetter(struct Credentials *creds);
 
@@ -50,6 +52,8 @@ Test_UserPrincipalsGetter(struct Credentials *creds);
 int
 Test_InstrumentInfoGetter(struct Credentials *creds);
 
+int
+Test_OrderGetters(struct Credentials *creds, const char* acct);
 
 int
 Test_Getters(struct Credentials *creds, const char* acct, long wait)
@@ -153,9 +157,33 @@ Test_Getters(struct Credentials *creds, const char* acct, long wait)
         return err;
     SleepFor(wait);
 
+    err = Test_OrderGetters(creds, acct);
+    if( err )
+        return err;
+    SleepFor(wait);
+
     return err;
 }
 
+/* include/_get.h */
+const int TYPE_ID_GETTER_QUOTE = 1;
+const int TYPE_ID_GETTER_QUOTES = 2;
+const int TYPE_ID_GETTER_MARKET_HOURS = 3;
+const int TYPE_ID_GETTER_MOVERS = 4;
+const int TYPE_ID_GETTER_HISTORICAL_PERIOD = 5;
+const int TYPE_ID_GETTER_HISTORICAL_RANGE = 6;
+const int TYPE_ID_GETTER_OPTION_CHAIN = 7;
+const int TYPE_ID_GETTER_OPTION_CHAIN_STRATEGY = 8;
+const int TYPE_ID_GETTER_OPTION_CHAIN_ANALYTICAL = 9;
+const int TYPE_ID_GETTER_ACCOUNT_INFO = 10;
+const int TYPE_ID_GETTER_PREFERENCES = 11;
+const int TYPE_ID_GETTER_SUBSCRIPTION_KEYS = 12;
+const int TYPE_ID_GETTER_TRANSACTION_HISTORY = 13;
+const int TYPE_ID_GETTER_IND_TRANSACTION_HISTORY = 14;
+const int TYPE_ID_GETTER_ORDER = 15;
+const int TYPE_ID_GETTER_ORDERS = 16;
+const int TYPE_ID_GETTER_USER_PRINCIPALS = 17;
+const int TYPE_ID_GETTER_INSTRUMENT_INFO = 18;
 
 int
 Test_QuoteGetter(struct Credentials* creds)
@@ -2319,7 +2347,380 @@ Test_InstrumentInfoGetter(struct Credentials *creds)
    return 0;
 }
 
+void
+build_order_date(char* buf, int off)
+{
 
+    time_t tt_now;
+    time(&tt_now);
+
+    struct tm t= *gmtime(&tt_now);
+    t.tm_mday -= off;
+    mktime(&t);
+
+    sprintf(buf, "%04d-%02d-%02d", t.tm_year + 1900, t.tm_mon + 1, t.tm_mday);
+    buf[10] = 0;
+}
+
+
+void
+find_order_ids(char*buf, size_t n, unsigned long long **order_ids, int *cnt)
+{
+    char oid[20];
+    const char* key = "\"orderId\" : ";
+    size_t klen = strlen(key);
+    if( n < klen )
+        return;
+    size_t i = 0;
+    for( ; i <= n-klen; ++i){
+        if( strncmp(key, &buf[i], klen) == 0){
+            i += klen;
+            char *tmp = buf + i;
+            memset(oid, 0, 20);
+            int ii = 0;
+            while( *tmp != ','){
+                if( *tmp == 0 )
+                    return;
+                if( *tmp >= '0' && *tmp <= '9')
+                    oid[ii++] = *tmp;
+                ++tmp;
+            }
+            (*cnt)++;
+            *order_ids = realloc(*order_ids, sizeof(unsigned long long) * (*cnt));
+            (*order_ids)[(*cnt)-1] = strtoull(oid, NULL, 10);
+        }
+    }
+}
+
+
+int
+Test_OrderGetters(struct Credentials *creds, const char* acct)
+{
+    int err = 0;
+    char *buf = NULL;
+    size_t n = 0;
+    OrdersGetter_C og = {0,0};
+
+    char fromdate1[11], todate1[11], fromdate2[11], todate2[11];
+    build_order_date(fromdate1, 59);
+    build_order_date(todate1, 0);
+    build_order_date(fromdate2, 20);
+    build_order_date(todate2, 1);
+
+    if( (err = OrdersGetter_Create(creds, acct, 10, fromdate1, todate1,
+                                   OrderStatusType_CANCELED, &og)) )
+        CHECK_AND_RETURN_ON_ERROR(err, "OrdersGetter_Create");
+
+    if( og.type_id != TYPE_ID_GETTER_ORDERS ){
+        fprintf(stderr, "invalid type id (%i,%i) \n", og.type_id,
+                 TYPE_ID_GETTER_ORDERS);
+        return -1;
+    }
+
+    if( (err = OrdersGetter_GetAccountId(&og, &buf, &n)) )
+        CHECK_AND_RETURN_ON_ERROR(err, "OrdersGetter_GetAccountId");
+
+    if( strcmp(buf, acct) ){
+        fprintf(stderr, "invalid account id (%s,%s) \n", buf, acct);
+        free(buf);
+        return -1;
+    }
+    printf("Account ID: %s \n", buf);
+    free(buf);
+    buf = NULL;
+
+    unsigned int nmax = 0;
+    if( (err = OrdersGetter_GetNMaxResults(&og, &nmax)) )
+        CHECK_AND_RETURN_ON_ERROR(err, "OrdersGetter_GetNMaxResults");
+
+    if( nmax != 10 ){
+        fprintf(stderr, "invalid nmax_results (%u, %u) \n", nmax, 10);
+        return -1;
+    }
+    printf("NMaxResults: %u \n", nmax);
+
+    if( (err = OrdersGetter_GetFromEnteredTime(&og, &buf, &n)) )
+        CHECK_AND_RETURN_ON_ERROR(err, "OrdersGetter_GetFromEnteredTime");
+
+    if( strcmp(buf, fromdate1) ){
+        fprintf(stderr, "invalid from date (%s,%s) \n", buf, fromdate1);
+        free(buf);
+        return -1;
+    }
+    printf("FromTime: %s \n", buf);
+    free(buf);
+    buf = NULL;
+
+    if( (err = OrdersGetter_GetToEnteredTime(&og, &buf, &n)) )
+        CHECK_AND_RETURN_ON_ERROR(err, "OrdersGetter_GetToEnteredTime");
+
+    if( strcmp(buf, todate1) ){
+        fprintf(stderr, "invalid to date (%s,%s) \n", buf, todate1);
+        free(buf);
+        return -1;
+    }
+    printf("ToTime: %s \n", buf);
+    free(buf);
+    buf = NULL;
+
+    OrderStatusType ost;
+    if( (err = OrdersGetter_GetOrderStatusType(&og, &ost)) )
+        CHECK_AND_RETURN_ON_ERROR(err, "OrdersGetter_GetOrderStatusType");
+
+    if( ost != OrderStatusType_CANCELED ){
+        fprintf(stderr, "invalid order status type (%i, %i) \n", ost,
+                 OrderStatusType_CANCELED);
+        return -1;
+    }
+
+    OrderStatusType_to_string(ost, &buf, &n);
+    printf("OrderStatusType: %s \n", buf);
+    free(buf);
+    buf = NULL;
+
+    if( (err = OrdersGetter_Get(&og, &buf, &n)) )
+        CHECK_AND_RETURN_ON_ERROR(err, "OrdersGetter_Get");
+    printf("Orders: %s \n", buf);
+
+    unsigned long long *order_ids=NULL;
+    int cnt = 0;
+    find_order_ids(buf, n, &order_ids, &cnt);
+    free(buf);
+    buf = NULL;
+
+    if( (err = OrdersGetter_SetOrderStatusType(&og, OrderStatusType_QUEUED)) ){
+        free(order_ids);
+        CHECK_AND_RETURN_ON_ERROR(err, "OrdersGetter_SetOrderStatusType ");
+    }
+
+    if( (err = OrdersGetter_Get(&og, &buf, &n)) ){
+        free(order_ids);
+        CHECK_AND_RETURN_ON_ERROR(err, "OrdersGetter_Get");
+    }
+    printf("Orders: %s \n", buf);
+
+    find_order_ids(buf, n, &order_ids, &cnt);
+    free(buf);
+    buf = NULL;
+
+    if( (err = OrdersGetter_SetOrderStatusType(&og, OrderStatusType_WORKING)) ){
+        free(order_ids);
+        CHECK_AND_RETURN_ON_ERROR(err, "OrdersGetter_SetOrderStatusType (2)");
+    }
+
+    if( (err = OrdersGetter_Get(&og, &buf, &n)) ){
+        free(order_ids);
+        CHECK_AND_RETURN_ON_ERROR(err, "OrdersGetter_Get");
+    }
+    printf("Orders: %s \n", buf);
+
+    find_order_ids(buf, n, &order_ids, &cnt);
+    free(buf);
+    buf = NULL;
+
+    unsigned long long order_id1 = 0, order_id2 = 0;
+    if( cnt > 0 )
+        order_id1 = order_ids[0];
+    if( cnt > 1 )
+        order_id2 = order_ids[1];
+    free(order_ids);
+
+//
+    if( (err = OrdersGetter_SetNMaxResults(&og, 1)) )
+        CHECK_AND_RETURN_ON_ERROR(err, "OrdersGetter_SetNMaxResults");
+
+    if( (err = OrdersGetter_SetFromEnteredTime(&og, fromdate2)) )
+        CHECK_AND_RETURN_ON_ERROR(err, "OrdersGetter_SetFromEnteredTime");
+
+    if( (err = OrdersGetter_SetToEnteredTime(&og, todate2)) )
+        CHECK_AND_RETURN_ON_ERROR(err, "OrdersGetter_SetToEnteredTime");
+
+    if( (err = OrdersGetter_SetOrderStatusType(&og, OrderStatusType_REJECTED)) )
+        CHECK_AND_RETURN_ON_ERROR(err, "OrdersGetter_SetOrderStatusType (3)");
+
+
+    if( (err = OrdersGetter_GetAccountId(&og, &buf, &n)) )
+        CHECK_AND_RETURN_ON_ERROR(err, "OrdersGetter_GetAccountId");
+
+    if( strcmp(buf, acct) ){
+        fprintf(stderr, "invalid account id (%s,%s) \n", buf, acct);
+        free(buf);
+        return -1;
+    }
+    printf("Account ID: %s \n", buf);
+    free(buf);
+    buf = NULL;
+
+    nmax = 0;
+    if( (err = OrdersGetter_GetNMaxResults(&og, &nmax)) )
+        CHECK_AND_RETURN_ON_ERROR(err, "OrdersGetter_GetNMaxResults (2)");
+
+    if( nmax != 1 ){
+        fprintf(stderr, "invalid nmax_results (%u, %u) \n", nmax, 1);
+        return -1;
+    }
+    printf("NMaxResults: %u \n", nmax);
+
+    if( (err = OrdersGetter_GetFromEnteredTime(&og, &buf, &n)) )
+        CHECK_AND_RETURN_ON_ERROR(err, "OrdersGetter_GetFromEnteredTime (2)");
+
+    if( strcmp(buf, fromdate2) ){
+        fprintf(stderr, "invalid from date (%s,%s) \n", buf, fromdate2);
+        free(buf);
+        return -1;
+    }
+    printf("FromTime: %s \n", buf);
+    free(buf);
+    buf = NULL;
+
+    if( (err = OrdersGetter_GetToEnteredTime(&og, &buf, &n)) )
+        CHECK_AND_RETURN_ON_ERROR(err, "OrdersGetter_GetToEnteredTime (2)");
+
+    if( strcmp(buf, todate2) ){
+        fprintf(stderr, "invalid to date (%s,%s) \n", buf, todate2);
+        free(buf);
+        return -1;
+    }
+    printf("ToTime: %s \n", buf);
+    free(buf);
+    buf = NULL;
+
+    if( (err = OrdersGetter_GetOrderStatusType(&og, &ost)) )
+        CHECK_AND_RETURN_ON_ERROR(err, "OrdersGetter_GetOrderStatusType (2)");
+
+    if( ost != OrderStatusType_REJECTED ){
+        fprintf(stderr, "invalid order status type (%i, %i) \n", ost,
+                 OrderStatusType_REJECTED );
+        return -1;
+    }
+
+    OrderStatusType_to_string(ost, &buf, &n);
+    printf("OrderStatusType: %s \n", buf);
+    free(buf);
+    buf = NULL;
+
+    if( (err = OrdersGetter_Get(&og, &buf, &n)) )
+        CHECK_AND_RETURN_ON_ERROR(err, "OrdersGetter_Get");
+    printf("Orders: %s \n", buf);
+    free(buf);
+    buf = NULL;
+
+    if( (err = OrdersGetter_Destroy(&og)) )
+        CHECK_AND_RETURN_ON_ERROR(err, "OrdersGetter_Destroy");
+
+    if( cnt == 0 ){
+        printf(" NO CANCELED/QUEUE/WORKING ORDERS OVER LAST 59 DAYS - "
+                " SKIP OrderGetter (non-error) tests\n");
+
+        OrderGetter_C o = {0,0};
+        if( (err = OrderGetter_Create(creds, acct, "000000000", &o)) )
+            CHECK_AND_RETURN_ON_ERROR(err, "OrderGetter_Create");
+
+        if( o.type_id != TYPE_ID_GETTER_ORDER ){
+           fprintf(stderr, "invalid type id (%i,%i) \n", o.type_id,
+                    TYPE_ID_GETTER_ORDER);
+           return -1;
+       }
+
+        if( OrderGetter_Get(&o, &buf, &n) !=  TDMA_API_REQUEST_ERROR ){
+            fprintf(stderr, "OrderGetter_Get failed to return REQUEST_ERROR\n");
+            return -1;
+        }
+
+        if( (err = OrderGetter_Destroy(&o)) )
+            CHECK_AND_RETURN_ON_ERROR(err, "OrderGetter_Destroy");
+
+    }else{
+
+        OrderGetter_C o = {0,0};
+        char id1_str[20];
+        memset(id1_str, 0, 20);
+        sprintf(id1_str, "%llu", order_id1);
+
+        if( (err = OrderGetter_Create(creds, acct, id1_str, &o)) )
+            CHECK_AND_RETURN_ON_ERROR(err, "OrderGetter_Create (2)");
+
+        if( o.type_id != TYPE_ID_GETTER_ORDER ){
+           fprintf(stderr, "invalid type id (%i,%i) \n", o.type_id,
+                    TYPE_ID_GETTER_ORDER);
+           return -1;
+       }
+
+       if( (err = OrderGetter_GetAccountId(&o, &buf, &n)) )
+           CHECK_AND_RETURN_ON_ERROR(err, "OrderGetter_GetAccountId");
+
+       if( strcmp(buf, acct) ){
+           fprintf(stderr, "invalid account id (%s,%s) \n", buf, acct);
+           free(buf);
+           return -1;
+       }
+       printf("Account ID: %s \n", buf);
+       free(buf);
+       buf = NULL;
+
+       if( (err = OrderGetter_GetOrderId(&o, &buf, &n)) )
+           CHECK_AND_RETURN_ON_ERROR(err, "OrderGetter_GetOrderId");
+
+       if( strcmp(buf, id1_str) ){
+           fprintf(stderr, "invalid order id (%s,%s) \n", buf, id1_str);
+           free(buf);
+           return -1;
+       }
+       printf("Order ID: %s \n", buf);
+       free(buf);
+       buf = NULL;
+
+       if( (err = OrderGetter_Get(&o, &buf, &n)) )
+           CHECK_AND_RETURN_ON_ERROR(err, "OrderGetter_Get");
+
+       printf("Order %llu: %s \n", order_id1, buf);
+       free(buf);
+       buf = NULL;
+
+       if( order_id2 != 0 ){
+           char id2_str[20];
+           memset(id2_str, 0, 20);
+           sprintf(id2_str, "%llu", order_id2);
+
+           if( (err = OrderGetter_SetOrderId(&o, id2_str)) )
+               CHECK_AND_RETURN_ON_ERROR(err, "OrderGetter_SetOrderId (2)");
+
+           if( (err = OrderGetter_GetOrderId(&o, &buf, &n)) )
+               CHECK_AND_RETURN_ON_ERROR(err, "OrderGetter_GetOrderId (2)");
+
+           if( strcmp(buf, id2_str) ){
+               fprintf(stderr, "invalid order id (%s,%s) \n", buf, id2_str);
+               free(buf);
+               return -1;
+           }
+           printf("Order ID: %s \n", buf);
+           free(buf);
+           buf = NULL;
+
+           if( (err = OrderGetter_Get(&o, &buf, &n)) )
+               CHECK_AND_RETURN_ON_ERROR(err, "OrderGetter_Get (2)");
+
+           printf("Order %llu: %s \n", order_id2, buf);
+           free(buf);
+           buf = NULL;
+
+       }
+
+       if( (err = OrderGetter_SetOrderId(&o, "000000000")) )
+           CHECK_AND_RETURN_ON_ERROR(err, "OrderGetter_SetOrderId (3)");
+
+       if( OrderGetter_Get(&o, &buf, &n) !=  TDMA_API_REQUEST_ERROR ){
+           fprintf(stderr, "OrderGetter_Get failed to return REQUEST_ERROR\n");
+           return -1;
+       }
+
+       if( (err = OrderGetter_Destroy(&o)) )
+           CHECK_AND_RETURN_ON_ERROR(err, "OrderGetter_Destroy");
+    }
+
+
+    return err;
+}
 
 
 

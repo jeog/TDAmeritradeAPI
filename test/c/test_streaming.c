@@ -2,6 +2,28 @@
 
 #include "test.h"
 
+/* include/_streaming.h */
+const int TYPE_ID_SUB_QUOTES = 1;
+const int TYPE_ID_SUB_OPTIONS = 2;
+const int TYPE_ID_SUB_LEVEL_ONE_FUTURES = 3;
+const int TYPE_ID_SUB_LEVEL_ONE_FOREX = 4;
+const int TYPE_ID_SUB_LEVEL_ONE_FUTURES_OPTIONS = 5;
+const int TYPE_ID_SUB_NEWS_HEADLINE = 6;
+const int TYPE_ID_SUB_CHART_EQUITY = 7;
+const int TYPE_ID_SUB_CHART_FOREX = 8; // not working
+const int TYPE_ID_SUB_CHART_FUTURES = 9;
+const int TYPE_ID_SUB_CHART_OPTIONS = 10;
+const int TYPE_ID_SUB_TIMESALE_EQUITY = 11;
+const int TYPE_ID_SUB_TIMESALE_FOREX = 12; // not working
+const int TYPE_ID_SUB_TIMESALE_FUTURES = 13;
+const int TYPE_ID_SUB_TIMESALE_OPTIONS = 14;
+const int TYPE_ID_SUB_ACTIVES_NASDAQ = 15;
+const int TYPE_ID_SUB_ACTIVES_NYSE = 16;
+const int TYPE_ID_SUB_ACTIVES_OTCBB = 17;
+const int TYPE_ID_SUB_ACTIVES_OPTION = 18;
+
+const int TYPE_ID_STREAMING_SESSION = 100;
+
 void
 streaming_callback( int cb_type, int ss_type, unsigned long long ts, const char* msg)
 {

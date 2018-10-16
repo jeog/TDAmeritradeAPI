@@ -1,15 +1,18 @@
 ### Execute Interface
 - - -
 - [Overview](#overview)
+- [WARNING](#warning-please-read)
 - [Using OrderTicket Objects](#using-orderticket-objects)
 - [Raw Orders](#raw-orders)
 - [Managed Orders](#managed-orders)
    - [SimpleOrderBuilder](#simpleorderbuilder)
    - [SpreadOrderBuilder](#spreadorderbuilder)
    - [ConditionalOrderBuilder](#conditionalorderbuilder)
-- [Design Ideas](#design-ideas)
-   - [Higher Level Features](#higher-level-features)
-   - [Order Hub](#order-hub)
+- [Execute](#execute)
+   - [Send Order](#send-order)
+   - [Cancel Order](#cancel-order)
+   - [Replace Order](#replace-order)
+- [Order & Position Information](#order--position-information)
 - - -
 
 ### Overview
@@ -27,22 +30,30 @@ from tdma_api import execute
 
 Order execution and management interface. 
 
-This interface is waiting on a mechanism from Ameritrade to test execution without having to send live dummy orders. There has been no actual testing of execution but you can build ```OrderTicket``` objects whose underlying JSON can be submitted for execution. Currently we DO NOT provide a means to send/manage orders.
+This interface is waiting on a mechanism from Ameritrade to test execution without having to send live dummy orders. There has only been limited testing of execution.
 
-Below we provide some basics of the proposed interface. Feel free to comment via [issues](https://github.com/jeog/TDAmeritradeAPI/issues/1) or email: jeog.dev@gmail.com
+Feel free to comment and make suggestsions via [issues](https://github.com/jeog/TDAmeritradeAPI/issues/1) or email: jeog.dev@gmail.com
+
+[TDAmeritrade docs.](https://developer.tdameritrade.com/account-access/apis/post/accounts/{accountId}/orders-0)
+
+## WARNING (PLEASE READ)
+
+- This interface allows you to build and execute **live** orders.
+- This interface has undergone very **limited testing.**
+- It's recommended you wait for Ameritrade to release a better testing environment before using.
+- You should **assume bugs** in Order Builders, Tickets, Legs, etc that may affect order quantity, price, type etc. 
+- **REVIEW ALL THE RELEVANT CODE** and **DOUBLE CHECK THE RAW JSON BEFORE SENDING.**
+
+**BY USING THIS CODE/LIBRARY TO BUILD AND/OR SEND LIVE ORDERS YOU AGREE TO TAKE FULL RESPONSIBILITY FOR ANY LOSSES INCURRED - INCLUDING, BUT NOT LIMITED TO, LOSSES RESULTING FROM ERRORS IN THE CODE/LIBRARY AND/OR THE GROSS NEGLIGENCE OF THE AUTHOR(S).**
 
 
 ### Using OrderTicket Objects
 
-**IF YOU CHOOSE TO SEND THESE ORDERS BE VERY VERY CAREFUL - MAKE SURE YOU KNOW EXACTLY WHAT IS BEING SENT!** 
-
 1. Build an ```OrderTicket``` directly or use one of the builders. (see below)
 2. Check that the ```OrderTicket``` is accurately representing the JSON you intend to POST.
-    - because of the number of builders and accessors expect bugs 
     - triple check quantities, prices, order types etc. **of the raw json** 
     - be sure you understand how the Builders handle price and OrderType fields for spreads (+/- prices vis-a-vis NET_CREDIT/NET_DEBIT order types)
-3. Review the [offical docs](https://developer.tdameritrade.com/account-access/apis/post/accounts/{accountId}/orders-0).
-4. Build your own mechanism to send the order - take a look at ```HttpsPostConnection``` in curl_connect.h/cpp
+3. Use ```Execute_SendOrder``` or create your own mechanism to send the order.
 
 ### Raw Orders
 
@@ -157,9 +168,7 @@ Equity and Option OrderTickets can be constructed with the static builders of th
     - Market 
     - Limit
 
-##### Example Usage
-
-**BUY LONG (TO OPEN) 100 SPY @ 285.05 or better**
+**Example - BUY LONG (TO OPEN) 100 SPY @ 285.05 or better**
 
 ```
 [C++]
@@ -208,9 +217,8 @@ Option spread OrderTickets can be constructed with the static builders of the re
 
 IMPORTANT - negative(-) prices for NET_CREDIT, positive prices for NET_DEBIT
 
-##### Example Usage
 
-**BUY (TO OPEN) 3 Jan-20 300/350 VERTICAL SPY CALL spreads @ a 10.10 DEBIT or better**
+**Example - BUY (TO OPEN) 3 Jan-20 300/350 VERTICAL SPY CALL spreads @ a 10.10 DEBIT or better**
 
 ```
 [C++]
@@ -257,7 +265,7 @@ order = VB.Build1("SPY_011720C300", "SPY_011720C350", 3, True, 10.10)
 order = VB.Build2("SPY", 1, 17, 2020, 1, 300, 350, 3, 1, 10.10)
 ```
 
-**SELL (TO CLOSE) 10 1-3-2 UNBALANCED Jan-20 300/325/350 SPY CALL BUTTERFLIES @ 1.05 CREDIT or better**
+**Example - SELL (TO CLOSE) 10 1-3-2 UNBALANCED Jan-20 300/325/350 SPY CALL BUTTERFLIES @ 1.05 CREDIT or better**
 ```
 [C++]
 
@@ -312,9 +320,7 @@ order = BB.Build2("SPY", 1, 17, 2020, True, 300, 325, 350, 10, 20,
 
 One-Cancels-Other(OCO) and One-Triggers-Other(OTO) OrderTickets can be constructed with the static builders of the relevant nested classes inside the ConditionalOrderBuilder class(C++, Python) or the similarly name static methods(C).
 
-##### Example Usage
-
-**OCO Exit Bracket: SELL (TO CLOSE) 100 SPY @ 299.95 or better -OR- SELL (TO CLOSE) 100 SPY on trade below 289.95 @ 289.45 or better**
+**Example - OCO Exit Bracket: SELL (TO CLOSE) 100 SPY @ 299.95 or better -OR- SELL (TO CLOSE) 100 SPY on trade below 289.95 @ 289.45 or better**
 ```
 [C++]
 
@@ -360,30 +366,58 @@ order2 = SB.Stop.Build("SPY", 100, false, false, 289.95, 289.45)
 order3 = execute.ConditionalOrderBuilder.OCO(order1, order2);
 ```
 
-### Design Ideas
+### Execute
 
-#### Higher Level Features
+***CAUTION* - The following functionality has undergone very limited testing (basic equity limit orders in C++ only)**
 
-- Automatic checking for valid symbols via the 'Get' interface
-- Automatic strike combination and credit/debit value checks/warnings vis-a-vis spread type
-- ```Instrument``` objects that represent tradable instruments(w/ real-time bid/ask/last data) that can be passed to the builders
-- Build related close, roll and leg-adjust orders from ```Order``` instances
+#### Send Order
 
-...
+```Execute_SendOrder``` attempts to take an ```OrderTicket```, convert it to JSON and make a HTTPS/POST connection in order to place an order for account ```account_id```. If the order is successfully recieved an order ID string will be returned; if not an exception will be thrown(C++) or an error code returned(C).
+```
+[C++]
+inline std::string
+Execute_SendOrder( Credentials& creds,
+                   const std::string& account_id,
+                   const OrderTicket& order );
 
-#### Order Hub
+[C]
+static inline int
+Execute_SendOrder( struct Credentials *creds,
+                   const char* account_id,
+                   OrderTicket_C *porder,
+                   char** buf,
+                   size_t *n );
+```
 
-Some type of object/interface that manages all order flow from the client side:
-- receive Order objects, serialize, send to TDMA
-- handle return info, errors etc.
-- alert client, log 
-- store/curate past and future orders for reference
-- globally control/enforce execution and position limits 
-- kill switch
-- batch order control
+#### Cancel Order
 
-...
+```Execute_CancelOrder``` attempts to take an ```order_id``` string (of an active order) for account ```account_id``` and make a HTTPS/DELETE connection to cancel that order. If the order is active and successfully canceled ```true``` will be returned(C++) or ```*success``` will be set to non-zero(C); if not an exception will be thrown(C++) or an error code returned(C). 
 
+(At some point in the future we may catch certain exceptions and return a fail state.)
+```
+[C++]
+inline bool
+Execute_CancelOrder( Credentials& creds,
+                     const std::string& account_id,
+                     const std::string& order_id );
 
+[C]
+static inline int
+Execute_CancelOrder( struct Credentials *creds,
+                     const char* account_id,
+                     const char* order_id,
+                     int *success );
+```
+
+#### Replace Order
+
+// TODO
+
+### Order & Position Information
+
+To get order and position information for an account review the following 'Getter' objects:
+   - [OrderGetter](README_GET.md#ordergetter) - order by id
+   - [OrdersGetter](README_GET.md#ordersgetter) - orders by status/range 
+   - [AccountInfoGetter](README_GET.md#accountinfogetter) - orders and/or positions 
 
 
