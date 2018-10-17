@@ -23,7 +23,7 @@ and then uses the library to request an access token, which is refreshed automat
 
 - Please report bugs via issues: be desciptive and try to replicate if possible. 
 
-- If you're capable of and interested in contributing please communicate your intentions first.
+- If you're capable of and interested in contributing please communicate your intentions first. 
 
 *Communicating w/ 3rd party servers, accessing financial accounts, and automating trade execution are all operations that present risk and require responsibility. **By using this software you agree that you understand and accept these risks and responsibilities. You accept sole responsibility for the results of said use. You completely absolve the author of any damages, financial or otherwise, incurred personally or by 3rd parties, directly or indirectly, by using this software - even those resulting from the gross negligence of the author. All communication with TDAmeritrade servers, access of accounts, and execution of orders must adhere to their policies and terms of service and is your repsonsibility, and yours alone.***
 
@@ -50,7 +50,7 @@ and then uses the library to request an access token, which is refreshed automat
 - [Access](#access)
     - [Get](#get)
     - [Streaming](#streaming)
-    - [Update/Execute](#updateexecute)
+    - [Execute](#execute)
 - [Utilities](#utilities)
     - [OptionSymbols](#optionsymbols)
 - [Licensing & Warranty](#licensing--warranty)
@@ -73,8 +73,8 @@ This project would not be possible without some of the great open-source project
 - - -
 | | Get Interface  |  Streaming Interface  |  Execute Interface 
 -------------------|---------------|---------------------|--------------------
-**C**              | *Working*     | *Working*   | *OrderTicket, Builders*
-**C++**            | *Working*     | *Working*   | *OrderTicket, Builders*
+**C**              | *Working*     | *Working*   | *OrderTicket, Builders, Send/Cancel*
+**C++**            | *Working*     | *Working*   | *OrderTicket, Builders, Send/Cancel*
 **Python**         | *Working*     | *Working*   | *OrderTicket, Builders*
 
 *Note: 'Working' does not necessarily mean 'Stable'*
@@ -569,9 +569,9 @@ CloseCredentials(struct Credentials* pcreds );
 
     For real-time, low(er)-latency streaming data you'll establish a long-lived WebSocket connection through the StreamingSession class that will callback with json objects or strings. [Please review the full documentation](README_STREAMING.md).
 
-- ##### *Update/Execute* 
+- ##### *Execute* 
 
-    For updating your account and executing trades you'll make HTTPS Put/Post/Delete requests. ***Currently, we are waiting on a mechanism from Ameritrade to test execution outside of live trading before allowing direct access from the library***. In the meantime you can create 'OrderTicket' objects, retrieve the underlying JSON, and POST yourself. [Please review the preliminary documentation](README_EXECUTE.md).
+    For executing trades you'll make HTTPS Put/Post/Delete requests using the JSON from OrderTicket/Leg objects.  Building OrderTickets/Legs can be done manually or through static Builders that help with popular order types. ***This has undergone very limited live testing - we are waiting on a mechanism from Ameritrade to test execution outside of live trading***. [Please review the preliminary documentation](README_EXECUTE.md).
 
 
 ### Utilities

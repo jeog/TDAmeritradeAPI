@@ -372,7 +372,7 @@ order3 = execute.ConditionalOrderBuilder.OCO(order1, order2);
 
 #### Send Order
 
-```Execute_SendOrder``` attempts to take an ```OrderTicket```, convert it to JSON and make a HTTPS/POST connection in order to place an order for account ```account_id```. If the order is successfully recieved an order ID string will be returned; if not an exception will be thrown(C++) or an error code returned(C).
+```Execute_SendOrder``` attempts to take an ```OrderTicket```, convert it to JSON and make a HTTPS/Post connection in order to place an order for account ```account_id```. If the order is successfully recieved an order ID string will be returned; if not an exception will be thrown(C++) or an error code returned(C).
 ```
 [C++]
 inline std::string
@@ -391,7 +391,7 @@ Execute_SendOrder( struct Credentials *creds,
 
 #### Cancel Order
 
-```Execute_CancelOrder``` attempts to take an ```order_id``` string (of an active order) for account ```account_id``` and make a HTTPS/DELETE connection to cancel that order. If the order is active and successfully canceled ```true``` will be returned(C++) or ```*success``` will be set to non-zero(C); if not an exception will be thrown(C++) or an error code returned(C). 
+```Execute_CancelOrder``` attempts to take an ```order_id``` string (of an active order) for account ```account_id``` and make a HTTPS/Delete connection to cancel that order. If the order is active and successfully canceled ```true``` will be returned(C++) or ```*success``` will be set to non-zero(C); if not an exception will be thrown(C++) or an error code returned(C). 
 
 (At some point in the future we may catch certain exceptions and return a fail state.)
 ```
