@@ -21,8 +21,6 @@ from time import strftime, perf_counter, sleep, gmtime, mktime
 import argparse, gc, os, json
 
 from tdma_api import get, auth, clib, stream, execute, common
-from Cython.Build.BuildExecutable import build
-from sklearn.ensemble.weight_boosting import AdaBoostClassifier
 
 SYSTEM = system()
 ARCH = architecture()[0]
@@ -2576,6 +2574,22 @@ def test_execute_oco_oto_builders():
     print(oto1.as_json())
 
 
+# LIVE ORDERS !
+#def test_execute_transactions(creds, account_id):
+#    order = execute.SimpleOrderBuilder.Equity.Build("XLF", 1, True, True, 1.99)
+#    print( order.get_price() )
+#    l = order.get_leg(0)
+#    print( l.get_quantity() )
+#    print( l.get_symbol() )
+#    print( l.get_instruction() )
+#    print( order.get_duration() )
+#    print( order.get_session() )    
+#    oid = execute.send_order(creds, account_id, order)    
+#    print("order ID: ", oid)
+#    success = execute.cancel_order(creds, account_id, oid)
+#    print("cancel: ", str(success))
+    
+    
 
 if __name__ == '__main__':
     print("\n*** TDAmeritradeAPI test.py ***")
@@ -2598,6 +2612,7 @@ if __name__ == '__main__':
     print_title("load credentials")
     with auth.CredentialsManager(args.credentials_path, \
                                   args.credentials_password, True) as cm:
+        #test(test_execute_transactions,cm.credentials, args.account_id)               
         test(test_option_symbol_builder)
         test(test_execute_order_objects)
         test(test_execute_order_builders)

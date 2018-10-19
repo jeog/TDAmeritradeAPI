@@ -34,6 +34,11 @@ int main(int argc, char* argv[])
         return 1;        
     }
 
+    if( argc > 4 && strcmp(argv[4], "--no-live-connect") == 0){
+        cout<< argv[4] << endl;
+        use_live_connection = false;
+    }
+
     {
         CredentialsManager cmanager(creds_path, password);
 

@@ -14,6 +14,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see http://www.gnu.org/licenses.
 */
+#include <iostream>
 
 #include "../../include/_tdma_api.h"
 #include "../../include/_execute.h"
@@ -22,6 +23,23 @@ using namespace std;
 using namespace conn;
 
 namespace tdma{
+
+std::string
+order_id_from_header(const std::string& header)
+{
+    static const regex ID_RX(
+        "Location:[ ]*https://api\\.tdameritrade\\.com/.+/[0-9]+/orders/"
+        "([0-9]+)[ ]*[\r\n]+"
+    );
+
+    smatch m;
+    regex_search(header, m, ID_RX);
+    if( m.ready() && m.size() == 2 )
+        return m[1];
+
+    cerr<< "failed to find order ID in header" << endl;
+    return "";
+}
 
 std::string
 Execute_SendOrderImpl( Credentials& creds,
@@ -38,11 +56,13 @@ Execute_SendOrderImpl( Credentials& creds,
     connection.SET_url(url);
     connection.SET_fields(body);
 
-    string order_id;
-    conn::clock_ty::time_point tp;
-    tie(order_id, tp) = connect_order_send( connection, creds );
-    return order_id;
+    string r_head;
+    conn::clock_ty::time_point r_tp;
+    tie(r_head, r_tp) =
+        connect_execute(connection, creds, HTTP_RESPONSE_CREATED);
+    return order_id_from_header(r_head);
 }
+
 
 bool
 Execute_CancelOrderImpl( Credentials& creds,
@@ -55,11 +75,9 @@ Execute_CancelOrderImpl( Credentials& creds,
     HTTPSDeleteConnection connection;
     connection.SET_url(url);
 
-    bool success;
-    conn::clock_ty::time_point tp;
-    tie(success, tp) = connect_order_cancel(connection, creds);
-    return success;
-
+    // TODO catch exceptions and return fail state ??
+    connect_execute(connection, creds, HTTP_RESPONSE_OK);
+    return true;
 }
 
 
@@ -97,16 +115,7 @@ Execute_SendOrder_ABI( Credentials *creds,
     if( err )
         return err;
 
-    *n = r.size() + 1; // NULL TERM
-    *buf = reinterpret_cast<char*>(malloc(*n));
-    if( !*buf ){
-        return HANDLE_ERROR( tdma::MemoryError,
-            "failed to allocate buffer memory", allow_exceptions
-            );
-    }
-    (*buf)[(*n)-1] = 0;
-    strncpy(*buf, r.c_str(), (*n)-1);
-    return 0;
+    return to_new_char_buffer(r, buf, n, allow_exceptions);
 }
 
 int
@@ -138,13 +147,13 @@ OrderSession_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
 
     switch(static_cast<OrderSession>(v)){
     case OrderSession::NORMAL:
-        return alloc_C_str("NORMAL", buf, n, allow_exceptions);
+        return to_new_char_buffer("NORMAL", buf, n, allow_exceptions);
     case OrderSession::AM:
-        return alloc_C_str("AM", buf, n, allow_exceptions);
+        return to_new_char_buffer("AM", buf, n, allow_exceptions);
     case OrderSession::PM:
-        return alloc_C_str("PM", buf, n, allow_exceptions);
+        return to_new_char_buffer("PM", buf, n, allow_exceptions);
     case OrderSession::SEAMLESS:
-        return alloc_C_str("SEAMLESS", buf, n, allow_exceptions);
+        return to_new_char_buffer("SEAMLESS", buf, n, allow_exceptions);
     default:
         throw std::runtime_error("Invalid OrderSession");
     }
@@ -157,11 +166,11 @@ OrderDuration_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
 
     switch(static_cast<OrderDuration>(v)){
     case OrderDuration::DAY:
-        return alloc_C_str("DAY", buf, n, allow_exceptions);
+        return to_new_char_buffer("DAY", buf, n, allow_exceptions);
     case OrderDuration::GOOD_TILL_CANCEL:
-        return alloc_C_str("GOOD_TILL_CANCEL", buf, n, allow_exceptions);
+        return to_new_char_buffer("GOOD_TILL_CANCEL", buf, n, allow_exceptions);
     case OrderDuration::FILL_OR_KILL:
-        return alloc_C_str("FILL_OR_KILL", buf, n, allow_exceptions);
+        return to_new_char_buffer("FILL_OR_KILL", buf, n, allow_exceptions);
     default:
         throw std::runtime_error("Invalid OrderDuration");
     }
@@ -175,19 +184,19 @@ OrderAssetType_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
 
     switch(static_cast<OrderAssetType>(v)){
     case OrderAssetType::EQUITY:
-        return alloc_C_str("EQUITY", buf, n, allow_exceptions);
+        return to_new_char_buffer("EQUITY", buf, n, allow_exceptions);
     case OrderAssetType::OPTION:
-        return alloc_C_str("OPTION", buf, n, allow_exceptions);
+        return to_new_char_buffer("OPTION", buf, n, allow_exceptions);
     case OrderAssetType::INDEX:
-        return alloc_C_str("INDEX", buf, n, allow_exceptions);
+        return to_new_char_buffer("INDEX", buf, n, allow_exceptions);
     case OrderAssetType::MUTUAL_FUND:
-        return alloc_C_str("MUTUAL_FUND", buf, n, allow_exceptions);
+        return to_new_char_buffer("MUTUAL_FUND", buf, n, allow_exceptions);
     case OrderAssetType::CASH_EQUIVALENT:
-        return alloc_C_str("CASH_EQUIVALENT", buf, n, allow_exceptions);
+        return to_new_char_buffer("CASH_EQUIVALENT", buf, n, allow_exceptions);
     case OrderAssetType::FIXED_INCOME:
-        return alloc_C_str("FIXED_INCOME", buf, n, allow_exceptions);
+        return to_new_char_buffer("FIXED_INCOME", buf, n, allow_exceptions);
     case OrderAssetType::CURRENCY:
-        return alloc_C_str("CURRENCY", buf, n, allow_exceptions);
+        return to_new_char_buffer("CURRENCY", buf, n, allow_exceptions);
     default:
         throw std::runtime_error("Invalid OrderAssetType");
     }
@@ -201,23 +210,23 @@ OrderInstruction_to_string_ABI(int v, char** buf, size_t* n, int allow_exception
 
     switch(static_cast<OrderInstruction>(v)){
     case OrderInstruction::BUY:
-        return alloc_C_str("BUY", buf, n, allow_exceptions);
+        return to_new_char_buffer("BUY", buf, n, allow_exceptions);
     case OrderInstruction::SELL:
-        return alloc_C_str("SELL", buf, n, allow_exceptions);
+        return to_new_char_buffer("SELL", buf, n, allow_exceptions);
     case OrderInstruction::BUY_TO_COVER:
-        return alloc_C_str("BUY_TO_COVER", buf, n, allow_exceptions);
+        return to_new_char_buffer("BUY_TO_COVER", buf, n, allow_exceptions);
     case OrderInstruction::SELL_SHORT:
-        return alloc_C_str("SELL_SHORT", buf, n, allow_exceptions);
+        return to_new_char_buffer("SELL_SHORT", buf, n, allow_exceptions);
     case OrderInstruction::BUY_TO_OPEN:
-        return alloc_C_str("BUY_TO_OPEN", buf, n, allow_exceptions);
+        return to_new_char_buffer("BUY_TO_OPEN", buf, n, allow_exceptions);
     case OrderInstruction::BUY_TO_CLOSE:
-        return alloc_C_str("BUY_TO_CLOSE", buf, n, allow_exceptions);
+        return to_new_char_buffer("BUY_TO_CLOSE", buf, n, allow_exceptions);
     case OrderInstruction::SELL_TO_OPEN:
-        return alloc_C_str("SELL_TO_OPEN", buf, n, allow_exceptions);
+        return to_new_char_buffer("SELL_TO_OPEN", buf, n, allow_exceptions);
     case OrderInstruction::SELL_TO_CLOSE:
-        return alloc_C_str("SELL_TO_CLOSE", buf, n, allow_exceptions);
+        return to_new_char_buffer("SELL_TO_CLOSE", buf, n, allow_exceptions);
     case OrderInstruction::EXCHANGE:
-        return alloc_C_str("EXCHANGE", buf, n, allow_exceptions);
+        return to_new_char_buffer("EXCHANGE", buf, n, allow_exceptions);
     default:
         throw std::runtime_error("Invalid OrderInstruction");
     }
@@ -231,27 +240,27 @@ OrderType_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
 
     switch(static_cast<OrderType>(v)){
     case OrderType::MARKET:
-        return alloc_C_str("MARKET", buf, n, allow_exceptions);
+        return to_new_char_buffer("MARKET", buf, n, allow_exceptions);
     case OrderType::LIMIT:
-        return alloc_C_str("LIMIT", buf, n, allow_exceptions);
+        return to_new_char_buffer("LIMIT", buf, n, allow_exceptions);
     case OrderType::STOP:
-        return alloc_C_str("STOP", buf, n, allow_exceptions);
+        return to_new_char_buffer("STOP", buf, n, allow_exceptions);
     case OrderType::STOP_LIMIT:
-        return alloc_C_str("STOP_LIMIT", buf, n, allow_exceptions);
+        return to_new_char_buffer("STOP_LIMIT", buf, n, allow_exceptions);
     case OrderType::TRAILING_STOP:
-        return alloc_C_str("TRAILING_STOP", buf, n, allow_exceptions);
+        return to_new_char_buffer("TRAILING_STOP", buf, n, allow_exceptions);
     case OrderType::MARKET_ON_CLOSE:
-        return alloc_C_str("MARKET_ON_CLOSE", buf, n, allow_exceptions);
+        return to_new_char_buffer("MARKET_ON_CLOSE", buf, n, allow_exceptions);
     case OrderType::EXERCISE:
-        return alloc_C_str("EXERCISE", buf, n, allow_exceptions);
+        return to_new_char_buffer("EXERCISE", buf, n, allow_exceptions);
     case OrderType::TRAILING_STOP_LIMIT:
-        return alloc_C_str("TRAILING_STOP_LIMIT", buf, n, allow_exceptions);
+        return to_new_char_buffer("TRAILING_STOP_LIMIT", buf, n, allow_exceptions);
     case OrderType::NET_DEBIT:
-        return alloc_C_str("NET_DEBIT", buf, n, allow_exceptions);
+        return to_new_char_buffer("NET_DEBIT", buf, n, allow_exceptions);
     case OrderType::NET_CREDIT:
-        return alloc_C_str("NET_CREDIT", buf, n, allow_exceptions);
+        return to_new_char_buffer("NET_CREDIT", buf, n, allow_exceptions);
     case OrderType::NET_ZERO:
-        return alloc_C_str("NET_ZERO", buf, n, allow_exceptions);
+        return to_new_char_buffer("NET_ZERO", buf, n, allow_exceptions);
     default:
         throw std::runtime_error("Invalid OrderType");
     }
@@ -266,45 +275,45 @@ ComplexOrderStrategyType_to_string_ABI(
 
     switch(static_cast<ComplexOrderStrategyType>(v)){
     case ComplexOrderStrategyType::NONE:
-        return alloc_C_str("NONE", buf, n, allow_exceptions);
+        return to_new_char_buffer("NONE", buf, n, allow_exceptions);
     case ComplexOrderStrategyType::COVERED:
-        return alloc_C_str("COVERED", buf, n, allow_exceptions);
+        return to_new_char_buffer("COVERED", buf, n, allow_exceptions);
     case ComplexOrderStrategyType::VERTICAL:
-        return alloc_C_str("VERTICAL", buf, n, allow_exceptions);
+        return to_new_char_buffer("VERTICAL", buf, n, allow_exceptions);
     case ComplexOrderStrategyType::BACK_RATIO:
-        return alloc_C_str("BACK_RATIO", buf, n, allow_exceptions);
+        return to_new_char_buffer("BACK_RATIO", buf, n, allow_exceptions);
     case ComplexOrderStrategyType::CALENDAR:
-        return alloc_C_str("CALENDAR", buf, n, allow_exceptions);
+        return to_new_char_buffer("CALENDAR", buf, n, allow_exceptions);
     case ComplexOrderStrategyType::DIAGONAL:
-        return alloc_C_str("DIAGONAL", buf, n, allow_exceptions);
+        return to_new_char_buffer("DIAGONAL", buf, n, allow_exceptions);
     case ComplexOrderStrategyType::STRADDLE:
-        return alloc_C_str("STRADDLE", buf, n, allow_exceptions);
+        return to_new_char_buffer("STRADDLE", buf, n, allow_exceptions);
     case ComplexOrderStrategyType::STRANGLE:
-        return alloc_C_str("STRANGLE", buf, n, allow_exceptions);
+        return to_new_char_buffer("STRANGLE", buf, n, allow_exceptions);
     case ComplexOrderStrategyType::COLLAR_SYNTHETIC:
-        return alloc_C_str("COLLAR_SYNTHETIC", buf, n, allow_exceptions);
+        return to_new_char_buffer("COLLAR_SYNTHETIC", buf, n, allow_exceptions);
     case ComplexOrderStrategyType::BUTTERFLY:
-        return alloc_C_str("BUTTERFLY", buf, n, allow_exceptions);
+        return to_new_char_buffer("BUTTERFLY", buf, n, allow_exceptions);
     case ComplexOrderStrategyType::CONDOR:
-        return alloc_C_str("CONDOR", buf, n, allow_exceptions);
+        return to_new_char_buffer("CONDOR", buf, n, allow_exceptions);
     case ComplexOrderStrategyType::IRON_CONDOR:
-        return alloc_C_str("IRON_CONDOR", buf, n, allow_exceptions);
+        return to_new_char_buffer("IRON_CONDOR", buf, n, allow_exceptions);
     case ComplexOrderStrategyType::VERTICAL_ROLL:
-        return alloc_C_str("VERTICAL_ROLL", buf, n, allow_exceptions);
+        return to_new_char_buffer("VERTICAL_ROLL", buf, n, allow_exceptions);
     case ComplexOrderStrategyType::COLLAR_WITH_STOCK:
-        return alloc_C_str("COLLAR_WITH_STOCK", buf, n, allow_exceptions);
+        return to_new_char_buffer("COLLAR_WITH_STOCK", buf, n, allow_exceptions);
     case ComplexOrderStrategyType::DOUBLE_DIAGONAL:
-        return alloc_C_str("DOUBLE_DIAGONAL", buf, n, allow_exceptions);
+        return to_new_char_buffer("DOUBLE_DIAGONAL", buf, n, allow_exceptions);
     case ComplexOrderStrategyType::UNBALANCED_BUTTERFLY:
-        return alloc_C_str("UNBALANCED_BUTTERFLY", buf, n, allow_exceptions);
+        return to_new_char_buffer("UNBALANCED_BUTTERFLY", buf, n, allow_exceptions);
     case ComplexOrderStrategyType::UNBALANCED_CONDOR:
-        return alloc_C_str("UNBALANCED_CONDOR", buf, n, allow_exceptions);
+        return to_new_char_buffer("UNBALANCED_CONDOR", buf, n, allow_exceptions);
     case ComplexOrderStrategyType::UNBALANCED_IRON_CONDOR:
-        return alloc_C_str("UNBALANCED_IRON_CONDOR", buf, n, allow_exceptions);
+        return to_new_char_buffer("UNBALANCED_IRON_CONDOR", buf, n, allow_exceptions);
     case ComplexOrderStrategyType::UNBALANCED_VERTICAL_ROLL:
-        return alloc_C_str("UNBALANCED_VERTICAL_ROLL", buf, n, allow_exceptions);
+        return to_new_char_buffer("UNBALANCED_VERTICAL_ROLL", buf, n, allow_exceptions);
     case ComplexOrderStrategyType::CUSTOM:
-        return alloc_C_str("CUSTOM", buf, n, allow_exceptions);
+        return to_new_char_buffer("CUSTOM", buf, n, allow_exceptions);
     default:
         throw std::runtime_error("Invalid ComplexOrderStrategyType");
     }
@@ -318,11 +327,11 @@ OrderStrategyType_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptio
 
     switch(static_cast<OrderStrategyType>(v)){
     case OrderStrategyType::SINGLE:
-        return alloc_C_str("SINGLE", buf, n, allow_exceptions);
+        return to_new_char_buffer("SINGLE", buf, n, allow_exceptions);
     case OrderStrategyType::OCO:
-        return alloc_C_str("OCO", buf, n, allow_exceptions);
+        return to_new_char_buffer("OCO", buf, n, allow_exceptions);
     case OrderStrategyType::TRIGGER:
-        return alloc_C_str("TRIGGER", buf, n, allow_exceptions);
+        return to_new_char_buffer("TRIGGER", buf, n, allow_exceptions);
     default:
         throw std::runtime_error("Invalid OrderStrategyType");
     }

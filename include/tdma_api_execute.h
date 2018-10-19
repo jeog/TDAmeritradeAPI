@@ -4335,6 +4335,8 @@ Execute_CancelOrder_ABI( struct Credentials *creds,
                              int *success,
                              int allow_exceptions );
 
+#ifndef __cplusplus
+
 static inline int
 Execute_SendOrder( struct Credentials *creds,
                      const char* account_id,
@@ -4352,7 +4354,7 @@ Execute_CancelOrder( struct Credentials *creds,
 { return Execute_CancelOrder_ABI(creds, account_id, order_id, success, 0); }
 
 
-#ifdef __cplusplus
+#else
 
 namespace tdma {
 
@@ -4361,7 +4363,7 @@ Execute_SendOrder( Credentials& creds,
                       const std::string& account_id,
                       const OrderTicket& order )
 { return str_from_abi_vargs( Execute_SendOrder_ABI, ALLOW_EXCEPTIONS,
-                             &creds, account_id.c_str(),order.get_cproxy() ); }
+                             &creds, account_id.c_str(), order.get_cproxy() ); }
 
 inline bool
 Execute_CancelOrder( Credentials& creds,
@@ -4373,6 +4375,19 @@ Execute_CancelOrder( Credentials& creds,
               order_id.c_str(), &success );
     return static_cast<bool>(success);
 }
+
+using std::to_string;
+
+} /* tdma */
+
+#endif /* __cplusplus */
+
+#undef THROW_VALUE_EXCEPTION
+
+#endif /* TDMA_API_EXECUTE_H */
+
+
+
 
 /*
 {
@@ -4529,15 +4544,4 @@ Execute_CancelOrder( Credentials& creds,
   ]
 }
  */
-
-using std::to_string;
-
-} /* tdma */
-
-#undef THROW_VALUE_EXCEPTION
-
-#endif /* __cplusplus */
-
-#endif /* TDMA_API_EXECUTE_H */
-
 

@@ -154,34 +154,14 @@ curl_execute(HTTPSConnection& connection, bool return_header_data)
 }
 
 
-json
-connect_auth(HTTPSPostConnection& connection, std::string fname)
-{
-    assert(connection);
-
-    long r_code;
-    string r_data, h_data;
-    conn::clock_ty::time_point r_tp;
-    tie(r_code, r_data, h_data, r_tp) = curl_execute(connection, false);
-
-    if( r_code != HTTP_RESPONSE_OK ){
-        cerr<< "error response: " << r_code << endl;
-        TDMA_API_THROW( AuthenticationException,
-                        fname + " failed: " + r_data, r_code );
-    }
-
-    return json::parse(r_data);
-}
-
-
 bool
 on_return( long code,
-            long code_success,
+            long success_code,
             const string& data,
             bool allow_refresh,
             api_on_error_cb_ty on_error_cb )
 {
-    if( code == code_success )
+    if( code == success_code )
         return true;
 
     cerr<< "error response: " << code << endl;
@@ -221,7 +201,7 @@ connect( HTTPSConnection& connection,
           const vector<pair<string,string>>& static_headers,
           api_on_error_cb_ty on_error_cb,
           bool return_headers,
-          long code_success )
+          long success_code )
 {
     if( !creds.access_token || !creds.client_id )
         TDMA_API_THROW( LocalCredentialException, "invalid credentials" );
@@ -255,7 +235,7 @@ connect( HTTPSConnection& connection,
     conn::clock_ty::time_point r_tp;
     tie(r_code, r_data, r_head, r_tp) = curl_execute(connection, return_headers);
 
-    if( !on_return(r_code, code_success, r_data, true, on_error_cb) ){
+    if( !on_return(r_code, success_code, r_data, true, on_error_cb) ){
         /*
          * if 'on_return' returns FALSE initially we have an expired token
          * IN THE HEADER (or in the header AND cache):
@@ -299,7 +279,7 @@ connect( HTTPSConnection& connection,
                 curl_execute(connection, return_headers);
 
             /* if still FALSE, expired token IN CACHE, continue to refresh */
-            if( on_return(r_code, code_success, r_data, true, on_error_cb) )
+            if( on_return(r_code, success_code, r_data, true, on_error_cb) )
                 return make_tuple(r_data, r_head, r_tp);
         }
 
@@ -318,7 +298,7 @@ connect( HTTPSConnection& connection,
         tie(r_code, r_data, r_head, r_tp) =
             curl_execute(connection, return_headers);
 
-        bool r = on_return(r_code, code_success, r_data, false, on_error_cb);
+        bool r = on_return(r_code, success_code, r_data, false, on_error_cb);
         assert(r); /* should either be true or have thrown */
         cerr<< "...successfully refreshed access token" << endl;
     } 
@@ -336,35 +316,19 @@ connect_get( HTTPSConnection& connection,
         {"Accept", "application/json"}
     };
 
-    auto r = connect(connection, creds, STATIC_HEADERS, on_error_cb, false,
-                     HTTP_RESPONSE_OK);
+    string r_data, r_head;
+    conn::clock_ty::time_point r_tp;
+    tie(r_data, r_head, r_tp) = connect(connection, creds, STATIC_HEADERS,
+                                        on_error_cb, false, HTTP_RESPONSE_OK);
 
-    return make_pair( get<0>(r), get<2>(r) );
-}
-
-
-std::string
-order_id_from_header(const std::string& header)
-{
-    static const regex ID_RX(
-        "Location:[ ]*https://api\\.tdameritrade\\.com/.+/[0-9]+/orders/"
-        "([0-9]+)[ ]*[\r\n]+"
-    );
-
-    smatch m;
-    regex_search(header, m, ID_RX);
-    if( m.ready() && m.size() == 2 )
-        return m[1];
-
-    cerr<< "failed to find order ID in header" << endl;
-    return "";
+    return make_pair(r_data, r_tp);
 }
 
 
 pair<string, conn::clock_ty::time_point>
-connect_order( HTTPSConnection& connection,
-                Credentials& creds,
-                long code_success )
+connect_execute( HTTPSConnection& connection,
+                   Credentials& creds,
+                   long success_code )
 {
     static const vector<pair<string,string>> STATIC_HEADERS = {
         {"Accept", "*/*"},
@@ -375,35 +339,28 @@ connect_order( HTTPSConnection& connection,
     conn::clock_ty::time_point r_tp;
     tie(r_data, r_head, r_tp) = connect( connection, creds, STATIC_HEADERS,
                                          account_api_on_error_callback,
-                                         true, code_success );
+                                         true, success_code );
 
     return make_pair(r_head, r_tp);
 }
 
 
-pair<string, conn::clock_ty::time_point>
-connect_order_send( HTTPSPostConnection& connection,
-                      Credentials& creds )
+json
+connect_auth(HTTPSPostConnection& connection, std::string fname)
 {
-    string r_head;
+    long r_code;
+    string r_data, h_data;
     conn::clock_ty::time_point r_tp;
-    tie(r_head, r_tp) = connect_order(connection, creds, HTTP_RESPONSE_CREATED);
-    string order_id = order_id_from_header(r_head);
-    return make_pair(order_id, r_tp);
+    tie(r_code, r_data, h_data, r_tp) = curl_execute(connection, false);
+
+    if( r_code != HTTP_RESPONSE_OK ){
+        string e = fname + " failed: " + r_data;
+        cerr<< "error response: " << r_code << endl << e << endl;
+        TDMA_API_THROW(AuthenticationException, e, r_code);
+    }
+
+    return json::parse(r_data);
 }
-
-
-// TODO  CATCH EXCEPTIONS ??
-pair<bool, conn::clock_ty::time_point>
-connect_order_cancel( HTTPSDeleteConnection& connection,
-                        Credentials& creds )
-{
-    string r_head;
-    conn::clock_ty::time_point r_tp;
-    tie(r_head, r_tp) = connect_order(connection, creds, HTTP_RESPONSE_OK);
-    return make_pair(true, r_tp);
-}
-
 
 } /* tdma */
 

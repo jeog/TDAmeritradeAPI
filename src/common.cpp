@@ -122,15 +122,16 @@ CheckOptionSymbolImpl(const std::string& option) // ABC_MMDDYY[C|P]{STRIKE}
 }
 
 int
-alloc_C_str(const std::string& s, char** buf, size_t* n, bool raise_exception)
+to_new_char_buffer( const std::string& s, char** buf, size_t* n,
+                      bool allow_exceptions )
 {
     assert(buf);
     assert(n);
     *n = s.size() + 1;
     *buf = reinterpret_cast<char*>(malloc(*n));
-    if( !*(buf) ){
-        HANDLE_ERROR( MemoryError, "not enough memory to allocate enum string",
-                      raise_exception );
+    if( !(*buf) ){
+        return HANDLE_ERROR( MemoryError, "failed to allocate buffer memory",
+                             allow_exceptions );
     }
     strncpy(*buf, s.c_str(), (*n)-1);
     (*buf)[(*n)-1] = 0;
@@ -149,16 +150,7 @@ LibraryBuildDateTime_ABI(char **buf, size_t *n, int allow_exceptions)
 {
     static const std::string DT = __DATE__ + std::string(" - ") + __TIME__;
 
-    *n = DT.size() + 1; // NULL TERM
-    *buf = reinterpret_cast<char*>(malloc(*n));
-    if( !*buf ){
-        return HANDLE_ERROR(tdma::MemoryError,
-            "failed to allocate buffer memory", allow_exceptions
-            );
-    }
-    (*buf)[(*n)-1] = 0;
-    strncpy(*buf, DT.c_str(), (*n)-1);
-    return 0;
+    return to_new_char_buffer(DT, buf, n, allow_exceptions);
 }
 
 int
@@ -184,16 +176,7 @@ BuildOptionSymbol_ABI( const char* underlying,
     if( err )
         return err;
 
-    *n = r.size() + 1; // NULL TERM
-    *buf = reinterpret_cast<char*>(malloc(*n));
-    if( !*buf ){
-        return HANDLE_ERROR(tdma::MemoryError,
-            "failed to allocate buffer memory", allow_exceptions
-            );
-    }
-    (*buf)[(*n)-1] = 0;
-    strncpy(*buf, r.c_str(), (*n)-1);
-    return 0;
+    return to_new_char_buffer(r, buf, n, allow_exceptions);
 }
 
 int

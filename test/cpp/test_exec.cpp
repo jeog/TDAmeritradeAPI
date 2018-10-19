@@ -2013,9 +2013,11 @@ void
 test_execute_transactions(const std::string& account_id, Credentials& creds)
 {
     auto order1 = SimpleOrderBuilder::Equity::Build("XLF", 1, true, true, 1.99);
+    /*
     string oid = Execute_SendOrder(creds, account_id, order1);
     std::cout<< "Order ID: " << oid << std::endl;
     bool success = Execute_CancelOrder(creds, account_id, oid);
     std::cout<< "Cancel: " << std::boolalpha << success << std::endl;
+    */
 
 }

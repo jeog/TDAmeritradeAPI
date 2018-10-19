@@ -892,16 +892,7 @@ GetCertificateBundlePath_ABI(char **path, size_t *n, int allow_exceptions)
     if( err )
         return err;
 
-    *n = r.size() + 1;
-    *path = reinterpret_cast<char*>(malloc(*n));
-    if( !path ){
-        return HANDLE_ERROR(MemoryError,
-            "failed to allocate buffer memory", allow_exceptions
-            );
-    }
-    strncpy(*path, r.c_str(), (*n)-1);
-    *path[(*n)-1] = 0;
-    return 0;
+    return to_new_char_buffer(r, path, n, allow_exceptions);
 }
 
 
@@ -919,16 +910,7 @@ GetDefaultCertificateBundlePath_ABI( char **path,
     if( err )
         return err;
 
-    *n = r.size() + 1;
-    *path = reinterpret_cast<char*>(malloc(*n));
-    if( !path ){
-        return HANDLE_ERROR(MemoryError,
-            "failed to allocate buffer memory", allow_exceptions
-            );
-    }
-    strncpy(*path, r.c_str(), (*n)-1);
-    *path[(*n)-1] = 0;
-    return 0;
+    return to_new_char_buffer(r, path, n, allow_exceptions);
 }
 
 

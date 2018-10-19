@@ -26,6 +26,7 @@ along with this program.  If not, see http://www.gnu.org/licenses.
 #include "../include/tdma_common.h"
 
 using namespace std;
+using namespace tdma;
 
 namespace {
 int last_error_code = 0;
@@ -55,23 +56,6 @@ get_error_state()
 }
 
 int
-get_error_string( const string& s, char** buf, size_t *n, int allow_exceptions )
-{
-    using namespace tdma;
-
-    *n = s.size() + 1;
-    *buf = reinterpret_cast<char*>(malloc(*n));
-    if( !*buf ){
-        return HANDLE_ERROR( tdma::MemoryError,
-                             "failed to allocate buffer memory",
-                             allow_exceptions );
-    }
-    (*buf)[(*n)-1] = 0;
-    strncpy(*buf, s.c_str(), (*n)-1);
-    return 0;
-}
-
-int
 LastErrorCode_ABI( int *code, int allow_exceptions )
 {
     *code = last_error_code;
@@ -80,7 +64,7 @@ LastErrorCode_ABI( int *code, int allow_exceptions )
 
 int
 LastErrorMsg_ABI( char** buf, size_t *n, int allow_exceptions )
-{ return get_error_string(last_error_msg, buf, n, allow_exceptions); }
+{ return to_new_char_buffer(last_error_msg, buf, n, allow_exceptions); }
 
 int
 LastErrorLineNumber_ABI( int *lineno, int allow_exceptions )
@@ -91,7 +75,7 @@ LastErrorLineNumber_ABI( int *lineno, int allow_exceptions )
 
 int
 LastErrorFilename_ABI( char** buf, size_t *n, int allow_exceptions )
-{ return get_error_string(last_error_filename, buf, n, allow_exceptions); }
+{ return to_new_char_buffer(last_error_filename, buf, n, allow_exceptions); }
 
 int
 LastErrorState_ABI( int *code,

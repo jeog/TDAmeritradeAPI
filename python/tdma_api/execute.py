@@ -15,13 +15,15 @@
 # along with this program.  If not, see http://www.gnu.org/licenses.
 #
 
-from ctypes import byref as _REF, c_int, c_size_t, c_double, c_uint, POINTER
+from ctypes import byref as _REF, c_int, c_size_t, c_double, c_uint, \
+                    c_char_p, POINTER
 import json
 
 from . import clib
 from .common import *
 from .clib import PCHAR
 
+# TODO __str__ methods
 
 ORDER_SESSION_NORMAL = 1
 ORDER_SESSION_AM = 2
@@ -125,6 +127,53 @@ def order_strategy_type_to_str(strategy):
     """Converts ORDER_STRATEGY_TYPE_[] constant to str."""
     return clib.to_str("OrderStrategyType_to_string_ABI", c_int, strategy)
 
+
+def send_order(creds, account_id, order):
+    """Send OrderTicket for execution.
+    
+    WARNING - SENDS A LIVE ORDER & HAS UNDERGONE LIMITED TESTING !             
+            
+    def send_orders(creds, account_id, order):
+    
+        creds           :: Credentials :: instance received from auth.py        
+        account_id      :: str         :: user account ID
+        order           :: OrderTicket :: order to send for execution       
+
+    RETURNS -> order id str on success (throws CLibException on failure)
+    
+    THROWS -> LibraryNotLoaded, CLibException
+    """
+    if not isinstance(order, OrderTicket):
+        raise TypeError("order not instance of 'OrderTicket'")
+    c = c_char_p()
+    n = c_size_t()
+    clib.call('Execute_SendOrder_ABI', _REF(creds), PCHAR(account_id),
+               _REF(order._obj), _REF(c), _REF(n))
+    s = c.value.decode() 
+    clib.free_buffer(c)
+    return s
+    
+
+def cancel_order(creds, account_id, order_id):
+    """Cancel active order.
+    
+    WARNING - SENDS A LIVE 'CANCEL' REQUEST & HAS UNDERGONE LIMITED TESTING !            
+            
+    def cancel_order(creds, account_id, order_id):
+
+        creds      :: Credentials :: instance received from auth.py        
+        account_id :: str         :: user account ID
+        order      :: str         :: order ID of order to cancel
+
+    RETURNS -> True on success (throws CLibException on failure)
+    
+    THROWS -> LibraryNotLoaded, CLibException
+    """
+    b = c_int(0)
+    clib.call('Execute_CancelOrder_ABI', _REF(creds), PCHAR(account_id),
+              PCHAR(order_id), _REF(b))
+    return bool(b.value)
+    
 #
 # Careful - this is a shared base, unlike our C++ 'OrderObjectProxy'
 #

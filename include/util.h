@@ -152,6 +152,20 @@ buffers_to_set(const char **buffers, size_t n)
     return s;
 }
 
+class
+IOStreamFormatGuard{
+    std::iostream& _stream;
+    std::ios _state;
+public:
+    explicit IOStreamFormatGuard(std::iostream& stream)
+        :
+            _stream(stream),
+            _state(nullptr)
+        { _state.copyfmt(_stream); }
+
+    ~IOStreamFormatGuard()
+    { _stream.copyfmt(_state); }
+};
 } /* util */
 
 #endif /* UTIL_H */

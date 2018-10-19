@@ -903,16 +903,7 @@ StreamingSubscription_GetCommand_ABI( StreamingSubscription_C *psub,
     if( err )
         return err;
 
-    *n = r.size() + 1;
-    *buf = reinterpret_cast<char*>(malloc(*n));
-    if( !*buf ){
-        return HANDLE_ERROR(MemoryError,
-            "failed to allocate buffer memory", allow_exceptions
-            );
-    }
-    (*buf)[(*n)-1] = 0;
-    strncpy(*buf, r.c_str(), (*n)-1);
-    return 0;
+    return to_new_char_buffer(r, buf, n, allow_exceptions);
 }
 
 int

@@ -75,9 +75,10 @@ This project would not be possible without some of the great open-source project
 -------------------|---------------|---------------------|--------------------
 **C**              | *Working*     | *Working*   | *OrderTicket, Builders, Send/Cancel*
 **C++**            | *Working*     | *Working*   | *OrderTicket, Builders, Send/Cancel*
-**Python**         | *Working*     | *Working*   | *OrderTicket, Builders*
+**Python**         | *Working*     | *Working*   | *OrderTicket, Builders, Send/Cancel*
 
 *Note: 'Working' does not necessarily mean 'Stable'*
+*Note: Execute Interface has undergone very little testing*
 
 ### Structure
 - - -
@@ -288,6 +289,12 @@ Since all the dependencies are included(or built manually) you'll need to manage
 - All front-end C++ library code is in namespace ```tdma```. 
 
 - **ONLY** Symbol strings are converted to upper-case by the library, e.g 'sPy' -> 'SPY'.
+
+- Currently, decimal values are represented with ```double``` type and passed to the API as a string with precision of 6 (the default for std::to_string(double) which is used for the conversion). 
+    - Numbers requiring more precision than that will be passed to the API *incorrectly*.
+    - This may also cause issues with very large numbers that require a moderate amount of precision.
+    - This *shouldn't* be an issue for the current nature of access.
+    - Input string conversion precision may be reduced to 4 digits (.0001) to limit issues going forward.
 
 - Enums are defined for both C and C++ code using MACROS. Python mimics these enums by defining constant values. For example:
     ```
@@ -604,6 +611,7 @@ BuildOptionSymbol( const char* underlying,
 
 [Python]
 def common.build_option_symbol(underlying, month, day, year, is_call, strike):
+    returns -> str
 ```
 
 This is not guaranteed to work on all underlying types but generally:

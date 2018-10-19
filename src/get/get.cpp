@@ -226,13 +226,13 @@ PeriodType_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
 
     switch(static_cast<PeriodType>(v)){
     case PeriodType::day:
-        return alloc_C_str("day", buf, n, allow_exceptions);
+        return to_new_char_buffer("day", buf, n, allow_exceptions);
     case PeriodType::month:
-        return alloc_C_str("month", buf, n, allow_exceptions);
+        return to_new_char_buffer("month", buf, n, allow_exceptions);
     case PeriodType::year:
-        return alloc_C_str("year", buf, n, allow_exceptions);
+        return to_new_char_buffer("year", buf, n, allow_exceptions);
     case PeriodType::ytd:
-        return alloc_C_str("ytd", buf, n, allow_exceptions);
+        return to_new_char_buffer("ytd", buf, n, allow_exceptions);
     default:
         throw runtime_error("invalid PeriodType");
     }
@@ -248,13 +248,13 @@ FrequencyType_to_string_ABI( int v,
 
     switch(static_cast<FrequencyType>(v)){
     case FrequencyType::minute:
-        return alloc_C_str("minute", buf, n, allow_exceptions);
+        return to_new_char_buffer("minute", buf, n, allow_exceptions);
     case FrequencyType::daily:
-        return alloc_C_str("daily", buf, n, allow_exceptions);
+        return to_new_char_buffer("daily", buf, n, allow_exceptions);
     case FrequencyType::weekly:
-        return alloc_C_str("weekly", buf, n, allow_exceptions);
+        return to_new_char_buffer("weekly", buf, n, allow_exceptions);
     case FrequencyType::monthly:
-        return alloc_C_str("monthly", buf, n, allow_exceptions);
+        return to_new_char_buffer("monthly", buf, n, allow_exceptions);
     default:
         throw runtime_error("invalid FrequencyType");
     }
@@ -270,11 +270,11 @@ OptionContractType_to_string_ABI( int v,
 
     switch(static_cast<OptionContractType>(v)){
     case OptionContractType::call:
-        return alloc_C_str("CALL", buf, n, allow_exceptions);
+        return to_new_char_buffer("CALL", buf, n, allow_exceptions);
     case OptionContractType::put:
-        return alloc_C_str("PUT", buf, n, allow_exceptions);
+        return to_new_char_buffer("PUT", buf, n, allow_exceptions);
     case OptionContractType::all:
-        return alloc_C_str("ALL", buf, n, allow_exceptions);
+        return to_new_char_buffer("ALL", buf, n, allow_exceptions);
     default:
         throw runtime_error("invalid OptionContractType");
     }
@@ -292,25 +292,25 @@ OptionStrategyType_to_string_ABI( int v,
     //case OptionStrategyType::single: return "SINGLE";
     //case OptionStrategyType::analytical: return "ANALYTICAL";
     case OptionStrategyType::covered:
-        return alloc_C_str("COVERED", buf, n, allow_exceptions);
+        return to_new_char_buffer("COVERED", buf, n, allow_exceptions);
     case OptionStrategyType::vertical:
-        return alloc_C_str("VERTICAL", buf, n, allow_exceptions);
+        return to_new_char_buffer("VERTICAL", buf, n, allow_exceptions);
     case OptionStrategyType::calendar:
-        return alloc_C_str("CALENDAR", buf, n, allow_exceptions);
+        return to_new_char_buffer("CALENDAR", buf, n, allow_exceptions);
     case OptionStrategyType::strangle:
-        return alloc_C_str("STRANGLE", buf, n, allow_exceptions);
+        return to_new_char_buffer("STRANGLE", buf, n, allow_exceptions);
     case OptionStrategyType::straddle:
-        return alloc_C_str("STRADDLE", buf, n, allow_exceptions);
+        return to_new_char_buffer("STRADDLE", buf, n, allow_exceptions);
     case OptionStrategyType::butterfly:
-        return alloc_C_str("BUTTERFLY", buf, n, allow_exceptions);
+        return to_new_char_buffer("BUTTERFLY", buf, n, allow_exceptions);
     case OptionStrategyType::condor:
-        return alloc_C_str("CONDOR", buf, n, allow_exceptions);
+        return to_new_char_buffer("CONDOR", buf, n, allow_exceptions);
     case OptionStrategyType::diagonal:
-        return alloc_C_str("DIAGONAL", buf, n, allow_exceptions);
+        return to_new_char_buffer("DIAGONAL", buf, n, allow_exceptions);
     case OptionStrategyType::collar:
-        return alloc_C_str("COLLAR", buf, n, allow_exceptions);
+        return to_new_char_buffer("COLLAR", buf, n, allow_exceptions);
     case  OptionStrategyType::roll:
-        return alloc_C_str("ROLL", buf, n, allow_exceptions);
+        return to_new_char_buffer("ROLL", buf, n, allow_exceptions);
     default:
         throw runtime_error("invalid OptionStrategyType");
     }
@@ -327,21 +327,21 @@ OptionRangeType_to_string_ABI( int v,
 
     switch(static_cast<OptionRangeType>(v)){
     case OptionRangeType::null:
-        return alloc_C_str("", buf, n, allow_exceptions);
+        return to_new_char_buffer("", buf, n, allow_exceptions);
     case OptionRangeType::itm:
-        return alloc_C_str("ITM", buf, n, allow_exceptions);
+        return to_new_char_buffer("ITM", buf, n, allow_exceptions);
     case OptionRangeType::ntm:
-        return alloc_C_str("NTM", buf, n, allow_exceptions);
+        return to_new_char_buffer("NTM", buf, n, allow_exceptions);
     case OptionRangeType::otm:
-        return alloc_C_str("OTM", buf, n, allow_exceptions);
+        return to_new_char_buffer("OTM", buf, n, allow_exceptions);
     case OptionRangeType::sak:
-        return alloc_C_str("SAK", buf, n, allow_exceptions);
+        return to_new_char_buffer("SAK", buf, n, allow_exceptions);
     case OptionRangeType::sbk:
-        return alloc_C_str("SBK", buf, n, allow_exceptions);
+        return to_new_char_buffer("SBK", buf, n, allow_exceptions);
     case OptionRangeType::snk:
-        return alloc_C_str("SNK", buf, n, allow_exceptions);
+        return to_new_char_buffer("SNK", buf, n, allow_exceptions);
     case OptionRangeType::all:
-        return alloc_C_str("ALL", buf, n, allow_exceptions);
+        return to_new_char_buffer("ALL", buf, n, allow_exceptions);
     default:
         throw runtime_error("invalid OptionRangeType");
     }
@@ -358,31 +358,31 @@ OptionExpMonth_to_string_ABI( int v,
 
     switch(static_cast<OptionExpMonth>(v)){
     case OptionExpMonth::jan:
-        return alloc_C_str("JAN", buf, n, allow_exceptions);
+        return to_new_char_buffer("JAN", buf, n, allow_exceptions);
     case OptionExpMonth::feb:
-        return alloc_C_str("FEB", buf, n, allow_exceptions);
+        return to_new_char_buffer("FEB", buf, n, allow_exceptions);
     case OptionExpMonth::mar:
-        return alloc_C_str("MAR", buf, n, allow_exceptions);
+        return to_new_char_buffer("MAR", buf, n, allow_exceptions);
     case OptionExpMonth::apr:
-        return alloc_C_str("APR", buf, n, allow_exceptions);
+        return to_new_char_buffer("APR", buf, n, allow_exceptions);
     case OptionExpMonth::may:
-        return alloc_C_str("MAY", buf, n, allow_exceptions);
+        return to_new_char_buffer("MAY", buf, n, allow_exceptions);
     case OptionExpMonth::jun:
-        return alloc_C_str("JUN", buf, n, allow_exceptions);
+        return to_new_char_buffer("JUN", buf, n, allow_exceptions);
     case OptionExpMonth::jul:
-        return alloc_C_str("JUL", buf, n, allow_exceptions);
+        return to_new_char_buffer("JUL", buf, n, allow_exceptions);
     case OptionExpMonth::aug:
-        return alloc_C_str("AUG", buf, n, allow_exceptions);
+        return to_new_char_buffer("AUG", buf, n, allow_exceptions);
     case OptionExpMonth::sep:
-        return alloc_C_str("SEP", buf, n, allow_exceptions);
+        return to_new_char_buffer("SEP", buf, n, allow_exceptions);
     case OptionExpMonth::oct:
-        return alloc_C_str("OCT", buf, n, allow_exceptions);
+        return to_new_char_buffer("OCT", buf, n, allow_exceptions);
     case OptionExpMonth::nov:
-        return alloc_C_str("NOV", buf, n, allow_exceptions);
+        return to_new_char_buffer("NOV", buf, n, allow_exceptions);
     case OptionExpMonth::dec:
-        return alloc_C_str("DEC", buf, n, allow_exceptions);
+        return to_new_char_buffer("DEC", buf, n, allow_exceptions);
     case OptionExpMonth::all:
-        return alloc_C_str("ALL", buf, n, allow_exceptions);
+        return to_new_char_buffer("ALL", buf, n, allow_exceptions);
     default:
         throw runtime_error("invalid OptionExpMonth");
     }
@@ -396,11 +396,11 @@ OptionType_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
 
     switch(static_cast<OptionType>(v)){
     case OptionType::s:
-        return alloc_C_str("S", buf, n, allow_exceptions);
+        return to_new_char_buffer("S", buf, n, allow_exceptions);
     case OptionType::ns:
-        return alloc_C_str("NS", buf, n, allow_exceptions);
+        return to_new_char_buffer("NS", buf, n, allow_exceptions);
     case OptionType::all:
-        return alloc_C_str("ALL", buf, n, allow_exceptions);
+        return to_new_char_buffer("ALL", buf, n, allow_exceptions);
     default: throw runtime_error("invalid OptionType");
     }
 }
@@ -416,25 +416,25 @@ TransactionType_to_string_ABI( int v,
 
     switch(static_cast<TransactionType>(v)){
     case TransactionType::all:
-        return alloc_C_str("ALL", buf, n, allow_exceptions);
+        return to_new_char_buffer("ALL", buf, n, allow_exceptions);
     case TransactionType::trade:
-        return alloc_C_str("TRADE", buf, n, allow_exceptions);
+        return to_new_char_buffer("TRADE", buf, n, allow_exceptions);
     case TransactionType::buy_only:
-        return alloc_C_str("BUY_ONLY", buf, n, allow_exceptions);
+        return to_new_char_buffer("BUY_ONLY", buf, n, allow_exceptions);
     case TransactionType::sell_only:
-        return alloc_C_str("SELL_ONLY", buf, n, allow_exceptions);
+        return to_new_char_buffer("SELL_ONLY", buf, n, allow_exceptions);
     case TransactionType::cash_in_or_cash_out:
-        return alloc_C_str("CASH_IN_OR_CASH_OUT", buf, n, allow_exceptions);
+        return to_new_char_buffer("CASH_IN_OR_CASH_OUT", buf, n, allow_exceptions);
     case TransactionType::checking:
-        return alloc_C_str("CHECKING", buf, n, allow_exceptions);
+        return to_new_char_buffer("CHECKING", buf, n, allow_exceptions);
     case TransactionType::dividend:
-        return alloc_C_str("DIVIDEND", buf, n, allow_exceptions);
+        return to_new_char_buffer("DIVIDEND", buf, n, allow_exceptions);
     case TransactionType::interest:
-        return alloc_C_str("INTEREST", buf, n, allow_exceptions);
+        return to_new_char_buffer("INTEREST", buf, n, allow_exceptions);
     case TransactionType::other:
-        return alloc_C_str("OTHER", buf, n, allow_exceptions);
+        return to_new_char_buffer("OTHER", buf, n, allow_exceptions);
     case TransactionType::advisor_fees:
-        return alloc_C_str("ADVISOR_FEES", buf, n, allow_exceptions);
+        return to_new_char_buffer("ADVISOR_FEES", buf, n, allow_exceptions);
     default:
         throw runtime_error("invliad TransactionType");
     }
@@ -450,17 +450,17 @@ InstrumentSearchType_to_string_ABI( int v,
 
     switch(static_cast<InstrumentSearchType>(v)){
     case InstrumentSearchType::symbol_exact:
-        return alloc_C_str("fundamental", buf, n, allow_exceptions);
+        return to_new_char_buffer("fundamental", buf, n, allow_exceptions);
     case InstrumentSearchType::symbol_search:
-        return alloc_C_str("symbol-search", buf, n, allow_exceptions);
+        return to_new_char_buffer("symbol-search", buf, n, allow_exceptions);
     case InstrumentSearchType::symbol_regex:
-        return alloc_C_str("symbol-regex", buf, n, allow_exceptions);
+        return to_new_char_buffer("symbol-regex", buf, n, allow_exceptions);
     case InstrumentSearchType::description_search:
-        return alloc_C_str("desc-search", buf, n, allow_exceptions);
+        return to_new_char_buffer("desc-search", buf, n, allow_exceptions);
     case InstrumentSearchType::description_regex:
-        return alloc_C_str("desc-regex", buf, n, allow_exceptions);
+        return to_new_char_buffer("desc-regex", buf, n, allow_exceptions);
     case InstrumentSearchType::cusip:
-        return alloc_C_str("cusip", buf, n, allow_exceptions);
+        return to_new_char_buffer("cusip", buf, n, allow_exceptions);
     default:
         throw runtime_error("invalid InstrumentSearchType");
     }
@@ -474,15 +474,15 @@ MarketType_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
 
     switch(static_cast<MarketType>(v)){
     case MarketType::equity:
-        return alloc_C_str("EQUITY", buf, n, allow_exceptions);
+        return to_new_char_buffer("EQUITY", buf, n, allow_exceptions);
     case MarketType::option:
-        return alloc_C_str("OPTION", buf, n, allow_exceptions);
+        return to_new_char_buffer("OPTION", buf, n, allow_exceptions);
     case MarketType::future:
-        return alloc_C_str("FUTURE", buf, n, allow_exceptions);
+        return to_new_char_buffer("FUTURE", buf, n, allow_exceptions);
     case MarketType::bond:
-        return alloc_C_str("BOND", buf, n, allow_exceptions);
+        return to_new_char_buffer("BOND", buf, n, allow_exceptions);
     case MarketType::forex:
-        return alloc_C_str("FOREX", buf, n, allow_exceptions);
+        return to_new_char_buffer("FOREX", buf, n, allow_exceptions);
     default:
         throw runtime_error("Invalid MarketType");
     }
@@ -495,11 +495,11 @@ MoversIndex_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
 
     switch(static_cast<MoversIndex>(v)){
     case MoversIndex::compx:
-        return alloc_C_str("$COMPX", buf, n, allow_exceptions);
+        return to_new_char_buffer("$COMPX", buf, n, allow_exceptions);
     case MoversIndex::dji:
-        return alloc_C_str("$DJI", buf, n, allow_exceptions);
+        return to_new_char_buffer("$DJI", buf, n, allow_exceptions);
     case MoversIndex::spx:
-        return alloc_C_str("$SPX.X", buf, n, allow_exceptions);
+        return to_new_char_buffer("$SPX.X", buf, n, allow_exceptions);
     default:
         throw runtime_error("invalid MoversIndex");
     }
@@ -516,11 +516,11 @@ MoversDirectionType_to_string_ABI( int v,
 
     switch(static_cast<MoversDirectionType>(v)){
     case MoversDirectionType::up:
-        return alloc_C_str("up", buf, n, allow_exceptions);
+        return to_new_char_buffer("up", buf, n, allow_exceptions);
     case MoversDirectionType::down:
-        return alloc_C_str("down", buf, n, allow_exceptions);
+        return to_new_char_buffer("down", buf, n, allow_exceptions);
     case MoversDirectionType::up_and_down:
-        return alloc_C_str("up_and_down", buf, n, allow_exceptions);
+        return to_new_char_buffer("up_and_down", buf, n, allow_exceptions);
     default:
         throw runtime_error("invalid MoversDirectionType");
     }
@@ -536,9 +536,9 @@ MoversChangeType_to_string_ABI( int v,
 
     switch(static_cast<MoversChangeType>(v)){
     case MoversChangeType::percent:
-        return alloc_C_str("percent", buf, n, allow_exceptions);
+        return to_new_char_buffer("percent", buf, n, allow_exceptions);
     case MoversChangeType::value:
-        return alloc_C_str("value", buf, n, allow_exceptions);
+        return to_new_char_buffer("value", buf, n, allow_exceptions);
     default:
         throw runtime_error("invalid MoversChangeType");
     }
@@ -554,13 +554,13 @@ OptionStrikesType_to_string_ABI( int v,
 
     switch(static_cast<OptionStrikesType>(v)){
     case OptionStrikesType::n_atm:
-        return alloc_C_str("n_atm", buf, n, allow_exceptions);
+        return to_new_char_buffer("n_atm", buf, n, allow_exceptions);
     case OptionStrikesType::single:
-        return alloc_C_str("single", buf, n, allow_exceptions);
+        return to_new_char_buffer("single", buf, n, allow_exceptions);
     case OptionStrikesType::range:
-        return alloc_C_str("range", buf, n, allow_exceptions);
+        return to_new_char_buffer("range", buf, n, allow_exceptions);
     case OptionStrikesType::none:
-        return alloc_C_str("none", buf, n, allow_exceptions);
+        return to_new_char_buffer("none", buf, n, allow_exceptions);
     default:
         throw runtime_error("invalid OptionStrikesType");
     }
@@ -576,35 +576,35 @@ OrderStatusType_to_string_ABI( int v,
 
     switch(static_cast<OrderStatusType>(v) ){
     case OrderStatusType::AWAITING_PARENT_ORDER:
-        return alloc_C_str("AWAITING_PARENT_ORDER", buf, n, allow_exceptions);
+        return to_new_char_buffer("AWAITING_PARENT_ORDER", buf, n, allow_exceptions);
     case OrderStatusType::AWAITING_CONDITION:
-        return alloc_C_str("AWAITING_CONDITION", buf, n, allow_exceptions);
+        return to_new_char_buffer("AWAITING_CONDITION", buf, n, allow_exceptions);
     case OrderStatusType::AWAITING_MANUAL_REVIEW:
-        return alloc_C_str("AWAITING_MANUAL_REVIEW", buf, n, allow_exceptions);
+        return to_new_char_buffer("AWAITING_MANUAL_REVIEW", buf, n, allow_exceptions);
     case OrderStatusType::ACCEPTED:
-        return alloc_C_str("ACCEPTED", buf, n, allow_exceptions);
+        return to_new_char_buffer("ACCEPTED", buf, n, allow_exceptions);
     case OrderStatusType::AWAITING_UR_OUT:
-        return alloc_C_str("AWAITING_UR_OUT", buf, n, allow_exceptions);
+        return to_new_char_buffer("AWAITING_UR_OUT", buf, n, allow_exceptions);
     case OrderStatusType::PENDING_ACTIVATION:
-        return alloc_C_str("PENDING_ACTIVATION", buf, n, allow_exceptions);
+        return to_new_char_buffer("PENDING_ACTIVATION", buf, n, allow_exceptions);
     case OrderStatusType::QUEUED:
-        return alloc_C_str("QUEUED", buf, n, allow_exceptions);
+        return to_new_char_buffer("QUEUED", buf, n, allow_exceptions);
     case OrderStatusType::WORKING:
-        return alloc_C_str("WORKING", buf, n, allow_exceptions);
+        return to_new_char_buffer("WORKING", buf, n, allow_exceptions);
     case OrderStatusType::REJECTED:
-        return alloc_C_str("REJECTED", buf, n, allow_exceptions);
+        return to_new_char_buffer("REJECTED", buf, n, allow_exceptions);
     case OrderStatusType::PENDING_CANCEL:
-        return alloc_C_str("PENDING_CANCE", buf, n, allow_exceptions);
+        return to_new_char_buffer("PENDING_CANCE", buf, n, allow_exceptions);
     case OrderStatusType::CANCELED:
-        return alloc_C_str("CANCELED", buf, n, allow_exceptions);
+        return to_new_char_buffer("CANCELED", buf, n, allow_exceptions);
     case OrderStatusType::PENDING_REPLACE:
-        return alloc_C_str("PENDING_REPLACE", buf, n, allow_exceptions);
+        return to_new_char_buffer("PENDING_REPLACE", buf, n, allow_exceptions);
     case OrderStatusType::REPLACED:
-        return alloc_C_str("REPLACED", buf, n, allow_exceptions);
+        return to_new_char_buffer("REPLACED", buf, n, allow_exceptions);
     case OrderStatusType::FILLED:
-        return alloc_C_str("FILLED", buf, n, allow_exceptions);
+        return to_new_char_buffer("FILLED", buf, n, allow_exceptions);
     case OrderStatusType::EXPIRED:
-        return alloc_C_str("EXPIRED", buf, n, allow_exceptions);
+        return to_new_char_buffer("EXPIRED", buf, n, allow_exceptions);
     default:
         throw runtime_error("invalid OrderStatusType");
     }

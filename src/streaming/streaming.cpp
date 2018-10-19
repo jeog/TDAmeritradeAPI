@@ -176,11 +176,11 @@ AdminCommandType_to_string_ABI(int v, char** buf, size_t* n, int allow_exception
 
     switch(static_cast<AdminCommandType>(v)){
     case AdminCommandType::LOGIN:
-        return alloc_C_str("LOGIN", buf, n, allow_exceptions);
+        return to_new_char_buffer("LOGIN", buf, n, allow_exceptions);
     case AdminCommandType::LOGOUT:
-        return alloc_C_str("LOGOUT", buf, n, allow_exceptions);
+        return to_new_char_buffer("LOGOUT", buf, n, allow_exceptions);
     case AdminCommandType::QOS:
-        return alloc_C_str("QOS", buf, n, allow_exceptions);
+        return to_new_char_buffer("QOS", buf, n, allow_exceptions);
     default:
         throw runtime_error("Invalid AdminCommandType");
     }
@@ -193,17 +193,17 @@ QOSType_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
 
     switch(static_cast<QOSType>(v)){
     case QOSType::delayed:
-        return alloc_C_str("delayed", buf, n, allow_exceptions);
+        return to_new_char_buffer("delayed", buf, n, allow_exceptions);
     case QOSType::express:
-        return alloc_C_str("express", buf, n, allow_exceptions);
+        return to_new_char_buffer("express", buf, n, allow_exceptions);
     case QOSType::fast:
-        return alloc_C_str("fast", buf, n, allow_exceptions);
+        return to_new_char_buffer("fast", buf, n, allow_exceptions);
     case QOSType::moderate:
-        return alloc_C_str("moderate", buf, n, allow_exceptions);
+        return to_new_char_buffer("moderate", buf, n, allow_exceptions);
     case QOSType::real_time:
-        return alloc_C_str("real-time", buf, n, allow_exceptions);
+        return to_new_char_buffer("real-time", buf, n, allow_exceptions);
     case QOSType::slow:
-        return alloc_C_str("slow", buf, n, allow_exceptions);
+        return to_new_char_buffer("slow", buf, n, allow_exceptions);
     default:
         throw runtime_error("Invalid QOSType");
     }
@@ -218,17 +218,17 @@ DurationType_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
 
     switch(static_cast<DurationType>(v)){
     case DurationType::all_day:
-        return alloc_C_str("ALL", buf, n, allow_exceptions);
+        return to_new_char_buffer("ALL", buf, n, allow_exceptions);
     case DurationType::min_60:
-        return alloc_C_str("3600", buf, n, allow_exceptions);
+        return to_new_char_buffer("3600", buf, n, allow_exceptions);
     case DurationType::min_30:
-        return alloc_C_str("1800", buf, n, allow_exceptions);
+        return to_new_char_buffer("1800", buf, n, allow_exceptions);
     case DurationType::min_10:
-        return alloc_C_str("600", buf, n, allow_exceptions);
+        return to_new_char_buffer("600", buf, n, allow_exceptions);
     case DurationType::min_5:
-        return alloc_C_str("300", buf, n, allow_exceptions);
+        return to_new_char_buffer("300", buf, n, allow_exceptions);
     case DurationType::min_1:
-        return alloc_C_str("60", buf, n, allow_exceptions);
+        return to_new_char_buffer("60", buf, n, allow_exceptions);
     default:
         throw runtime_error("Invalid DurationType");
     }
@@ -242,17 +242,17 @@ VenueType_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
 
     switch(static_cast<VenueType>(v)){
     case VenueType::opts:
-        return alloc_C_str("OPTS", buf, n, allow_exceptions);
+        return to_new_char_buffer("OPTS", buf, n, allow_exceptions);
     case VenueType::calls:
-        return alloc_C_str("CALLS", buf, n, allow_exceptions);
+        return to_new_char_buffer("CALLS", buf, n, allow_exceptions);
     case VenueType::puts:
-        return alloc_C_str("PUTS", buf, n, allow_exceptions);
+        return to_new_char_buffer("PUTS", buf, n, allow_exceptions);
     case VenueType::opts_desc:
-        return alloc_C_str("OPTS-DESC", buf, n, allow_exceptions);
+        return to_new_char_buffer("OPTS-DESC", buf, n, allow_exceptions);
     case VenueType::calls_desc:
-        return alloc_C_str("CALLS-DESC", buf, n, allow_exceptions);
+        return to_new_char_buffer("CALLS-DESC", buf, n, allow_exceptions);
     case VenueType::puts_desc:
-        return alloc_C_str("PUTS-DESC", buf, n, allow_exceptions);
+        return to_new_char_buffer("PUTS-DESC", buf, n, allow_exceptions);
     default: throw runtime_error("Invalid VenueType");
     }
 }
@@ -265,19 +265,19 @@ StreamingCallbackType_to_string_ABI(int v, char** buf, size_t* n, int allow_exce
 
     switch(static_cast<StreamingCallbackType>(v)){
     case StreamingCallbackType::listening_start:
-        return alloc_C_str("listening_start", buf, n, allow_exceptions);
+        return to_new_char_buffer("listening_start", buf, n, allow_exceptions);
     case StreamingCallbackType::listening_stop:
-        return alloc_C_str("listening_stop", buf, n, allow_exceptions);
+        return to_new_char_buffer("listening_stop", buf, n, allow_exceptions);
     case StreamingCallbackType::data:
-        return alloc_C_str("data", buf, n, allow_exceptions);
+        return to_new_char_buffer("data", buf, n, allow_exceptions);
     case StreamingCallbackType::request_response:
-        return alloc_C_str("request_response", buf, n, allow_exceptions);
+        return to_new_char_buffer("request_response", buf, n, allow_exceptions);
     case StreamingCallbackType::notify:
-        return alloc_C_str("notify", buf, n, allow_exceptions);
+        return to_new_char_buffer("notify", buf, n, allow_exceptions);
     case StreamingCallbackType::timeout:
-        return alloc_C_str("timeout", buf, n, allow_exceptions);
+        return to_new_char_buffer("timeout", buf, n, allow_exceptions);
     case StreamingCallbackType::error:
-        return alloc_C_str("error", buf, n, allow_exceptions);
+        return to_new_char_buffer("error", buf, n, allow_exceptions);
     default:
         throw runtime_error("Invalid StreamingCallbackType");
     }
@@ -292,45 +292,45 @@ StreamerServiceType_to_string_ABI(int v, char** buf, size_t* n, int allow_except
 
     switch( static_cast<StreamerServiceType>(v) ){
     case StreamerServiceType::NONE:
-        return alloc_C_str("NONE", buf, n, allow_exceptions);
+        return to_new_char_buffer("NONE", buf, n, allow_exceptions);
     case StreamerServiceType::ADMIN:
-        return alloc_C_str("ADMIN", buf, n, allow_exceptions);
+        return to_new_char_buffer("ADMIN", buf, n, allow_exceptions);
     case StreamerServiceType::ACTIVES_NASDAQ:
-        return alloc_C_str("ACTIVES_NASDAQ", buf, n, allow_exceptions);
+        return to_new_char_buffer("ACTIVES_NASDAQ", buf, n, allow_exceptions);
     case StreamerServiceType::ACTIVES_NYSE:
-        return alloc_C_str("ACTIVES_NYSE", buf, n, allow_exceptions);
+        return to_new_char_buffer("ACTIVES_NYSE", buf, n, allow_exceptions);
     case StreamerServiceType::ACTIVES_OTCBB:
-        return alloc_C_str("ACTIVES_OTCBB", buf, n, allow_exceptions);
+        return to_new_char_buffer("ACTIVES_OTCBB", buf, n, allow_exceptions);
     case StreamerServiceType::ACTIVES_OPTIONS:
-        return alloc_C_str("ACTIVES_OPTIONS", buf, n, allow_exceptions);
+        return to_new_char_buffer("ACTIVES_OPTIONS", buf, n, allow_exceptions);
     case StreamerServiceType::CHART_EQUITY:
-        return alloc_C_str("CHART_EQUITY", buf, n, allow_exceptions);
+        return to_new_char_buffer("CHART_EQUITY", buf, n, allow_exceptions);
     case StreamerServiceType::CHART_FOREX:
-        return alloc_C_str("CHART_FOREX", buf, n, allow_exceptions);
+        return to_new_char_buffer("CHART_FOREX", buf, n, allow_exceptions);
     case StreamerServiceType::CHART_FUTURES:
-        return alloc_C_str("CHART_FUTURES", buf, n, allow_exceptions);
+        return to_new_char_buffer("CHART_FUTURES", buf, n, allow_exceptions);
     case StreamerServiceType::CHART_OPTIONS:
-        return alloc_C_str("CHART_OPTIONS", buf, n, allow_exceptions);
+        return to_new_char_buffer("CHART_OPTIONS", buf, n, allow_exceptions);
     case StreamerServiceType::QUOTE:
-        return alloc_C_str("QUOTE", buf, n, allow_exceptions);
+        return to_new_char_buffer("QUOTE", buf, n, allow_exceptions);
     case StreamerServiceType::LEVELONE_FUTURES:
-        return alloc_C_str("LEVELONE_FUTURES", buf, n, allow_exceptions);
+        return to_new_char_buffer("LEVELONE_FUTURES", buf, n, allow_exceptions);
     case StreamerServiceType::LEVELONE_FOREX:
-        return alloc_C_str("LEVELONE_FOREX", buf, n, allow_exceptions);
+        return to_new_char_buffer("LEVELONE_FOREX", buf, n, allow_exceptions);
     case StreamerServiceType::LEVELONE_FUTURES_OPTIONS:
-        return alloc_C_str("LEVELONE_FUTURES_OPTIONS", buf, n, allow_exceptions);
+        return to_new_char_buffer("LEVELONE_FUTURES_OPTIONS", buf, n, allow_exceptions);
     case StreamerServiceType::OPTION:
-        return alloc_C_str("OPTION", buf, n, allow_exceptions);
+        return to_new_char_buffer("OPTION", buf, n, allow_exceptions);
     case StreamerServiceType::NEWS_HEADLINE:
-        return alloc_C_str("NEWS_HEADLINE", buf, n, allow_exceptions);
+        return to_new_char_buffer("NEWS_HEADLINE", buf, n, allow_exceptions);
     case StreamerServiceType::TIMESALE_EQUITY:
-        return alloc_C_str("TIMESALE_EQUITY", buf, n, allow_exceptions);
+        return to_new_char_buffer("TIMESALE_EQUITY", buf, n, allow_exceptions);
     case StreamerServiceType::TIMESALE_FUTURES:
-        return alloc_C_str("TIMESALE_FUTURES", buf, n, allow_exceptions);
+        return to_new_char_buffer("TIMESALE_FUTURES", buf, n, allow_exceptions);
     case StreamerServiceType::TIMESALE_FOREX:
-        return alloc_C_str("TIMESALE_FOREX", buf, n, allow_exceptions);
+        return to_new_char_buffer("TIMESALE_FOREX", buf, n, allow_exceptions);
     case StreamerServiceType::TIMESALE_OPTIONS:
-        return alloc_C_str("TIMESALE_OPTIONS", buf, n, allow_exceptions);
+        return to_new_char_buffer("TIMESALE_OPTIONS", buf, n, allow_exceptions);
     default:
         throw runtime_error("Invalid StreamerServiceType");
     }
@@ -343,7 +343,7 @@ int \
 name##_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions) \
 { \
     CHECK_ENUM(name, v, allow_exceptions); \
-    return alloc_C_str(#name"-" + to_string(v), buf, n, allow_exceptions); \
+    return to_new_char_buffer(#name"-" + to_string(v), buf, n, allow_exceptions); \
 }
 
 DEF_TEMP_FIELD_TO_STRING(QuotesSubscriptionField)

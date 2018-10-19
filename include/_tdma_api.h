@@ -58,12 +58,9 @@ connect_get( conn::HTTPSConnection& connection,
               api_on_error_cb_ty on_error_cb );
 
 std::pair<std::string, conn::clock_ty::time_point>
-connect_order_send( conn::HTTPSPostConnection& connection,
-                      Credentials& creds );
-
-std::pair<bool, conn::clock_ty::time_point>
-connect_order_cancel( conn::HTTPSDeleteConnection& connection,
-                        Credentials& creds );
+connect_execute( conn::HTTPSConnection& connection,
+                   Credentials& creds,
+                   long success_code );
 
 json
 get_user_principals_for_streaming(Credentials& creds);
@@ -78,7 +75,10 @@ void
 query_api_on_error_callback(long code, const std::string& data);
 
 int
-alloc_C_str(const std::string& s, char** buf, size_t* n, bool raise_exception);
+to_new_char_buffer( const std::string& s,
+                            char** buf,
+                            size_t* n,
+                            bool allow_exceptions );
 
 
 template<typename RetTy>
@@ -478,16 +478,7 @@ struct ImplAccessor<char**>{
         if( err )
             return err;
 
-        *n = r.size() + 1; // NULL TERM
-        *pval = reinterpret_cast<char*>(malloc(*n));
-        if( !*pval ){
-            return HANDLE_ERROR( tdma::MemoryError,
-                "failed to allocate buffer memory", allow_exceptions
-                );
-        }
-        (*pval)[(*n)-1] = 0;
-        strncpy(*pval, r.c_str(), (*n)-1);
-        return 0;
+        return to_new_char_buffer(r, pval, n, allow_exceptions);
     }
 
     template<typename ImplTy>

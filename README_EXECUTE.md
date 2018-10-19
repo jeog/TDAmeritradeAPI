@@ -1,7 +1,7 @@
 ### Execute Interface
 - - -
-- [Overview](#overview)
 - [WARNING](#warning-please-read)
+- [Overview](#overview)
 - [Using OrderTicket Objects](#using-orderticket-objects)
 - [Raw Orders](#raw-orders)
 - [Managed Orders](#managed-orders)
@@ -13,6 +13,18 @@
    - [Cancel Order](#cancel-order)
    - [Replace Order](#replace-order)
 - [Order & Position Information](#order--position-information)
+- - -
+
+### WARNING (Please Read)
+
+- This interface allows you to build and execute **live** orders.
+- This interface has undergone very **limited testing.**
+- It's recommended you wait for Ameritrade to release a better testing environment before using.
+- You should **assume bugs** in Order Builders, Tickets, Legs, etc that may affect order quantity, price, type etc. 
+- **REVIEW ALL THE RELEVANT CODE** and **DOUBLE CHECK THE RAW JSON BEFORE SENDING.**
+
+**BY USING THIS CODE/LIBRARY TO BUILD AND/OR SEND LIVE ORDERS YOU AGREE TO TAKE FULL RESPONSIBILITY FOR ANY LOSSES INCURRED - INCLUDING, BUT NOT LIMITED TO, LOSSES RESULTING FROM ERRORS IN THE CODE/LIBRARY AND/OR THE GROSS NEGLIGENCE OF THE AUTHOR(S).**
+
 - - -
 
 ### Overview
@@ -35,17 +47,6 @@ This interface is waiting on a mechanism from Ameritrade to test execution witho
 Feel free to comment and make suggestsions via [issues](https://github.com/jeog/TDAmeritradeAPI/issues/1) or email: jeog.dev@gmail.com
 
 [TDAmeritrade docs.](https://developer.tdameritrade.com/account-access/apis/post/accounts/{accountId}/orders-0)
-
-## WARNING (PLEASE READ)
-
-- This interface allows you to build and execute **live** orders.
-- This interface has undergone very **limited testing.**
-- It's recommended you wait for Ameritrade to release a better testing environment before using.
-- You should **assume bugs** in Order Builders, Tickets, Legs, etc that may affect order quantity, price, type etc. 
-- **REVIEW ALL THE RELEVANT CODE** and **DOUBLE CHECK THE RAW JSON BEFORE SENDING.**
-
-**BY USING THIS CODE/LIBRARY TO BUILD AND/OR SEND LIVE ORDERS YOU AGREE TO TAKE FULL RESPONSIBILITY FOR ANY LOSSES INCURRED - INCLUDING, BUT NOT LIMITED TO, LOSSES RESULTING FROM ERRORS IN THE CODE/LIBRARY AND/OR THE GROSS NEGLIGENCE OF THE AUTHOR(S).**
-
 
 ### Using OrderTicket Objects
 
@@ -372,7 +373,7 @@ order3 = execute.ConditionalOrderBuilder.OCO(order1, order2);
 
 #### Send Order
 
-```Execute_SendOrder``` attempts to take an ```OrderTicket```, convert it to JSON and make a HTTPS/Post connection in order to place an order for account ```account_id```. If the order is successfully recieved an order ID string will be returned; if not an exception will be thrown(C++) or an error code returned(C).
+```Execute_SendOrder``` attempts to take an ```OrderTicket```, convert it to JSON and make a HTTPS/Post connection in order to place an order for account ```account_id```. If the order is successfully recieved an order ID string will be returned; if not an exception will be thrown(C++, Python) or an error code returned(C).
 ```
 [C++]
 inline std::string
@@ -387,11 +388,16 @@ Execute_SendOrder( struct Credentials *creds,
                    OrderTicket_C *porder,
                    char** buf,
                    size_t *n );
+
+[Python]
+def execute.send_order( creds, account_id, order ):
+   returns -> str
+
 ```
 
 #### Cancel Order
 
-```Execute_CancelOrder``` attempts to take an ```order_id``` string (of an active order) for account ```account_id``` and make a HTTPS/Delete connection to cancel that order. If the order is active and successfully canceled ```true``` will be returned(C++) or ```*success``` will be set to non-zero(C); if not an exception will be thrown(C++) or an error code returned(C). 
+```Execute_CancelOrder``` attempts to take an ```order_id``` string (of an active order) for account ```account_id``` and make a HTTPS/Delete connection to cancel that order. If the order is active and successfully canceled ```true``` will be returned(C++, Python) or ```*success``` will be set to non-zero(C); if not an exception will be thrown(C++, Python) or an error code returned(C). 
 
 (At some point in the future we may catch certain exceptions and return a fail state.)
 ```
@@ -407,6 +413,10 @@ Execute_CancelOrder( struct Credentials *creds,
                      const char* account_id,
                      const char* order_id,
                      int *success );
+
+[Python]
+def execute.cancel_order( creds, account_id, order_id ):
+    returns -> bool
 ```
 
 #### Replace Order
