@@ -77,8 +77,9 @@ This project would not be possible without some of the great open-source project
 **C++**            | *Working*     | *Working*   | *OrderTicket, Builders, Send/Cancel*
 **Python**         | *Working*     | *Working*   | *OrderTicket, Builders, Send/Cancel*
 
-*Note: 'Working' does not necessarily mean 'Stable'*
-*Note: Execute Interface has undergone very little testing*
+
+*Note: 'Working' does not necessarily mean 'Stable'*  
+*Note: Execute Interface has undergone very little testing*  
 
 ### Structure
 - - -
@@ -273,7 +274,7 @@ Since all the dependencies are included(or built manually) you'll need to manage
     from tdma_api import auth     # authorization methods and objects
     from tdma_api import get      # 'getter' objects and utilities
     from tdma_api import stream   # 'streaming' class and subscriptions
-    from tdma_api import execute  # order ticket/leg objects and builders
+    from tdma_api import execute  # order objects, builders and execution calls
     ```
     - the python package will try to load the library automatically
     - if it can't, it will output an error message on package import 
@@ -290,11 +291,11 @@ Since all the dependencies are included(or built manually) you'll need to manage
 
 - **ONLY** Symbol strings are converted to upper-case by the library, e.g 'sPy' -> 'SPY'.
 
-- Currently, decimal values are represented with ```double``` type and passed to the API as a string with precision of 6 (the default for std::to_string(double) which is used for the conversion). 
+- Currently, decimal values are represented with ```double``` type and passed to the API as a string with (fixed) precision of 6 (the default for std::to_string(double) which is used for the conversion). 
     - Numbers requiring more precision than that will be passed to the API *incorrectly*.
     - This may also cause issues with very large numbers that require a moderate amount of precision.
     - This *shouldn't* be an issue for the current nature of access.
-    - Input string conversion precision may be reduced to 4 digits (.0001) to limit issues going forward.
+    - Input string conversion may be reduced to 4 digit (fixed) precision (xxx.xxxx) to limit issues going forward.
 
 - Enums are defined for both C and C++ code using MACROS. Python mimics these enums by defining constant values. For example:
     ```

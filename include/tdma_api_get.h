@@ -1287,7 +1287,7 @@ MarketHoursGetter_Create( struct Credentials *pcreds,
 { return MarketHoursGetter_Create_ABI(pcreds, (int)market_type, date, pgetter, 0); }
 
 static inline int
-MarketHoursGetter_Destroy(MarketHoursGetter_C *pgetter, int allow_exceptions)
+MarketHoursGetter_Destroy(MarketHoursGetter_C *pgetter)
 { return MarketHoursGetter_Destroy_ABI(pgetter, 0); }
 
 DECL_WRAPPED_API_GETTER_BASE_FUNCS(MarketHoursGetter)

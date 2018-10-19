@@ -122,19 +122,58 @@ CheckOptionSymbolImpl(const std::string& option) // ABC_MMDDYY[C|P]{STRIKE}
 }
 
 int
-to_new_char_buffer( const std::string& s, char** buf, size_t* n,
+to_new_char_buffer( const std::string& s,
+                      char** buf, 
+                      size_t* n,
                       bool allow_exceptions )
 {
     assert(buf);
     assert(n);
+
     *n = s.size() + 1;
-    *buf = reinterpret_cast<char*>(malloc(*n));
-    if( !(*buf) ){
-        return HANDLE_ERROR( MemoryError, "failed to allocate buffer memory",
-                             allow_exceptions );
-    }
+    int err = alloc_to_buffer(buf, *n, allow_exceptions);
+    if( err )
+        return err;
+
     strncpy(*buf, s.c_str(), (*n)-1);
     (*buf)[(*n)-1] = 0;
+
+    return 0;
+}
+
+int
+to_new_char_buffers( const std::set<std::string>& strs,
+                       char*** bufs,
+                       size_t *n,
+                       bool allow_exceptions )
+{
+    assert(bufs);
+    assert(n);
+
+    *n = strs.size();
+    int err = alloc_to_buffer(bufs, *n, allow_exceptions);
+    if( err )
+        return err;
+
+    int cnt = 0;
+    for(auto& s : strs){
+        size_t s_sz = s.size();
+        (*bufs)[cnt] = reinterpret_cast<char*>(malloc(s_sz+1));
+        if( !(*bufs)[cnt] ){
+            // unwind allocations
+            while( --cnt >= 0 ){
+               free( (*bufs)[cnt] );
+            }
+            free( *bufs );
+            return HANDLE_ERROR(tdma::MemoryError,
+                "failed to allocate buffer memory", allow_exceptions
+                );
+        }
+        (*bufs)[cnt][s_sz] = 0;
+        strncpy((*bufs)[cnt], s.c_str(), s_sz);
+        ++cnt;
+    }
+
     return 0;
 }
 

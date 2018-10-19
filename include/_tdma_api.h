@@ -80,6 +80,12 @@ to_new_char_buffer( const std::string& s,
                             size_t* n,
                             bool allow_exceptions );
 
+int
+to_new_char_buffers( const std::set<std::string>& strs,
+                       char*** bufs,
+                       size_t *n,
+                       bool allow_exceptions );
+
 
 template<typename RetTy>
 struct ImplReturnHelper{
@@ -244,6 +250,21 @@ handle_error( const std::string& msg,
 
 #define HANDLE_ERROR_EX(exc, msg, allow, proxy) \
     handle_error<exc>(msg, allow, __LINE__, __FILE__, proxy)
+
+
+
+template<typename T>
+int
+alloc_to_buffer(T** pbuf, size_t n, bool allow_exceptions)
+{
+    *pbuf = reinterpret_cast<T*>(malloc((n) * sizeof(T)));
+    if( !(*pbuf) ){
+        return HANDLE_ERROR(
+            MemoryError, "failed to allocate buffer memory", allow_exceptions
+            );
+    }
+    return 0;
+}
 
 
 /*
@@ -550,29 +571,7 @@ struct ImplAccessor<char***>{
         if( err )
             return err;
 
-        *n = strs.size();
-        *pval = reinterpret_cast<char**>(malloc((*n) * sizeof(char*)));
-        if( !*pval ){
-            return HANDLE_ERROR(tdma::MemoryError,
-                "failed to allocate buffer memory", allow_exceptions
-                );
-        }
-
-        int cnt = 0;
-        for(auto& s : strs){
-            size_t s_sz = s.size();
-            (*pval)[cnt] = reinterpret_cast<char*>(malloc(s_sz+1));
-            if( !(*pval)[cnt] ){
-                return HANDLE_ERROR(tdma::MemoryError,
-                    "failed to allocate buffer memory", allow_exceptions
-                    );
-            }
-            (*pval)[cnt][s_sz] = 0;
-            strncpy((*pval)[cnt], s.c_str(), s_sz);
-            ++cnt;
-        }
-
-        return 0;
+        return to_new_char_buffers(strs, pval, n, allow_exceptions);
     }
 };
 

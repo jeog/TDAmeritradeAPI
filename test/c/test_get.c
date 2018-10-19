@@ -245,6 +245,10 @@ Test_QuoteGetter(struct Credentials* creds)
         free(symbol);
         symbol = NULL;
     }
+
+    if( (err = QuoteGetter_Destroy(&qg)) )
+        CHECK_AND_RETURN_ON_ERROR(err, "QuoteGetter_Destroy");
+
     return 0;
 }
 
@@ -361,6 +365,9 @@ Test_QuotesGetter(struct Credentials* creds)
         buf = NULL;
     }
 
+    if( (err = QuotesGetter_Destroy(&qsg)) )
+        CHECK_AND_RETURN_ON_ERROR(err, "QuotesGetter_Destroy");
+
     return 0;
 }
 
@@ -446,6 +453,9 @@ Test_MarketHoursGetter(struct Credentials *creds)
         free(buf);
         buf = NULL;
     }
+
+    if( (err = MarketHoursGetter_Destroy(&mhg)) )
+        CHECK_AND_RETURN_ON_ERROR(err, "MarketHoursGetter_Destroy");
 
 
     return 0;
@@ -563,6 +573,9 @@ Test_MoversGetter(struct Credentials *creds)
         free(buf);
         buf = NULL;
     }
+
+    if( (err = MoversGetter_Destroy(&mg)) )
+        CHECK_AND_RETURN_ON_ERROR(err, "MoversGetter_Destroy");
 
     return 0;
 }
@@ -750,6 +763,9 @@ Test_HistoricalPeriodGetter(struct Credentials *creds)
         return -1;
     }
 
+    if( (err = HistoricalPeriodGetter_Destroy(&hpg)) )
+        CHECK_AND_RETURN_ON_ERROR(err, "HistoricalPeriodGetter_Destroy");
+
 
     return 0;
 }
@@ -912,6 +928,9 @@ Test_HistoricalRangeGetter(struct Credentials *creds)
         free(buf);
         buf = NULL;
     }
+
+    if( (err = HistoricalRangeGetter_Destroy(&hpg)) )
+        CHECK_AND_RETURN_ON_ERROR(err, "HistoricalRangeGetter_Destroy");
 
     return 0;
 }

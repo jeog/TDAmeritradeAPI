@@ -522,16 +522,17 @@ OrderTicket_GetLegs_ABI( OrderTicket_C *porder,
         return err;
 
     *n = legs.size();
-    *plegs = reinterpret_cast<OrderLeg_C*>(malloc((*n) * sizeof(OrderLeg_C)));
-    if( !*plegs ){
-        return HANDLE_ERROR(tdma::MemoryError,
-            "failed to allocate buffer memory for order legs", allow_exceptions
-            );
-    }
+    err = alloc_to_buffer(plegs, *n, allow_exceptions);
+    if( err )
+        return err;
 
     static auto meth2 = +[](OrderLeg_C* l, size_t n, vector<OrderLegImpl>& L){
-        for(size_t i = 0; i < n; ++i){
-            l[i] = L[i].as_ctype();
+        try{
+            for(size_t i = 0; i < n; ++i)
+                l[i] = L[i].as_ctype();
+        }catch(...){
+            FreeOrderLegBuffer_ABI(l, 0);
+            throw;
         }
     };
 
@@ -656,23 +657,20 @@ OrderTicket_GetChildren_ABI( OrderTicket_C *porder,
         return err;
 
     *n = kids.size();
-    *pchildren = reinterpret_cast<OrderTicket_C*>(
-        malloc((*n) * sizeof(OrderTicket_C))
-        );
-    if( !*pchildren ){
-        return HANDLE_ERROR(tdma::MemoryError,
-            "failed to allocate buffer memory for child orders",
-            allow_exceptions
-            );
-    }
+    err = alloc_to_buffer(pchildren, *n, allow_exceptions);
+    if( err )
+        return err;
 
-    static auto meth2 = +[]( OrderTicket_C* l, size_t n,
-                             vector<OrderTicketImpl>& L )
-                             {
-                                for(size_t i = 0; i < n; ++i){
-                                    l[i] = L[i].as_ctype();
-                                }
-                             };
+    static auto meth2 =
+        +[]( OrderTicket_C* l, size_t n, vector<OrderTicketImpl>& L ){
+            try{
+                for(size_t i = 0; i < n; ++i)
+                    l[i] = L[i].as_ctype();
+            }catch(...){
+                FreeOrderTicketBuffer_ABI(l, 0);
+                throw;
+            }
+         };
 
     return CallImplFromABI(allow_exceptions, meth2, *pchildren, *n, kids);
 }

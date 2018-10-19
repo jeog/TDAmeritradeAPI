@@ -790,12 +790,10 @@ get_fields(typename ImplTy::ProxyType::CType *psub, int** fields, size_t *n,
         return err;
 
     *n = f.size();
-    *fields = reinterpret_cast<int*>(malloc(*n * sizeof(int)));
-    if( !*fields ){
-        return HANDLE_ERROR(MemoryError,
-            "failed to allocate buffer memory", allow_exceptions
-            );
-    }
+    err = alloc_to_buffer(fields, *n, allow_exceptions);
+    if( err )
+        return err;
+
     int i = 0;
     for(auto& ff : f)
         (*fields)[i++] = static_cast<int>(ff);
@@ -930,29 +928,7 @@ SubscriptionBySymbolBase_GetSymbols_ABI( StreamingSubscription_C *psub,
     if( err )
        return err;
 
-    *n = strs.size();
-    *buffers = reinterpret_cast<char**>(malloc((*n) * sizeof(char*)));
-    if( !*buffers ){
-       return HANDLE_ERROR(MemoryError,
-           "failed to allocate buffer memory", allow_exceptions
-           );
-    }
-
-    int cnt = 0;
-    for(auto& s : strs){
-       size_t s_sz = s.size();
-       (*buffers)[cnt] = reinterpret_cast<char*>(malloc(s_sz+1));
-       if( !(*buffers)[cnt] ){
-           return HANDLE_ERROR(MemoryError,
-               "failed to allocate buffer memory", allow_exceptions
-               );
-       }
-       (*buffers)[cnt][s_sz] = 0;
-       strncpy((*buffers)[cnt], s.c_str(), s_sz);
-       ++cnt;
-    }
-
-    return 0;
+    return to_new_char_buffers(strs, buffers, n, allow_exceptions);
 }
 
 
