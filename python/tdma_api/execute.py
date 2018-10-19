@@ -191,7 +191,12 @@ class _OrderObjectBase(clib._ProxyBase):
         t._obj.type_id = proxy.type_id
         t._alive = True
         return t
-
+    
+    def __str__(self):
+        """ Returns json representation of object as str. """
+        j = self.as_json()
+        return str(j) if j else "{}"
+    
     def _is_same(self, other):
         if type(self) != type(other):
             return False
@@ -209,9 +214,10 @@ class _OrderObjectBase(clib._ProxyBase):
         return copy
 
     def as_json(self):
-        """ Returns object as json - as dict, list, or None. """
+        """ Returns underlying json of object - as dict, list, or None. """
         j = clib.get_str( self._abi('AsJsonString'), self._obj )
         return json.loads(j) if j else None
+
 
 
 class OrderLeg( _OrderObjectBase ):
