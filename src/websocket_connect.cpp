@@ -19,9 +19,14 @@ along with this program.  If not, see http://www.gnu.org/licenses.
 
 #include "../include/websocket_connect.h"
 
-namespace conn{
+using std::string;
+using std::vector;
+using std::lock_guard;
+using std::mutex;
+using std::chrono::milliseconds;
 
-using namespace std;
+
+namespace conn{
 
 void
 D(string msg, WebSocketClient *obj)
@@ -158,14 +163,14 @@ WebSocketClient::Callbacks::on_signal(uS::Async *a)
 
 
 void
-WebSocketClient::connect(chrono::milliseconds timeout)
+WebSocketClient::connect(milliseconds timeout)
 {
     D("connect", this);
     if( _ws || _closing_state != CloseType::none )
         return;
 
     D("connect, move new _thread", this);
-    _thread = move( thread( SocketThreadTarget(this, timeout) ) );
+    _thread = std::move( std::thread( SocketThreadTarget(this, timeout) ) );
 
     D("connect, wait for callback notify", this);
     /*
@@ -180,7 +185,7 @@ WebSocketClient::connect(chrono::milliseconds timeout)
      *
      *  (CAN WE DEADLOCK HERE ??)
      */
-    unique_lock<mutex> lock(_init_mtx);
+    std::unique_lock<mutex> lock(_init_mtx);
     _init_cond.wait( lock, [this]{ return _init_flag; } );
 }
 
@@ -235,7 +240,7 @@ WebSocketClient::recv_or_wait()
 
 
 string
-WebSocketClient::recv_or_wait_for(chrono::milliseconds timeout)
+WebSocketClient::recv_or_wait_for(milliseconds timeout)
 {
     auto p = _in_queue.pop_front_or_wait_for(timeout);
     return p.second ? p.first : "";
@@ -276,7 +281,7 @@ WebSocketClient::recv_atleast_n_or_wait(size_t n)
 
 
 vector<string>
-WebSocketClient::recv_atleast_n_or_wait_for(size_t n, chrono::milliseconds timeout)
+WebSocketClient::recv_atleast_n_or_wait_for(size_t n, milliseconds timeout)
 {
     vector<string> all = recv_all();
     size_t all_n = all.size();
@@ -314,9 +319,9 @@ WebSocketClient::recv_n_or_wait(size_t n)
 
 
 vector<string>
-WebSocketClient::recv_n_or_wait_for(size_t n, chrono::milliseconds timeout)
+WebSocketClient::recv_n_or_wait_for(size_t n, milliseconds timeout)
 {
-    using namespace chrono;
+    using namespace std::chrono;
 
     vector<string> ret;
     auto t_beg = steady_clock::now();

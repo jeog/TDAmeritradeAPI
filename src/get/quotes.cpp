@@ -15,16 +15,16 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see http://www.gnu.org/licenses.
 */
 
-
 #include <string>
 
 #include "../../include/_tdma_api.h"
 #include "../../include/_get.h"
 
-using namespace std;
+using std::string;
+using std::set;
+using std::tie;
 
 namespace tdma {
-
 
 class QuoteGetterImpl
         : public APIGetterImpl {

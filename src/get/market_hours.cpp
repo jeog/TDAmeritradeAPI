@@ -25,14 +25,15 @@ along with this program.  If not, see http://www.gnu.org/licenses.
 #include "../../include/_tdma_api.h"
 #include "../../include/_get.h"
 
-using namespace std;
+using std::string;
+
 
 namespace tdma {
 
 class MarketHoursGetterImpl
         : public APIGetterImpl {
     MarketType _market_type;
-    std::string _date;
+    string _date;
 
     void
     _build()
@@ -78,7 +79,7 @@ public:
         build();
     }
 
-    std::string
+    string
     get_date() const
     { return _date; }
 
@@ -95,6 +96,7 @@ public:
 };
 
 } /* tdma */
+
 
 using namespace tdma;
 
@@ -119,7 +121,7 @@ MarketHoursGetter_Create_ABI( struct Credentials *pcreds,
     };
 
     ImplTy *obj;
-    tie(obj, err) = CallImplFromABI( allow_exceptions, meth, pcreds,
+    std::tie(obj, err) = CallImplFromABI( allow_exceptions, meth, pcreds,
                                            market_type, date );
     if( err ){
         kill_proxy(pgetter);

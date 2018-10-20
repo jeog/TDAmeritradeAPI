@@ -28,6 +28,18 @@ along with this program.  If not, see http://www.gnu.org/licenses.
 #include "../../include/util.h"
 #include "../../include/websocket_connect.h"
 
+using std::string;
+using std::vector;
+using std::map;
+using std::deque;
+using std::set;
+using std::stringstream;
+using std::tie;
+using std::mutex;
+using std::cout;
+using std::cerr;
+using std::endl;
+using std::chrono::milliseconds;
 
 /*
  * StreamingSession basic flow:
@@ -43,9 +55,8 @@ along with this program.  If not, see http://www.gnu.org/licenses.
  *
  *
  */
-namespace tdma{
 
-using namespace std;
+namespace tdma{
 
 class StreamingSessionImpl;
 
@@ -69,7 +80,8 @@ public:
 };
 
 struct PendingResponse{
-    typedef function<void(int, string, string, unsigned long long, int, string)>
+    typedef std::function< void(int, string, string, unsigned long long,
+                                int, string) >
     response_cb_ty;
 
     int request_id;
@@ -102,7 +114,7 @@ struct PendingResponse{
 
 
 struct PendingResponseBundle{
-    condition_variable cond;
+    std::condition_variable cond;
     mutex mtx;
     int n;
     int ntarget;
@@ -189,14 +201,14 @@ class StreamingRequests{
     vector<StreamingRequest> _requests;
 
 public:
-    StreamingRequests( initializer_list<StreamingRequest> requests )
+    StreamingRequests( std::initializer_list<StreamingRequest> requests )
         : _requests( requests )
     {}
 
     StreamingRequests( const vector<StreamingSubscriptionImpl>& subscriptions,
-                       const string& account_id,
-                       const string& source_id,
-                       const vector<int>& request_ids )
+                         const string& account_id,
+                         const string& source_id,
+                         const vector<int>& request_ids )
         {
             assert( subscriptions.size() == request_ids.size() );
             for( size_t i = 0; i < subscriptions.size(); ++i ){
@@ -219,28 +231,28 @@ public:
 
 // for the proxy object
 const string StreamingSession::VERSION(STREAMING_VERSION);
-const chrono::milliseconds StreamingSession::MIN_TIMEOUT(STREAMING_MIN_TIMEOUT);
-const chrono::milliseconds StreamingSession::MIN_LISTENING_TIMEOUT(
+const milliseconds StreamingSession::MIN_TIMEOUT(STREAMING_MIN_TIMEOUT);
+const milliseconds StreamingSession::MIN_LISTENING_TIMEOUT(
     STREAMING_MIN_LISTENING_TIMEOUT);
-const chrono::milliseconds StreamingSession::LOGOUT_TIMEOUT(
+const milliseconds StreamingSession::LOGOUT_TIMEOUT(
     STREAMING_LOGOUT_TIMEOUT);
-const chrono::milliseconds StreamingSession::DEF_CONNECT_TIMEOUT(
+const milliseconds StreamingSession::DEF_CONNECT_TIMEOUT(
     STREAMING_DEF_CONNECT_TIMEOUT);
-const chrono::milliseconds StreamingSession::DEF_LISTENING_TIMEOUT(
+const milliseconds StreamingSession::DEF_LISTENING_TIMEOUT(
     STREAMING_DEF_LISTENING_TIMEOUT);
-const chrono::milliseconds StreamingSession::DEF_SUBSCRIBE_TIMEOUT(
+const milliseconds StreamingSession::DEF_SUBSCRIBE_TIMEOUT(
     STREAMING_DEF_SUBSCRIBE_TIMEOUT);
 
 
 class StreamingSessionImpl{
     StreamerInfo _streamer_info;
     string _account_id;
-    unique_ptr<conn::WebSocketClient> _client;
+    std::unique_ptr<conn::WebSocketClient> _client;
     streaming_cb_ty _callback;
-    chrono::milliseconds _connect_timeout;
-    chrono::milliseconds _listening_timeout;
-    chrono::milliseconds _subscribe_timeout;
-    thread _listener_thread;
+    milliseconds _connect_timeout;
+    milliseconds _listening_timeout;
+    milliseconds _subscribe_timeout;
+    std::thread _listener_thread;
     string _server_id;
     int _next_request_id;
     bool _logged_in;
@@ -327,9 +339,9 @@ public:
 
     StreamingSessionImpl( const StreamerInfo& streamer_info,
                             streaming_cb_ty callback,
-                            chrono::milliseconds connect_timeout,
-                            chrono::milliseconds listening_timeout,
-                            chrono::milliseconds subscribe_timeout )
+                            milliseconds connect_timeout,
+                            milliseconds listening_timeout,
+                            milliseconds subscribe_timeout )
         :
             _streamer_info( streamer_info ),
             _client(nullptr),
@@ -434,7 +446,7 @@ StreamingSessionImpl::ListenerThreadTarget::operator()()
         cb_t = StreamingCallbackType::error;
         cb_j = { {"error:", e.what()} };
 
-    }catch( exception& e ){
+    }catch( std::exception& e ){
         /*
          * trouble regardless, do our best to close the connection first
          */
@@ -458,8 +470,10 @@ StreamingSessionImpl::ListenerThreadTarget::exec()
     while( _ss->_listening ){
 
         /* _client should *always* be connected while listening */
-        if( !_ss->_client->is_connected() )
-            TDMA_API_THROW(StreamingException,"client connection ended unexpectedly");
+        if( !_ss->_client->is_connected() ){
+            TDMA_API_THROW( StreamingException,
+                            "client connection ended unexpectedly" );
+        }
 
         /* BLOCK for _listening_timeout msec until we get at least 1 message */
         auto results = _ss->_client->recv_atleast_n_or_wait_for( 1,
@@ -553,7 +567,7 @@ StreamingSessionImpl::ListenerThreadTarget::parse_response_to_request(
     }
 
     if( service != pr.service || command != pr.command ){
-        std::stringstream ss;
+        stringstream ss;
         ss << "invalid response to request: " << response.dump()
            << ", (" << pr.service << "," << pr.command << ")";
         TDMA_API_THROW(StreamingException, ss.str() );
@@ -615,12 +629,11 @@ StreamingSessionImpl::ListenerThreadTarget::parse_response_data(
         _ss->_exec_callback( StreamingCallbackType::data,
                              streamer_service_from_str(service),
                              response.at("timestamp"), response.at("content") );
-    }catch(exception& e){
-        TDMA_API_THROW(StreamingException,"invalid 'data' response: " + string(e.what()));
+    }catch(std::exception& e){
+        TDMA_API_THROW( StreamingException,
+                        "invalid 'data' response: " + string(e.what()) );
     }
 }
-
-
 
 bool
 StreamingSessionImpl::_login()
@@ -708,7 +721,7 @@ StreamingSessionImpl::_login()
 bool
 StreamingSessionImpl::_logout()
 {
-    using namespace chrono;
+    using namespace std::chrono;
 
     D("logout", this);
 
@@ -784,7 +797,8 @@ StreamingSessionImpl::_logout()
             }
         }
 
-        auto t_elapsed = duration_cast<milliseconds>(steady_clock::now() - t_beg);
+        auto t_elapsed =
+            duration_cast<milliseconds>(steady_clock::now() - t_beg);
         t_remaining = StreamingSession::LOGOUT_TIMEOUT - t_elapsed;
     }
 
@@ -809,7 +823,7 @@ StreamingSessionImpl::set_qos(const QOSType& qos)
             bndl->successes[0] = (code == 0);
             bndl->msg = msg;
             {
-                lock_guard<mutex> _(bndl->mtx);
+                std::lock_guard<mutex> _(bndl->mtx);
                 ++(bndl->n);
             }
             bndl->cond.notify_all();
@@ -829,7 +843,7 @@ StreamingSessionImpl::set_qos(const QOSType& qos)
     );
     _subscribe( {sub}, cb );
 
-    unique_lock<mutex> l(bndl->mtx);
+    std::unique_lock<mutex> l(bndl->mtx);
     if( !bndl->cond.wait_for(l, _subscribe_timeout,
                              [&](){ return bndl->is_ready(); } ) )
     {
@@ -853,7 +867,7 @@ StreamingSessionImpl::_subscribe(
 {    
     if( !_responses_pending.empty() ){
         _responses_pending.access(
-            [](const unordered_map<int, PendingResponse>& m){
+            [](const std::unordered_map<int, PendingResponse>& m){
                 cerr<< "(" << m.size() << ") RESPONSES STILL PENDING" << endl;
                 for( auto& p : m ){
                     cerr<< "\t request_id: " << p.second.request_id << endl
@@ -908,7 +922,7 @@ StreamingSessionImpl::add_subscriptions(
         {
             bndl->successes[bndl->n] = ( code == 0 );
             {
-                lock_guard<mutex> _(bndl->mtx);
+                std::lock_guard<mutex> _(bndl->mtx);
                 ++(bndl->n);
                 if( !bndl->is_ready() )
                     return;
@@ -927,7 +941,7 @@ StreamingSessionImpl::add_subscriptions(
 
     _subscribe(subscriptions, cb);
 
-    unique_lock<mutex> l(bndl->mtx);
+    std::unique_lock<mutex> l(bndl->mtx);
     if( !bndl->cond.wait_for( l, _subscribe_timeout,
                               [&](){return bndl->is_ready();} ) )
     {
@@ -1021,7 +1035,7 @@ StreamingSessionImpl::_start_listener_thread()
         _listener_thread.join();
 
     D("move new listener thread", this);
-    _listener_thread = move( thread(ListenerThreadTarget(this)) );
+    _listener_thread = std::move( std::thread(ListenerThreadTarget(this)) );
 }
 
 
@@ -1042,6 +1056,10 @@ StreamingSessionImpl::_stop_listener_thread()
     D("join listener thread DONE", this);
 }
 
+} /*tdma*/
+
+
+namespace{
 
 int
 call_session_with_subs(
@@ -1049,9 +1067,11 @@ call_session_with_subs(
     StreamingSubscription_C **subs,
     size_t nsubs,
     int *results_buffer,
-    deque<bool>(*meth)(void*, const vector<StreamingSubscriptionImpl>&),
+    deque<bool>(*meth)(void*, const vector<tdma::StreamingSubscriptionImpl>&),
     int allow_exceptions )
 {
+    using namespace tdma;
+
     int err = proxy_is_callable<StreamingSessionImpl>(psession, allow_exceptions);
     if( err )
         return err;
@@ -1071,12 +1091,13 @@ call_session_with_subs(
             assert(c);
             res.emplace_back( C_sub_ptr_to_impl(c) );
         }
-    }catch(exception& e){
+    }catch(std::exception& e){
         return HANDLE_ERROR(StreamingException, e.what(), allow_exceptions);
     }
 
     deque<bool> results;
-    tie(results, err) = CallImplFromABI(allow_exceptions, meth, psession->obj, res);
+    tie(results, err) = CallImplFromABI( allow_exceptions, meth,
+                                         psession->obj, res );
     if( err )
         return err;
 
@@ -1090,7 +1111,8 @@ call_session_with_subs(
     return 0;
 }
 
-} /*tdma*/
+} /* namespace */
+
 
 using namespace tdma;
 
@@ -1116,7 +1138,6 @@ StreamingSession_Create_ABI( struct Credentials *pcreds,
                            unsigned long cto, unsigned long lto,
                            unsigned long sto)
                            {
-        using namespace chrono;
         StreamerInfo si = get_streamer_info(*pcreds);
         return new StreamingSessionImpl( si, cb, milliseconds(cto),
                                          milliseconds(lto), milliseconds(sto) );
@@ -1124,9 +1145,9 @@ StreamingSession_Create_ABI( struct Credentials *pcreds,
 
     int err;
     StreamingSessionImpl *obj;
-    tie(obj, err) = CallImplFromABI(allow_exceptions, meth, pcreds, callback,
-                                    connect_timeout, listening_timeout,
-                                    subscribe_timeout);
+    tie(obj, err) = CallImplFromABI( allow_exceptions, meth, pcreds,
+                                          callback, connect_timeout,
+                                          listening_timeout, subscribe_timeout);
     if( err ){
         kill_proxy(psession);
         return err;

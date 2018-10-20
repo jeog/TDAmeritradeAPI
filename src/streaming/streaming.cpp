@@ -21,20 +21,22 @@ along with this program.  If not, see http://www.gnu.org/licenses.
 
 #include "../../include/_streaming.h"
 
+using std::string;
+
+namespace {
+
 #ifdef _WIN32
 #define timegm _mkgmtime
 #endif
-
-namespace tdma {
-
-using namespace std;
 
 long long
 timestamp_to_ms(string ts)
 {
     //"2018-06-12T02:18:23+0000"
-    if( ts.size() != 24 || ts.substr(20,4) != "0000" )
-        TDMA_API_THROW(APIException,"invalid timestamp from streamerInfo");
+    if( ts.size() != 24 || ts.substr(20,4) != "0000" ){
+        TDMA_API_THROW( tdma::APIException,
+                        "invalid timestamp from streamerInfo" );
+    }
 
     auto pos = ts.begin();
     tm t = {0};
@@ -53,7 +55,12 @@ timestamp_to_ms(string ts)
     return timegm(&t) * 1000LL;
 }
 
+#undef timegm
 
+} /* namespace */
+
+
+namespace tdma {
 
 // TODO allow to search multiple accounts; for now just default to first
 StreamerInfo
@@ -101,7 +108,7 @@ get_streamer_info(Credentials& creds)
 void
 StreamerInfo::encode_credentials()
 {
-    stringstream ss;
+    std::stringstream ss;
     ss<< "userid" << "=" << credentials.user_id << "&"
       << "token" << "=" << credentials.token << "&"
       << "company" << "=" << credentials.company << "&"
@@ -166,11 +173,14 @@ streamer_service_from_str(string service_name)
 
 } /* tdma */
 
+
 using namespace tdma;
-using namespace std;
 
 int
-AdminCommandType_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
+AdminCommandType_to_string_ABI( int v,
+                                    char** buf,
+                                    size_t* n,
+                                    int allow_exceptions )
 {
     CHECK_ENUM(AdminCommandType, v, allow_exceptions);
 
@@ -182,7 +192,7 @@ AdminCommandType_to_string_ABI(int v, char** buf, size_t* n, int allow_exception
     case AdminCommandType::QOS:
         return to_new_char_buffer("QOS", buf, n, allow_exceptions);
     default:
-        throw runtime_error("Invalid AdminCommandType");
+        throw std::runtime_error("Invalid AdminCommandType");
     }
 }
 
@@ -205,14 +215,15 @@ QOSType_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
     case QOSType::slow:
         return to_new_char_buffer("slow", buf, n, allow_exceptions);
     default:
-        throw runtime_error("Invalid QOSType");
+        throw std::runtime_error("Invalid QOSType");
     }
 }
 
-
-
 int
-DurationType_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
+DurationType_to_string_ABI( int v,
+                               char** buf,
+                               size_t* n,
+                               int allow_exceptions )
 {
     CHECK_ENUM(DurationType, v, allow_exceptions);
 
@@ -230,10 +241,9 @@ DurationType_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
     case DurationType::min_1:
         return to_new_char_buffer("60", buf, n, allow_exceptions);
     default:
-        throw runtime_error("Invalid DurationType");
+        throw std::runtime_error("Invalid DurationType");
     }
 }
-
 
 int
 VenueType_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
@@ -253,13 +263,15 @@ VenueType_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
         return to_new_char_buffer("CALLS-DESC", buf, n, allow_exceptions);
     case VenueType::puts_desc:
         return to_new_char_buffer("PUTS-DESC", buf, n, allow_exceptions);
-    default: throw runtime_error("Invalid VenueType");
+    default: throw std::runtime_error("Invalid VenueType");
     }
 }
 
-
 int
-StreamingCallbackType_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
+StreamingCallbackType_to_string_ABI( int v,
+                                          char** buf,
+                                          size_t* n,
+                                          int allow_exceptions )
 {
     CHECK_ENUM(StreamingCallbackType, v, allow_exceptions);
 
@@ -279,12 +291,15 @@ StreamingCallbackType_to_string_ABI(int v, char** buf, size_t* n, int allow_exce
     case StreamingCallbackType::error:
         return to_new_char_buffer("error", buf, n, allow_exceptions);
     default:
-        throw runtime_error("Invalid StreamingCallbackType");
+        throw std::runtime_error("Invalid StreamingCallbackType");
     }
 }
 
 int
-StreamerServiceType_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
+StreamerServiceType_to_string_ABI( int v,
+                                       char** buf,
+                                       size_t* n,
+                                       int allow_exceptions )
 {
     if( v ){ // ::NONE (0) can't be allowed to fail in this particular case
         CHECK_ENUM(StreamerServiceType, v, allow_exceptions);
@@ -332,7 +347,7 @@ StreamerServiceType_to_string_ABI(int v, char** buf, size_t* n, int allow_except
     case StreamerServiceType::TIMESALE_OPTIONS:
         return to_new_char_buffer("TIMESALE_OPTIONS", buf, n, allow_exceptions);
     default:
-        throw runtime_error("Invalid StreamerServiceType");
+        throw std::runtime_error("Invalid StreamerServiceType");
     }
 }
 

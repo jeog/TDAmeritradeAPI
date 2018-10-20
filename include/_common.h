@@ -52,6 +52,8 @@ along with this program.  If not, see http://www.gnu.org/licenses.
 
 #ifdef __cplusplus
 #include <string>
+
+// TODO move from global
 extern std::string certificate_bundle_path;
 
 #define EXTERN_C_SPEC_ extern "C"

@@ -25,16 +25,19 @@ along with this program.  If not, see http://www.gnu.org/licenses.
 #include "../include/_common.h"
 #include "../include/tdma_common.h"
 
-using namespace std;
-using namespace tdma;
+using std::string;
 
 namespace {
+
 int last_error_code = 0;
 string last_error_msg("");
 int last_error_lineno = 0;
 string last_error_filename("");
-};
 
+} /* namespace */
+
+
+namespace tdma{
 
 void
 set_error_state( int code,
@@ -48,12 +51,17 @@ set_error_state( int code,
     last_error_filename = filename;
 }
 
-tuple<int, string, int, string>
+std::tuple<int, string, int, string>
 get_error_state()
 {
     return make_tuple(last_error_code, last_error_msg, last_error_lineno,
                       last_error_filename);
 }
+
+} /* tdma */
+
+
+using namespace tdma;
 
 int
 LastErrorCode_ABI( int *code, int allow_exceptions )

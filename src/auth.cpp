@@ -28,6 +28,16 @@ along with this program.  If not, see http://www.gnu.org/licenses.
 #include "openssl/evp.h"
 #include "openssl/conf.h"
 
+using std::string;
+using std::vector;
+using std::pair;
+using std::stringstream;
+using std::fstream;
+using std::ios_base;
+using std::cerr;
+using std::endl;
+using tdma::LocalCredentialException;
+
 std::string certificate_bundle_path;
 /*
  * Empty certificate_bundle_path means we let curl use the default store. 
@@ -35,9 +45,8 @@ std::string certificate_bundle_path;
  * w/ SetCertificateBundlePath() ) we'll fail w/ CURLE_SSL_CACERT and throw 
  */
 
-using namespace std;
 
-namespace tdma{
+namespace{
 
 /* this should all be done during build */
 #ifdef _WIN32
@@ -75,13 +84,7 @@ const std::string DEF_CERTIFICATE_BUNDLE_PATH;
  *  IV + BODY CHECKSUM (binary, 32 bytes)
  */
 
-using namespace conn;
-
-const string URL_ACCESS_TOKEN = URL_BASE + "oauth2/token";
-
-const vector<pair<string,string>> AUTH_HEADERS = {
-    {"Content-Type", "application/x-www-form-urlencoded"}
-};
+const string URL_ACCESS_TOKEN = tdma::URL_BASE + "oauth2/token";
 
 const int CREDS_IV_LENGTH = 16;
 const int CREDS_CHECKSUM_LENGTH = 32;
@@ -91,7 +94,7 @@ const long TOKEN_EXPIRATION_MARGIN_SEC = 60 *60 * 24; // 1 day
 /* this is a bit arbitrary, (just trying to avoid junk) */
 const long TOKEN_EARLIEST_EXPIRATION = 1528323136;
 const long long TOKEN_LATEST_EXPIRATION =
-        TOKEN_EARLIEST_EXPIRATION + (60ULL * 60 * 24 * 365 * 100); // 100 yrs
+    TOKEN_EARLIEST_EXPIRATION + (60ULL * 60 * 24 * 365 * 100); // 100 yrs
 
 
 template<typename T>
@@ -133,7 +136,7 @@ public:
         {}
 
     template<typename A>
-    explicit SmartBuffer(const basic_string<A>& s)
+    explicit SmartBuffer(const std::basic_string<A>& s)
         :
             _buffer()
     {
@@ -300,7 +303,7 @@ encrypt(const string& in, const string& key)
     result.resize(result_len + len);
 
     EVP_CIPHER_CTX_free(ctx);
-    return make_pair(iv, result);
+    return std::make_pair(iv, result);
 }
 
 
@@ -364,7 +367,7 @@ store_credentials( const string& path,
     stringstream input;
     input << creds->access_token << endl
           << creds->refresh_token << endl
-          << to_string(creds->epoch_sec_token_expiration) << endl
+          << std::to_string(creds->epoch_sec_token_expiration) << endl
           << creds->client_id << endl;
     string input_str = input.str();
 
@@ -376,7 +379,7 @@ store_credentials( const string& path,
 
     SmartByteBuffer iv;
     SmartByteBuffer ctext;    
-    tie(iv, ctext) = encrypt(input_str, password);
+    std::tie(iv, ctext) = encrypt(input_str, password);
 
     auto iv_and_ctext= iv + ctext;
     auto iv_body_checksum = hash_sha256(iv_and_ctext);
@@ -558,7 +561,7 @@ copy_credentials_file(const string& from_path, const string& to_path)
 bool
 refresh_token_has_expired(long long epoch_sec_token_expiration)
 {
-    using namespace chrono;
+    using namespace std::chrono;
 
     assert(epoch_sec_token_expiration > 0);
     auto now = system_clock::now();
@@ -572,7 +575,7 @@ refresh_token_has_expired(long long epoch_sec_token_expiration)
 long long
 generate_token_expiration_sec(long life)
 {
-    using namespace chrono;
+    using namespace std::chrono;
 
     assert(life > 0);
     auto now = system_clock::now();
@@ -580,6 +583,10 @@ generate_token_expiration_sec(long life)
     return sse.count() + life;
 }
 
+} /* namespace */
+
+
+namespace tdma {
 
 void
 LoadCredentialsImpl( const string& path,
@@ -619,7 +626,6 @@ LoadCredentialsImpl( const string& path,
     }
 }
 
-
 void
 StoreCredentialsImpl( const string& path,
                         const string& password,
@@ -639,7 +645,6 @@ StoreCredentialsImpl( const string& path,
     }
 }
 
-
 void
 RequestAccessTokenImpl( const string& code,
                            const string& client_id,
@@ -652,8 +657,7 @@ RequestAccessTokenImpl( const string& code,
     if( client_id.empty() )
         TDMA_API_THROW(LocalCredentialException,"'client_id' required");
 
-    HTTPSPostConnection connection(URL_ACCESS_TOKEN);
-    connection.ADD_headers(AUTH_HEADERS);
+    conn::HTTPSPostConnection connection(URL_ACCESS_TOKEN);
 
     vector<pair<string, string>> fields = {
         {"grant_type","authorization_code"},
@@ -682,14 +686,13 @@ RequestAccessTokenImpl( const string& code,
     };
 }
 
-
 void
 RefreshAccessTokenImpl(Credentials* creds)
 {
     if( creds->epoch_sec_token_expiration < TOKEN_EARLIEST_EXPIRATION ||
         creds->epoch_sec_token_expiration > TOKEN_LATEST_EXPIRATION )
     {
-        string e( to_string(creds->epoch_sec_token_expiration) );
+        string e( std::to_string(creds->epoch_sec_token_expiration) );
         TDMA_API_THROW( LocalCredentialException,
                         "creds.epoch_sec_toke_expiration contains invalid value"
                         "(" + e + ")" );
@@ -707,8 +710,7 @@ RefreshAccessTokenImpl(Credentials* creds)
     if( string(creds->refresh_token).empty() )
         TDMA_API_THROW(LocalCredentialException,"creds.refresh_token is empty");
 
-    HTTPSPostConnection connection(URL_ACCESS_TOKEN);
-    connection.ADD_headers(AUTH_HEADERS);
+    conn::HTTPSPostConnection connection(URL_ACCESS_TOKEN);
 
     vector<pair<string, string>> fields = {
         {"grant_type","refresh_token"},
@@ -734,7 +736,6 @@ RefreshAccessTokenImpl(Credentials* creds)
     }
 }
 
-
 void
 SetCertificateBundlePathImpl(const string& path)
 {    
@@ -753,16 +754,13 @@ SetCertificateBundlePathImpl(const string& path)
     certificate_bundle_path = path;
 }
 
-
 string
 GetCertificateBundlePathImpl()
 { return certificate_bundle_path; }
 
-
 string
 GetDefaultCertificateBundlePathImpl()
 { return DEF_CERTIFICATE_BUNDLE_PATH; }
-
 
 void
 CloseCredentialsImpl(Credentials* pcreds)
@@ -783,6 +781,7 @@ CloseCredentialsImpl(Credentials* pcreds)
 }
 
 } /* tdma */
+
 
 using namespace tdma;
 

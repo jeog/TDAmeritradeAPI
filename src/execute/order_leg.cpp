@@ -18,7 +18,8 @@ along with this program.  If not, see http://www.gnu.org/licenses.
 #include "../../include/_tdma_api.h"
 #include "../../include/_execute.h"
 
-using namespace std;
+using std::string;
+using std::vector;
 
 namespace tdma{
 
@@ -104,6 +105,7 @@ OrderLegImpl::as_ctype() const
 
 } /* tdma */
 
+
 using namespace tdma;
 
 int
@@ -126,8 +128,8 @@ OrderLeg_Create_ABI( int asset_type,
 
     int err;
     OrderLegImpl *obj;
-    tie(obj, err) = CallImplFromABI( allow_exceptions, meth, asset_type, symbol,
-                                     instruction, quantity );
+    std::tie(obj, err) = CallImplFromABI( allow_exceptions, meth, asset_type,
+                                          symbol, instruction, quantity );
     if( err ){
         kill_proxy(pleg);
         return err;

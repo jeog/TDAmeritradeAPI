@@ -30,16 +30,6 @@ along with this program.  If not, see http://www.gnu.org/licenses.
 #include "tdma_common.h"
 #include "curl_connect.h"
 
-void
-set_error_state(int code,
-                  const std::string&  msg,
-                  int fileno,
-                  const std::string& filename);
-
-std::tuple<int, std::string, int, std::string>
-get_error_state();
-
-
 namespace tdma{
 
 const std::string URL_BASE = "https://api.tdameritrade.com/v1/";
@@ -85,6 +75,15 @@ to_new_char_buffers( const std::set<std::string>& strs,
                        char*** bufs,
                        size_t *n,
                        bool allow_exceptions );
+
+void
+set_error_state(int code,
+                  const std::string&  msg,
+                  int fileno,
+                  const std::string& filename);
+
+std::tuple<int, std::string, int, std::string>
+get_error_state();
 
 
 template<typename RetTy>
@@ -132,14 +131,12 @@ template<typename RetTy, typename... Args, typename... Args2>
 typename ImplReturnHelper<RetTy>::type
 CallImplFromABI(bool allow_throw, RetTy(*func)(Args...), Args2... args)
 {
-    using namespace std;
-
     if( allow_throw )
         return ImplReturnHelper<RetTy>::from_call(func, args...);
 
     int err = 0;
     int lineno = 0;
-    string msg, filename;
+    std::string msg, filename;
 
     try{
         return ImplReturnHelper<RetTy>::from_call(func, args...);
@@ -148,22 +145,25 @@ CallImplFromABI(bool allow_throw, RetTy(*func)(Args...), Args2... args)
         msg = e.what();
         lineno = e.lineno();
         filename = e.filename();
-        cerr<< "ABI :: " << e.name() << " --> error code " << err << endl;
+        std::cerr<< "ABI :: " << e.name() << " --> error code " << err
+                 << std::endl;
     }catch(APIException& e){
         err = e.error_code();
         msg = e.what();
         lineno = e.lineno();
         filename = e.filename();
-        cerr<< "ABI :: " << e.name() << " --> error code " << err << endl;
+        std::cerr<< "ABI :: " << e.name() << " --> error code " << err
+                 << std::endl;
     }catch(std::exception& e){
         err = TDMA_API_STD_EXCEPTION;
         msg = e.what();
-        cerr<< "ABI :: std::exception(" << msg << ") --> error code "
-            << err << endl;
+        std::cerr<< "ABI :: std::exception(" << msg << ") --> error code "
+                 << err << std::endl;
     }catch(...){
         err = TDMA_API_UNKNOWN_EXCEPTION;
         msg = "unknown exception";
-        cerr<< "ABI :: unknown exception --> error code" << err << endl;
+        std::cerr<< "ABI :: unknown exception --> error code" << err
+                 << std::endl;
     }
 
     set_error_state(err, msg, lineno, filename);

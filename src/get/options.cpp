@@ -25,18 +25,21 @@ along with this program.  If not, see http://www.gnu.org/licenses.
 #include "../../include/_tdma_api.h"
 #include "../../include/_get.h"
 
-using namespace std;
+using std::string;
+using std::vector;
+using std::pair;
+using std::tie;
 
 namespace tdma {
 
 class OptionChainGetterImpl
         : public APIGetterImpl {
-    std::string _symbol;
+    string _symbol;
     OptionStrikes _strikes;
     OptionContractType _contract_type;
     bool _include_quotes;
-    std::string _from_date;
-    std::string _to_date;
+    string _from_date;
+    string _to_date;
     OptionExpMonth _exp_month;
     OptionType _option_type;
 
@@ -55,7 +58,7 @@ class OptionChainGetterImpl
     { _build(); }
 
 protected:
-    std::vector<std::pair<std::string,std::string>>
+    vector<pair<string,string>>
     build_query_params() const
     {
         vector<pair<string,string>> params { {"symbol", _symbol} };
@@ -101,12 +104,12 @@ public:
     static const int TYPE_ID_HIGH = TYPE_ID_GETTER_OPTION_CHAIN_ANALYTICAL;
 
     OptionChainGetterImpl( Credentials& creds,
-                               const std::string& symbol,
+                               const string& symbol,
                                const OptionStrikes& strikes,
                                OptionContractType contract_type = OptionContractType::all,
                                bool include_quotes = false,
-                               const std::string& from_date = "",
-                               const std::string& to_date = "",
+                               const string& from_date = "",
+                               const string& to_date = "",
                                OptionExpMonth exp_month = OptionExpMonth::all,
                                OptionType option_type = OptionType::all )
         :
@@ -132,7 +135,7 @@ public:
             _build();
         }
 
-    std::string
+    string
     get_symbol() const
     { return _symbol; }
 
@@ -148,11 +151,11 @@ public:
     includes_quotes() const
     { return _include_quotes; }
 
-    std::string
+    string
     get_from_date() const
     { return _from_date; }
 
-    std::string
+    string
     get_to_date() const
     { return _to_date; }
 
@@ -165,7 +168,7 @@ public:
     { return _option_type; }
 
     void
-    set_symbol(const std::string& symbol)
+    set_symbol(const string& symbol)
     {
         if( symbol.empty() )
             TDMA_API_THROW(ValueException,"empty symbol");
@@ -195,7 +198,7 @@ public:
     }
 
     void
-    set_from_date(const std::string& from_date)
+    set_from_date(const string& from_date)
     {
         if( !from_date.empty() && !util::is_valid_iso8601_datetime(from_date) )
            TDMA_API_THROW(ValueException,"invalid ISO-8601 date string: " + from_date);
@@ -205,7 +208,7 @@ public:
     }
 
     void
-    set_to_date(const std::string& to_date)
+    set_to_date(const string& to_date)
     {
         if( !to_date.empty() && !util::is_valid_iso8601_datetime(to_date) )
            TDMA_API_THROW(ValueException,"invalid ISO-8601 date string: " + to_date);
@@ -247,7 +250,7 @@ class OptionChainStrategyGetterImpl
     { _build(); }
 
 protected:
-    std::vector<std::pair<std::string,std::string>>
+    vector<pair<string,string>>
     build_query_params() const
     {
         vector<pair<string,string>> params =
@@ -268,13 +271,13 @@ public:
 
     OptionChainStrategyGetterImpl(
             Credentials& creds,
-            const std::string& symbol,
+            const string& symbol,
             OptionStrategy strategy,
             OptionStrikes strikes,
             OptionContractType contract_type = OptionContractType::all,
             bool include_quotes = false,
-            const std::string& from_date = "",
-            const std::string& to_date = "",
+            const string& from_date = "",
+            const string& to_date = "",
             OptionExpMonth exp_month = OptionExpMonth::all,
             OptionType option_type = OptionType::all )
         :
@@ -320,7 +323,7 @@ class OptionChainAnalyticalGetterImpl
     { _build(); }
 
 protected:
-    std::vector<std::pair<std::string,std::string>>
+    vector<pair<string,string>>
     build_query_params() const
     {
         vector<pair<string,string>> params =
@@ -344,7 +347,7 @@ public:
 
     OptionChainAnalyticalGetterImpl(
             Credentials& creds,
-            const std::string& symbol,
+            const string& symbol,
             double volatility,
             double underlying_price,
             double interest_rate,
@@ -352,8 +355,8 @@ public:
             OptionStrikes strikes,
             OptionContractType contract_type = OptionContractType::all,
             bool include_quotes = false,
-            const std::string& from_date = "",
-            const std::string& to_date = "",
+            const string& from_date = "",
+            const string& to_date = "",
             OptionExpMonth exp_month = OptionExpMonth::all,
             OptionType option_type = OptionType::all )
         :
@@ -414,6 +417,7 @@ public:
 };
 
 } /* tdma */
+
 
 using namespace tdma;
 
@@ -523,7 +527,7 @@ OptionChainGetter_GetStrikes_ABI( OptionChainGetter_C *pgetter,
     };
 
     OptionStrikes os;
-    std::tie(os, err) = CallImplFromABI(allow_exceptions, mwrap, pgetter->obj);
+    tie(os, err) = CallImplFromABI(allow_exceptions, mwrap, pgetter->obj);
     if( err )
         return err;
 
@@ -804,7 +808,7 @@ OptionChainStrategyGetter_GetStrategy_ABI(
     };
 
     OptionStrategy os;
-    std::tie(os, err) = CallImplFromABI(allow_exceptions, mwrap, pgetter->obj);
+    tie(os, err) = CallImplFromABI(allow_exceptions, mwrap, pgetter->obj);
     if( err )
         return err;
 

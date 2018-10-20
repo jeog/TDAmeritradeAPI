@@ -25,9 +25,12 @@ along with this program.  If not, see http://www.gnu.org/licenses.
 #include "../include/_tdma_api.h"
 #include "../include/curl_connect.h"
 
-using namespace std;
-using namespace chrono;
-using namespace conn;
+using std::string;
+using std::vector;
+using std::tuple;
+using std::pair;
+using std::cerr;
+using std::endl;
 
 #ifdef USE_SIGNAL_BLOCKER_
 namespace{
@@ -35,19 +38,24 @@ util::SignalBlocker signal_blocker({SIGPIPE});
 };
 #endif
 
-namespace tdma{
+namespace {
 
 bool
 error_msg_about_token_expiration(const string& msg)
 {
-    using namespace regex_constants;
+    using namespace std::regex_constants;
 
-    static const regex ACCESS_TOKEN_RX("Access Token", ECMAScript | icase);
-    static const regex EXPIRE_RX("Expire", ECMAScript | icase);
+    static const std::regex ACCESS_TOKEN_RX("Access Token", ECMAScript | icase);
+    static const std::regex EXPIRE_RX("Expire", ECMAScript | icase);
 
-    return regex_search(msg, ACCESS_TOKEN_RX) && regex_search(msg, EXPIRE_RX);
+    return std::regex_search(msg, ACCESS_TOKEN_RX)
+        && std::regex_search(msg, EXPIRE_RX);
 }
 
+} /* namespace */
+
+
+namespace tdma{
 
 bool
 base_on_error_callback(long code, const string& data, bool allow_refresh)
@@ -140,15 +148,16 @@ query_api_on_error_callback(long code, const string& data)
 
 
 tuple<long, string, string, conn::clock_ty::time_point>
-curl_execute(HTTPSConnection& connection, bool return_header_data)
+curl_execute(conn::HTTPSConnection& connection, bool return_header_data)
 {   /*
      * Curl exceptions are not exposed publicly so we catch and wrap
      */
     try{
         return connection.execute(return_header_data);
-    }catch( CurlConnectionError& e ){
+    }catch( conn::CurlConnectionError& e ){
         cerr<< "CurlConnectionError --> ConnectionException" << endl;
-        string msg = e.what() + string("(curl code=") + to_string(e.code) + ')';
+        string msg = e.what() + string("(curl code=")
+                   + std::to_string(e.code) + ')';
         TDMA_API_THROW( ConnectException, msg );
     }
 }
@@ -196,7 +205,7 @@ build_auth_headers( const vector<pair<string,string>>& headers,
 
 
 tuple<string, string, conn::clock_ty::time_point>
-connect( HTTPSConnection& connection,
+connect( conn::HTTPSConnection& connection,
           Credentials& creds,
           const vector<pair<string,string>>& static_headers,
           api_on_error_cb_ty on_error_cb,
@@ -219,7 +228,7 @@ connect( HTTPSConnection& connection,
      * NOTE - the cached token takes priority to avoid refresh 'thrashing'
      *        between unsynced callers
      */
-    static unordered_map<string, string> token_cache;
+    static std::unordered_map<string, string> token_cache;
     string& cached_token = token_cache.insert(
         {creds.client_id, creds.access_token}
     ).first->second;
@@ -308,7 +317,7 @@ connect( HTTPSConnection& connection,
 
 
 pair<string, conn::clock_ty::time_point>
-connect_get( HTTPSConnection& connection,
+connect_get( conn::HTTPSConnection& connection,
               Credentials& creds,
               api_on_error_cb_ty on_error_cb )
 {
@@ -319,14 +328,15 @@ connect_get( HTTPSConnection& connection,
     string r_data, r_head;
     conn::clock_ty::time_point r_tp;
     tie(r_data, r_head, r_tp) = connect(connection, creds, STATIC_HEADERS,
-                                        on_error_cb, false, HTTP_RESPONSE_OK);
+                                        on_error_cb, false,
+                                        conn::HTTP_RESPONSE_OK);
 
     return make_pair(r_data, r_tp);
 }
 
 
 pair<string, conn::clock_ty::time_point>
-connect_execute( HTTPSConnection& connection,
+connect_execute( conn::HTTPSConnection& connection,
                    Credentials& creds,
                    long success_code )
 {
@@ -346,14 +356,20 @@ connect_execute( HTTPSConnection& connection,
 
 
 json
-connect_auth(HTTPSPostConnection& connection, std::string fname)
+connect_auth(conn::HTTPSPostConnection& connection, std::string fname)
 {
+    static const vector<pair<string,string>> STATIC_HEADERS = {
+        {"Content-Type", "application/x-www-form-urlencoded"}
+    };
+
+    connection.ADD_headers(STATIC_HEADERS);
+
     long r_code;
     string r_data, h_data;
     conn::clock_ty::time_point r_tp;
     tie(r_code, r_data, h_data, r_tp) = curl_execute(connection, false);
 
-    if( r_code != HTTP_RESPONSE_OK ){
+    if( r_code != conn::HTTP_RESPONSE_OK ){
         string e = fname + " failed: " + r_data;
         cerr<< "error response: " << r_code << endl << e << endl;
         TDMA_API_THROW(AuthenticationException, e, r_code);

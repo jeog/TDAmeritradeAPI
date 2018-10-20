@@ -21,26 +21,26 @@ along with this program.  If not, see http://www.gnu.org/licenses.
 #include "curl_connect.h"
 #include "tdma_api_get.h"
 
-static const int TYPE_ID_GETTER_QUOTE = 1;
-static const int TYPE_ID_GETTER_QUOTES = 2;
-static const int TYPE_ID_GETTER_MARKET_HOURS = 3;
-static const int TYPE_ID_GETTER_MOVERS = 4;
-static const int TYPE_ID_GETTER_HISTORICAL_PERIOD = 5;
-static const int TYPE_ID_GETTER_HISTORICAL_RANGE = 6;
-static const int TYPE_ID_GETTER_OPTION_CHAIN = 7;
-static const int TYPE_ID_GETTER_OPTION_CHAIN_STRATEGY = 8;
-static const int TYPE_ID_GETTER_OPTION_CHAIN_ANALYTICAL = 9;
-static const int TYPE_ID_GETTER_ACCOUNT_INFO = 10;
-static const int TYPE_ID_GETTER_PREFERENCES = 11;
-static const int TYPE_ID_GETTER_SUBSCRIPTION_KEYS = 12;
-static const int TYPE_ID_GETTER_TRANSACTION_HISTORY = 13;
-static const int TYPE_ID_GETTER_IND_TRANSACTION_HISTORY = 14;
-static const int TYPE_ID_GETTER_ORDER = 15;
-static const int TYPE_ID_GETTER_ORDERS = 16;
-static const int TYPE_ID_GETTER_USER_PRINCIPALS = 17;
-static const int TYPE_ID_GETTER_INSTRUMENT_INFO = 18;
-
 namespace tdma {
+
+const int TYPE_ID_GETTER_QUOTE = 1;
+const int TYPE_ID_GETTER_QUOTES = 2;
+const int TYPE_ID_GETTER_MARKET_HOURS = 3;
+const int TYPE_ID_GETTER_MOVERS = 4;
+const int TYPE_ID_GETTER_HISTORICAL_PERIOD = 5;
+const int TYPE_ID_GETTER_HISTORICAL_RANGE = 6;
+const int TYPE_ID_GETTER_OPTION_CHAIN = 7;
+const int TYPE_ID_GETTER_OPTION_CHAIN_STRATEGY = 8;
+const int TYPE_ID_GETTER_OPTION_CHAIN_ANALYTICAL = 9;
+const int TYPE_ID_GETTER_ACCOUNT_INFO = 10;
+const int TYPE_ID_GETTER_PREFERENCES = 11;
+const int TYPE_ID_GETTER_SUBSCRIPTION_KEYS = 12;
+const int TYPE_ID_GETTER_TRANSACTION_HISTORY = 13;
+const int TYPE_ID_GETTER_IND_TRANSACTION_HISTORY = 14;
+const int TYPE_ID_GETTER_ORDER = 15;
+const int TYPE_ID_GETTER_ORDERS = 16;
+const int TYPE_ID_GETTER_USER_PRINCIPALS = 17;
+const int TYPE_ID_GETTER_INSTRUMENT_INFO = 18;
 
 class APIGetterImpl{
     static std::chrono::milliseconds wait_msec; // DEF_WAIT_MSEC

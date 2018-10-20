@@ -19,31 +19,35 @@ along with this program.  If not, see http://www.gnu.org/licenses.
 #include "../../include/_tdma_api.h"
 #include "../../include/_execute.h"
 
-using namespace std;
-using namespace conn;
+using std::string;
 
-namespace tdma{
+namespace {
 
-std::string
-order_id_from_header(const std::string& header)
+string
+order_id_from_header(const string& header)
 {
-    static const regex ID_RX(
+    static const std::regex ID_RX(
         "Location:[ ]*https://api\\.tdameritrade\\.com/.+/[0-9]+/orders/"
         "([0-9]+)[ ]*[\r\n]+"
     );
 
-    smatch m;
-    regex_search(header, m, ID_RX);
+    std::smatch m;
+    std::regex_search(header, m, ID_RX);
     if( m.ready() && m.size() == 2 )
         return m[1];
 
-    cerr<< "failed to find order ID in header" << endl;
+    std::cerr<< "failed to find order ID in header" << std::endl;
     return "";
 }
 
-std::string
+} /* namespace */
+
+
+namespace tdma{
+
+string
 Execute_SendOrderImpl( Credentials& creds,
-                           const std::string& account_id,
+                           const string& account_id,
                            const OrderTicketImpl& order )
 {
     string url = URL_ACCOUNTS + util::url_encode(account_id) + "/orders";
@@ -52,39 +56,38 @@ Execute_SendOrderImpl( Credentials& creds,
     if( body.empty() )
         TDMA_API_THROW(ValueException, "order json is empty");
 
-    HTTPSPostConnection connection;
+    conn::HTTPSPostConnection connection;
     connection.SET_url(url);
     connection.SET_fields(body);
 
     string r_head;
     conn::clock_ty::time_point r_tp;
     tie(r_head, r_tp) =
-        connect_execute(connection, creds, HTTP_RESPONSE_CREATED);
+        connect_execute(connection, creds, conn::HTTP_RESPONSE_CREATED);
     return order_id_from_header(r_head);
 }
 
 
 bool
 Execute_CancelOrderImpl( Credentials& creds,
-                             const std::string& account_id,
-                             const std::string& order_id )
+                             const string& account_id,
+                             const string& order_id )
 {
     string url = URL_ACCOUNTS + util::url_encode(account_id)
                + "/orders/" + util::url_encode(order_id); // encode uncessary
 
-    HTTPSDeleteConnection connection;
+    conn::HTTPSDeleteConnection connection;
     connection.SET_url(url);
 
     // TODO catch exceptions and return fail state ??
-    connect_execute(connection, creds, HTTP_RESPONSE_OK);
+    connect_execute(connection, creds, conn::HTTP_RESPONSE_OK);
     return true;
 }
 
-
 } /* tdma */
 
-using namespace tdma;
 
+using namespace tdma;
 
 int
 Execute_SendOrder_ABI( Credentials *creds,
@@ -109,7 +112,7 @@ Execute_SendOrder_ABI( Credentials *creds,
                 );
         };
 
-    std::string r;
+    string r;
     std::tie(r,err) = CallImplFromABI( allow_exceptions, meth, creds,
                                        account_id, porder );
     if( err )

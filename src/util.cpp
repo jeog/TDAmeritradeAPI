@@ -26,12 +26,14 @@ along with this program.  If not, see http://www.gnu.org/licenses.
 
 #include "../include/util.h"
 
+using std::string;
+using std::stringstream;
+
+
 namespace util {
 
-using namespace std;
-
 #ifdef USE_SIGNAL_BLOCKER_
-SignalBlocker::SignalBlocker( set<int> signums )
+SignalBlocker::SignalBlocker( std::set<int> signums )
     :
         _mask(),
         _active(false)
@@ -42,7 +44,7 @@ SignalBlocker::SignalBlocker( set<int> signums )
                 sigaddset(&_mask, sig);
             }
             if( pthread_sigmask(SIG_BLOCK, &_mask, &_mask_old) )
-                throw runtime_error("pthread_sigmask failed");
+                throw std::runtime_error("pthread_sigmask failed");
             _active = true;
         }
     }
@@ -55,25 +57,31 @@ SignalBlocker::~SignalBlocker()
         /* grab the pending signals */
         while( sigtimedwait(&_mask, 0, &t) > 0 )
         {}
-        if( errno != EAGAIN )
-            throw runtime_error("sigtimedwait failed: " + to_string(errno));
+        if( errno != EAGAIN ){
+            throw std::runtime_error(
+                "sigtimedwait failed: " + std::to_string(errno)
+                );
+        }
 
         /* reset to original state */
-        if( pthread_sigmask(SIG_SETMASK, &_mask_old, 0) == -1 )
-            throw runtime_error("pthread_sigmask failed: " + to_string(errno));
+        if( pthread_sigmask(SIG_SETMASK, &_mask_old, 0) == -1 ){
+            throw std::runtime_error(
+                "pthread_sigmask failed: " + std::to_string(errno)
+                );
+        }
     }
 }
 #endif /* USE_SIGNAL_BLOCKER_ */
 
 void
-debug_out(string tag, string message, ostream& out)
+debug_out(string tag, string message, std::ostream& out)
 {
 #ifdef DEBUG_VERBOSE_1_
-    static mutex mtx;
-    lock_guard<mutex> _(mtx);
-    out<< setw(20) << left << tag << ' '
-       << setw(20) << left << this_thread::get_id() << ' '
-       << message << endl;
+    static std::mutex mtx;
+    std::lock_guard<std::mutex> _(mtx);
+    out<< std::setw(20) << std::left << tag << ' '
+       << std::setw(20) << std::left << std::this_thread::get_id() << ' '
+       << message << std::endl;
 #endif /* DEBUG_VERBOSE_1_ */
 }
 
@@ -82,15 +90,15 @@ string
 url_encode(const string& url)
 {
     stringstream ss;
-    ss << hex;
+    ss << std::hex;
 
     for(auto i = url.begin(); i < url.end(); ++i){
         auto c = *i;
         if(isalnum(c) || c == '-' || c == '_' || c == '.' || c == '~'){
             ss << c;
         }else{
-            ss << uppercase << '%' << setw(2)
-               << (int)(unsigned char)c << nouppercase;
+            ss << std::uppercase << '%' << std::setw(2)
+               << (int)(unsigned char)c << std::nouppercase;
         }
     }
     return ss.str();
@@ -98,7 +106,7 @@ url_encode(const string& url)
 
 
 string
-build_encoded_query_str(const vector<pair<string,string>>& params)
+build_encoded_query_str(const std::vector<std::pair<string,string>>& params)
 {
     if( params.empty() )
         return "";

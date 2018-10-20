@@ -25,7 +25,10 @@ along with this program.  If not, see http://www.gnu.org/licenses.
 #include "../../include/_tdma_api.h"
 #include "../../include/_get.h"
 
-using namespace std;
+using std::string;
+using std::vector;
+using std::pair;
+
 
 namespace tdma {
 
@@ -38,7 +41,9 @@ class MoversGetterImpl
     void
     _build()
     {
-        vector<pair<string,string>> params = {{"change", to_string(_change_type)}};
+        vector<pair<string,string>> params = {
+            {"change", to_string(_change_type)}
+        };
 
         if( _direction_type != MoversDirectionType::up_and_down ){
             params.emplace_back("direction", to_string(_direction_type));
@@ -137,8 +142,8 @@ MoversGetter_Create_ABI( struct Credentials *pcreds,
     };
 
     ImplTy *obj;
-    tie(obj, err) = CallImplFromABI( allow_exceptions, meth, pcreds,
-                                     index, direction_type, change_type);
+    std::tie(obj, err) = CallImplFromABI( allow_exceptions, meth, pcreds,
+                                          index, direction_type, change_type);
     if( err ){
         kill_proxy(pgetter);
         return err;

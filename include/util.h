@@ -58,14 +58,14 @@ debug_out( std::string tag,
             T *obj,
             std::ostream& out )
 {
-    using namespace std;
 #ifdef DEBUG_VERBOSE_1_
-    static mutex mtx;
-    lock_guard<mutex> _(mtx);
-    out<< setw(40) << left << tag << ' '
-       << setw(20) << left << hex << reinterpret_cast<size_t>(obj) << dec << ' '
-       << setw(20) << left << this_thread::get_id() << ' '
-       << message << endl;
+    static std::mutex mtx;
+    std::lock_guard<std::mutex> _(mtx);
+    out<< std::setw(40) << std::left << tag << ' '
+       << std::setw(20) << std::left << std::hex
+                        << reinterpret_cast<size_t>(obj) << std::dec << ' '
+       << std::setw(20) << std::left << std::this_thread::get_id() << ' '
+       << message << std::endl;
 #endif /* DEBUG_VERBOSE_1_ */
 }
 
@@ -100,10 +100,9 @@ template<typename ClockTy>
 std::chrono::milliseconds
 get_msec_since_epoch()
 {
-    using namespace std::chrono;
-
-    auto now = ClockTy::now();
-    return duration_cast<milliseconds>( now.time_since_epoch() );
+    return std::chrono::duration_cast<std::chrono::milliseconds>(
+        ClockTy::now().time_since_epoch()
+        );
 }
 
 
@@ -166,6 +165,7 @@ public:
     ~IOStreamFormatGuard()
     { _stream.copyfmt(_state); }
 };
+
 } /* util */
 
 #endif /* UTIL_H */

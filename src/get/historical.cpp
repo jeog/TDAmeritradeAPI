@@ -25,13 +25,16 @@ along with this program.  If not, see http://www.gnu.org/licenses.
 #include "../../include/_tdma_api.h"
 #include "../../include/_get.h"
 
-using namespace std;
+using std::string;
+using std::vector;
+using std::pair;
+using std::tie;
 
 namespace tdma {
 
 class HistoricalGetterBaseImpl
         : public APIGetterImpl {
-    std::string _symbol;
+    string _symbol;
     FrequencyType _frequency_type;
     unsigned int _frequency;
     bool _extended_hours;
@@ -46,7 +49,7 @@ class HistoricalGetterBaseImpl
         assert( valid != end(VALID_FREQUENCIES_BY_FREQUENCY_TYPE) );
         if( valid->second.count(f) == 0 ){
             TDMA_API_THROW(ValueException,
-                "invalid frequency(" + std::to_string(f)
+                "invalid frequency(" + to_string(f)
                 + ") for frequency type(" + to_string(fty) + ")"
                 );
         }
@@ -54,7 +57,7 @@ class HistoricalGetterBaseImpl
 
 protected:
     HistoricalGetterBaseImpl( Credentials& creds,
-                          const std::string& symbol,
+                          const string& symbol,
                           FrequencyType frequency_type,
                           unsigned int frequency,
                           bool extended_hours )
@@ -70,7 +73,7 @@ protected:
             _throw_if_invalid_frequency(frequency_type, frequency);
         }
 
-    std::vector<std::pair<std::string, std::string>>
+    vector<pair<string, string>>
     build_query_params() const
     {
         return { {"frequencyType", to_string(_frequency_type)},
@@ -83,7 +86,7 @@ public:
     static const int TYPE_ID_LOW = TYPE_ID_GETTER_HISTORICAL_PERIOD;
     static const int TYPE_ID_HIGH = TYPE_ID_GETTER_HISTORICAL_RANGE;
 
-    std::string
+    string
     get_symbol() const
     { return _symbol; }
 
@@ -100,7 +103,7 @@ public:
     { return _extended_hours; }
 
     void
-    set_symbol(const std::string& symbol)
+    set_symbol(const string& symbol)
     {
         if( symbol.empty() )
             TDMA_API_THROW(ValueException,"empty symbol");
@@ -169,7 +172,7 @@ class HistoricalPeriodGetterImpl
         assert( valid != end(VALID_PERIODS_BY_PERIOD_TYPE) );
         if( valid->second.count(p) == 0 ){
             TDMA_API_THROW(ValueException,
-                "invalid period(" + std::to_string(p)
+                "invalid period(" + to_string(p)
                 + ") for period type(" + to_string(pty) + ")"
                 );
         }
@@ -181,7 +184,7 @@ public:
     static const int TYPE_ID_HIGH = TYPE_ID_GETTER_HISTORICAL_PERIOD;
 
     HistoricalPeriodGetterImpl( Credentials& creds,
-                            const std::string& symbol,
+                            const string& symbol,
                             PeriodType period_type,
                             unsigned int period,
                             FrequencyType frequency_type,
@@ -256,7 +259,7 @@ public:
     static const int TYPE_ID_HIGH = TYPE_ID_GETTER_HISTORICAL_RANGE;
 
     HistoricalRangeGetterImpl( Credentials& creds,
-                              const std::string& symbol,
+                              const string& symbol,
                               FrequencyType frequency_type,
                               unsigned int frequency,
                               unsigned long long start_msec_since_epoch,
@@ -295,6 +298,7 @@ public:
 };
 
 } /* tdma */
+
 
 using namespace tdma;
 

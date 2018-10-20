@@ -22,34 +22,31 @@ along with this program.  If not, see http://www.gnu.org/licenses.
 #include "_tdma_api.h"
 #include "tdma_api_streaming.h"
 
-
-static const int TYPE_ID_SUB_QUOTES = 1;
-static const int TYPE_ID_SUB_OPTIONS = 2;
-static const int TYPE_ID_SUB_LEVEL_ONE_FUTURES = 3;
-static const int TYPE_ID_SUB_LEVEL_ONE_FOREX = 4;
-static const int TYPE_ID_SUB_LEVEL_ONE_FUTURES_OPTIONS = 5;
-static const int TYPE_ID_SUB_NEWS_HEADLINE = 6;
-static const int TYPE_ID_SUB_CHART_EQUITY = 7;
-static const int TYPE_ID_SUB_CHART_FOREX = 8; // not working
-static const int TYPE_ID_SUB_CHART_FUTURES = 9;
-static const int TYPE_ID_SUB_CHART_OPTIONS = 10;
-static const int TYPE_ID_SUB_TIMESALE_EQUITY = 11;
-static const int TYPE_ID_SUB_TIMESALE_FOREX = 12; // not working
-static const int TYPE_ID_SUB_TIMESALE_FUTURES = 13;
-static const int TYPE_ID_SUB_TIMESALE_OPTIONS = 14;
-static const int TYPE_ID_SUB_ACTIVES_NASDAQ = 15;
-static const int TYPE_ID_SUB_ACTIVES_NYSE = 16;
-static const int TYPE_ID_SUB_ACTIVES_OTCBB = 17;
-static const int TYPE_ID_SUB_ACTIVES_OPTION = 18;
-
-static const int TYPE_ID_STREAMING_SESSION = 100;
-
 namespace tdma {
 
-using namespace std;
+const int TYPE_ID_SUB_QUOTES = 1;
+const int TYPE_ID_SUB_OPTIONS = 2;
+const int TYPE_ID_SUB_LEVEL_ONE_FUTURES = 3;
+const int TYPE_ID_SUB_LEVEL_ONE_FOREX = 4;
+const int TYPE_ID_SUB_LEVEL_ONE_FUTURES_OPTIONS = 5;
+const int TYPE_ID_SUB_NEWS_HEADLINE = 6;
+const int TYPE_ID_SUB_CHART_EQUITY = 7;
+const int TYPE_ID_SUB_CHART_FOREX = 8; // not working
+const int TYPE_ID_SUB_CHART_FUTURES = 9;
+const int TYPE_ID_SUB_CHART_OPTIONS = 10;
+const int TYPE_ID_SUB_TIMESALE_EQUITY = 11;
+const int TYPE_ID_SUB_TIMESALE_FOREX = 12; // not working
+const int TYPE_ID_SUB_TIMESALE_FUTURES = 13;
+const int TYPE_ID_SUB_TIMESALE_OPTIONS = 14;
+const int TYPE_ID_SUB_ACTIVES_NASDAQ = 15;
+const int TYPE_ID_SUB_ACTIVES_NYSE = 16;
+const int TYPE_ID_SUB_ACTIVES_OTCBB = 17;
+const int TYPE_ID_SUB_ACTIVES_OPTION = 18;
+
+const int TYPE_ID_STREAMING_SESSION = 100;
 
 StreamerServiceType
-streamer_service_from_str(string service_name);
+streamer_service_from_str(std::string service_name);
 
 
 StreamerInfo

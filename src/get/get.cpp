@@ -25,8 +25,10 @@ along with this program.  If not, see http://www.gnu.org/licenses.
 #include "../../include/_tdma_api.h"
 #include "../../include/_get.h"
 
-using namespace std;
-using namespace chrono;
+using std::string;
+using std::tie;
+using std::chrono::milliseconds;
+
 
 namespace tdma{
 
@@ -37,7 +39,7 @@ milliseconds APIGetterImpl::last_get_msec(
     util::get_msec_since_epoch<conn::clock_ty>()
     );
 
-mutex APIGetterImpl::get_mtx;
+std::mutex APIGetterImpl::get_mtx;
 
 APIGetterImpl::APIGetterImpl(Credentials& creds,
                                  api_on_error_cb_ty on_error_callback)
@@ -80,7 +82,7 @@ APIGetterImpl::throttled_get(APIGetterImpl& getter)
      * IT DOESN'T HANDLE OTHER OTHER SYNC ISSUES INSIDE THE CurlConnection
      * CLASSES.
      */
-    lock_guard<mutex> _(get_mtx);
+    std::lock_guard<std::mutex> _(get_mtx);
     auto remaining = throttled_wait_remaining();
     if( remaining.count() > 0 ){
         /*
@@ -88,7 +90,7 @@ APIGetterImpl::throttled_get(APIGetterImpl& getter)
          * for ALL get requests to avoid excessive calls to TDMA servers
          */
         assert( remaining <= wait_msec );
-        this_thread::sleep_for( remaining );
+        std::this_thread::sleep_for( remaining );
     }
 
     string s;
@@ -96,7 +98,8 @@ APIGetterImpl::throttled_get(APIGetterImpl& getter)
     tie(s, tp) = connect_get( getter._connection, getter._credentials,
                               getter._on_error_callback );
 
-    last_get_msec = duration_cast<milliseconds>(tp.time_since_epoch());
+    last_get_msec =
+        std::chrono::duration_cast<milliseconds>(tp.time_since_epoch());
     return s;
 }
 
@@ -118,7 +121,7 @@ APIGetterImpl::wait_remaining()
 void
 APIGetterImpl::set_wait_msec(milliseconds msec)
 {
-    lock_guard<mutex> _(get_mtx);
+    std::lock_guard<std::mutex> _(get_mtx);
     wait_msec = msec;
 }
 
@@ -126,8 +129,8 @@ milliseconds
 APIGetterImpl::get_wait_msec()
 { return wait_msec; }
 
-
 } /* tdma */
+
 
 using namespace tdma;
 
@@ -234,7 +237,7 @@ PeriodType_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
     case PeriodType::ytd:
         return to_new_char_buffer("ytd", buf, n, allow_exceptions);
     default:
-        throw runtime_error("invalid PeriodType");
+        throw std::runtime_error("invalid PeriodType");
     }
 }
 
@@ -256,7 +259,7 @@ FrequencyType_to_string_ABI( int v,
     case FrequencyType::monthly:
         return to_new_char_buffer("monthly", buf, n, allow_exceptions);
     default:
-        throw runtime_error("invalid FrequencyType");
+        throw std::runtime_error("invalid FrequencyType");
     }
 }
 
@@ -276,7 +279,7 @@ OptionContractType_to_string_ABI( int v,
     case OptionContractType::all:
         return to_new_char_buffer("ALL", buf, n, allow_exceptions);
     default:
-        throw runtime_error("invalid OptionContractType");
+        throw std::runtime_error("invalid OptionContractType");
     }
 }
 
@@ -312,7 +315,7 @@ OptionStrategyType_to_string_ABI( int v,
     case  OptionStrategyType::roll:
         return to_new_char_buffer("ROLL", buf, n, allow_exceptions);
     default:
-        throw runtime_error("invalid OptionStrategyType");
+        throw std::runtime_error("invalid OptionStrategyType");
     }
 }
 
@@ -343,7 +346,7 @@ OptionRangeType_to_string_ABI( int v,
     case OptionRangeType::all:
         return to_new_char_buffer("ALL", buf, n, allow_exceptions);
     default:
-        throw runtime_error("invalid OptionRangeType");
+        throw std::runtime_error("invalid OptionRangeType");
     }
 }
 
@@ -384,7 +387,7 @@ OptionExpMonth_to_string_ABI( int v,
     case OptionExpMonth::all:
         return to_new_char_buffer("ALL", buf, n, allow_exceptions);
     default:
-        throw runtime_error("invalid OptionExpMonth");
+        throw std::runtime_error("invalid OptionExpMonth");
     }
 }
 
@@ -401,7 +404,7 @@ OptionType_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
         return to_new_char_buffer("NS", buf, n, allow_exceptions);
     case OptionType::all:
         return to_new_char_buffer("ALL", buf, n, allow_exceptions);
-    default: throw runtime_error("invalid OptionType");
+    default: throw std::runtime_error("invalid OptionType");
     }
 }
 
@@ -436,7 +439,7 @@ TransactionType_to_string_ABI( int v,
     case TransactionType::advisor_fees:
         return to_new_char_buffer("ADVISOR_FEES", buf, n, allow_exceptions);
     default:
-        throw runtime_error("invliad TransactionType");
+        throw std::runtime_error("invliad TransactionType");
     }
 }
 
@@ -462,7 +465,7 @@ InstrumentSearchType_to_string_ABI( int v,
     case InstrumentSearchType::cusip:
         return to_new_char_buffer("cusip", buf, n, allow_exceptions);
     default:
-        throw runtime_error("invalid InstrumentSearchType");
+        throw std::runtime_error("invalid InstrumentSearchType");
     }
 }
 
@@ -484,7 +487,7 @@ MarketType_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
     case MarketType::forex:
         return to_new_char_buffer("FOREX", buf, n, allow_exceptions);
     default:
-        throw runtime_error("Invalid MarketType");
+        throw std::runtime_error("Invalid MarketType");
     }
 }
 
@@ -501,7 +504,7 @@ MoversIndex_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
     case MoversIndex::spx:
         return to_new_char_buffer("$SPX.X", buf, n, allow_exceptions);
     default:
-        throw runtime_error("invalid MoversIndex");
+        throw std::runtime_error("invalid MoversIndex");
     }
 }
 
@@ -522,7 +525,7 @@ MoversDirectionType_to_string_ABI( int v,
     case MoversDirectionType::up_and_down:
         return to_new_char_buffer("up_and_down", buf, n, allow_exceptions);
     default:
-        throw runtime_error("invalid MoversDirectionType");
+        throw std::runtime_error("invalid MoversDirectionType");
     }
 }
 
@@ -540,7 +543,7 @@ MoversChangeType_to_string_ABI( int v,
     case MoversChangeType::value:
         return to_new_char_buffer("value", buf, n, allow_exceptions);
     default:
-        throw runtime_error("invalid MoversChangeType");
+        throw std::runtime_error("invalid MoversChangeType");
     }
 }
 
@@ -562,7 +565,7 @@ OptionStrikesType_to_string_ABI( int v,
     case OptionStrikesType::none:
         return to_new_char_buffer("none", buf, n, allow_exceptions);
     default:
-        throw runtime_error("invalid OptionStrikesType");
+        throw std::runtime_error("invalid OptionStrikesType");
     }
 }
 
@@ -606,6 +609,6 @@ OrderStatusType_to_string_ABI( int v,
     case OrderStatusType::EXPIRED:
         return to_new_char_buffer("EXPIRED", buf, n, allow_exceptions);
     default:
-        throw runtime_error("invalid OrderStatusType");
+        throw std::runtime_error("invalid OrderStatusType");
     }
 }

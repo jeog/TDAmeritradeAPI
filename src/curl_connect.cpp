@@ -21,13 +21,17 @@ along with this program.  If not, see http://www.gnu.org/licenses.
 #include <iomanip>
 #include <iostream>
 
-
 #include "../include/curl_connect.h"
 #include "../include/util.h"
 
-namespace conn{
+using std::string;
+using std::map;
+using std::vector;
+using std::pair;
+using std::tuple;
+using std::ostream;
 
-using namespace std;
+namespace conn{
 
 class CurlConnection::CurlConnectionImpl_ { 
     static struct Init {
@@ -45,7 +49,7 @@ class CurlConnection::CurlConnectionImpl_ {
 
     struct curl_slist *_header;
     CURL *_handle;
-    std::map<CURLoption, std::string> _options;
+    map<CURLoption, string> _options;
  
     /* to string overloads for our different stored option values */
     template<typename T, typename Dummy = void>
@@ -57,13 +61,13 @@ class CurlConnection::CurlConnectionImpl_ {
         static size_t
         write( char* input, size_t sz, size_t n, void* output )
         {
-            stringbuf& buf = ((WriteCallback*)output)->_buf;
-            streamsize ssz = buf.sputn(input, sz*n);
+            std::stringbuf& buf = ((WriteCallback*)output)->_buf;
+            std::streamsize ssz = buf.sputn(input, sz*n);
             assert(ssz >= 0);
             return ssz;
         }
 
-        std::string
+        string
         str()
         { return _buf.str(); }
 
@@ -139,7 +143,7 @@ public:
     void
     set_option(CURLoption option, T param)
     {
-        static_assert(!std::is_same<T, std::string>::value,
+        static_assert(!std::is_same<T, string>::value,
             "CurlConnection::set_option doesn't accept string");
         if (!_handle) {
             throw CurlException("connection/handle has been closed");
@@ -307,7 +311,7 @@ public:
 
         /* CURLOPT_POST FIELDS DOES NOT COPY STRING */
         if (!fields.empty()) {
-            stringstream ss;
+            std::stringstream ss;
             for (auto& f : fields) {
                 ss << f.first << "=" << f.second << "&";
             }
@@ -321,7 +325,7 @@ public:
     }
 
     void
-    SET_fields(const std::string& fields)
+    SET_fields(const string& fields)
     {
         if (is_closed())
             throw CurlException("connection/handle has been closed");
@@ -350,19 +354,19 @@ CurlConnection::CurlConnectionImpl_::Init CurlConnection::CurlConnectionImpl_::_
 
 template<typename T, typename Dummy>
 struct CurlConnection::CurlConnectionImpl_::to {
-    static std::string str(T t)
+    static string str(T t)
     { return std::to_string(t); }
 };
 
 template<typename Dummy>
 struct CurlConnection::CurlConnectionImpl_::to<const char*, Dummy> {
-    static std::string str(const char* s)
-    { return std::string(s); }
+    static string str(const char* s)
+    { return string(s); }
 };
 
 template<typename T, typename Dummy>
 struct CurlConnection::CurlConnectionImpl_::to<T*, Dummy> {
-    static std::string str(T* p)
+    static string str(T* p)
     { return std::to_string(reinterpret_cast<unsigned long long>(p)); }
 };
 
@@ -574,7 +578,7 @@ CurlException::what() const noexcept
 
 CurlOptionException::CurlOptionException(CURLoption opt, string val)
     :
-        CurlException( "error setting easy curl option(" + to_string(opt)
+        CurlException( "error setting easy curl option(" + std::to_string(opt)
                        + ") with value(" + val + ")"),
         option(opt),
         value(val)
@@ -648,6 +652,8 @@ operator<<(ostream& out, const CurlConnection& session)
 ostream&
 CurlConnection::CurlConnectionImpl_::to_out(ostream& out)
 {
+    using std::endl;
+
     for (auto& opt : get_option_strings()) {
 
         auto oiter = option_strings.find(opt.first);
@@ -671,8 +677,8 @@ CurlConnection::CurlConnectionImpl_::to_out(ostream& out)
             continue;
         case CURLOPT_WRITEDATA:
         case CURLOPT_WRITEFUNCTION:
-            out << "\t" << oiter->second << "\t" << hex
-                << stoull(opt.second) << dec << endl;
+            out << "\t" << oiter->second << "\t" << std::hex
+                << stoull(opt.second) << std::dec << endl;
             continue;
         default:
             out << "\t" << oiter->second << "\t" << opt.second << endl;

@@ -33,8 +33,6 @@ along with this program.  If not, see http://www.gnu.org/licenses.
 
 namespace conn{
 
-using namespace std;
-
 class WebSocketClient{
     typedef uWS::WebSocket<uWS::CLIENT> uws_client_ty;
 
@@ -58,14 +56,14 @@ class WebSocketClient{
     };
 
     uWS::Hub _hub;
-    string _url;
+    std::string _url;
     uS::Async *_signal;
-    thread _thread;
-    ThreadSafeQueue<string> _in_queue; // in from server
-    ThreadSafeQueue<string> _out_queue; // out to server
-    condition_variable _init_cond;
+    std::thread _thread;
+    ThreadSafeQueue<std::string> _in_queue; // in from server
+    ThreadSafeQueue<std::string> _out_queue; // out to server
+    std::condition_variable _init_cond;
     bool _init_flag;
-    mutex _init_mtx;
+    std::mutex _init_mtx;
     uws_client_ty *_ws; // sync issues with is_connected() ?
     Callbacks _callbacks;
 
@@ -78,23 +76,26 @@ class WebSocketClient{
 
     struct SocketThreadTarget{
         WebSocketClient *_wsc;
-        chrono::milliseconds _timeout;
+        std::chrono::milliseconds _timeout;
 
         void
         operator()(){
-            util::debug_out("WebSocket", "SocketThreadTarget IN", _wsc, cout);
+            util::debug_out("WebSocket", "SocketThreadTarget IN", _wsc,
+                            std::cout);
             _wsc->_hub.connect(_wsc->_url, nullptr, {}, _timeout.count());
             _wsc->_hub.run();
-            util::debug_out("WebSocket", "SocketThreadTarget OUT", _wsc, cout);
+            util::debug_out("WebSocket", "SocketThreadTarget OUT", _wsc,
+                            std::cout);
         }
 
-        SocketThreadTarget(WebSocketClient *wsc, chrono::milliseconds timeout)
+        SocketThreadTarget(WebSocketClient *wsc,
+                             std::chrono::milliseconds timeout)
             : _wsc(wsc), _timeout(timeout)
         {}
     };
 
 public:
-    WebSocketClient(string url);
+    WebSocketClient(std::string url);
 
     WebSocketClient( const WebSocketClient& ) = delete;
 
@@ -105,7 +106,7 @@ public:
     ~WebSocketClient();
 
     void
-    connect(chrono::milliseconds timeout);
+    connect(std::chrono::milliseconds timeout);
 
     bool
     is_connected() const;
@@ -114,7 +115,7 @@ public:
     close(bool graceful=true);
 
     void
-    send(string msg);
+    send(std::string msg);
 
     void
     push_empty_message()
@@ -124,32 +125,32 @@ public:
     nready()
     { return _in_queue.size(); }
 
-    string
+    std::string
     recv();
 
-    string
+    std::string
     recv_or_wait();
 
-    string
-    recv_or_wait_for(chrono::milliseconds timeout);
+    std::string
+    recv_or_wait_for(std::chrono::milliseconds timeout);
 
-    vector<string>
+    std::vector<std::string>
     recv_all();
 
-    vector<string>
+    std::vector<std::string>
     recv_atleast_n_or_wait(size_t n);
 
-    vector<string>
-    recv_atleast_n_or_wait_for(size_t n, chrono::milliseconds timeout);
+    std::vector<std::string>
+    recv_atleast_n_or_wait_for(size_t n, std::chrono::milliseconds timeout);
 
-    vector<string>
+    std::vector<std::string>
     recv_atmost_n(size_t n);
 
-    vector<string>
+    std::vector<std::string>
     recv_n_or_wait(size_t n);
 
-    vector<string>
-    recv_n_or_wait_for(size_t n, chrono::milliseconds timeout);
+    std::vector<std::string>
+    recv_n_or_wait_for(size_t n, std::chrono::milliseconds timeout);
 };
 
 } /* conn */

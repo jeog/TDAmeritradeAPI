@@ -18,7 +18,35 @@ along with this program.  If not, see http://www.gnu.org/licenses.
 #include "../../include/_tdma_api.h"
 #include "../../include/_execute.h"
 
-using namespace std;
+using std::string;
+using std::vector;
+
+namespace {
+
+template<typename BTy, typename... Args>
+int
+build( int allow_exceptions,
+        BTy build_method,
+        OrderTicket_C *porder,
+        Args... args )
+{
+    using namespace tdma;
+    CHECK_PTR(porder, "order", allow_exceptions);
+
+    OrderTicket o;
+    int err;
+    std::tie(o, err) = CallImplFromABI( allow_exceptions, build_method, args...);
+    if( err ){
+        kill_proxy(porder);
+        return err;
+    }
+
+    *porder = o.release_cproxy();
+    return 0;
+}
+
+} /* namespace */
+
 
 namespace tdma{
 
@@ -239,6 +267,7 @@ OrderTicketImpl::as_ctype() const
 
 } /* tdma */
 
+
 using namespace tdma;
 
 int
@@ -250,7 +279,7 @@ OrderTicket_Create_ABI( OrderTicket_C *porder, int allow_exceptions )
 
     int err;
     OrderTicketImpl *obj;
-    tie(obj, err) = CallImplFromABI( allow_exceptions, meth);
+    std::tie(obj, err) = CallImplFromABI( allow_exceptions, meth);
     if( err ){
         kill_proxy(porder);
         return err;
@@ -555,7 +584,8 @@ OrderTicket_GetLeg_ABI( OrderTicket_C *porder,
         return reinterpret_cast<OrderTicketImpl*>(o)->get_leg(p).as_ctype();
     };
 
-    tie(*pleg, err) = CallImplFromABI(allow_exceptions, meth, porder->obj, pos);
+    std::tie(*pleg, err) = CallImplFromABI( allow_exceptions, meth,
+                                            porder->obj, pos );
     return err;
 }
 
@@ -734,27 +764,6 @@ FreeOrderTicketBuffer_ABI( OrderTicket_C *orders, int allow_exceptions )
 {
     if( orders )
         free( (void*)orders );
-    return 0;
-}
-
-template<typename BTy, typename... Args>
-int
-build( int allow_exceptions,
-        BTy build_method,
-        OrderTicket_C *porder,
-        Args... args )
-{
-    CHECK_PTR(porder, "order", allow_exceptions);
-
-    OrderTicket o;
-    int err;
-    tie(o, err) = CallImplFromABI( allow_exceptions, build_method, args...);
-    if( err ){
-        kill_proxy(porder);
-        return err;
-    }
-
-    *porder = o.release_cproxy();
     return 0;
 }
 

@@ -19,13 +19,15 @@ along with this program.  If not, see http://www.gnu.org/licenses.
 #include "../../include/_tdma_api.h"
 #include "../../include/_get.h"
 
-namespace tdma {
+using std::string;
+using std::vector;
+using std::pair;
 
-using namespace std;
+namespace tdma {
 
 class InstrumentInfoGetterImpl
         : public APIGetterImpl {
-    std::string _query_string;
+    string _query_string;
     InstrumentSearchType _search_type;
 
     void
@@ -59,7 +61,7 @@ public:
 
     InstrumentInfoGetterImpl( Credentials& creds,
                                  InstrumentSearchType search_type,
-                                 const std::string& query_string )
+                                 const string& query_string )
         :
             APIGetterImpl(creds, query_api_on_error_callback),
             _query_string(query_string),
@@ -70,7 +72,7 @@ public:
             _build();
         }
 
-    std::string
+    string
     get_query_string() const
     { return _query_string; }
 
@@ -79,7 +81,7 @@ public:
     { return _search_type; }
 
     void
-    set_query(InstrumentSearchType search_type, const std::string& query_string)
+    set_query(InstrumentSearchType search_type, const string& query_string)
     {
         if( query_string.empty() )
             TDMA_API_THROW(ValueException,"empty query_string");
@@ -116,8 +118,8 @@ InstrumentInfoGetter_Create_ABI( struct Credentials *pcreds,
     };
 
     ImplTy *obj;
-    tie(obj, err) = CallImplFromABI( allow_exceptions, meth, pcreds,
-                                     search_type, query_string );
+    std::tie(obj, err) = CallImplFromABI( allow_exceptions, meth, pcreds,
+                                          search_type, query_string );
     if( err ){
         kill_proxy(pgetter);
         return err;

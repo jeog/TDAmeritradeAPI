@@ -20,20 +20,22 @@ along with this program.  If not, see http://www.gnu.org/licenses.
 #include "../../include/_tdma_api.h"
 #include "../../include/_get.h"
 
-namespace tdma {
+using std::string;
+using std::vector;
+using std::tie;
+using std::pair;
 
-using namespace std;
+namespace tdma {
 
 class AccountGetterBaseImpl
         : public APIGetterImpl{
-    std::string _account_id;
+    string _account_id;
 
     virtual void
     build() = 0;
 
 protected:
-    AccountGetterBaseImpl( Credentials& creds,
-                         const std::string& account_id )
+    AccountGetterBaseImpl( Credentials& creds, const string& account_id )
         :
            APIGetterImpl(creds, account_api_on_error_callback),
            _account_id(account_id)
@@ -47,12 +49,12 @@ public:
     static const int TYPE_ID_LOW = TYPE_ID_GETTER_ACCOUNT_INFO;
     static const int TYPE_ID_HIGH = TYPE_ID_GETTER_ORDERS;
 
-    std::string
+    string
     get_account_id() const
     { return _account_id; }
 
     void
-    set_account_id(const std::string& account_id)
+    set_account_id(const string& account_id)
     {
         if( account_id.empty() )
             TDMA_API_THROW(ValueException,"account_id is empty");
@@ -93,7 +95,7 @@ public:
     static const int TYPE_ID_HIGH = TYPE_ID_GETTER_ACCOUNT_INFO;
 
     AccountInfoGetterImpl( Credentials& creds,
-                       const std::string& account_id,
+                       const string& account_id,
                        bool positions,
                        bool orders )
         :
@@ -146,7 +148,7 @@ public:
     static const int TYPE_ID_LOW = TYPE_ID_GETTER_PREFERENCES;
     static const int TYPE_ID_HIGH = TYPE_ID_GETTER_PREFERENCES;
 
-    PreferencesGetterImpl( Credentials& creds, const std::string& account_id )
+    PreferencesGetterImpl( Credentials& creds, const string& account_id )
         :
             AccountGetterBaseImpl(creds, account_id)
         {
@@ -178,7 +180,7 @@ public:
     static const int TYPE_ID_HIGH = TYPE_ID_GETTER_SUBSCRIPTION_KEYS;
 
     StreamerSubscriptionKeysGetterImpl( Credentials& creds,
-                                    const std::string& account_id )
+                                    const string& account_id )
         :
             AccountGetterBaseImpl(creds, account_id)
         {
@@ -189,11 +191,11 @@ public:
 
 class TransactionHistoryGetterImpl
         : public AccountGetterBaseImpl{
-    std::string _transaction_id;
+    string _transaction_id;
     TransactionType _transaction_type;
-    std::string _symbol;
-    std::string _start_date;
-    std::string _end_date;
+    string _symbol;
+    string _start_date;
+    string _end_date;
 
     void
     _build()
@@ -224,11 +226,11 @@ public:
 
     TransactionHistoryGetterImpl(
             Credentials& creds,
-            const std::string& account_id,
+            const string& account_id,
             TransactionType transaction_type = TransactionType::all,
-            const std::string& symbol = "",
-            const std::string& start_date = "",
-            const std::string& end_date = "")
+            const string& symbol = "",
+            const string& start_date = "",
+            const string& end_date = "")
         :
             AccountGetterBaseImpl(creds, account_id),
             _transaction_type(transaction_type),
@@ -249,15 +251,15 @@ public:
     get_transaction_type() const
     { return _transaction_type; }
 
-    std::string
+    string
     get_symbol() const
     { return _symbol; }
 
-    std::string
+    string
     get_start_date() const
     { return _start_date; }
 
-    std::string
+    string
     get_end_date() const
     { return _end_date; }
 
@@ -269,14 +271,14 @@ public:
     }
 
     void
-    set_symbol(const std::string& symbol)
+    set_symbol(const string& symbol)
     {
         _symbol = util::toupper(symbol);
         build();
     }
 
     void
-    set_start_date(const std::string& start_date)
+    set_start_date(const string& start_date)
     {
         if( !start_date.empty() && !util::is_valid_iso8601_datetime(start_date) ){
             TDMA_API_THROW(ValueException,"invalid ISO-8601 date: " + start_date);
@@ -286,7 +288,7 @@ public:
     }
 
     void
-    set_end_date(const std::string& end_date)
+    set_end_date(const string& end_date)
     {
         if( !end_date.empty() && !util::is_valid_iso8601_datetime(end_date) ){
             TDMA_API_THROW(ValueException,"invalid ISO-8601 date: " + end_date);
@@ -300,7 +302,7 @@ public:
 
 class IndividualTransactionHistoryGetterImpl
         : public AccountGetterBaseImpl {
-    std::string _transaction_id;
+    string _transaction_id;
 
     void
     _build()
@@ -322,8 +324,8 @@ public:
 
     IndividualTransactionHistoryGetterImpl(
             Credentials& creds,
-            const std::string& account_id,
-            const std::string& transaction_id)
+            const string& account_id,
+            const string& transaction_id)
         :
             AccountGetterBaseImpl(creds, account_id),
             _transaction_id(transaction_id)
@@ -334,12 +336,12 @@ public:
             _build();
         }
 
-    std::string
+    string
     get_transaction_id() const
     { return _transaction_id; }
 
     void
-    set_transaction_id(const std::string& transaction_id)
+    set_transaction_id(const string& transaction_id)
     {
          if( transaction_id.empty() )
              TDMA_API_THROW(ValueException,"transaction id is empty");
@@ -510,8 +512,8 @@ public:
 class OrdersGetterImpl
         : public AccountGetterBaseImpl {
     unsigned int _nmax_results;
-    std::string _from_entered_time;
-    std::string _to_entered_time;
+    string _from_entered_time;
+    string _to_entered_time;
     OrderStatusType _order_status_type;
 
     void
@@ -543,8 +545,8 @@ public:
     OrdersGetterImpl( Credentials& creds,
                         const string& account_id,
                         unsigned int nmax_results,
-                        const std::string& from_entered_time,
-                        const std::string& to_entered_time,
+                        const string& from_entered_time,
+                        const string& to_entered_time,
                         OrderStatusType order_status_type )
         :
             AccountGetterBaseImpl(creds, account_id),
@@ -571,11 +573,11 @@ public:
     get_nmax_results() const
     { return _nmax_results; }
 
-    std::string
+    string
     get_from_entered_time() const
     { return _from_entered_time; }
 
-    std::string
+    string
     get_to_entered_time() const
     { return _to_entered_time; }
 
@@ -593,7 +595,7 @@ public:
     }
 
     void
-    set_from_entered_time(const std::string& from_entered_time)
+    set_from_entered_time(const string& from_entered_time)
     {
         _from_entered_time = from_entered_time;
         if( !util::is_valid_iso8601_datetime(from_entered_time) ){
@@ -604,7 +606,7 @@ public:
     }
 
     void
-    set_to_entered_time(const std::string& to_entered_time)
+    set_to_entered_time(const string& to_entered_time)
     {
         _to_entered_time = to_entered_time;
         if( !util::is_valid_iso8601_datetime(to_entered_time) ){
