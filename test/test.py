@@ -433,8 +433,8 @@ def test_option_chain_analytical_getters(creds):
     to_date = "2019-03-01"
     g.set_symbol("SpY")
     g.set_volatility(100.10)
-    g.set_underlying_price(49.99)
-    g.set_interest_rate(15.01)
+    g.set_underlying_price(49.9999)
+    g.set_interest_rate(15.001)
     g.set_days_to_exp(1000)
     g.set_strikes(strikes)
     g.set_contract_type(get.OPTION_CONTRACT_TYPE_ALL)
@@ -446,8 +446,8 @@ def test_option_chain_analytical_getters(creds):
 
     assert g.get_symbol() == 'SPY'
     assert g.get_volatility() == 100.10
-    assert g.get_underlying_price() == 49.99
-    assert g.get_interest_rate() == 15.01
+    assert g.get_underlying_price() == 49.9999
+    assert g.get_interest_rate() == 15.001
     assert g.get_days_to_exp() == 1000
     assert g.get_strikes() == strikes
     assert g.get_contract_type() == get.OPTION_CONTRACT_TYPE_ALL

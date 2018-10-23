@@ -520,7 +520,7 @@ class OrdersGetterImpl
     _build()
     {
         vector<pair<string,string>> params{
-            {"maxResults", to_string(_nmax_results)},
+            {"maxResults", std::to_string(_nmax_results)},
             {"fromEnteredTime", _from_entered_time},
             {"toEnteredTime", _to_entered_time},
             {"status", to_string(_order_status_type)}

@@ -151,8 +151,7 @@ buffers_to_set(const char **buffers, size_t n)
     return s;
 }
 
-class
-IOStreamFormatGuard{
+class IOStreamFormatGuard{
     std::iostream& _stream;
     std::ios _state;
 public:
@@ -165,6 +164,41 @@ public:
     ~IOStreamFormatGuard()
     { _stream.copyfmt(_state); }
 };
+
+
+class FixedPrecisionConverter{
+    std::stringstream _ss;
+public:
+    FixedPrecisionConverter(unsigned int decimal_places){
+        _ss.precision(decimal_places);
+        std::fixed(_ss);
+    }
+    template<typename T>
+    std::string
+    to_string(T val,
+        typename std::enable_if<std::is_floating_point<T>::value,T>::type* _=0){
+        _ss.str({});
+        _ss << val;
+        return _ss.str();
+    }
+};
+
+template<typename T>
+std::string
+to_fixedpoint_string(T val, unsigned int decimal_places = 4,
+    typename std::enable_if<std::is_floating_point<T>::value, T>::type* _ = 0)
+{
+    static FixedPrecisionConverter fp4(4);
+
+    switch(decimal_places){
+    case 4: return fp4.to_string(val);
+    /* ... */
+    default:
+        std::stringstream ss;
+        ss << std::fixed << std::setprecision(decimal_places) << val;
+        return ss.str();
+    }
+}
 
 } /* util */
 

@@ -358,7 +358,9 @@ int \
 name##_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions) \
 { \
     CHECK_ENUM(name, v, allow_exceptions); \
-    return to_new_char_buffer(#name"-" + to_string(v), buf, n, allow_exceptions); \
+    return to_new_char_buffer( \
+        #name"-" + std::to_string(v), buf, n, allow_exceptions \
+        ); \
 }
 
 DEF_TEMP_FIELD_TO_STRING(QuotesSubscriptionField)

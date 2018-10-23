@@ -2019,5 +2019,4 @@ test_execute_transactions(const std::string& account_id, Credentials& creds)
     bool success = Execute_CancelOrder(creds, account_id, oid);
     std::cout<< "Cancel: " << std::boolalpha << success << std::endl;
     */
-
 }

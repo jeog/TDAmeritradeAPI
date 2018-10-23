@@ -92,7 +92,7 @@ class SubscriptionBySymbolBaseImpl
         vector<string> fields_str(fields.size());
         transform( fields.begin(), fields.end(), fields_str.begin(),
                    [](F f){
-                       return to_string(static_cast<unsigned int>(f));
+                       return std::to_string(static_cast<unsigned int>(f));
                    } );
 
         return { {"fields", util::join(fields_str, ',')},

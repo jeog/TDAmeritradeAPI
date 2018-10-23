@@ -107,10 +107,10 @@ OrderTicketImpl::as_json() const
 
     // this assumes a 0.0 price is always invalid
     if( _price )
-        j["price"] = std::to_string(_price);
+        j["price"] = util::to_fixedpoint_string(_price);
 
     if( _stop_price ) // ASSERT _type == stop type
-        j["stopPrice"] = std::to_string(_stop_price);
+        j["stopPrice"] = util::to_fixedpoint_string(_stop_price);
 
     if( !_legs.empty() ){
         json j_legs;

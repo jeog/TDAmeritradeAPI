@@ -65,10 +65,14 @@ protected:
 
         switch( _strikes.get_type() ){
         case OptionStrikes::Type::n_atm:
-            params.emplace_back("strikeCount", to_string(_strikes.get_n_atm()));
+            params.emplace_back(
+                "strikeCount", std::to_string(_strikes.get_n_atm())
+            );
             break;
         case OptionStrikes::Type::single:
-            params.emplace_back("strike", to_string(_strikes.get_single()));
+            params.emplace_back(
+                "strike", util::to_fixedpoint_string(_strikes.get_single())
+            );
             break;
         case OptionStrikes::Type::range:
             params.emplace_back("range", to_string(_strikes.get_range()));
@@ -259,7 +263,7 @@ protected:
         params.emplace_back("strategy", to_string(_strategy.get_strategy()));
         double intrvl = _strategy.get_spread_interval();
         if( intrvl >= 0.01 ){
-            params.emplace_back("interval", to_string(intrvl));
+            params.emplace_back("interval", util::to_fixedpoint_string(intrvl));
         }
         return params;
     }
@@ -331,10 +335,10 @@ protected:
 
         vector<pair<string,string>> aparams{
             {"strategy", "ANALYTICAL"},
-            {"volatility", to_string(_volatility)},
-            {"underlyingPrice", to_string(_underlying_price)},
-            {"interestRate", to_string(_interest_rate)},
-            {"daysToExpiration", to_string(_days_to_exp)}
+            {"volatility", util::to_fixedpoint_string(_volatility)},
+            {"underlyingPrice", util::to_fixedpoint_string(_underlying_price)},
+            {"interestRate", util::to_fixedpoint_string(_interest_rate)},
+            {"daysToExpiration", std::to_string(_days_to_exp)}
         };
         params.insert(params.end(), aparams.begin(), aparams.end());
         return params;

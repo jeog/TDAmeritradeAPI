@@ -144,7 +144,10 @@ Execute_CancelOrder_ABI( Credentials *creds,
 
 
 int
-OrderSession_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
+OrderSession_to_string_ABI( int v,
+                               char** buf,
+                               size_t* n,
+                               int allow_exceptions )
 {
     CHECK_ENUM(OrderSession, v, allow_exceptions);
 
@@ -163,7 +166,10 @@ OrderSession_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
 }
 
 int
-OrderDuration_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
+OrderDuration_to_string_ABI( int v,
+                                char** buf,
+                                size_t* n,
+                                int allow_exceptions )
 {
     CHECK_ENUM(OrderDuration, v, allow_exceptions);
 
@@ -181,7 +187,10 @@ OrderDuration_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
 
 
 int
-OrderAssetType_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
+OrderAssetType_to_string_ABI( int v,
+                                  char** buf,
+                                  size_t* n,
+                                  int allow_exceptions )
 {
     CHECK_ENUM(OrderAssetType, v, allow_exceptions);
 
@@ -207,7 +216,10 @@ OrderAssetType_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
 
 
 int
-OrderInstruction_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
+OrderInstruction_to_string_ABI( int v,
+                                    char** buf,
+                                    size_t* n,
+                                    int allow_exceptions )
 {
     CHECK_ENUM(OrderInstruction, v, allow_exceptions);
 
@@ -257,7 +269,8 @@ OrderType_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
     case OrderType::EXERCISE:
         return to_new_char_buffer("EXERCISE", buf, n, allow_exceptions);
     case OrderType::TRAILING_STOP_LIMIT:
-        return to_new_char_buffer("TRAILING_STOP_LIMIT", buf, n, allow_exceptions);
+        return to_new_char_buffer("TRAILING_STOP_LIMIT", buf, n,
+                                  allow_exceptions);
     case OrderType::NET_DEBIT:
         return to_new_char_buffer("NET_DEBIT", buf, n, allow_exceptions);
     case OrderType::NET_CREDIT:
@@ -271,8 +284,10 @@ OrderType_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
 
 
 int
-ComplexOrderStrategyType_to_string_ABI(
-    int v, char** buf, size_t* n, int allow_exceptions)
+ComplexOrderStrategyType_to_string_ABI( int v,
+                                             char** buf,
+                                             size_t* n,
+                                             int allow_exceptions )
 {
     CHECK_ENUM(ComplexOrderStrategyType, v, allow_exceptions);
 
@@ -308,13 +323,16 @@ ComplexOrderStrategyType_to_string_ABI(
     case ComplexOrderStrategyType::DOUBLE_DIAGONAL:
         return to_new_char_buffer("DOUBLE_DIAGONAL", buf, n, allow_exceptions);
     case ComplexOrderStrategyType::UNBALANCED_BUTTERFLY:
-        return to_new_char_buffer("UNBALANCED_BUTTERFLY", buf, n, allow_exceptions);
+        return to_new_char_buffer("UNBALANCED_BUTTERFLY", buf, n,
+                                  allow_exceptions);
     case ComplexOrderStrategyType::UNBALANCED_CONDOR:
         return to_new_char_buffer("UNBALANCED_CONDOR", buf, n, allow_exceptions);
     case ComplexOrderStrategyType::UNBALANCED_IRON_CONDOR:
-        return to_new_char_buffer("UNBALANCED_IRON_CONDOR", buf, n, allow_exceptions);
+        return to_new_char_buffer("UNBALANCED_IRON_CONDOR", buf, n,
+                                  allow_exceptions);
     case ComplexOrderStrategyType::UNBALANCED_VERTICAL_ROLL:
-        return to_new_char_buffer("UNBALANCED_VERTICAL_ROLL", buf, n, allow_exceptions);
+        return to_new_char_buffer("UNBALANCED_VERTICAL_ROLL", buf, n,
+                                  allow_exceptions);
     case ComplexOrderStrategyType::CUSTOM:
         return to_new_char_buffer("CUSTOM", buf, n, allow_exceptions);
     default:
@@ -324,7 +342,10 @@ ComplexOrderStrategyType_to_string_ABI(
 
 
 int
-OrderStrategyType_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
+OrderStrategyType_to_string_ABI( int v,
+                                     char** buf,
+                                     size_t* n,
+                                     int allow_exceptions )
 {
     CHECK_ENUM(OrderStrategyType, v, allow_exceptions);
 

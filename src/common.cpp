@@ -66,7 +66,7 @@ BuildOptionSymbolImpl( const string& underlying,
        << setw(2) << setfill('0') << yy.substr( yy.size() - 2 )
        << (is_call ? 'C' : 'P');
 
-    string s(std::to_string(strike));
+    string s(util::to_fixedpoint_string(strike));
     if( s.find('.') != string::npos ){
         s.erase( s.find_last_not_of('0') + 1, string::npos);
         s.erase( s.find_last_not_of('.') + 1, string::npos);

@@ -49,7 +49,7 @@ class HistoricalGetterBaseImpl
         assert( valid != end(VALID_FREQUENCIES_BY_FREQUENCY_TYPE) );
         if( valid->second.count(f) == 0 ){
             TDMA_API_THROW(ValueException,
-                "invalid frequency(" + to_string(f)
+                "invalid frequency(" + std::to_string(f)
                 + ") for frequency type(" + to_string(fty) + ")"
                 );
         }
@@ -77,7 +77,7 @@ protected:
     build_query_params() const
     {
         return { {"frequencyType", to_string(_frequency_type)},
-                 {"frequency", to_string(_frequency)},
+                 {"frequency", std::to_string(_frequency)},
                  {"needExtendedHoursData", _extended_hours ? "true" : "false"} };
     }
 
@@ -140,7 +140,7 @@ class HistoricalPeriodGetterImpl
     {
         vector<pair<string,string>> params( build_query_params() );
         params.emplace_back( "periodType", to_string(_period_type) );
-        params.emplace_back( "period", to_string(_period) );
+        params.emplace_back( "period", std::to_string(_period) );
 
         string qstr = util::build_encoded_query_str(params);
         string url = URL_MARKETDATA + util::url_encode(get_symbol())
@@ -172,7 +172,7 @@ class HistoricalPeriodGetterImpl
         assert( valid != end(VALID_PERIODS_BY_PERIOD_TYPE) );
         if( valid->second.count(p) == 0 ){
             TDMA_API_THROW(ValueException,
-                "invalid period(" + to_string(p)
+                "invalid period(" + std::to_string(p)
                 + ") for period type(" + to_string(pty) + ")"
                 );
         }
@@ -240,8 +240,12 @@ class HistoricalRangeGetterImpl
     _build()
     {
         vector<pair<string,string>> params( build_query_params() );
-        params.emplace_back( "startDate", to_string(_start_msec_since_epoch) );
-        params.emplace_back( "endDate", to_string(_end_msec_since_epoch) );
+        params.emplace_back(
+            "startDate", std::to_string(_start_msec_since_epoch)
+        );
+        params.emplace_back(
+            "endDate", std::to_string(_end_msec_since_epoch)
+        );
 
         string qstr = util::build_encoded_query_str(params);
         string url = URL_MARKETDATA + util::url_encode(get_symbol())

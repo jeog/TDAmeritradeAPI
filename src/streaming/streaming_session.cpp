@@ -187,7 +187,7 @@ public:
     {
         return {
            {"service", to_string(_service)},
-           {"requestid", to_string(_request_id)},
+           {"requestid", std::to_string(_request_id)},
            {"command", _command},
            {"account", _account_id},
            {"source", _source_id},
@@ -363,9 +363,12 @@ public:
         {
             D("construct", this);
             D("primary account: " + streamer_info.primary_acct_id, this);
-            D("connect_timeout: " + to_string(connect_timeout.count()), this);
-            D("listening_timeout: " + to_string(listening_timeout.count()), this);
-            D("subscribe_timeout: " + to_string(subscribe_timeout.count()), this);
+            D("connect_timeout: " + std::to_string(connect_timeout.count()),
+                this);
+            D("listening_timeout: " + std::to_string(listening_timeout.count()),
+                this);
+            D("subscribe_timeout: " + std::to_string(subscribe_timeout.count()),
+                this);
         }
 
     virtual
@@ -678,7 +681,7 @@ StreamingSessionImpl::_login()
 
     if( service != to_string(StreamerServiceType::ADMIN) ||
         command != to_string(AdminCommandType::LOGIN ) ||
-        response_req_id != to_string(req_id) )
+        response_req_id != std::to_string(req_id) )
     {
         /*
          *  since login is first we can assume no other responses will be on 
@@ -769,7 +772,7 @@ StreamingSessionImpl::_logout()
 
             if( service == to_string(StreamerServiceType::ADMIN) &&
                 command == to_string(AdminCommandType::LOGOUT ) &&
-                response_req_id == to_string(req_id) )
+                response_req_id == std::to_string(req_id) )
             {
                 auto content = info["content"];
                 int code = content["code"];
@@ -839,7 +842,8 @@ StreamingSessionImpl::set_qos(const QOSType& qos)
         };
 
     AdminSubscriptionImpl sub(
-        AdminCommandType::QOS, {{"qoslevel", to_string(static_cast<int>(qos))}}
+        AdminCommandType::QOS,
+        {{"qoslevel", std::to_string(static_cast<int>(qos))}}
     );
     _subscribe( {sub}, cb );
 

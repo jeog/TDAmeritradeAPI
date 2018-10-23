@@ -2975,7 +2975,7 @@ to_string(const OptionStrategy& strategy)
 {
     double d = strategy.get_spread_interval();
     return to_string(strategy.get_strategy())
-        + (d ? "(" + std::to_string(d) + ")" : "");
+        + (d ? "(" + util::to_fixedpoint_string(d) + ")" : "");
 }
 
 inline std::ostream&
@@ -3796,7 +3796,6 @@ GetInstrumentInfo( Credentials& creds,
 { return InstrumentInfoGetter(creds, search_type, query_string).get(); }
 
 
-/* NEW */
 class OrderGetter
         : public AccountGetterBase{
 public:
@@ -3911,9 +3910,6 @@ GetOrders( Credentials& creds,
             OrderStatusType order_status_type  )
 { return OrdersGetter(creds, account_id, nmax_results, from_entered_time,
                       to_entered_time, order_status_type). get(); }
-/* NEW */
-
-using std::to_string;
 
 } /* tdma */
 

@@ -626,14 +626,14 @@ check_option_chain_getter( const OptionChainGetter& o,
 void option_chain_analytical_getter(Credentials& c)
 {
     auto strikes = OptionStrikes::Single(65.00);
-    OptionChainAnalyticalGetter ocg(c, "kORS", 30.00, 65.00, 3.0, 100,
+    OptionChainAnalyticalGetter ocg(c, "kORS", 30.50, 65.00, 3.0, 100,
                                     strikes, OptionContractType::call, true,
                                     "", "", OptionExpMonth::jan);
     cout<<ocg << endl;
 
     check_option_chain_getter(ocg, "KORS", strikes, OptionContractType::call,
                               true, "", "", OptionExpMonth::jan, OptionType::all);
-    if( ocg.get_volatility() != 30.00 )
+    if( ocg.get_volatility() != 30.50 )
         throw runtime_error("invalid volatility");
     if( ocg.get_underlying_price() != 65.00 )
             throw runtime_error("invalid underlying price");
@@ -645,9 +645,9 @@ void option_chain_analytical_getter(Credentials& c)
     Get(ocg);
 
     strikes = OptionStrikes::Range(OptionRangeType::sbk);
-    ocg.set_volatility(40.00);
-    ocg.set_underlying_price(70.00);
-    ocg.set_interest_rate(1.0);
+    ocg.set_volatility(40.5555);
+    ocg.set_underlying_price(70.25);
+    ocg.set_interest_rate(1.001);
     ocg.set_days_to_exp(1);
     ocg.set_strikes( strikes );
     ocg.set_contract_type( OptionContractType::put );
@@ -657,11 +657,11 @@ void option_chain_analytical_getter(Credentials& c)
     check_option_chain_getter(ocg, "KORS", strikes, OptionContractType::put,
                               true, "", "2020-01-01", OptionExpMonth::jan,
                               OptionType::all);
-    if( ocg.get_volatility() != 40.00 )
+    if( ocg.get_volatility() != 40.5555 )
         throw runtime_error("invalid volatility");
-    if( ocg.get_underlying_price() != 70.00 )
+    if( ocg.get_underlying_price() != 70.25 )
             throw runtime_error("invalid underlying price");
-    if( ocg.get_interest_rate() != 1.0 )
+    if( ocg.get_interest_rate() != 1.001 )
             throw runtime_error("invalid interest rate");
     if( ocg.get_days_to_exp() != 1 )
             throw runtime_error("invalid days to exp");

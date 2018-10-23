@@ -4376,8 +4376,6 @@ Execute_CancelOrder( Credentials& creds,
     return static_cast<bool>(success);
 }
 
-using std::to_string;
-
 } /* tdma */
 
 #endif /* __cplusplus */

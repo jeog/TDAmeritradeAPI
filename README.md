@@ -291,11 +291,11 @@ Since all the dependencies are included(or built manually) you'll need to manage
 
 - **ONLY** Symbol strings are converted to upper-case by the library, e.g 'sPy' -> 'SPY'.
 
-- Currently, decimal values are represented with ```double``` type and passed to the API as a string with (fixed) precision of 6 (the default for std::to_string(double) which is used for the conversion). 
+- Currently, decimal values are represented with ```double``` type and passed to the API as a string with four decimal places of fixed precision. 
     - Numbers requiring more precision than that will be passed to the API *incorrectly*.
-    - This may also cause issues with very large numbers that require a moderate amount of precision.
-    - This *shouldn't* be an issue for the current nature of access.
-    - Input string conversion may be reduced to 4 digit (fixed) precision (xxx.xxxx) to limit issues going forward.
+    - Very large floating point numbers can lose accuracy. 
+    - Rounding behavior is the default used by stringstream, using std::fixed and std::setprecision(4).
+    - This *shouldn't* be an issue for the current nature of access. (If so, file an issue.)
 
 - Enums are defined for both C and C++ code using MACROS. Python mimics these enums by defining constant values. For example:
     ```

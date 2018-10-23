@@ -1644,8 +1644,6 @@ public:
     }
 };
 
-using std::to_string;
-
 } /* tdma */
 
 #endif /* __cplusplus */
