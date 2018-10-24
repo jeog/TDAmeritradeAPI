@@ -105,6 +105,12 @@ get_msec_since_epoch()
         );
 }
 
+inline std::string
+toupper(std::string str)
+{
+    std::transform(str.begin(), str.end(), str.begin(), ::toupper);
+    return str;
+}
 
 template< template<typename T, typename... V> class C, typename A, typename...B >
 C<A,B...>
@@ -115,15 +121,6 @@ toupper(const C<A, B...>& container)
                    std::inserter(ret, ret.begin()),
                    [](const A& a){ return toupper(a); });
     return ret;
-}
-
-template<>
-inline std::string
-toupper(const std::string& string)
-{
-    std::string s(string);
-    std::transform(s.begin(), s.end(), s.begin(), ::toupper);
-    return s;
 }
 
 using std::toupper;

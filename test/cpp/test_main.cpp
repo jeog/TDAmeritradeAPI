@@ -12,7 +12,7 @@ using namespace std;
 
 void test_option_symbol_builder();
 
-bool use_live_connection = true;
+bool use_live_connection = false;
 
 int main(int argc, char* argv[])
 {
