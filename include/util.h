@@ -175,6 +175,7 @@ public:
     to_string(T val,
         typename std::enable_if<std::is_floating_point<T>::value,T>::type* _=0){
         _ss.str({});
+        _ss.clear();
         _ss << val;
         return _ss.str();
     }

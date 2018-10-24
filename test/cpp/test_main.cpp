@@ -107,18 +107,18 @@ void test_option_symbol_builder()
         throw std::runtime_error("failed to catch exception for: " + o);
     };
 
-    is_good("SPY_010118C300", "SPY",1,1,2018,true,300);
+    is_good("SPY_010118C300", "Spy",1,1,2018,true,300);
     is_good("SPY_123199P200", "SPY",12,31,2099,false,200);
-    is_good("A_021119P1.5", "A",2,11,2019,false,1.5);
+    is_good("A_021119P1.5", "a",2,11,2019,false,1.5);
     is_good("A_021119P1.5", "A",2,11,2019,false,1.500);
-    is_good("ABCDEF_110121C99.999", "ABCDEF",11,1,2021,true,99.999);
+    is_good("ABCDEF_110121C99.999", "abcdEF",11,1,2021,true,99.999);
     is_good("ABCDEF_110121C99.999", "ABCDEF",11,1,2021,true,99.99900);
     is_good("ABCDEF_110121C99", "ABCDEF",11,1,2021,true,99.0);
     is_good("ABCDEF_110121C99.001", "ABCDEF",11,1,2021,true,99.001);
 
     is_bad("",1,1,2018,true,300);
     is_bad("SPY_",1,1,2018,true,300);
-    is_bad("SPY_",1,1,2018,true,300);
+    is_bad("spy_",1,1,2018,false,300);
     is_bad("_SPY",1,1,2018,true,300);
     is_bad("SP_Y",1,1,2018,true,300);
     is_bad("SPY",0,1,2018,true,300);
