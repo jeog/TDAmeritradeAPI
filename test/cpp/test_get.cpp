@@ -88,7 +88,7 @@ void
 Get(APIGetter& getter, bool test_exc = false, string test_exc_msg="")
 {
     if( use_live_connection ){
-        cout<< getter.get() << endl << endl;
+        cout<< getter.get().dump(4) << endl << endl;
         if(test_exc)
             throw runtime_error(test_exc_msg);
     }else
@@ -103,7 +103,7 @@ GetJson(APIGetter& getter, bool test_exc = false, string test_exc_msg="")
         j = getter.get();
         if(test_exc)
             throw runtime_error(test_exc_msg);
-        cout<< j << endl << endl;
+        cout<< j.dump(4) << endl << endl;
     }
     else{
         cout<< "CAN NOT TEST GET WITHOUT USING LIVE CONNECTION" << endl;
@@ -773,11 +773,12 @@ operator<<(ostream& out, const HistoricalGetterBase &hg)
     return out;
 }
 
-ostream&
+ostream& // TODO UPDATE
 operator<<(ostream& out, const HistoricalPeriodGetter &hpg)
 {
     out << reinterpret_cast<const HistoricalGetterBase&>(hpg);
-    out<< ' ' << hpg.get_period_type() << ' ' << hpg.get_period();
+    out<< ' ' << hpg.get_period_type() << ' ' << hpg.get_period()
+        << ' ' << hpg.get_msec_since_epoch();
     return out;
 }
 
@@ -793,8 +794,17 @@ operator<<(ostream& out, const HistoricalRangeGetter &hrg)
 void
 historical_getters(Credentials& c)
 {
+    using namespace std::chrono;
+    auto tp_now = duration_cast<milliseconds>(
+        system_clock::now().time_since_epoch()
+        );
+    auto tp_tomorrow = tp_now + hours(24);
+    auto tp_yesterday = tp_now - hours(24);
+    auto tp_70ago = tp_now - hours(24*70);
+
     HistoricalPeriodGetter hpg(c, "SPY", PeriodType::month, 1,
-                               FrequencyType::daily, 1, true);
+                               FrequencyType::daily, 1, true,
+                               tp_tomorrow.count());
     cout<< hpg<< endl;
 
     if( hpg.get_symbol() != "SPY" ){
@@ -815,6 +825,9 @@ historical_getters(Credentials& c)
     if( hpg.is_extended_hours() != true ){
         throw runtime_error("invalid is extended hours");
     }
+    if( hpg.get_msec_since_epoch() != tp_tomorrow.count() ){
+        throw runtime_error("invalid msec_since_epoch");
+    }
 
     Get(hpg);
 
@@ -822,7 +835,8 @@ historical_getters(Credentials& c)
     hpg.set_period(PeriodType::day, 3);
     hpg.set_frequency(FrequencyType::minute, 30);
     hpg.set_extended_hours(false);
-    cout<< hpg;
+    hpg.set_msec_since_epoch(0);
+    cout<< hpg << endl;
     if( hpg.get_symbol() != "QQQ" ){
         throw runtime_error("invalid symbol");
     }
@@ -841,20 +855,17 @@ historical_getters(Credentials& c)
     if( hpg.is_extended_hours() != false ){
         throw runtime_error("invalid is extended hours");
     }
-
-    Get(hpg);
+    if( hpg.get_msec_since_epoch() != 0 ){
+        throw runtime_error("invalid msec_since_epoch");
+    }
 
     hpg.set_frequency(FrequencyType::monthly, 1); // bad but cant throw here
     try{
-        if( use_live_connection ){
-            cout<< hpg.get() << endl << endl;
-            throw runtime_error("failed to catch exception for bad frequency type");
-        }else{
-            cout<< "CAN NOT TEST GET WITHOUT USING LIVE CONNECTION" << endl;
-        }
+        Get(hpg, true, "failed to catch exception for bad frequency type");
     }catch(ValueException& e){
         cout<< "succesfully caught: " << e << endl;
     }
+    hpg.set_frequency(FrequencyType::minute, 30);
 
     try{
         hpg.set_period(PeriodType::month, 99);
@@ -863,8 +874,28 @@ historical_getters(Credentials& c)
         cout<< "succesfully caught: " << e << endl;
     }
 
-    unsigned long long end = 1528205400000;
-    unsigned long long start = 1528119000000;
+    /* 10-25-18 */
+    hpg.set_msec_since_epoch(tp_yesterday.count());
+    if( hpg.get_msec_since_epoch() != tp_yesterday.count() ){
+        throw runtime_error("invalid msec_since_epoch");
+    }
+
+    hpg.set_msec_since_epoch(tp_yesterday.count() * -1);
+    if( hpg.get_msec_since_epoch() != (tp_yesterday.count()*-1) ){
+        throw runtime_error("invalid msec_since_epoch");
+    }
+
+    cout<< hpg << endl;
+    Get(hpg);
+
+    HistoricalPeriodGetter hpg2(c, "SPY", PeriodType::month, 1,
+                                   FrequencyType::daily, 1, true);
+    if( hpg2.get_msec_since_epoch() != 0 ){
+        throw runtime_error("invalid msec_since_epoch");
+    }
+
+    unsigned long long end = tp_tomorrow.count();
+    unsigned long long start = tp_yesterday.count();
     //unsigned long day_msec = 86400000;
     HistoricalRangeGetter hrg(c, "SPY", FrequencyType::minute, 30,
                                start, end, true);
@@ -898,7 +929,10 @@ historical_getters(Credentials& c)
         cout<< "succesfully caught: " << e << endl;
     }
 
+    start = tp_70ago.count();
+    hrg.set_start_msec_since_epoch(start);
     hrg.set_frequency(FrequencyType::monthly, 1);
+    cout<< hrg << endl;
     if( hrg.get_symbol() != "SPY" ){
         throw runtime_error("invalid symbol");
     }
@@ -916,6 +950,15 @@ historical_getters(Credentials& c)
     }
     if( hrg.is_extended_hours() != true ){
         throw runtime_error("invalid is extended hours");
+    }
+
+    auto j = GetJson(hrg);
+    if( use_live_connection ){
+        auto ji = j.find("candles");
+        if( ji == j.end() )
+            throw runtime_error("no historical candles in json");
+        //if( ji->size() != 2 )
+        //    throw runtime_error("not 2 monthly candles in json");
     }
 }
 

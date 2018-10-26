@@ -510,15 +510,17 @@ HistoricalGetterBase_SetFrequency_ABI( Getter_C *pgetter,
 
 /* HistoricalPeriodGetter */
 EXTERN_C_SPEC_ DLL_SPEC_ int
-HistoricalPeriodGetter_Create_ABI( struct Credentials *pcreds,
-                                       const char* symbol,
-                                       int period_type,
-                                       unsigned int period,
-                                       int frequency_type,
-                                       unsigned int frequency,
-                                       int extended_hours,
-                                       HistoricalPeriodGetter_C *pgetter,
-                                       int allow_exceptions );
+HistoricalPeriodGetter_Create_ABI(
+    struct Credentials *pcreds,
+    const char* symbol,
+    int period_type,
+    unsigned int period,
+    int frequency_type,
+    unsigned int frequency,
+    int extended_hours,
+    long long msec_since_epoch,
+    HistoricalPeriodGetter_C *pgetter,
+    int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 HistoricalPeriodGetter_Destroy_ABI( HistoricalPeriodGetter_C *pgetter,
@@ -540,6 +542,18 @@ HistoricalPeriodGetter_SetPeriod_ABI( HistoricalPeriodGetter_C *pgetter,
                                            int period_type,
                                            unsigned int period,
                                            int allow_exceptions );
+
+EXTERN_C_SPEC_ DLL_SPEC_ int
+HistoricalPeriodGetter_SetMSecSinceEpoch_ABI(
+    HistoricalPeriodGetter_C *pgetter,
+    long long msec_since_epoch,
+    int allow_exceptions );
+
+EXTERN_C_SPEC_ DLL_SPEC_ int
+HistoricalPeriodGetter_GetMSecSinceEpoch_ABI(
+    HistoricalPeriodGetter_C *pgetter,
+    long long *msec_since_epoch,
+    int allow_exceptions );
 
 /* HistoricalRangeGetter */
 EXTERN_C_SPEC_ DLL_SPEC_ int
@@ -1364,11 +1378,13 @@ HistoricalPeriodGetter_Create( struct Credentials *pcreds,
                                int frequency_type,
                                unsigned int frequency,
                                int extended_hours,
+                               long long msec_since_epoch,
                                HistoricalPeriodGetter_C *pgetter )
 {
-    return HistoricalPeriodGetter_Create_ABI(pcreds, symbol, period_type, period,
-                                             frequency_type, frequency,
-                                             extended_hours, pgetter, 0);
+    return HistoricalPeriodGetter_Create_ABI( pcreds, symbol, period_type,
+                                              period, frequency_type, frequency,
+                                              extended_hours, msec_since_epoch,
+                                              pgetter, 0 );
 }
 
 static inline int
@@ -1437,6 +1453,18 @@ HistoricalPeriodGetter_SetFrequency( HistoricalPeriodGetter_C *pgetter,
 { return HistoricalGetterBase_SetFrequency_ABI( (Getter_C*)pgetter,
                                                 (int)frequency_type,
                                                 frequency, 0); }
+
+static inline int
+HistoricalPeriodGetter_SetMSecSinceEpoch( HistoricalPeriodGetter_C *pgetter,
+                                          long long msec_since_epoch )
+{ return HistoricalPeriodGetter_SetMSecSinceEpoch_ABI( pgetter,
+                                                       msec_since_epoch, 0 ); }
+
+static inline int
+HistoricalPeriodGetter_GetMSecSinceEpoch( HistoricalPeriodGetter_C *pgetter,
+                                          long long *msec_since_epoch )
+{ return HistoricalPeriodGetter_GetMSecSinceEpoch_ABI( pgetter,
+                                                       msec_since_epoch, 0 ); }
 
 /* HistoricalRangeGetter */
 static inline int
@@ -2654,7 +2682,8 @@ public:
                             unsigned int period,
                             FrequencyType frequency_type,
                             unsigned int frequency,
-                            bool extended_hours )
+                            bool extended_hours,
+                            long long msec_since_epoch = 0 )
         :
             HistoricalGetterBase( HistoricalPeriodGetter_C{},
                                   HistoricalPeriodGetter_Create_ABI,
@@ -2665,7 +2694,8 @@ public:
                                   period,
                                   static_cast<int>(frequency_type),
                                   frequency,
-                                  static_cast<int>(extended_hours) )
+                                  static_cast<int>(extended_hours),
+                                  msec_since_epoch )
         {
         }
 
@@ -2692,6 +2722,22 @@ public:
         call_abi( HistoricalPeriodGetter_SetPeriod_ABI, cgetter<CType>(),
                   static_cast<int>(period_type), period );
     }
+
+    void
+    set_msec_since_epoch( long long msec_since_epoch )
+    {
+        call_abi( HistoricalPeriodGetter_SetMSecSinceEpoch_ABI,
+                  cgetter<CType>(), msec_since_epoch );
+    }
+
+    long long
+    get_msec_since_epoch() const
+    {
+        long long ms;
+        call_abi( HistoricalPeriodGetter_GetMSecSinceEpoch_ABI,
+                  cgetter<CType>(), &ms );
+        return ms;
+    }
 };
 
 inline json
@@ -2701,11 +2747,12 @@ GetHistoricalPeriod( Credentials& creds,
                         unsigned int period,
                         FrequencyType frequency_type,
                         unsigned int frequency,
-                        bool extended_hours )
+                        bool extended_hours,
+                        long long msec_since_epoch = 0 )
 {
     return HistoricalPeriodGetter( creds, symbol, period_type, period,
-                                   frequency_type, frequency,
-                                   extended_hours ).get();
+                                   frequency_type, frequency, extended_hours,
+                                   msec_since_epoch ).get();
 }
 
 

@@ -134,6 +134,7 @@ class HistoricalPeriodGetterImpl
         : public HistoricalGetterBaseImpl {
     PeriodType _period_type;
     unsigned int _period;
+    long long _msec_since_epoch;
 
     void
     _build()
@@ -141,6 +142,17 @@ class HistoricalPeriodGetterImpl
         vector<pair<string,string>> params( build_query_params() );
         params.emplace_back( "periodType", to_string(_period_type) );
         params.emplace_back( "period", std::to_string(_period) );
+
+        /* FEATURE FIX - Oct 25 2018
+         *
+         * Add the ability to pass a start OR end datetime to the period.
+         */
+        if( _msec_since_epoch != 0 ){
+            string f = _msec_since_epoch > 0 ? "endDate" : "startDate";
+            params.emplace_back(
+                f, std::to_string( std::llabs(_msec_since_epoch) )
+            );
+        }
 
         string qstr = util::build_encoded_query_str(params);
         string url = URL_MARKETDATA + util::url_encode(get_symbol())
@@ -189,12 +201,14 @@ public:
                             unsigned int period,
                             FrequencyType frequency_type,
                             unsigned int frequency,
-                            bool extended_hours )
+                            bool extended_hours,
+                            long long msec_since_epoch )
     :
         HistoricalGetterBaseImpl(creds, symbol, frequency_type, frequency,
                                  extended_hours),
         _period_type(period_type),
-        _period(period)
+        _period(period),
+        _msec_since_epoch(msec_since_epoch)
     {
         _throw_if_invalid_frequency_type(period_type, frequency_type);
         _throw_if_invalid_period(period_type, period);
@@ -217,6 +231,17 @@ public:
         _period = period;
         build();
     }
+
+    void
+    set_msec_since_epoch( long long msec_since_epoch )
+    {
+        _msec_since_epoch = msec_since_epoch;
+        build();
+    }
+
+    long long
+    get_msec_since_epoch() const
+    { return _msec_since_epoch; }
 
     string
     get()
@@ -246,6 +271,18 @@ class HistoricalRangeGetterImpl
         params.emplace_back(
             "endDate", std::to_string(_end_msec_since_epoch)
         );
+
+        /* BUG FIX - Oct 25 2018
+         *
+         * contra example #4 in docs, if we use a daily/weekly/monthy frequency
+         * type we need to specify a valid period type to override the default
+         * value of 'day' which is invalid for those frequency types
+         *
+         * PeriodType::year is valid for all three
+         */
+        if( get_frequency_type() != FrequencyType::minute ){
+            params.emplace_back( "periodType", to_string(PeriodType::year) );
+        }
 
         string qstr = util::build_encoded_query_str(params);
         string url = URL_MARKETDATA + util::url_encode(get_symbol())
@@ -392,15 +429,18 @@ HistoricalGetterBase_SetFrequency_ABI( Getter_C *pgetter,
 
 /* HistoricalPeriodGetter */
 int
-HistoricalPeriodGetter_Create_ABI( struct Credentials *pcreds,
-                                       const char* symbol,
-                                       int period_type,
-                                       unsigned int period,
-                                       int frequency_type,
-                                       unsigned int frequency,
-                                       int extended_hours,
-                                       HistoricalPeriodGetter_C *pgetter,
-                                       int allow_exceptions )
+HistoricalPeriodGetter_Create_ABI(
+    struct Credentials *pcreds,
+    const char* symbol,
+    int period_type,
+    unsigned int period,
+    int frequency_type,
+    unsigned int frequency,
+    int extended_hours,
+    long long msec_since_epoch,
+    HistoricalPeriodGetter_C *pgetter,
+    int allow_exceptions
+    )
 {
     using ImplTy = HistoricalPeriodGetterImpl;
 
@@ -415,16 +455,18 @@ HistoricalPeriodGetter_Create_ABI( struct Credentials *pcreds,
     CHECK_PTR_KILL_PROXY(symbol, "symbol", allow_exceptions, pgetter);
 
     static auto meth = +[]( Credentials *c, const char* s, int pt,
-                            unsigned int p, int ft, unsigned int f, int eh ){
+                            unsigned int p, int ft, unsigned int f, int eh,
+                            long long mse ){
         return new ImplTy( *c, s, static_cast<PeriodType>(pt), p,
                            static_cast<FrequencyType>(ft), f,
-                           static_cast<bool>(eh) );
+                           static_cast<bool>(eh), mse );
     };
 
     ImplTy *obj;
     tie(obj, err) = CallImplFromABI( allow_exceptions, meth, pcreds, symbol,
                                      period_type, period, frequency_type,
-                                     frequency, extended_hours );
+                                     frequency, extended_hours,
+                                     msec_since_epoch );
     if( err ){
         kill_proxy(pgetter);
         return err;
@@ -479,6 +521,33 @@ HistoricalPeriodGetter_SetPeriod_ABI( HistoricalPeriodGetter_C *pgetter,
             pgetter, &HistoricalPeriodGetterImpl::set_period, period_type,
             period, allow_exceptions
             );
+}
+
+int
+HistoricalPeriodGetter_SetMSecSinceEpoch_ABI(
+    HistoricalPeriodGetter_C *pgetter,
+    long long msec_since_epoch,
+    int allow_exceptions )
+{
+    return ImplAccessor<long long>::template
+        set<HistoricalPeriodGetterImpl>(
+            pgetter, &HistoricalPeriodGetterImpl::set_msec_since_epoch,
+            msec_since_epoch, allow_exceptions
+            );
+}
+
+int
+HistoricalPeriodGetter_GetMSecSinceEpoch_ABI(
+    HistoricalPeriodGetter_C *pgetter,
+    long long *msec_since_epoch,
+    int allow_exceptions )
+{
+    return ImplAccessor<long long>::template
+        get<HistoricalPeriodGetterImpl>(
+            pgetter, &HistoricalPeriodGetterImpl::get_msec_since_epoch,
+            msec_since_epoch, "msec_since_epoch", allow_exceptions
+        );
+
 }
 
 

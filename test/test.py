@@ -50,6 +50,8 @@ parser.add_argument("--no-live-connect", action='store_true')
 
 use_live_connection = True
 
+jprint = lambda j: print( json.dumps(j, indent=4) )
+
 def Get(getter):
     if use_live_connection:
         return getter.get()
@@ -64,7 +66,6 @@ def print_title(s):
     print('+', s, '+')
     print('+' * l, '\n')
 
-
 def test(func, *args):
     try:
         print_title(func.__name__)
@@ -74,7 +75,6 @@ def test(func, *args):
         print("- Failed ")
         print_exc()
         raise SystemExit()
-
 
 def init():
     if not clib._lib:
@@ -180,36 +180,30 @@ def test_throttling(creds):
 def test_quote_getters(creds):
     g = get.QuoteGetter(creds, "SpY")
     assert g.get_symbol() == "SPY"
-    j = Get(g)
-    print(str(j))
+    j = Get(g)    
+    jprint(j)
     g.set_symbol('qqq')
     assert g.get_symbol() == 'QQQ'
     j = Get(g)
-    print(str(j))
+    jprint(j)
 
 
 def test_quotes_getters(creds):
     g = get.QuotesGetter(creds, "SPY", "qqq", "IwM")
     assert sorted(g.get_symbols()) == sorted(["SPY", "QQQ", "IWM"])
     j = Get(g)
-    for k, v in j.items():
-        print(k)
-        print(str(v))
+    jprint(j)
     g.set_symbols('QqQ')
     assert g.get_symbols() == ['QQQ']
     j = Get(g)
-    for k, v in j.items():
-        print(k)
-        print(str(v))
+    jprint(j)
     g.add_symbols('SPy')
     g.add_symbols('iwm','GLD')
     assert sorted(g.get_symbols()) == sorted(["SPY", "QQQ", "IWM", "GLD"])
     g.remove_symbols('sPY','IWM')
     assert g.get_symbols() == sorted(['QQQ','GLD'])
     j = Get(g)
-    for k, v in j.items():
-        print(k)
-        print(str(v))
+    jprint(j)
     g.remove_symbols('QQQ','gld')
     assert g.get_symbols() == []
     assert not Get(g)
@@ -221,13 +215,13 @@ def test_market_hours_getters(creds):
     assert g.get_market_type() == get.MARKET_TYPE_BOND
     assert g.get_date() == "2019-07-04"
     j = Get(g)
-    print(str(j))
+    jprint(j)
     g.set_market_type(get.MARKET_TYPE_EQUITY)
     g.set_date("2019-07-05")
     assert g.get_market_type() == get.MARKET_TYPE_EQUITY
     assert g.get_date() == "2019-07-05"
     j = Get(g)
-    print(str(j))
+    jprint(j)
 
 
 def test_movers_getters(creds):
@@ -238,7 +232,7 @@ def test_movers_getters(creds):
     assert g.get_direction_type() == get.MOVERS_DIRECTION_TYPE_UP
     assert g.get_change_type() == get.MOVERS_CHANGE_TYPE_PERCENT
     j = Get(g)
-    print(str(j))
+    jprint(j)
     g.set_index(get.MOVERS_INDEX_SPX)
     g.set_direction_type(get.MOVERS_DIRECTION_TYPE_UP_AND_DOWN)
     g.set_change_type(get.MOVERS_CHANGE_TYPE_VALUE)
@@ -246,7 +240,7 @@ def test_movers_getters(creds):
     assert g.get_direction_type() == get.MOVERS_DIRECTION_TYPE_UP_AND_DOWN
     assert g.get_change_type() == get.MOVERS_CHANGE_TYPE_VALUE
     j = Get(g)
-    print(str(j))
+    jprint(j)
 
 
 def test_historical_period_getters(creds):
@@ -254,6 +248,7 @@ def test_historical_period_getters(creds):
     p = get.VALID_PERIODS_BY_PERIOD_TYPE[pt][0]
     ft = get.VALID_FREQUENCY_TYPES_BY_PERIOD_TYPE[pt][0]
     f = get.VALID_FREQUENCIES_BY_FREQUENCY_TYPE[ft][1]
+    # 1-day / 5-min
     g = get.HistoricalPeriodGetter(creds, "SPY", pt, p, ft, f, True)
     assert g.get_symbol() == "SPY"
     assert g.get_period() == p
@@ -261,32 +256,60 @@ def test_historical_period_getters(creds):
     assert g.get_frequency() == f
     assert g.get_frequency_type() == ft
     assert g.is_extended_hours() == True
-    j = Get(g)
-    print(str(j))
-
+    assert g.get_msec_since_epoch() is None    
+    j = Get(g) #### DEBUG
+    jprint(j)
+    
+    today = int(mktime(gmtime())*1000)
+    tomorrow = today + (60*60*24*1000)
+    days_ago_70 = today - (60*60*24*1000)*70
+         
     pt = get.PERIOD_TYPE_YEAR
-    p = get.VALID_PERIODS_BY_PERIOD_TYPE[p][0]
-    ft = get.VALID_FREQUENCY_TYPES_BY_PERIOD_TYPE[pt][1]
-    f = get.VALID_FREQUENCY_TYPES_BY_PERIOD_TYPE[ft][0]
+    p = get.VALID_PERIODS_BY_PERIOD_TYPE[p][0] # 1
+    ft = get.VALID_FREQUENCY_TYPES_BY_PERIOD_TYPE[pt][2] # monthly   
+    f = get.VALID_FREQUENCIES_BY_FREQUENCY_TYPE[ft][0] # 1
+    #1-year / 1-month
     g.set_symbol("qqq")
     g.set_period(pt, p)
     g.set_frequency(ft, f)
-    g.set_extended_hours(False)
+    g.set_extended_hours(False) 
+    #include today by adding 'end' date    
+    g.set_msec_since_epoch(tomorrow)  
     assert g.get_symbol() == "QQQ"
     assert g.get_period() == p
     assert g.get_period_type() == pt
     assert g.get_frequency() == f
     assert g.get_frequency_type() == ft
-    assert g.is_extended_hours() == False
+    assert g.is_extended_hours() == False    
+    assert g.get_msec_since_epoch() == tomorrow    
     j = Get(g)
-    print(str(j))
-
-
+    jprint(j)
+    
+    g.set_msec_since_epoch(None)
+    assert g.get_msec_since_epoch() is None     
+    g.set_msec_since_epoch(days_ago_70 * -1)    
+    assert g.get_msec_since_epoch() == (days_ago_70 * -1)
+    j = Get(g)
+    jprint(j)
+        
+    gg = get.HistoricalPeriodGetter(creds, "SPY", pt, p, ft, f, True, days_ago_70)
+    assert gg.get_symbol() == "SPY"
+    assert gg.get_period() == p
+    assert gg.get_period_type() == pt
+    assert gg.get_frequency() == f
+    assert gg.get_frequency_type() == ft
+    assert gg.is_extended_hours() == True
+    assert gg.get_msec_since_epoch() == days_ago_70
+   
 def test_historical_range_getters(creds):
     ft = get.FREQUENCY_TYPE_MINUTE
     f = get.VALID_FREQUENCIES_BY_FREQUENCY_TYPE[ft][-1]
-    end = 1528205400000
-    start = 1528119000000
+    
+    today = int(mktime(gmtime())*1000)  
+    end = today
+    start = today - (60*60*24*1000)*10
+    days_ago_70 = today - (60*60*24*1000)*70
+    
     g = get.HistoricalRangeGetter(creds, "SpY", ft, f, start, end, False)
     assert g.get_symbol() == "SPY"
     assert g.get_frequency() == f
@@ -295,9 +318,10 @@ def test_historical_range_getters(creds):
     assert g.get_end_msec_since_epoch() == end
     assert g.is_extended_hours() == False
     j = Get(g)
-    print(str(j))
+    jprint(j)
 
-    f = get.VALID_FREQUENCIES_BY_FREQUENCY_TYPE[ft][1]
+    ft = get.FREQUENCY_TYPE_DAILY
+    f = get.VALID_FREQUENCIES_BY_FREQUENCY_TYPE[ft][0]
     g.set_symbol("qqq")
     g.set_frequency(ft, f)
     g.set_extended_hours(True)
@@ -308,7 +332,24 @@ def test_historical_range_getters(creds):
     assert g.get_end_msec_since_epoch() == end
     assert g.is_extended_hours() == True
     j = Get(g)
-    print(str(j))
+    jprint(j)
+           
+    end = today +  (60*60*24*1000)*10
+    g.set_end_msec_since_epoch(end)
+    g.set_start_msec_since_epoch(days_ago_70)   
+    ft = get.FREQUENCY_TYPE_MONTHLY
+    f = 1
+    g.set_frequency(ft, f)     
+    assert g.get_frequency() == f
+    assert g.get_frequency_type() == ft 
+    assert g.get_start_msec_since_epoch() == days_ago_70
+    assert g.get_end_msec_since_epoch() == end
+    j = Get(g)
+    jprint(j)
+    if use_live_connection:
+        assert j["candles"]
+        #assert len(j["candles"]) == 2
+    
 
 
 def test_option_chain_getters(creds):
@@ -328,7 +369,7 @@ def test_option_chain_getters(creds):
     assert g.get_exp_month() == get.OPTION_EXP_MONTH_AUG
     assert g.get_option_type() == get.OPTION_TYPE_ALL
     j = Get(g)
-    print(str(j))
+    jprint(j)
 
     strikes = get.OptionStrikes.RANGE(get.OPTION_RANGE_TYPE_ITM)
     from_date = "2019-01-01"
@@ -351,7 +392,7 @@ def test_option_chain_getters(creds):
     assert g.get_exp_month() == get.OPTION_EXP_MONTH_ALL
     assert g.get_option_type() == get.OPTION_TYPE_S
     j = Get(g)
-    print(str(j))
+    jprint(j)
 
 
 def test_option_chain_strategy_getters(creds):
@@ -374,7 +415,7 @@ def test_option_chain_strategy_getters(creds):
     assert g.get_exp_month() == get.OPTION_EXP_MONTH_AUG
     assert g.get_option_type() == get.OPTION_TYPE_ALL
     j = Get(g)
-    print(str(j))
+    jprint(j)
 
     strikes = get.OptionStrikes.RANGE(get.OPTION_RANGE_TYPE_ITM)
     strategy = get.OptionStrategy.VERTICAL(5.0)
@@ -400,7 +441,7 @@ def test_option_chain_strategy_getters(creds):
     assert g.get_exp_month() == get.OPTION_EXP_MONTH_ALL
     assert g.get_option_type() == get.OPTION_TYPE_S
     j = Get(g)
-    print(str(j))
+    jprint(j)
 
 
 def test_option_chain_analytical_getters(creds):
@@ -426,7 +467,7 @@ def test_option_chain_analytical_getters(creds):
     assert g.get_exp_month() == get.OPTION_EXP_MONTH_AUG
     assert g.get_option_type() == get.OPTION_TYPE_ALL
     j = Get(g)
-    print(str(j))
+    jprint(j)
 
     strikes = get.OptionStrikes.RANGE(get.OPTION_RANGE_TYPE_ITM)
     from_date = "2019-02-01"
@@ -457,7 +498,7 @@ def test_option_chain_analytical_getters(creds):
     assert g.get_exp_month() == get.OPTION_EXP_MONTH_ALL
     assert g.get_option_type() == get.OPTION_TYPE_S
     j = Get(g)
-    print(str(j))
+    jprint(j)
 
 
 def test_account_info_getters(creds, account_id):
@@ -466,7 +507,7 @@ def test_account_info_getters(creds, account_id):
     assert g.returns_positions() == True
     assert g.returns_orders() == False
     j = Get(g)
-    print(str(j))
+    jprint(j)
     g.set_account_id("BAD_ACCOUNT_ID")
     assert g.get_account_id() == "BAD_ACCOUNT_ID"
     g.set_account_id(account_id)
@@ -476,14 +517,14 @@ def test_account_info_getters(creds, account_id):
     assert g.returns_positions() == False
     assert g.returns_orders() == True
     j = Get(g)
-    print(str(j))
+    jprint(j)
 
 
 def test_preferences_getter(creds, account_id):
     g = get.PreferencesGetter(creds, account_id)
     assert g.get_account_id() == account_id
     j = Get(g)
-    print(str(j))
+    jprint(j)
     g.set_account_id("BAD_ACCOUNT_ID")
     assert g.get_account_id() == "BAD_ACCOUNT_ID"
 
@@ -492,7 +533,7 @@ def test_subscription_keys_getter(creds, account_id):
     g = get.StreamerSubscriptionKeysGetter(creds, account_id)
     assert g.get_account_id() == account_id
     j = Get(g)
-    print(str(j))
+    jprint(j)
     g.set_account_id("BAD_ACCOUNT_ID")
     assert g.get_account_id() == "BAD_ACCOUNT_ID"
 
@@ -505,9 +546,9 @@ def test_transaction_history_getters(creds, account_id):
     assert g.get_transaction_type() == get.TRANSACTION_TYPE_TRADE
     assert g.get_symbol() == "SPY"
     assert g.get_start_date() == "2018-01-01"
-    assert g.get_end_date() == "2019-01-01"
+    assert g.get_end_date() == "2019-01-01"    
     j = Get(g)
-    print(str(j))
+    jprint(j)
 
     g.set_account_id("BAD_ACCOUNT_ID")
     assert g.get_account_id() == "BAD_ACCOUNT_ID"
@@ -522,7 +563,7 @@ def test_transaction_history_getters(creds, account_id):
     assert g.get_start_date() == "2018-02-02"
     assert g.get_end_date() == "2019-02-02"
     j = Get(g)
-    print(str(j))
+    jprint(j)
 
 
 def test_individual_transaction_history_getters(creds, account_id):
@@ -548,7 +589,7 @@ def test_user_principals_getters(creds):
     assert g.returns_preferences() == False
     assert g.returns_surrogate_ids() == False
     j = Get(g)
-    print(str(j))
+    jprint(j)
 
     g.return_subscription_keys(True)
     g.return_connection_info(True)
@@ -559,7 +600,7 @@ def test_user_principals_getters(creds):
     assert g.returns_preferences() == True
     assert g.returns_surrogate_ids() == True
     j = Get(g)
-    print(str(j))
+    jprint(j)
 
 
 def test_instrument_info_getters(creds):
@@ -568,13 +609,13 @@ def test_instrument_info_getters(creds):
     assert g.get_search_type() == get.INSTRUMENT_SEARCH_TYPE_SYMBOL_REGEX
     assert g.get_query_string() == "GOOGL?"
     j = Get(g)
-    print(str(j))
+    jprint(j)
 
     g.set_query(get.INSTRUMENT_SEARCH_TYPE_CUSIP, "78462F103")
     assert g.get_search_type() == get.INSTRUMENT_SEARCH_TYPE_CUSIP
     assert g.get_query_string() == "78462F103"
     j = Get(g)
-    print(str(j))
+    jprint(j)
 
 
 def test_order_getters(creds, account_id):
@@ -2612,7 +2653,7 @@ if __name__ == '__main__':
     print_title("load credentials")
     with auth.CredentialsManager(args.credentials_path, \
                                   args.credentials_password, True) as cm:
-        #test(test_execute_transactions,cm.credentials, args.account_id)               
+        #test(test_execute_transactions,cm.credentials, args.account_id)                      
         test(test_option_symbol_builder)
         test(test_execute_order_objects)
         test(test_execute_order_builders)
@@ -2622,7 +2663,7 @@ if __name__ == '__main__':
         test(test_market_hours_getters, cm.credentials)
         test(test_movers_getters, cm.credentials)
         test(test_historical_period_getters, cm.credentials)
-        test(test_historical_range_getters, cm.credentials)
+        test(test_historical_range_getters, cm.credentials)               
         test(test_option_chain_getters, cm.credentials)
         test(test_option_chain_strategy_getters, cm.credentials)
         test(test_option_chain_analytical_getters, cm.credentials)

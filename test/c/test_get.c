@@ -591,12 +591,12 @@ Test_HistoricalPeriodGetter(struct Credentials *creds)
     memset(&hpg, 0, sizeof(HistoricalPeriodGetter_C));
 
     PeriodType pt = PeriodType_day;
-    unsigned int period = VALID_PERIODS_BY_PERIOD_TYPE[pt][0];
-    FrequencyType ft = VALID_FREQUENCY_TYPES_BY_PERIOD_TYPE[pt][0];
-    unsigned int freq = VALID_FREQUENCIES_BY_FREQUENCY_TYPE[ft][1];
+    unsigned int period = VALID_PERIODS_BY_PERIOD_TYPE[pt][0]; // 1
+    FrequencyType ft = VALID_FREQUENCY_TYPES_BY_PERIOD_TYPE[pt][0]; // min
+    unsigned int freq = VALID_FREQUENCIES_BY_FREQUENCY_TYPE[ft][1]; // 5
 
     if( (err = HistoricalPeriodGetter_Create(creds, "SPY", pt, period, ft,
-                                             freq, 1, &hpg)) )
+                                             freq, 1, 0, &hpg)) )
         CHECK_AND_RETURN_ON_ERROR(err, "HistoricalPeriodGetter_Create");
 
 
@@ -613,30 +613,69 @@ Test_HistoricalPeriodGetter(struct Credentials *creds)
     char *symbol;
     size_t n;
     int is_ext;
-
-    if( (err = HistoricalPeriodGetter_GetSymbol(&hpg, &symbol, &n)) )
-        CHECK_AND_RETURN_ON_ERROR(err, "HistoricalPeriodGetter_GetSymbol");
+    long long mse;
 
     if( (err = HistoricalPeriodGetter_GetFrequency(&hpg, &freq2)) )
         CHECK_AND_RETURN_ON_ERROR(err, "HistoricalPeriodGetter_GetFrequency");
 
+    if( freq != freq2 ){
+        fprintf(stderr, "invalid frequency (%u, %u)\n", freq, freq2);
+        return -1;
+    }
+
     if( (err = HistoricalPeriodGetter_GetFrequencyType(&hpg, &ft2)) )
         CHECK_AND_RETURN_ON_ERROR(err, "HistoricalPeriodGetter_GetFrequencyType");
+
+    if( ft != ft2 ){
+        fprintf(stderr, "invalid frequency type (%i, %i)\n", ft, ft2);
+        return -1;
+    }
 
     if( (err = HistoricalPeriodGetter_IsExtendedHours(&hpg, &is_ext)) )
         CHECK_AND_RETURN_ON_ERROR(err, "HistoricalPeriodGetter_IsExtendedHours");
 
+    if( is_ext != 1 ){
+        fprintf(stderr, "invalid is_exteneded(%i, %i)\n", 1, is_ext);
+        return -1;
+    }
+
     if( (err = HistoricalPeriodGetter_GetPeriodType(&hpg, &pt2)) )
         CHECK_AND_RETURN_ON_ERROR(err, "HistoricalPeriodGetter_GetPeriodType");
+
+    if( pt != pt2){
+        fprintf(stderr, "invalid period type (%i, %i)\n", pt, pt2);
+        return -1;
+    }
 
     if( (err = HistoricalPeriodGetter_GetPeriod(&hpg, &period2)) )
         CHECK_AND_RETURN_ON_ERROR(err, "HistoricalPeriodGetter_GetPeriod");
 
-    if( symbol ){
-        printf("Symbol: %s \n", symbol);
-        free(symbol);
-        symbol = NULL;
+    if( period != period2 ){
+        fprintf(stderr, "invalid period (%u, %u)\n", period, period2 );
+        return -1;
     }
+
+    if( (err = HistoricalPeriodGetter_GetMSecSinceEpoch(&hpg, &mse)) )
+         CHECK_AND_RETURN_ON_ERROR(err, "HistoricalPeriodGetter_GetMSecSinceEpoch");
+
+    if( mse != 0 ){
+        fprintf(stderr, "invalid msec_since_epoch (%i, %lld)\n", 0, mse);
+            return -1;
+    }
+
+    if( (err = HistoricalPeriodGetter_GetSymbol(&hpg, &symbol, &n)) )
+        CHECK_AND_RETURN_ON_ERROR(err, "HistoricalPeriodGetter_GetSymbol");
+
+    assert(symbol);
+    if( strcmp(symbol, "SPY") ){
+        fprintf(stderr, "invalid symbol (%s,%s) \n", symbol, "SPY");
+        free(symbol);
+        return -1;
+    }
+
+    printf("Symbol: %s \n", symbol);
+    free(symbol);
+    symbol = NULL;
 
     char* str;
     PeriodType_to_string(pt2, &str, &n);
@@ -668,10 +707,12 @@ Test_HistoricalPeriodGetter(struct Credentials *creds)
         buf = NULL;
     }
 
+
     pt = PeriodType_month;
-    period = VALID_PERIODS_BY_PERIOD_TYPE[pt][3];
-    ft = VALID_FREQUENCY_TYPES_BY_PERIOD_TYPE[pt][0];
-    freq = VALID_FREQUENCIES_BY_FREQUENCY_TYPE[ft][0];
+    period = VALID_PERIODS_BY_PERIOD_TYPE[pt][3]; //6
+    ft = VALID_FREQUENCY_TYPES_BY_PERIOD_TYPE[pt][0]; // daily
+    freq = VALID_FREQUENCIES_BY_FREQUENCY_TYPE[ft][0]; // 1
+
 
     if( (err = HistoricalPeriodGetter_SetSymbol(&hpg, "QQQ")) )
         CHECK_AND_RETURN_ON_ERROR(err, "HistoricalPeriodGetter_SetSymbol");
@@ -737,6 +778,53 @@ Test_HistoricalPeriodGetter(struct Credentials *creds)
     printf("Frequency: %i \n", freq2);
     printf("Extended Hours: %i \n", is_ext);
 
+    /*
+    if( (err = HistoricalPeriodGetter_Get(&hpg, &buf, &ndata)) )
+        CHECK_AND_RETURN_ON_ERROR(err, "HistoricalPeriodGetter_Get");
+
+    if( buf) {
+        printf("Get: %s \n", buf);
+        free(buf);
+        buf = NULL;
+    }
+    */
+
+    // 10-25-18
+    long long msec = 1528205400000;
+    if( (err = HistoricalPeriodGetter_SetMSecSinceEpoch(&hpg, msec * -1)) )
+        CHECK_AND_RETURN_ON_ERROR(err, "HistoricalPeriodGetter_SetMSecSInceEpoch");
+
+    if( (err = HistoricalPeriodGetter_GetMSecSinceEpoch(&hpg, &mse)) )
+         CHECK_AND_RETURN_ON_ERROR(err, "HistoricalPeriodGetter_GetMSecSinceEpoch");
+
+    if( mse != (msec*-1) ){
+        fprintf(stderr, "invalid msec_since_epoch (%lld, %lld)\n", msec*-1, mse);
+            return -1;
+    }
+
+    if( (err = HistoricalPeriodGetter_SetMSecSinceEpoch(&hpg, 0)) )
+        CHECK_AND_RETURN_ON_ERROR(err, "HistoricalPeriodGetter_SetMSecSInceEpoch(0)");
+
+    if( (err = HistoricalPeriodGetter_GetMSecSinceEpoch(&hpg, &mse)) )
+         CHECK_AND_RETURN_ON_ERROR(err, "HistoricalPeriodGetter_GetMSecSinceEpoch");
+
+    if( mse != 0 ){
+        fprintf(stderr, "invalid msec_since_epoch (%i, %lld)\n", 0, mse);
+            return -1;
+    }
+
+    if( (err = HistoricalPeriodGetter_SetMSecSinceEpoch(&hpg, msec)) )
+        CHECK_AND_RETURN_ON_ERROR(err, "HistoricalPeriodGetter_SetMSecSInceEpoch");
+
+    if( (err = HistoricalPeriodGetter_GetMSecSinceEpoch(&hpg, &mse)) )
+         CHECK_AND_RETURN_ON_ERROR(err, "HistoricalPeriodGetter_GetMSecSinceEpoch");
+
+    if( mse != msec){
+        fprintf(stderr, "invalid msec_since_epoch (%lld, %lld)\n", msec, mse);
+            return -1;
+    }
+
+    printf("MSecSinceEpoch: %llu \n", mse);
 
     if( (err = HistoricalPeriodGetter_Get(&hpg, &buf, &ndata)) )
         CHECK_AND_RETURN_ON_ERROR(err, "HistoricalPeriodGetter_Get");
@@ -917,10 +1005,9 @@ Test_HistoricalRangeGetter(struct Credentials *creds)
     printf("Start MSec: %llu \n", start2);
     printf("End MSec: %llu \n", end2);
 
-
-    // not exactly sure why this is rejected by server
     if( (err = HistoricalRangeGetter_Get(&hpg, &buf, &ndata)) ){
         fprintf(stderr, "HistoricalRangeGetter_Get ERROR(%i)", err);
+        return -1;
     }
 
     if( buf) {

@@ -17,7 +17,7 @@
     - [QuotesGetter](#quotesgetter)  
     - [MarketHoursGetter](#markethoursgetter)  
     - [MoversGetter](#moversgetter)  
-    - [HistoricalPeriodGetter](#historicalperiodgetter)  
+    - [HistoricalPeriodGetter](#historicalperiodgetter)  ***\*UPDATED\****
     - [HistoricalRangeGetter](#historicalrangegetter)  
     - [OptionChainGetter](#optionchaingetter)  
     - [OptionChainStrategyGetter](#optionchainstrategygetter)  
@@ -704,7 +704,20 @@ GetMovers( Credentials& creds,
 
 #### HistoricalPeriodGetter
 
-Price history over a certain period for a single security. [TDAmeritrade docs.](https://developer.tdameritrade.com/price-history/apis/get/marketdata/{symbol}/pricehistory)
+Price history for a single security. [TDAmeritrade docs.](https://developer.tdameritrade.com/price-history/apis/get/marketdata/{symbol}/pricehistory)
+
+Control the size and granularity of the historical period using the following fields:
+- period_type - *e.g day*
+- period - *e.g 3 (days)*
+- frequency_type - *e.g minute*
+- frequency - *e.g 5 (minutes)*
+
+By default the period will be 'anchored' at an end point of **yesterday** (excluding today's data). To change this anchor point set the optional field:
+- msec_since_epoch - *e.g -1512108000000 to start on the 12/01/2017 bar*
+
+How these five parameters interact (what are valid combinations, what throws and when etc.)
+can be somewhat complex so **please read the detailed comments** in the *constructors* and *utilities* sections below.
+
 
 **constructors**
 ```
@@ -714,20 +727,42 @@ HistoricalPeriodGetter::HistoricalPeriodGetter( Credentials& creds,
                                                 unsigned int period,
                                                 FrequencyType frequency_type,
                                                 unsigned int frequency,
-                                                bool extended_hours );
+                                                bool extended_hours,
+                                                long long msec_since_epoch = 0 );
 
-    creds          ::  credentials struct received from RequestAccessToken 
-                       / LoadCredentials / CredentialsManager.credentials
-    symbol         :: (case sensitive) security symbol
-    period_type    :: type of period (day, month etc.)
-    period         :: # of periods **
-    frequency_type :: type of frequency (minute, daily etc.) **
-    frequency      :: # of that frequency (e.g 10 or 100 minutes) **
-    extended_hours :: include extended hours data
+    creds            ::  credentials struct received from RequestAccessToken 
+                         / LoadCredentials / CredentialsManager.credentials
+    symbol           :: (case sensitive) security symbol
+    period_type      :: type of period (day, month etc.)
+    period           :: # of periods **
+    frequency_type   :: type of frequency (minute, daily etc.) *
+    frequency        :: # of that frequency (e.g 10 or 100 minutes) *
+    extended_hours   :: include extended hours data
+    msec_since_epoch :: milliseconds since epoch of period anchor **
 
-    ** these args are restricted to certain values based on other args and will
-       throw ValueError if invalid, see the 'utilities' section below 
+    * these args are restricted to certain values based on other args and will
+      throw ValueError if invalid, see the 'utilities' section below 
 
+    ** msec_since_epoch represents both the datetime that will serve to 
+       anchor/bound the period and the position of the period with respect to it.
+
+       > 0 : milliseconds since epoch to END of period; the period will
+             end at the last full candle before this datetime
+
+       < 0 : -1 * milliseconds since epoch to START of period; the period
+             will begin at the first full candle after this datetime  
+
+       = 0 : maintain/revert to default behavior(anchor end to yesterday,
+             ignoring todays candles; pass a current or future value to 
+             include today)    
+
+       e.g 
+
+       (-1512108000000) w/ a monthly frequency will start the period 
+       with the 12/01/17 monthly candle  
+
+       (1512108000000) w/ a monthly frequency will end the period 
+       with the 11/01/17 monthly candle         
 ```
 
 **types**
@@ -832,6 +867,10 @@ bool
 HistoricalGetterBase::is_extended_hours() const;  
 ```
 ```
+long long
+HistoricalPeriodGetter::get_msec_since_epoch() const;
+```
+```
 void  
 HistoricalGetterBase::set_symbol(const string& symbol);
 ```
@@ -848,7 +887,10 @@ HistoricalGetterBase::set_frequency( FrequencyType frequency_type,
 ```
 void 
 HistoricalGetterBase::set_extended_hours(bool extended_hours);
-
+```
+```
+void
+HistoricalPeriodGetter::set_msec_since_epoch( long long msec_since_epoch );
 ```
 
 **convenience function**
@@ -860,7 +902,8 @@ GetHistoricalPeriod( Credentials& creds,
                      unsigned int period,
                      FrequencyType frequency_type,
                      unsigned int frequency,
-                     bool extended_hours );
+                     bool extended_hours,
+                     long long msec_since_epoch = 0 );
 ```
 <br>
 

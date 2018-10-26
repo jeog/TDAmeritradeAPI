@@ -194,13 +194,13 @@ int test_one_cancels_other_order_builder()
                 "\"instrument\":{\"assetType\":\"EQUITY\",\"symbol\":\"SPY\"},"
                 "\"quantity\":100}],"
             "\"orderStrategyType\":\"SINGLE\",\"orderType\":\"LIMIT\","
-            "\"price\":\"300.000000\",\"session\":\"NORMAL\"},"
+            "\"price\":\"300.0000\",\"session\":\"NORMAL\"},"
         "{\"duration\":\"DAY\",\"orderLegCollection\":"
                 "[{\"instruction\":\"SELL\","
                 "\"instrument\":{\"assetType\":\"EQUITY\",\"symbol\":\"SPY\"},"
                 "\"quantity\":100}],"
             "\"orderStrategyType\":\"SINGLE\",\"orderType\":\"STOP\","
-            "\"session\":\"NORMAL\",\"stopPrice\":\"270.000000\"}],"
+            "\"session\":\"NORMAL\",\"stopPrice\":\"270.0000\"}],"
         "\"orderStrategyType\":\"OCO\"}";
 
     if( strcmp(buf, S1) ){
@@ -403,13 +403,13 @@ int test_one_triggers_other_order_builder()
                 "\"instrument\":{\"assetType\":\"EQUITY\",\"symbol\":\"SPY\"},"
                 "\"quantity\":100}],"
             "\"orderStrategyType\":\"SINGLE\",\"orderType\":\"STOP\","
-            "\"session\":\"NORMAL\",\"stopPrice\":\"270.000000\"}],"
+            "\"session\":\"NORMAL\",\"stopPrice\":\"270.0000\"}],"
         "\"duration\":\"DAY\","
         "\"orderLegCollection\":"
             "[{\"instruction\":\"BUY\",\"instrument\":"
                 "{\"assetType\":\"EQUITY\",\"symbol\":\"SPY\"},\"quantity\":100}],"
         "\"orderStrategyType\":\"TRIGGER\",\"orderType\":\"LIMIT\","
-        "\"price\":\"275.000000\",\"session\":\"NORMAL\"}";
+        "\"price\":\"275.0000\",\"session\":\"NORMAL\"}";
 
     if( strcmp(buf, S1) ){
         FreeBuffer(buf);
@@ -4588,7 +4588,7 @@ test_simple_option_order_builder()
     const char* S3 = "{\"duration\":\"DAY\",\"orderLegCollection\""
         ":[{\"instruction\":\"SELL_TO_OPEN\",\"instrument\":{\"assetType\":\"OPTION\","
         "\"symbol\":\"SPY_011720C300\"},\"quantity\":1}],\"orderStrategyType\":\"SINGLE\","
-        "\"orderType\":\"LIMIT\",\"price\":\"9.990000\",\"session\":\"NORMAL\"}";
+        "\"orderType\":\"LIMIT\",\"price\":\"9.9900\",\"session\":\"NORMAL\"}";
     if( strcmp(buf, S3) ){
         FreeBuffer(buf);
         fprintf(stderr, "json of raw option doesn't match \n");
@@ -4643,7 +4643,7 @@ test_simple_option_order_builder()
     const char* S4 = "{\"duration\":\"DAY\",\"orderLegCollection\""
         ":[{\"instruction\":\"BUY_TO_CLOSE\",\"instrument\":{\"assetType\":\"OPTION\","
         "\"symbol\":\"SPY_011720P200\"},\"quantity\":99}],\"orderStrategyType\":\"SINGLE\","
-        "\"orderType\":\"LIMIT\",\"price\":\"0.010000\",\"session\":\"NORMAL\"}";
+        "\"orderType\":\"LIMIT\",\"price\":\"0.0100\",\"session\":\"NORMAL\"}";
     if( strcmp(buf, S4) ){
         FreeBuffer(buf);
         fprintf(stderr, "json of raw option doesn't match \n");
@@ -4815,7 +4815,7 @@ test_simple_equity_order_builder()
     const char* S5 = "{\"duration\":\"DAY\",\"orderLegCollection\""
         ":[{\"instruction\":\"BUY\",\"instrument\":{\"assetType\":\"EQUITY\","
         "\"symbol\":\"SPY\"},\"quantity\":100}],\"orderStrategyType\":\"SINGLE\","
-        "\"orderType\":\"LIMIT\",\"price\":\"275.000000\",\"session\":\"NORMAL\"}";
+        "\"orderType\":\"LIMIT\",\"price\":\"275.0000\",\"session\":\"NORMAL\"}";
     if( strcmp(buf, S5) ){
         FreeBuffer(buf);
         fprintf(stderr, "json of raw equity doesn't match \n");
@@ -4846,7 +4846,7 @@ test_simple_equity_order_builder()
     const char* S6 = "{\"duration\":\"DAY\",\"orderLegCollection\""
         ":[{\"instruction\":\"SELL\",\"instrument\":{\"assetType\":\"EQUITY\","
         "\"symbol\":\"SPY\"},\"quantity\":100}],\"orderStrategyType\":\"SINGLE\","
-        "\"orderType\":\"LIMIT\",\"price\":\"274.990000\",\"session\":\"NORMAL\"}";
+        "\"orderType\":\"LIMIT\",\"price\":\"274.9900\",\"session\":\"NORMAL\"}";
     if( strcmp(buf, S6) ){
         FreeBuffer(buf);
         fprintf(stderr, "json of raw equity doesn't match \n");
@@ -4877,7 +4877,7 @@ test_simple_equity_order_builder()
     const char* S7 = "{\"duration\":\"DAY\",\"orderLegCollection\""
         ":[{\"instruction\":\"SELL_SHORT\",\"instrument\":{\"assetType\":\"EQUITY\","
         "\"symbol\":\"SPY\"},\"quantity\":100}],\"orderStrategyType\":\"SINGLE\","
-        "\"orderType\":\"LIMIT\",\"price\":\"275.000100\",\"session\":\"NORMAL\"}";
+        "\"orderType\":\"LIMIT\",\"price\":\"275.0001\",\"session\":\"NORMAL\"}";
     if( strcmp(buf, S7) ){
         FreeBuffer(buf);
         fprintf(stderr, "json of raw equity doesn't match \n");
@@ -4908,7 +4908,7 @@ test_simple_equity_order_builder()
     const char* S8 = "{\"duration\":\"DAY\",\"orderLegCollection\""
         ":[{\"instruction\":\"BUY_TO_COVER\",\"instrument\":{\"assetType\":\"EQUITY\","
         "\"symbol\":\"SPY\"},\"quantity\":100}],\"orderStrategyType\":\"SINGLE\","
-        "\"orderType\":\"LIMIT\",\"price\":\"0.010000\",\"session\":\"NORMAL\"}";
+        "\"orderType\":\"LIMIT\",\"price\":\"0.0100\",\"session\":\"NORMAL\"}";
     if( strcmp(buf, S8) ){
         FreeBuffer(buf);
         fprintf(stderr, "json of raw equity doesn't match \n");
@@ -4940,7 +4940,7 @@ test_simple_equity_order_builder()
     const char* S9 = "{\"duration\":\"DAY\",\"orderLegCollection\""
         ":[{\"instruction\":\"BUY\",\"instrument\":{\"assetType\":\"EQUITY\","
         "\"symbol\":\"SPY\"},\"quantity\":100}],\"orderStrategyType\":\"SINGLE\","
-        "\"orderType\":\"STOP\",\"session\":\"NORMAL\",\"stopPrice\":\"275.000000\"}";
+        "\"orderType\":\"STOP\",\"session\":\"NORMAL\",\"stopPrice\":\"275.0000\"}";
     if( strcmp(buf, S9) ){
         FreeBuffer(buf);
         fprintf(stderr, "json of raw equity doesn't match \n");
@@ -4971,7 +4971,7 @@ test_simple_equity_order_builder()
     const char* S10 = "{\"duration\":\"DAY\",\"orderLegCollection\""
         ":[{\"instruction\":\"SELL\",\"instrument\":{\"assetType\":\"EQUITY\","
         "\"symbol\":\"SPY\"},\"quantity\":100}],\"orderStrategyType\":\"SINGLE\","
-        "\"orderType\":\"STOP\",\"session\":\"NORMAL\",\"stopPrice\":\"274.990000\"}";
+        "\"orderType\":\"STOP\",\"session\":\"NORMAL\",\"stopPrice\":\"274.9900\"}";
     if( strcmp(buf, S10) ){
         FreeBuffer(buf);
         fprintf(stderr, "json of raw equity doesn't match \n");
@@ -5002,7 +5002,7 @@ test_simple_equity_order_builder()
     const char* S11 = "{\"duration\":\"DAY\",\"orderLegCollection\""
         ":[{\"instruction\":\"SELL_SHORT\",\"instrument\":{\"assetType\":\"EQUITY\","
         "\"symbol\":\"SPY\"},\"quantity\":100}],\"orderStrategyType\":\"SINGLE\","
-        "\"orderType\":\"STOP\",\"session\":\"NORMAL\",\"stopPrice\":\"275.000100\"}";
+        "\"orderType\":\"STOP\",\"session\":\"NORMAL\",\"stopPrice\":\"275.0001\"}";
     if( strcmp(buf, S11) ){
         FreeBuffer(buf);
         fprintf(stderr, "json of raw equity doesn't match \n");
@@ -5033,7 +5033,7 @@ test_simple_equity_order_builder()
     const char* S12 = "{\"duration\":\"DAY\",\"orderLegCollection\""
         ":[{\"instruction\":\"BUY_TO_COVER\",\"instrument\":{\"assetType\":\"EQUITY\","
         "\"symbol\":\"SPY\"},\"quantity\":100}],\"orderStrategyType\":\"SINGLE\","
-        "\"orderType\":\"STOP\",\"session\":\"NORMAL\",\"stopPrice\":\"0.010000\"}";
+        "\"orderType\":\"STOP\",\"session\":\"NORMAL\",\"stopPrice\":\"0.0100\"}";
     if( strcmp(buf, S12) ){
         FreeBuffer(buf);
         fprintf(stderr, "json of raw equity doesn't match \n");
@@ -5065,8 +5065,8 @@ test_simple_equity_order_builder()
     const char* S13 = "{\"duration\":\"DAY\",\"orderLegCollection\""
         ":[{\"instruction\":\"BUY\",\"instrument\":{\"assetType\":\"EQUITY\","
         "\"symbol\":\"SPY\"},\"quantity\":100}],\"orderStrategyType\":\"SINGLE\","
-        "\"orderType\":\"STOP_LIMIT\",\"price\":\"276.010000\","
-        "\"session\":\"NORMAL\",\"stopPrice\":\"275.000000\"}";
+        "\"orderType\":\"STOP_LIMIT\",\"price\":\"276.0100\","
+        "\"session\":\"NORMAL\",\"stopPrice\":\"275.0000\"}";
     if( strcmp(buf, S13) ){
         FreeBuffer(buf);
         fprintf(stderr, "json of raw equity doesn't match \n");
@@ -5097,8 +5097,8 @@ test_simple_equity_order_builder()
     const char* S14 = "{\"duration\":\"DAY\",\"orderLegCollection\""
         ":[{\"instruction\":\"SELL\",\"instrument\":{\"assetType\":\"EQUITY\","
         "\"symbol\":\"SPY\"},\"quantity\":100}],\"orderStrategyType\":\"SINGLE\","
-        "\"orderType\":\"STOP_LIMIT\",\"price\":\"274.000000\","
-        "\"session\":\"NORMAL\",\"stopPrice\":\"274.990000\"}";
+        "\"orderType\":\"STOP_LIMIT\",\"price\":\"274.0000\","
+        "\"session\":\"NORMAL\",\"stopPrice\":\"274.9900\"}";
     if( strcmp(buf, S14) ){
         FreeBuffer(buf);
         fprintf(stderr, "json of raw equity doesn't match \n");
@@ -5130,8 +5130,8 @@ test_simple_equity_order_builder()
     const char* S15 = "{\"duration\":\"DAY\",\"orderLegCollection\""
         ":[{\"instruction\":\"SELL_SHORT\",\"instrument\":{\"assetType\":\"EQUITY\","
         "\"symbol\":\"SPY\"},\"quantity\":100}],\"orderStrategyType\":\"SINGLE\","
-        "\"orderType\":\"STOP_LIMIT\",\"price\":\"274.999000\","
-        "\"session\":\"NORMAL\",\"stopPrice\":\"275.000100\"}";
+        "\"orderType\":\"STOP_LIMIT\",\"price\":\"274.9990\","
+        "\"session\":\"NORMAL\",\"stopPrice\":\"275.0001\"}";
     if( strcmp(buf, S15) ){
         FreeBuffer(buf);
         fprintf(stderr, "json of raw equity doesn't match \n");
@@ -5162,8 +5162,8 @@ test_simple_equity_order_builder()
     const char* S16 = "{\"duration\":\"DAY\",\"orderLegCollection\""
         ":[{\"instruction\":\"BUY_TO_COVER\",\"instrument\":{\"assetType\":\"EQUITY\","
         "\"symbol\":\"SPY\"},\"quantity\":100}],\"orderStrategyType\":\"SINGLE\","
-        "\"orderType\":\"STOP_LIMIT\",\"price\":\"0.010000\","
-        "\"session\":\"NORMAL\",\"stopPrice\":\"0.010000\"}";
+        "\"orderType\":\"STOP_LIMIT\",\"price\":\"0.0100\","
+        "\"session\":\"NORMAL\",\"stopPrice\":\"0.0100\"}";
     if( strcmp(buf, S16) ){
         FreeBuffer(buf);
         fprintf(stderr, "json of raw equity doesn't match \n");
