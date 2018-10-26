@@ -381,7 +381,7 @@ VALID_FREQUENCY_TYPES_BY_PERIOD_TYPE = {
     PERIOD_TYPE_MONTH : (FREQUENCY_TYPE_DAILY, FREQUENCY_TYPE_WEEKLY),
     PERIOD_TYPE_YEAR : (FREQUENCY_TYPE_DAILY, FREQUENCY_TYPE_WEEKLY,
                         FREQUENCY_TYPE_MONTHLY),
-    PERIOD_TYPE_YTD : (FREQUENCY_TYPE_WEEKLY,)
+    PERIOD_TYPE_YTD : (FREQUENCY_TYPE_DAILY, FREQUENCY_TYPE_WEEKLY,)
     }
 
 VALID_FREQUENCIES_BY_FREQUENCY_TYPE = {
@@ -437,7 +437,7 @@ class HistoricalPeriodGetter(_HistoricalGetterBase):
     """HistoricalPeriodGetter - Retrieve historical data over a certain period.
 
     def __init__(self, creds, symbol, period_type, period, frequency_type,
-                 frequency, extended_hours, msec_since_epoch=None):
+                 frequency, extended_hours=True, msec_since_epoch=None):
 
          creds  :: Credentials :: instance received from auth.py
 
@@ -492,7 +492,7 @@ class HistoricalPeriodGetter(_HistoricalGetterBase):
 
     """
     def __init__(self, creds, symbol, period_type, period, frequency_type,
-                 frequency, extended_hours, msec_since_epoch=None):
+                 frequency, extended_hours=True, msec_since_epoch=None):
         super().__init__(creds, PCHAR(symbol), c_int(period_type),
                          c_int(period), c_int(frequency_type),
                          c_int(frequency), c_int(extended_hours),
@@ -553,7 +553,7 @@ class HistoricalRangeGetter(_HistoricalGetterBase):
 
     def __init__(self, creds, symbol, frequency_type, frequency,
                  start_msec_since_epoch, end_msec_since_epoch,
-                extended_hours):
+                 extended_hours=True):
 
          creds  :: Credentials :: instance received from auth.py
 
@@ -579,7 +579,7 @@ class HistoricalRangeGetter(_HistoricalGetterBase):
     """
     def __init__(self, creds, symbol, frequency_type, frequency,
                  start_msec_since_epoch, end_msec_since_epoch,
-                 extended_hours):
+                 extended_hours=True):
         super().__init__(creds, PCHAR(symbol), c_int(frequency_type),
                          c_int(frequency), c_ulonglong(start_msec_since_epoch),
                          c_ulonglong(end_msec_since_epoch),
@@ -863,12 +863,13 @@ class _OptionChainGetterBase(_APIGetter):
 class OptionChainGetter(_OptionChainGetterBase):
     """OptionChainGetter - Retrieve standard option chain.
 
-    def __init__(self, creds, symbol, strikes, contract_type, include_quotes,
-                 from_date, to_date, exp_month, option_type):
+    def __init__(self, creds, symbol, strikes, 
+                 contract_type=OPTION_CONTRACT_TYPE_ALL, 
+                 include_quotes=False, from_date="", to_date="", 
+                 exp_month=OPTION_EXP_MONTH_ALL, option_type=OPTION_TYPE_ALL):
 
          creds          :: Credentials   :: instance received from auth.py
-         symbol         :: str           ::  symbol of
-                                            underlying security
+         symbol         :: str           :: symbol of underlying security
          strikes        :: OptionStrikes :: (see OptionStrikes.__doc__)
          contract_type  :: int           :: OPTION_CONTRACT_TYPE_[] constant
                                             indicating CALL, PUT, ALL
@@ -884,8 +885,10 @@ class OptionChainGetter(_OptionChainGetterBase):
 
     *date formats: "yyyy-MM-dd", "yyyy-MM-dd'T'HH::mm::ssz"
     """
-    def __init__(self, creds, symbol, strikes, contract_type, include_quotes,
-                 from_date, to_date, exp_month, option_type):
+    def __init__(self, creds, symbol, strikes, 
+                 contract_type=OPTION_CONTRACT_TYPE_ALL, 
+                 include_quotes=False, from_date="", to_date="", 
+                 exp_month=OPTION_EXP_MONTH_ALL, option_type=OPTION_TYPE_ALL):
         if not isinstance(strikes, OptionStrikes):
             raise ValueError("strikes not instance of OptionStrikes")
         v = OptionStrikesValue.build(strikes.strikes_type, strikes.strikes_value)
@@ -898,16 +901,17 @@ class OptionChainGetter(_OptionChainGetterBase):
 class OptionChainStrategyGetter(_OptionChainGetterBase):
     """OptionChainStrategyGetter - Retrieve strategy/spread option chains.
 
-    def __init__(self, creds, symbol, strategy, strikes, contract_type,
-                 include_quotes, from_date, to_date, exp_month, option_type):
+    def __init__(self, creds, symbol, strategy, strikes, 
+                contract_type=OPTION_CONTRACT_TYPE_ALL, 
+                include_quotes=False, from_date="", to_date="", 
+                exp_month=OPTION_EXP_MONTH_ALL, option_type=OPTION_TYPE_ALL):
 
          creds          :: Credentials    :: instance received from auth.py
-         symbol         :: str            ::  symbol of
-                                             underlying security
+         symbol         :: str            :: symbol of underlying security
          strategy       :: OptionStrategy :: (see OptionStrategy.__doc__)
          strikes        :: OptionStrikes  :: (see OptionStrikes.__doc__)
          contract_type  :: int            :: OPTION_CONTRACT_TYPE_[] constant
-                                            indicating CALL, PUT, ALL
+                                             indicating CALL, PUT, ALL
          include_quotes :: bool           :: include underlying quote info
          from_date      :: str            :: iso8601 date for start of range*
          to_date        :: str            :: iso8601 date for end of range*
@@ -920,8 +924,10 @@ class OptionChainStrategyGetter(_OptionChainGetterBase):
 
     *date formats: "yyyy-MM-dd", "yyyy-MM-dd'T'HH::mm::ssz"
     """
-    def __init__(self, creds, symbol, strategy, strikes, contract_type,
-                  include_quotes, from_date, to_date, exp_month, option_type):
+    def __init__(self, creds, symbol, strategy, strikes, 
+                 contract_type=OPTION_CONTRACT_TYPE_ALL, 
+                 include_quotes=False, from_date="", to_date="", 
+                 exp_month=OPTION_EXP_MONTH_ALL, option_type=OPTION_TYPE_ALL):
         if not isinstance(strikes, OptionStrikes):
             raise ValueError("strikes not instance of OptionStrikes")
         if not isinstance(strategy, OptionStrategy):
@@ -956,11 +962,13 @@ class OptionChainAnalyticalGetter(_OptionChainGetterBase):
     expiration etc.) and returns additional calculated values.
 
     def __init__(self, creds, symbol, volatility, underlying_price,
-                 interest_rate, days_to_exp, strikes, contract_type,
-                 include_quotes, from_date, to_date, exp_month, option_type):
+                 interest_rate, days_to_exp, strikes, 
+                 contract_type=OPTION_CONTRACT_TYPE_ALL, 
+                 include_quotes=False, from_date="", to_date="", 
+                 exp_month=OPTION_EXP_MONTH_ALL, option_type=OPTION_TYPE_ALL):
 
          creds          :: Credentials   :: instance received from auth.py
-         symbol         :: str           ::  symbol of underlying security
+         symbol         :: str           :: symbol of underlying security
          volatility     :: float         :: implied volatility
          underlying_price :: float       :: price of underlying security
          interest_rate  :: float         :: market interest rate
@@ -981,8 +989,10 @@ class OptionChainAnalyticalGetter(_OptionChainGetterBase):
     *date formats: "yyyy-MM-dd", "yyyy-MM-dd'T'HH::mm::ssz"
     """
     def __init__(self, creds, symbol, volatility, underlying_price,
-                 interest_rate, days_to_exp, strikes, contract_type,
-                  include_quotes, from_date, to_date, exp_month, option_type):
+                 interest_rate, days_to_exp, strikes, 
+                 contract_type=OPTION_CONTRACT_TYPE_ALL, 
+                 include_quotes=False, from_date="", to_date="", 
+                 exp_month=OPTION_EXP_MONTH_ALL, option_type=OPTION_TYPE_ALL):
         if not isinstance(strikes, OptionStrikes):
             raise ValueError("strikes not instance of OptionStrikes")
         v = OptionStrikesValue.build(strikes.strikes_type,
@@ -1053,7 +1063,8 @@ class _AccountGetterBase(_APIGetter):
 class AccountInfoGetter(_AccountGetterBase):
     """AccountInfoGetter - Retrieve user account information.
 
-        def __init__(self, creds, account_id, return_positions, return_orders):
+        def __init__(self, creds, account_id, return_positions=True, 
+                     return_orders=True):
 
              creds :: Credentials :: instance received from auth.py
 
@@ -1064,9 +1075,10 @@ class AccountInfoGetter(_AccountGetterBase):
          ALL METHODS THROW -> LibraryNotLoaded, CLibException
 
     """
-    def __init__(self, creds, account_id, return_positions, return_orders):
-        super().__init__(creds, account_id, c_int(int(return_positions)),
-                         c_int(int(return_orders)))
+    def __init__(self, creds, account_id, return_positions=True, 
+                 return_orders=True):
+        super().__init__(creds, account_id, c_int(return_positions),
+                         c_int(return_orders))
 
     def returns_positions(self):
         """Returns if position information is retrieved."""
@@ -1074,8 +1086,8 @@ class AccountInfoGetter(_AccountGetterBase):
 
     def return_positions(self, return_positions):
         """Sets/changes if position information should be retrieved."""
-        clib.set_val(self._abi('ReturnPositions'), c_int, int(return_positions),
-                 self._obj)
+        clib.set_val(self._abi('ReturnPositions'), c_int, return_positions,
+                     self._obj)
 
     def returns_orders(self):
         """Returns if order information is retrieved."""
@@ -1083,8 +1095,7 @@ class AccountInfoGetter(_AccountGetterBase):
 
     def return_orders(self, return_orders):
         """Sets/changes if order information should be retreived."""
-        clib.set_val(self._abi('ReturnOrders'), c_int, int(return_orders),
-                 self._obj)
+        clib.set_val(self._abi('ReturnOrders'), c_int, return_orders, self._obj)
 
 
 class PreferencesGetter(_AccountGetterBase):
@@ -1120,8 +1131,9 @@ class StreamerSubscriptionKeysGetter(_AccountGetterBase):
 class TransactionHistoryGetter(_AccountGetterBase):
     """TransactionHistoryGetter - Retrieve info from past transactions.
 
-        def __init__(self, creds, account_id, transaction_type, symbol,
-                     start_date, end_date):
+        def __init__(self, creds, account_id, 
+                     transaction_type=TRANSACTION_TYPE_ALL, 
+                     symbol="", start_date="", end_date=""):
 
              creds :: Credentials :: instance received from auth.py
 
@@ -1136,8 +1148,9 @@ class TransactionHistoryGetter(_AccountGetterBase):
 
          *date format: "yyyy-MM-dd"
     """
-    def __init__(self, creds, account_id, transaction_type, symbol,
-                 start_date, end_date):
+    def __init__(self, creds, account_id, 
+                 transaction_type=TRANSACTION_TYPE_ALL, 
+                 symbol="", start_date="", end_date=""):
         super().__init__(creds, account_id, c_int(transaction_type),
                          PCHAR(symbol), PCHAR(start_date), PCHAR(end_date))
 
@@ -1217,10 +1230,9 @@ class UserPrincipalsGetter(_APIGetter):
     """
     def __init__(self, creds, subscription_keys, connection_info,
                  preferences, surrogate_ids):
-        super().__init__(creds, c_int(int(subscription_keys)),
-                         c_int(int(connection_info)),
-                         c_int(int(preferences)),
-                         c_int(int(surrogate_ids)) )
+        super().__init__(creds, c_int(subscription_keys), 
+                         c_int(connection_info), c_int(preferences),
+                         c_int(surrogate_ids) )
 
     def returns_subscription_keys(self):
         """Returns if streamer subscription keys are being retrieved."""
@@ -1230,7 +1242,7 @@ class UserPrincipalsGetter(_APIGetter):
     def return_subscription_keys(self, return_subscription_keys):
         """Sets/changes if streamer subscription keys should be retrieved."""
         clib.set_val(self._abi('ReturnSubscriptionKeys'), c_int,
-                     int(return_subscription_keys), self._obj)
+                     return_subscription_keys, self._obj)
 
     def returns_connection_info(self):
         """Returns if streamer connection info is being retrieved."""
@@ -1240,7 +1252,7 @@ class UserPrincipalsGetter(_APIGetter):
     def return_connection_info(self, return_connection_info):
         """Sets/changes if streamer connection info should be retrieved."""
         clib.set_val(self._abi('ReturnConnectionInfo'), c_int,
-                     int(return_connection_info), self._obj)
+                     return_connection_info, self._obj)
 
     def returns_preferences(self):
         """Returns if user preferences are being retrieved."""
@@ -1250,7 +1262,7 @@ class UserPrincipalsGetter(_APIGetter):
     def return_preferences(self, return_preferences):
         """Sets/changes if user preferences should be retrieved."""
         clib.set_val(self._abi('ReturnPreferences'), c_int,
-                     int(return_preferences), self._obj)
+                     return_preferences, self._obj)
 
     def returns_surrogate_ids(self):
         """Returns if user surrogate IDs are being retrieved."""
@@ -1260,7 +1272,7 @@ class UserPrincipalsGetter(_APIGetter):
     def return_surrogate_ids(self, return_surrogate_ids):
         """Sets/changes if user surrogate IDs should be retrieved."""
         clib.set_val(self._abi('ReturnSurrogateIds'), c_int,
-                     int(return_surrogate_ids), self._obj)
+                     return_surrogate_ids, self._obj)
 
 
 class InstrumentInfoGetter(_APIGetter):

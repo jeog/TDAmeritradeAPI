@@ -222,7 +222,7 @@ VALID_FREQUENCY_TYPES_BY_PERIOD_TYPE = {
     {PeriodType::month, {FrequencyType::daily, FrequencyType::weekly} },
     {PeriodType::year, {FrequencyType::daily, FrequencyType::weekly,
                         FrequencyType::monthly} },
-    {PeriodType::ytd, { FrequencyType::weekly} },
+    {PeriodType::ytd, {FrequencyType::daily, FrequencyType::weekly} },
 };
 
 
@@ -252,7 +252,7 @@ VALID_FREQUENCY_TYPES_BY_PERIOD_TYPE[PeriodType_ytd + 1][4] = {
     {FrequencyType_minute, -1, -1, -1},
     {FrequencyType_daily, FrequencyType_weekly, -1, -1},
     {FrequencyType_daily, FrequencyType_weekly, FrequencyType_monthly, -1},
-    {FrequencyType_weekly, -1,-1, -1}
+    {FrequencyType_daily, FrequencyType_weekly, -1, -1}
 };
 
 static const int
@@ -2682,7 +2682,7 @@ public:
                             unsigned int period,
                             FrequencyType frequency_type,
                             unsigned int frequency,
-                            bool extended_hours,
+                            bool extended_hours = true,
                             long long msec_since_epoch = 0 )
         :
             HistoricalGetterBase( HistoricalPeriodGetter_C{},
@@ -2747,7 +2747,7 @@ GetHistoricalPeriod( Credentials& creds,
                         unsigned int period,
                         FrequencyType frequency_type,
                         unsigned int frequency,
-                        bool extended_hours,
+                        bool extended_hours = true,
                         long long msec_since_epoch = 0 )
 {
     return HistoricalPeriodGetter( creds, symbol, period_type, period,
@@ -2768,7 +2768,7 @@ public:
                               unsigned int frequency,
                               unsigned long long start_msec_since_epoch,
                               unsigned long long end_msec_since_epoch,
-                              bool extended_hours )
+                              bool extended_hours = true )
         :
             HistoricalGetterBase( HistoricalRangeGetter_C{},
                                   HistoricalRangeGetter_Create_ABI,
@@ -2823,7 +2823,7 @@ GetHistoricalRange( Credentials& creds,
                        unsigned int frequency,
                        unsigned long long start_msec_since_epoch,
                        unsigned long long end_msec_since_epoch,
-                       bool extended_hours )
+                       bool extended_hours = true )
 {
     return HistoricalRangeGetter( creds, symbol, ftype, frequency,
                                   start_msec_since_epoch, end_msec_since_epoch,
@@ -3388,19 +3388,20 @@ public:
 };
 
 inline json
-GetOptionChainAnalytical( Credentials& creds,
-                          const std::string& symbol,
-                          double volatility,
-                          double underlying_price,
-                          double interest_rate,
-                          unsigned int days_to_exp,
-                          OptionStrikes strikes,
-                          OptionContractType contract_type = OptionContractType::all,
-                          bool include_quotes = false,
-                          const std::string& from_date = "",
-                          const std::string& to_date = "",
-                          OptionExpMonth exp_month = OptionExpMonth::all,
-                          OptionType option_type = OptionType::all )
+GetOptionChainAnalytical(
+    Credentials& creds,
+    const std::string& symbol,
+    double volatility,
+    double underlying_price,
+    double interest_rate,
+    unsigned int days_to_exp,
+    OptionStrikes strikes,
+    OptionContractType contract_type = OptionContractType::all,
+    bool include_quotes = false,
+    const std::string& from_date = "",
+    const std::string& to_date = "",
+    OptionExpMonth exp_month = OptionExpMonth::all,
+    OptionType option_type = OptionType::all )
 {
     return OptionChainAnalyticalGetter( creds, symbol, volatility,
                                         underlying_price, interest_rate,
@@ -3452,9 +3453,9 @@ public:
     typedef AccountInfoGetter_C CType;
 
     AccountInfoGetter( Credentials& creds,
-                       const std::string& account_id,
-                       bool positions,
-                       bool orders )
+                         const std::string& account_id,
+                         bool positions = true,
+                         bool orders = true )
         :
             AccountGetterBase( AccountInfoGetter_C{},
                                AccountInfoGetter_Create_ABI,
@@ -3500,8 +3501,8 @@ public:
 inline json
 GetAccountInfo( Credentials& creds,
                 const std::string& account_id,
-                bool positions,
-                bool orders )
+                bool positions = true,
+                bool orders = true )
 { return AccountInfoGetter(creds, account_id, positions, orders).get(); }
 
 
@@ -3553,12 +3554,13 @@ class TransactionHistoryGetter
 public:
     typedef TransactionHistoryGetter_C CType;
 
-    TransactionHistoryGetter( Credentials& creds,
-                              const std::string& account_id,
-                              TransactionType transaction_type = TransactionType::all,
-                              const std::string& symbol = "",
-                              const std::string& start_date = "",
-                              const std::string& end_date = "")
+    TransactionHistoryGetter(
+            Credentials& creds,
+            const std::string& account_id,
+            TransactionType transaction_type = TransactionType::all,
+            const std::string& symbol = "",
+            const std::string& start_date = "",
+            const std::string& end_date = "")
         :
             AccountGetterBase( TransactionHistoryGetter_C{},
                                TransactionHistoryGetter_Create_ABI,
@@ -3633,12 +3635,13 @@ public:
 };
 
 inline json
-GetTransactionHistory( Credentials& creds,
-                       const std::string& account_id,
-                       TransactionType transaction_type,
-                       const std::string& symbol,
-                       const std::string& start_date,
-                       const std::string& end_date )
+GetTransactionHistory(
+    Credentials& creds,
+    const std::string& account_id,
+    TransactionType transaction_type = TransactionType::all,
+    const std::string& symbol = "",
+    const std::string& start_date = "",
+    const std::string& end_date = "" )
 {
     return TransactionHistoryGetter( creds, account_id, transaction_type,
                                      symbol, start_date, end_date ).get();
@@ -3683,8 +3686,8 @@ public:
 
 inline json
 GetIndividualTransactionHistory( Credentials& creds,
-                                 const std::string& account_id,
-                                 const std::string& transaction_id )
+                                     const std::string& account_id,
+                                     const std::string& transaction_id )
 {
     return IndividualTransactionHistoryGetter( creds, account_id,
                                                transaction_id ).get();
@@ -3782,10 +3785,10 @@ public:
 
 inline json
 GetUserPrincipals( Credentials& creds,                   
-                   bool streamer_subscription_keys,
-                   bool streamer_connection_info,
-                   bool preferences,
-                   bool surrogate_ids )
+                     bool streamer_subscription_keys,
+                     bool streamer_connection_info,
+                     bool preferences,
+                     bool surrogate_ids )
 {
     return UserPrincipalsGetter( creds, streamer_subscription_keys,
                                  streamer_connection_info, preferences,
@@ -3838,8 +3841,8 @@ public:
 
 inline json
 GetInstrumentInfo( Credentials& creds,
-                   InstrumentSearchType search_type,
-                   const std::string& query_string )
+                     InstrumentSearchType search_type,
+                     const std::string& query_string )
 { return InstrumentInfoGetter(creds, search_type, query_string).get(); }
 
 
