@@ -449,32 +449,32 @@ class HistoricalPeriodGetter(_HistoricalGetterBase):
                                     frequency (MINUTE, DAILY, WEEKLY, MONTHLY)
          frequency        :: int  :: size of frequency e.g 3 with
                                     FREQUENCY_TYPE_MINUTE -> 3 minutes
-         extended_hours   :: bool :: retrieve extended hour data         
+         extended_hours   :: bool :: retrieve extended hour data
          msec_since_epoch :: int  :: milliseconds since epoch of period anchor*
-         
-         
-        *   msec_since_epoch is an 'int' representing both the datetime that 
-            will serve to anchor/bound the period and the position of the 
+
+
+        *   msec_since_epoch is an 'int' representing both the datetime that
+            will serve to anchor/bound the period and the position of the
             period with respect to it.
-            
+
             > 0 : milliseconds since epoch to END of period; the period will
                   end at the last full candle before this datetime
-                  
+
             < 0 : -1 * milliseconds since epoch to START of period; the period
                   will begin at the first full candle after this datetime
-                    
+
             = None/0 : maintain default behavior(anchor end to yesterday,
                        ignoring todays candles; pass a current
                        or future value to include today)
-            
-            e.g 
-            
-            (-1512108000000) w/ a monthly frequency will start the period 
-            with the 12/01/17 monthly candle  
-            
-            (1512108000000) w/ a monthly frequency will end the period 
-            with the 11/01/17 monthly candle                                               
-                                            
+
+            e.g
+
+            (-1512108000000) w/ a monthly frequency will start the period
+            with the 12/01/17 monthly candle
+
+            (1512108000000) w/ a monthly frequency will end the period
+            with the 11/01/17 monthly candle
+
      ALL METHODS THROW -> LibraryNotLoaded, CLibException
 
      IMPORTANT - Only certain combinations of periods, frequencies, and types
@@ -489,13 +489,13 @@ class HistoricalPeriodGetter(_HistoricalGetterBase):
      passed to set_frequency and set_period, respectively, will throw.
      Invalid frequency-type-to-period_type combinations WILL NOT THROW UNTIL
      .get() method is called.
-          
+
     """
     def __init__(self, creds, symbol, period_type, period, frequency_type,
                  frequency, extended_hours, msec_since_epoch=None):
         super().__init__(creds, PCHAR(symbol), c_int(period_type),
                          c_int(period), c_int(frequency_type),
-                         c_int(frequency), c_int(extended_hours), 
+                         c_int(frequency), c_int(extended_hours),
                          c_longlong(msec_since_epoch if msec_since_epoch else 0))
 
     def get_period_type(self):
@@ -510,43 +510,43 @@ class HistoricalPeriodGetter(_HistoricalGetterBase):
         """Sets/changes PERIOD_TYPE_[] constant AND number of periods to use."""
         clib.call(self._abi('SetPeriod'), _REF(self._obj), c_int(period_type),
                   c_int(period))
-        
+
     def set_msec_since_epoch(self, msec_since_epoch):
-        """Sets/changes milliseconds since epoch of period anchor. 
-        
-        msec_since_epoch is an 'int' representing both the datetime that will 
-        serve to anchor/bound the period and the position of the period with 
+        """Sets/changes milliseconds since epoch of period anchor.
+
+        msec_since_epoch is an 'int' representing both the datetime that will
+        serve to anchor/bound the period and the position of the period with
         respect to it.
-        
+
         > 0 : milliseconds since epoch to END of period; the period will
               end at the last full candle before this datetime
-              
+
         < 0 : -1 * milliseconds since epoch to START of period; the period
-              will begin at the first full candle after this datetime  
-              
+              will begin at the first full candle after this datetime
+
         = None/0 : revert to default behavior(anchor end to yesterday,
-                   ignoring todays candles; pass a current or future value 
+                   ignoring todays candles; pass a current or future value
                    to include today)
-              
-        e.g 
-        
-        (-1512108000000) w/ a monthly frequency will start the period 
-        with the 12/01/17 monthly candle  
-        
-        (1512108000000) w/ a monthly frequency will end the period 
+
+        e.g
+
+        (-1512108000000) w/ a monthly frequency will start the period
+        with the 12/01/17 monthly candle
+
+        (1512108000000) w/ a monthly frequency will end the period
         with the 11/01/17 monthly candle
-        
+
         THROWS -> LibraryNotLoaded, CLibException
         """
-        clib.call(self._abi('SetMSecSinceEpoch'), _REF(self._obj), 
+        clib.call(self._abi('SetMSecSinceEpoch'), _REF(self._obj),
                   c_longlong(msec_since_epoch if msec_since_epoch else 0))
-        
+
     def get_msec_since_epoch(self):
-        """Returns milliseconds since epoch of period anchor or None."""     
-        ms = c_longlong(0)     
+        """Returns milliseconds since epoch of period anchor or None."""
+        ms = c_longlong(0)
         clib.call(self._abi('GetMSecSinceEpoch'), _REF(self._obj), _REF(ms))
         return ms.value if ms.value else None
-  
+
 
 class HistoricalRangeGetter(_HistoricalGetterBase):
     """HistoricalRangeGetter - Retrieve historical data within a date range.

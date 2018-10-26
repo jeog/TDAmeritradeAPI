@@ -180,7 +180,7 @@ def test_throttling(creds):
 def test_quote_getters(creds):
     g = get.QuoteGetter(creds, "SpY")
     assert g.get_symbol() == "SPY"
-    j = Get(g)    
+    j = Get(g)
     jprint(j)
     g.set_symbol('qqq')
     assert g.get_symbol() == 'QQQ'
@@ -256,42 +256,42 @@ def test_historical_period_getters(creds):
     assert g.get_frequency() == f
     assert g.get_frequency_type() == ft
     assert g.is_extended_hours() == True
-    assert g.get_msec_since_epoch() is None    
+    assert g.get_msec_since_epoch() is None
     j = Get(g) #### DEBUG
     jprint(j)
-    
+
     today = int(mktime(gmtime())*1000)
     tomorrow = today + (60*60*24*1000)
     days_ago_70 = today - (60*60*24*1000)*70
-         
+
     pt = get.PERIOD_TYPE_YEAR
     p = get.VALID_PERIODS_BY_PERIOD_TYPE[p][0] # 1
-    ft = get.VALID_FREQUENCY_TYPES_BY_PERIOD_TYPE[pt][2] # monthly   
+    ft = get.VALID_FREQUENCY_TYPES_BY_PERIOD_TYPE[pt][2] # monthly
     f = get.VALID_FREQUENCIES_BY_FREQUENCY_TYPE[ft][0] # 1
     #1-year / 1-month
     g.set_symbol("qqq")
     g.set_period(pt, p)
     g.set_frequency(ft, f)
-    g.set_extended_hours(False) 
-    #include today by adding 'end' date    
-    g.set_msec_since_epoch(tomorrow)  
+    g.set_extended_hours(False)
+    #include today by adding 'end' date
+    g.set_msec_since_epoch(tomorrow)
     assert g.get_symbol() == "QQQ"
     assert g.get_period() == p
     assert g.get_period_type() == pt
     assert g.get_frequency() == f
     assert g.get_frequency_type() == ft
-    assert g.is_extended_hours() == False    
-    assert g.get_msec_since_epoch() == tomorrow    
+    assert g.is_extended_hours() == False
+    assert g.get_msec_since_epoch() == tomorrow
     j = Get(g)
     jprint(j)
-    
+
     g.set_msec_since_epoch(None)
-    assert g.get_msec_since_epoch() is None     
-    g.set_msec_since_epoch(days_ago_70 * -1)    
+    assert g.get_msec_since_epoch() is None
+    g.set_msec_since_epoch(days_ago_70 * -1)
     assert g.get_msec_since_epoch() == (days_ago_70 * -1)
     j = Get(g)
     jprint(j)
-        
+
     gg = get.HistoricalPeriodGetter(creds, "SPY", pt, p, ft, f, True, days_ago_70)
     assert gg.get_symbol() == "SPY"
     assert gg.get_period() == p
@@ -300,16 +300,16 @@ def test_historical_period_getters(creds):
     assert gg.get_frequency_type() == ft
     assert gg.is_extended_hours() == True
     assert gg.get_msec_since_epoch() == days_ago_70
-   
+
 def test_historical_range_getters(creds):
     ft = get.FREQUENCY_TYPE_MINUTE
     f = get.VALID_FREQUENCIES_BY_FREQUENCY_TYPE[ft][-1]
-    
-    today = int(mktime(gmtime())*1000)  
+
+    today = int(mktime(gmtime())*1000)
     end = today
     start = today - (60*60*24*1000)*10
     days_ago_70 = today - (60*60*24*1000)*70
-    
+
     g = get.HistoricalRangeGetter(creds, "SpY", ft, f, start, end, False)
     assert g.get_symbol() == "SPY"
     assert g.get_frequency() == f
@@ -333,15 +333,15 @@ def test_historical_range_getters(creds):
     assert g.is_extended_hours() == True
     j = Get(g)
     jprint(j)
-           
+
     end = today +  (60*60*24*1000)*10
     g.set_end_msec_since_epoch(end)
-    g.set_start_msec_since_epoch(days_ago_70)   
+    g.set_start_msec_since_epoch(days_ago_70)
     ft = get.FREQUENCY_TYPE_MONTHLY
     f = 1
-    g.set_frequency(ft, f)     
+    g.set_frequency(ft, f)
     assert g.get_frequency() == f
-    assert g.get_frequency_type() == ft 
+    assert g.get_frequency_type() == ft
     assert g.get_start_msec_since_epoch() == days_ago_70
     assert g.get_end_msec_since_epoch() == end
     j = Get(g)
@@ -349,7 +349,7 @@ def test_historical_range_getters(creds):
     if use_live_connection:
         assert j["candles"]
         #assert len(j["candles"]) == 2
-    
+
 
 
 def test_option_chain_getters(creds):
@@ -546,7 +546,7 @@ def test_transaction_history_getters(creds, account_id):
     assert g.get_transaction_type() == get.TRANSACTION_TYPE_TRADE
     assert g.get_symbol() == "SPY"
     assert g.get_start_date() == "2018-01-01"
-    assert g.get_end_date() == "2019-01-01"    
+    assert g.get_end_date() == "2019-01-01"
     j = Get(g)
     jprint(j)
 
@@ -2624,13 +2624,13 @@ def test_execute_oco_oto_builders():
 #    print( l.get_symbol() )
 #    print( l.get_instruction() )
 #    print( order.get_duration() )
-#    print( order.get_session() )    
-#    oid = execute.send_order(creds, account_id, order)    
+#    print( order.get_session() )
+#    oid = execute.send_order(creds, account_id, order)
 #    print("order ID: ", oid)
 #    success = execute.cancel_order(creds, account_id, oid)
 #    print("cancel: ", str(success))
-    
-    
+
+
 
 if __name__ == '__main__':
     print("\n*** TDAmeritradeAPI test.py ***")
@@ -2653,7 +2653,7 @@ if __name__ == '__main__':
     print_title("load credentials")
     with auth.CredentialsManager(args.credentials_path, \
                                   args.credentials_password, True) as cm:
-        #test(test_execute_transactions,cm.credentials, args.account_id)                      
+        #test(test_execute_transactions,cm.credentials, args.account_id)
         test(test_option_symbol_builder)
         test(test_execute_order_objects)
         test(test_execute_order_builders)
@@ -2663,7 +2663,7 @@ if __name__ == '__main__':
         test(test_market_hours_getters, cm.credentials)
         test(test_movers_getters, cm.credentials)
         test(test_historical_period_getters, cm.credentials)
-        test(test_historical_range_getters, cm.credentials)               
+        test(test_historical_range_getters, cm.credentials)
         test(test_option_chain_getters, cm.credentials)
         test(test_option_chain_strategy_getters, cm.credentials)
         test(test_option_chain_analytical_getters, cm.credentials)
