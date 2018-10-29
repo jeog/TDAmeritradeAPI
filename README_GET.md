@@ -50,7 +50,7 @@ using namespace tdma;
 from tdma_api import get
 ```
 
-The C++ Get Interface consists of 'Getter' objects that derive from ```APIGetter```, and related convenience functions. 
+The C++ Get Interface consists of 'Getter' objects that derive from ```APIGetter```.
 
 The C++ 'Getter' objects are simple 'proxies', all defined inline, that call through the ABI to the corresponding implementation objects. The implementation objects are built on top of ```conn::CurlConnection```: an object-oriented wrapper to libcurl found in curl_connect.h/cpp.
 
@@ -89,7 +89,9 @@ Getter objects are fundamental to accessing the API. Before using you'll need to
 
 Each object sets up an underlying HTTPS/Get connection(via libcurl) using the credentials object and the relevant arguments for that particular request type. The connection sets the Keep-Alive header and will execute a request each time ```get / Get``` is called, until ```close / Close``` is called. C++ and Python getters will call ```close``` on destruction.
 
-**Symbol strings are automatically converted to upper-case, e.g 'spy' -> 'SPY'.**
+- Symbol strings are automatically converted to upper-case, e.g 'spy' -> 'SPY'.
+- C interface uses an object orient approach that mirrors C++
+- Stateless get calls, that don't require a getter object, are provided for convenience.
 
 #### [C++]
 
@@ -99,9 +101,6 @@ Each object sets up an underlying HTTPS/Get connection(via libcurl) using the cr
 Each object has accessor methods for querying the fields passed to the constructor and updating 
 those to be used in subsequent ```.get()``` call. 
 
-If you only need to make the call once, each 'Getter' object has a similarly name 'Get' convenience function
-that wraps the object and calls its ```.get()``` method once before destruction. 
-
 To make this more concrete here is the Getter interface for individual price quotes:
 
 ```
@@ -109,13 +108,13 @@ class QuoteGetter
         : public APIGetter {
     ...
 public:
-    QuoteGetter( Credentials& creds, string symbol );
+    QuoteGetter( Credentials& creds, const string& symbol );
 
     string
     get_symbol() const;
 
     void
-    set_symbol(string symbol);
+    set_symbol(const string& symbol);
     
     json /* INHERITED FROM APIGetter */
     get();
@@ -125,19 +124,22 @@ public:
 
     bool /* INHERITED FROM APIGetter */
     is_closed();
-};
 
-inline json
-GetQuote(Credentials& creds, string symbol)
-{ return QuoteGetter(creds, symbol).get(); }
+    static json
+    Get( Credentials& creds, const string& symbol);
+};
 ```
+
+##### Stateless Convenience Function
+
+If you only need to make the call once, each 'Getter' object has static method ```::Get(...)```
+that constructs the object and calls its ```.get()``` method once before destruction. 
 
 #### [C]
 
 1. define a a getter struct that will serve as the proxy instance, e.g:
 ```
-QuoteGetter_C qg;
-memset(&qg, 0, sizeof(qg));
+QuoteGetter_C qg = {0,0};
 ```
 
 2. initialize the getter object using the appropriately named ```Create``` function, e.g:
@@ -156,9 +158,9 @@ QuoteGetter_Create( struct Credentials *pcreds,
 3. use a pointer to the proxy instance to return (un-parsed) json data, e.g:
 ```
 inline int
-QuoteGetter_Get(QuoteGetter_C *getter, char **buf, size_t *n)
+QuoteGetter_Get(QuoteGetter_C *pgetter, char **buf, size_t *n)
 
-    getter :: pointer to the getter object created by 'Create'
+    pgetter :: pointer to the getter object created by 'Create'
     buf    :: address of a char* that will be populated by a char buffer
               *HEAP ALLOCATED VIA MALLOC*
     n      :: address of a size_t to be populated with the size of the
@@ -190,10 +192,10 @@ FreeBuffer( raw ); // notice we are using the char* version for a single buffer
 To view or change the paramaters of the getter use the accessor methods, e.g:
 ```
 inline int
-QuoteGetter_GetSymbol(QuoteGetter_C *getter, char **buf, size_t *n)
+QuoteGetter_GetSymbol(QuoteGetter_C *pgetter, char **buf, size_t *n)
 
 inline int
-QuoteGetter_SetSymbol(QuoteGetter_C *getter, const char *symbol)
+QuoteGetter_SetSymbol(QuoteGetter_C *pgetter, const char *symbol)
 ```
 Again, remember to free the char buffer returned by the 'GetSymbol' call.
 
@@ -201,18 +203,25 @@ When done you can close the object to end the connection and/or destroy it
 to release the underlying resources e.g:
 ```
 inline int
-QuoteGetter_Close(QuoteGetter_C *getter)
+QuoteGetter_Close(QuoteGetter_C *pgetter)
 
 inline int
-QuoteGetter_Destroy(QuoteGetter_C *getter)
+QuoteGetter_Destroy(QuoteGetter_C *pgetter)
 ```
-***Once ```Destroy``` is called any use of the getter is UNDEFINED BEHAVIOR.***
+- Once ```Destroy``` is called any use of the getter is UNDEFINED BEHAVIOR.
 
 To check the state(before ```Destroy``` is called), e.g:
 ```
 inline int
-QuoteGetter_IsClosed(QuoteGetter_C *getter, int *b)
+QuoteGetter_IsClosed(QuoteGetter_C *pgetter, int *b)
 ```
+
+##### Stateless Convenience Function
+
+Each object has a similarly named stand-alone function for making a single get call
+per connection. (e.g QuoteGetter -> GetQuote(...), AccountInfoGetter -> GetAccountInfo(...)). This function calls Create, Get, and Destroy, populating a char buffer, as above.
+
+This is the C equivalent of the C++ ```::Get(...)``` static method.
 
 #### [Python]
 
@@ -344,8 +353,7 @@ use [StreamingSession](README_STREAMING.md) for that.
          char *buf = NULL, *symbol = NULL;
          size_t n = 0;
 
-         QuoteGetter_C qg;
-         memset(&qg, 0, sizeof(QuoteGetter_C));
+         QuoteGetter_C qg = {0,0};
 
         if( (err = QuoteGetter_Create(creds, "SPY", &qg)) )
             CHECK_AND_RETURN_ON_ERROR(err, "QuoteGetter_Create");
@@ -436,22 +444,31 @@ use [StreamingSession](README_STREAMING.md) for that.
 ### Getter Classes
 - - -
 
-*Only the C++ Getters are shown. The Python and C interfaces match these closely.  The C interface uses appropriately named functions to mimic the methods of the C++ classes and requires explicit use of the ```Create``` functions for construction and ```Destroy``` functions for destruction. See tdma_api_get.h for function prototypes.*
+C++ Getter classes and the equivalent C interfaces are outlined below.  
+
+The C interface uses appropriately named functions to mimic the methods of the C++ classes. It requires explicit use of the ```Create``` functions for construction and ```Destroy``` functions for destruction. 
+
+The Python interface matches C++ almost exactly. (see object docstrings in tdma_api/get.py)
 
 #### QuoteGetter
 
 Retrieve a single quote for a single security. [TDAmeritrade docs.](https://developer.tdameritrade.com/quotes/apis/get/marketdata/{symbol}/quotes)
 
+##### [C++]
+
 **constructors**
 ```
-QuoteGetter::QuoteGetter(Credentials& creds, string symbol);
+QuoteGetter::QuoteGetter(Credentials& creds, const string& symbol);
 
     creds   ::  credentials struct received from RequestAccessToken / LoadCredentials 
                 / CredentialsManager.credentials
     symbol  ::  (case sensitive) security symbol 
 
 ```
-
+**types**
+```
+class QuoteGetter : public APIGetter;
+```
 **methods**
 ```
 virtual json 
@@ -471,19 +488,55 @@ QuoteGetter::get_symbol() const;
 ```
 ```
 void
-QuoteGetter::set_symbol(string symbol);
+QuoteGetter::set_symbol(const string& symbol);
+```
+```
+static json
+QuoteGetter::Get(Credentials& creds, const string& symbol);
 ```
 
-**convenience function**
+##### [C]
+
+**types**
 ```
-inline json
-GetQuote(Credentials& creds, string symbol);
+struct QuoteGetter_C;
+```
+
+**functions**
+```
+static inline int
+QuoteGetter_Create(struct Credentials *pcreds, 
+                   const char* symbol, 
+                   QuoteGetter_C *pgetter);
+
+static inline int
+QuoteGetter_Destroy(QuoteGetter_C *pgetter);
+
+static inline int
+QuoteGetter_Get(QuoteGetter_C *pgetter, char** buf, size_t *n);
+
+static inline int
+QuoteGetter_Close(QuoteGetter_C *pgetter);
+
+static inline int
+QuoteGetter_IsClosed(QuoteGetter_C *pgetter, int*b);
+
+static inline int
+QuoteGetter_GetSymbol(QuoteGetter_C *pgetter, char **buf, size_t *n);
+
+static inline int
+QuoteGetter_SetSymbol(QuoteGetter_C *pgetter, const char* symbol);
+
+static inline int 
+GetQuote(structCredentials *pcreds, const char* symbol, char **buf, size_t *n);
 ```
 <br>
 
 #### QuotesGetter
 
 Retrieve a single quote for multiple securities. [TDAmeritrade docs.](https://developer.tdameritrade.com/quotes/apis/get/marketdata/quotes)
+
+##### [C++]
 
 **constructors**
 ```
@@ -498,6 +551,10 @@ QuotesGetter::QuotesGetter(Credentials& creds, const set<string>& symbols);
 - empty symbol strings and/or symbol sets will throw ValueException
 - if all symbols are removed, calling ```.get()``` will return an empty json object
 
+**types**
+```
+class QuotesGetter : public APIGetter;
+```
 
 **methods**
 ```
@@ -536,18 +593,87 @@ QuotesGetter::add_symbols(const set<string>& symbols);
 void
 QuotesGetter::remove_symbols(const set<string>& symbols);
 ```
-
-
-**convenience function**
 ```
-inline json
-GetQuotes(Credentials& creds, const set<string>& symbols);
+static json
+QuotesGetter::Get(Credentials& creds, const set<string>& symbols);
+```
+
+##### [C]
+
+**types**
+```
+struct QuotesGetter_C;
+```
+
+**functions**
+```
+static inline int
+QuotesGetter_Create(struct Credentials *pcreds, 
+                    const char** symbols,
+                    size_t nsymbols,
+                    QuotesGetter_C *pgetter);
+```
+```
+static inline int
+QuotesGetter_Destroy(QuotesGetter_C *pgetter);
+```
+```
+static inline int
+QuotesGetter_Get(QuotesGetter_C *pgetter, char** buf, size_t *n);
+```
+```
+static inline int
+QuotesGetter_Close(QuotesGetter_C *pgetter);
+```
+```
+static inline int
+QuotesGetter_IsClosed(QuotesGetter_C *pgetter, int*b);
+```
+```
+static inline int
+QuotesGetter_GetSymbols(QuotesGetter_C *pgetter, char ***buf, size_t *n);
+```
+```
+static inline int
+QuotesGetter_SetSymbols(QuotesGetter_C *pgetter, 
+                        const char** 
+                        symbols, size_t nsymbols);
+```
+```
+static inline int
+QuotesGetter_AddSymbol(QuotesGetter_C *pgetter, const char* symbol);
+```
+```
+static inline int
+QuotesGetter_RemoveSymbols(QuotesGetter_C *pgetter, const char* symbol);
+```
+```
+static inline int
+QuotesGetter_AddSymbols(QuotesGetter_C *pgetter, 
+                        const char **symbols, 
+                        size_t nsymbols);
+```
+```
+static inline int
+QuotesGetter_RemoveSymbols(QuotesGetter_C *pgetter, 
+                           const char **symbols, 
+                           size_t nsymbols);
+```
+```
+static inline int
+GetQuotes(struct Credentials *pcreds, 
+          const char** symbols, 
+          size_t nysmbols, 
+          char **buf, 
+          size_t *n);
 ```
 <br>
 
 #### MarketHoursGetter
 
 Retrieve market hours for a single market. [TDAmeritrade docs.](https://developer.tdameritrade.com/market-hours/apis/get/marketdata/{market}/hours)
+
+##### [C++]
 
 **constructors**
 ```
@@ -558,11 +684,16 @@ MarketHoursGetter::MarketHoursGetter( Credentials& creds,
     creds        ::  credentials struct received from RequestAccessToken 
                      / LoadCredentials / CredentialsManager.credentials
     market_type  ::  market to get hours for
-    date         ::  date string to get hours for (yyyy-MM-dd or yyyy-MM-dd'T'HH::mm::ssz)
+    date         ::  date string to get hours for* 
+                     
+    * yyyy-MM-dd or yyyy-MM-dd'T'HH::mm::ssz
 
 ```
 
 **types**
+```
+class MarketHoursGetter : public APIGetter;
+```
 ```
 enum class MarketType : int{
     equity,
@@ -602,19 +733,87 @@ MarketHoursGetter::set_date(const string& date);
 void
 MarketHoursGetter::set_market_type(MarketType market_type);
 ```
-
-**convenience function**
 ```
-inline json
-GetMarketHours(Credentials& creds, MarketType market_type, const string& date);
+static json
+MarketHoursGetter::Get( Credentials& creds, 
+                        MarketType market_type, 
+                        const string& date );
+```
+
+##### [C]
+
+**types**
+```
+struct MarketHoursGetter_C;
+```
+```
+enum MarketType {
+    MarketType_equity,
+    MarketType_option,
+    MarketType_future,
+    MarketType_bond,
+    MarketType_forex
+};
+```
+
+**functions**
+```
+static inline int
+MarketHoursGetter_Create( struct Credentials *pcreds,
+                          MarketType market_type,
+                          const char* date,
+                          MarketHoursGetter_C *pgetter );
+```
+```
+static inline int
+MarketHoursGetter_Destroy(MarketHoursGetter_C *pgetter);
+```
+```
+static inline int
+MarketHoursGetter_Get(MarketHoursGetter_C *pgetter, char** buf, size_t *n);
+```
+```
+static inline int
+MarketHoursGetter_Close(MarketHoursGetter_C *pgetter);
+```
+```
+static inline int
+MarketHoursGetter_IsClosed(MarketHoursGetter_C *pgetter, int *b);
+```
+```
+static inline int
+MarketHoursGetter_GetMarketType( MarketHoursGetter_C *pgetter, 
+                                 MarketType *market_type );
+```
+```
+static inline int
+MarketHoursGetter_SetMarketType( MarketHoursGetter_C *pgetter, 
+                                 MarketType market_type );
+```
+```
+static inline int
+MarketHoursGetter_GetDate( MarketHoursGetter_C *pgetter, char **buf, size_t *n );
+```
+```
+static inline int
+MarketHoursGetter_SetDate( MarketHoursGetter_C *pgetter, const char* date );
+```
+```
+static inline int
+GetMarketHours( struct Credentials *pcreds,
+                MarketType market_type,
+                const char* date,
+                char **buf,
+                size_t *n );
 ```
 <br>
-
 
 
 #### MoversGetter
 
 Top 10 up or down movers by value or %. [TDAmeritrade docs.](https://developer.tdameritrade.com/movers/apis/get/marketdata/{index}/movers)
+
+##### [C++]
 
 **constructors**
 ```
@@ -632,6 +831,9 @@ MoversGetter::MoversGetter( Credentials& creds,
 ```
 
 **types**
+```
+class MoversGetter : public APIGetter;
+```
 ```
 enum class MoversIndex : int{
     compx, /* $COMPX */
@@ -690,17 +892,105 @@ MoversGetter::set_direction_type(MoversDirectionType direction_type);
 void
 MoversGetter::set_change_type(MoversChangeType change_type);
 ```
-
-**convenience function**
 ```
-inline json
-GetMovers( Credentials& creds,  
+static json
+MoversGetter::Get( Credentials& creds,  
+                   MoversIndex index,
+                   MoversDirectionType direction_type,
+                   MoversChangeType change_type );
+```
+
+##### [C]
+
+**types**
+```
+struct MoversGetter_C;
+```
+```
+enum MoversIndex {
+    MoversIndex_compx, /* $COMPX */
+    MoversIndex_dji,  /* $DJI */
+    MoversIndex_spx   /* SPX */
+};
+```
+```
+enum MoversDirectionType {
+    MoversDirectionType_up,
+    MoversDirectionType_down,
+    MoversDirectionType_up_and_down
+};
+```
+```
+enum MoversChangeType {
+    MoversChangeType_value,
+    MoversChangeType_percent
+};
+```
+
+**functions**
+```
+static inline int
+MoversGetter_Create( struct Credentials *pcreds,
+                     MoversIndex index,
+                     MoversDirectionType direction_type,
+                     MoversChangeType change_type,
+                     MoversGetter_C *pgetter );
+```
+```
+static inline int
+MoversGetter_Destroy( MoversGetter_C *pgetter)
+{ return MoversGetter_Destroy_ABI(pgetter, 0); };
+```
+```
+static inline int
+MoversGetter_Get(MoversGetter_C *pgetter, char** buf, size_t *n);
+```
+```
+static inline int
+MoversGetter_Close(MoversGetter_C *pgetter);
+```
+```
+static inline int
+MoversGetter_IsClosed(MoversGetter_C *pgetter, int *b);
+```
+```
+static inline int
+MoversGetter_GetIndex( MoversGetter_C *pgetter, MoversIndex *index);
+```
+```
+static inline int
+MoversGetter_SetIndex( MoversGetter_C *pgetter,  MoversIndex index);
+```
+```
+static inline int
+MoversGetter_GetDirectionType( MoversGetter_C *pgetter,
+                               MoversDirectionType *direction_type );
+```
+```
+static inline int
+MoversGetter_SetDirectionType( MoversGetter_C *pgetter,
+                               MoversDirectionType direction_type);
+```
+```
+static inline int
+MoversGetter_GetChangeType( MoversGetter_C *pgetter,
+                            MoversChangeType *change_type );
+```
+```
+static inline int
+MoversGetter_SetChangeType( MoversGetter_C *pgetter,
+                            MoversChangeType change_type);
+```
+```
+static inline int
+GetMovers( struct Credentials *pcreds,
            MoversIndex index,
            MoversDirectionType direction_type,
-           MoversChangeType change_type );
+           MoversChangeType change_type,
+           char **buf,
+           size_t *n );
 ```
 <br>
-
 
 #### HistoricalPeriodGetter
 
@@ -716,8 +1006,9 @@ By default the period will be 'anchored' at an end point of **yesterday** (exclu
 - msec_since_epoch - *e.g -1512108000000 to start on the 12/01/2017 bar*
 
 How these five parameters interact (what are valid combinations, what throws and when etc.)
-can be somewhat complex so **please read the detailed comments** in the *constructors* and *utilities* sections below.
+can be somewhat complex so **please read the detailed comments** in the C++ *constructors* and *utilities* sections below.
 
+##### [C++]
 
 **constructors**
 ```
@@ -767,6 +1058,9 @@ HistoricalPeriodGetter::HistoricalPeriodGetter( Credentials& creds,
 
 **types**
 ```
+class HistoricalPeriodGetter : public HistoricalGetterBase;
+```
+```
 enum class PeriodType : int{
     day,
     month,
@@ -785,9 +1079,7 @@ enum class FrequencyType : int{
 
 **utilities**
 
-*Note - The C interface exposes 2D array versions of these objects where each 'row' is terminated by at least one -1 value. See tdma_api_get.h for defintions.*
-
-***```VALID_PERIODS_BY_PERIOD_TYPE```*** - A mapping that provides *the* set of valid # of 
+```VALID_PERIODS_BY_PERIOD_TYPE``` - A mapping that provides *the* set of valid # of 
 periods for a particular period type. (e.g ```PeriodType::day``` allows for 1,2,3,4,5, and 10 periods)
 ```
 const unordered_map<PeriodType, set<int>, EnumHash<PeriodType>>
@@ -799,7 +1091,7 @@ VALID_PERIODS_BY_PERIOD_TYPE = {
 };
 ```
 
-***```VALID_FREQUENCY_TYPES_BY_PERIOD_TYPE```*** - A mapping that provides *the* set of valid 
+```VALID_FREQUENCY_TYPES_BY_PERIOD_TYPE``` - A mapping that provides *the* set of valid 
 frequency types for a particular period type. (e.g ```PeriodType::day``` only allows for ```FrequencyType::minute```)
 ```
 const unordered_map<PeriodType, set<FrequencyType, EnumCompare<FrequencyType>>,
@@ -809,11 +1101,11 @@ VALID_FREQUENCY_TYPES_BY_PERIOD_TYPE ={
     {PeriodType::month, {FrequencyType::daily, FrequencyType::weekly} },
     {PeriodType::year, {FrequencyType::daily, FrequencyType::weekly, 
                         FrequencyType::monthly} },
-    {PeriodType::ytd, { FrequencyType::weekly} },
+    {PeriodType::ytd, {FrequencyType::daily, FrequencyType::weekly} },
 };
 ```
 
-***```VALID_FREQUENCIES_BY_FREQUENCY_TYPE```*** - A mapping that provides *the* set of valid frequency amounts for a particular frequency type. (e.g ```FrequencyType::daily``` only allows for a frequency amount of 1, in other words: you can get data over some period one day at a time, but not 2,3 etc. days at a time)
+```VALID_FREQUENCIES_BY_FREQUENCY_TYPE``` - A mapping that provides *the* set of valid frequency amounts for a particular frequency type. (e.g ```FrequencyType::daily``` only allows for a frequency amount of 1, in other words: you can get data over some period one day at a time, but not 2,3 etc. days at a time)
 ```
 const unordered_map<FrequencyType, set<int>, EnumHash<FrequencyType>>
 VALID_FREQUENCIES_BY_FREQUENCY_TYPE = {
@@ -892,18 +1184,187 @@ HistoricalGetterBase::set_extended_hours(bool extended_hours);
 void
 HistoricalPeriodGetter::set_msec_since_epoch( long long msec_since_epoch );
 ```
-
-**convenience function**
 ```
-inline json
-GetHistoricalPeriod( Credentials& creds,
-                     const string& symbol,
-                     PeriodType period_type,
+static json
+HistoricalPeriodGetter::Get( Credentials& creds,
+                             const string& symbol,
+                             PeriodType period_type,
+                             unsigned int period,
+                             FrequencyType frequency_type,
+                             unsigned int frequency,
+                             bool extended_hours,
+                             long long msec_since_epoch = 0 );
+```
+
+##### [C]
+
+**types**
+```
+struct HistoricalPeriodGetter_C;
+```
+```
+enum PeriodType {
+    PeriodType_day,
+    PeriodType_month,
+    PeriodType_year,
+    PeriodType_ytd
+};
+```
+```
+enum FrequencyType {
+    FrequencyType_minute,
+    FrequencyType_daily,
+    FrequencyType_weekly,
+    FrequencyType_monthly
+};
+```
+**utilities**
+
+```VALID_PERIODS_BY_PERIOD_TYPE``` - A mapping that provides *the* set of valid # of 
+periods for a particular period type. (e.g ```PeriodType_day``` allows for 1,2,3,4,5, and 10 periods)
+```
+static const int
+VALID_PERIODS_BY_PERIOD_TYPE[PeriodType_ytd + 1][8] = {
+    {1,2,3,4,5,10,-1,-1},
+    {1,2,3,6,-1,-1,-1,-1},
+    {1,2,3,5,10,15,10,-1},
+    {1,-1,-1,-1,-1,-1,-1,-1},
+};
+```
+
+```VALID_FREQUENCY_TYPES_BY_PERIOD_TYPE``` - A mapping that provides *the* set of valid 
+frequency types for a particular period type. (e.g ```PeriodType_day``` only allows for ```FrequencyType_minute```)
+```
+static const FrequencyType
+VALID_FREQUENCY_TYPES_BY_PERIOD_TYPE[PeriodType_ytd + 1][4] = {
+    {FrequencyType_minute, -1, -1, -1},
+    {FrequencyType_daily, FrequencyType_weekly, -1, -1},
+    {FrequencyType_daily, FrequencyType_weekly, FrequencyType_monthly, -1},
+    {FrequencyType_daily, FrequencyType_weekly, -1, -1}
+};
+```
+
+```VALID_FREQUENCIES_BY_FREQUENCY_TYPE``` - A mapping that provides *the* set of valid frequency amounts for a particular frequency type. (e.g ```FrequencyType_daily``` only allows for a frequency amount of 1, in other words: you can get data over some period one day at a time, but not 2,3 etc. days at a time)
+```
+static const int
+VALID_FREQUENCIES_BY_FREQUENCY_TYPE[FrequencyType_monthly + 1][5] = {
+    {1, 5, 10, 30, -1},
+    {1, -1, -1, -1 ,-1},
+    {1, -1, -1, -1 ,-1},
+    {1, -1, -1, -1 ,-1}
+};
+```
+
+- invalid frequency-to-frequency-type combinations will return error code immediately
+- invalid period-to-period-type combinations will return error code immediately
+- invalid frequency-type-to-period-type combinations will only return error code immediately from 'Create' function; if passed to the 'Set' methods it will not return an error code until the '_Get' function is called
+
+**functions**
+```
+static inline int
+HistoricalPeriodGetter_Create( struct Credentials *pcreds,
+                               const char* symbol,
+                               int period_type,
+                               unsigned int period,
+                               int frequency_type,
+                               unsigned int frequency,
+                               int extended_hours,
+                               long long msec_since_epoch,
+                               HistoricalPeriodGetter_C *pgetter );
+```
+```
+static inline int
+HistoricalPeriodGetter_Destroy( HistoricalPeriodGetter_C *pgetter );
+```
+```
+static inline int
+HistoricalPeriodGetter_Get(HistoricalPeriodGetter_C *pgetter, 
+                           char** buf,  
+                           size_t *n);
+```
+```
+static inline int
+HistoricalPeriodGetter_Close(HistoricalPeriodGetter_C *pgetter);
+```
+```
+static inline int
+HistoricalPeriodGetter_IsClosed(HistoricalPeriodGetter_C *pgetter, int *b);
+```
+```
+static inline int
+HistoricalPeriodGetter_GetSymbol( HistoricalPeriodGetter_C *pgetter,
+                                  char **buf,
+                                  size_t *n );
+```
+```
+static inline int
+HistoricalPeriodGetter_SetSymbol( HistoricalPeriodGetter_C *pgetter,
+                                  const char *symbol );
+```
+```
+static inline int
+HistoricalPeriodGetter_GetFrequency( HistoricalPeriodGetter_C *pgetter,
+                                     unsigned int *frequency );
+```
+```
+static inline int
+HistoricalPeriodGetter_GetFrequencyType( HistoricalPeriodGetter_C *pgetter,
+                                         FrequencyType *frequency_type );
+```
+```
+static inline int
+HistoricalPeriodGetter_IsExtendedHours( HistoricalPeriodGetter_C *pgetter,
+                                        int *is_extended_hours );
+```
+```
+static inline int
+HistoricalPeriodGetter_SetExtendedHours( HistoricalPeriodGetter_C *pgetter,
+                                         int is_extended_hours );
+```
+```
+static inline int
+HistoricalPeriodGetter_GetPeriodType( HistoricalPeriodGetter_C *pgetter,
+                                      PeriodType *period_type );
+```
+```
+static inline int
+HistoricalPeriodGetter_GetPeriod( HistoricalPeriodGetter_C *pgetter,
+                                  unsigned int *period );
+```
+```
+static inline int
+HistoricalPeriodGetter_SetPeriod( HistoricalPeriodGetter_C *pgetter,
+                                  PeriodType period_type,
+                                  unsigned int period );
+```
+```
+static inline int
+HistoricalPeriodGetter_SetFrequency( HistoricalPeriodGetter_C *pgetter,
+                                     FrequencyType frequency_type,
+                                     unsigned int frequency );
+```
+```
+static inline int
+HistoricalPeriodGetter_SetMSecSinceEpoch( HistoricalPeriodGetter_C *pgetter,
+                                          long long msec_since_epoch );
+```
+```
+static inline int
+HistoricalPeriodGetter_GetMSecSinceEpoch( HistoricalPeriodGetter_C *pgetter,
+                                          long long *msec_since_epoch );
+```
+```
+static inline int
+GetHistoricalPeriod( struct Credentials *pcreds,
+                     const char* symbol,
+                     int period_type,
                      unsigned int period,
-                     FrequencyType frequency_type,
+                     int frequency_type,
                      unsigned int frequency,
-                     bool extended_hours,
-                     long long msec_since_epoch = 0 );
+                     int extended_hours,
+                     long long msec_since_epoch,
+                     char **buf,
+                     size_t *n );
 ```
 <br>
 
@@ -911,32 +1372,39 @@ GetHistoricalPeriod( Credentials& creds,
 
 Price history between a date range for a single security. [TDAmeritrade docs.](https://developer.tdameritrade.com/price-history/apis/get/marketdata/{symbol}/pricehistory)
 
+##### [C++]
+
 **constructors**
 ```
-HistoricalRangeGetter::HistoricalRangeGetter( Credentials& creds,
-                                              const string& symbol,                         
-                                              FrequencyType frequency_type,
-                                              unsigned int frequency,
-                                              unsigned long long start_msec_since_epoch,
-                                              unsigned long long end_msec_since_epoch,
-                                              bool extended_hours );
+HistoricalRangeGetter::HistoricalRangeGetter( 
+        Credentials& creds,
+        const string& symbol,                         
+        FrequencyType frequency_type,
+        unsigned int frequency,
+        unsigned long long start_msec_since_epoch,
+        unsigned long long end_msec_since_epoch,
+        bool extended_hours 
+    );
 
     creds                  ::  credentials struct received from RequestAccessToken 
                                / LoadCredentials / CredentialsManager.credentials
     symbol                 :: (case sensitive) security symbol
     frequency_type         :: type of frequency (minute, daily etc.) 
-    frequency              :: # of that frequency (e.g 10 or 100 minutes) **
-    start_msec_since_epoch :: beginning of historical range in milliseconds since epoch***
-    end_msec_since_epoch   :: end of historical range in milliseconds since epoch***
+    frequency              :: # of that frequency (e.g 10 or 100 minutes) *
+    start_msec_since_epoch :: start of historical range in milliseconds since epoch**
+    end_msec_since_epoch   :: end of historical range in milliseconds since epoch**
     extended_hours         :: include extended hours data
 
-    ** these args are restricted to certain values based on other args and will
+    * these args are restricted to certain values based on other args and will
        throw ValueError if invalid, see the 'utilities' section below 
 
-    *** the epoch is 00:00 of Jan 1 1970
+    ** the epoch is 00:00 of Jan 1 1970
 ```
 
 **types**
+```
+class HistoricalRangeGetter : public HistoricalGetterBase;
+```
 ```
 enum class FrequencyType : int{
     minute,
@@ -948,9 +1416,7 @@ enum class FrequencyType : int{
 
 **utilities**
 
-*Note - The C interface exposes a 2D array version of this object where each 'row' is terminated by at least one -1 value. See tdma_api_get.h for defintions.*
-
-***```VALID_FREQUENCIES_BY_FREQUENCY_TYPE```*** - A mapping that provides *the* set of valid 
+```VALID_FREQUENCIES_BY_FREQUENCY_TYPE``` - A mapping that provides *the* set of valid 
 frequency amounts for a particular frequency type. (e.g ```FrequencyType::daily``` only allows for a frequency amount of 1, in other words: you can get data over some period one day at a time, but not 2,3 etc. days at a time)
 ```
 const unordered_map<FrequencyType, set<int>, EnumHash<FrequencyType>>
@@ -1026,24 +1492,154 @@ HistoricalRangeGetter::set_stat_msec_since_epoch(
 void 
 HistoricalGetterBase::set_extended_hours(bool extended_hours);
 ```
-
-**convenience function**
 ```
-inline json
-GetHistoricalRange( Credentials& creds,
-                    const string& symbol,                         
+static json
+HistoricalRangeGetter::Get( Credentials& creds,
+                            const string& symbol,
+                            FrequencyType frequency_type,
+                            unsigned int frequency,
+                            unsigned long long start_msec_since_epoch,
+                            unsigned long long end_msec_since_epoch,
+                            bool extended_hours );
+```
+
+##### [C]
+
+**types**
+```
+struct HistoricalRangeGetter_C;
+```
+```
+enum FrequencyType {
+    FrequencyType_minute,
+    FrequencyType_daily,
+    FrequencyType_weekly,
+    FrequencyType_monthly
+};
+```
+**utilities**
+
+```VALID_FREQUENCIES_BY_FREQUENCY_TYPE``` - A mapping that provides *the* set of valid frequency amounts for a particular frequency type. (e.g ```FrequencyType_daily``` only allows for a frequency amount of 1, in other words: you can get data over some period one day at a time, but not 2,3 etc. days at a time)
+```
+static const int
+VALID_FREQUENCIES_BY_FREQUENCY_TYPE[FrequencyType_monthly + 1][5] = {
+    {1, 5, 10, 30, -1},
+    {1, -1, -1, -1 ,-1},
+    {1, -1, -1, -1 ,-1},
+    {1, -1, -1, -1 ,-1}
+};
+```
+- invalid frequency-to-frequency-type combinations will return error code immediately
+
+**functions**
+```
+static inline int
+HistoricalRangeGetter_Create( struct Credentials *pcreds,
+                               const char* symbol,
+                               FrequencyType frequency_type,
+                               unsigned int frequency,
+                               unsigned long long start_msec_since_epoch,
+                               unsigned long long end_msec_since_epoch,
+                               int extended_hours,
+                               HistoricalRangeGetter_C *pgetter );
+```
+```
+static inline int
+HistoricalRangeGetter_Destroy( HistoricalRangeGetter_C *pgetter );
+```
+```
+static inline int
+HistoricalRangeGetter_Get( HistoricalRangeGetter_C *pgetter, 
+                           char** buf,  
+                           size_t *n);
+```
+```
+static inline int
+HistoricalRangeGetter_Close(HistoricalRangeGetter_C *pgetter);
+```
+```
+static inline int
+HistoricalRangeGetter_IsClosed(HistoricalRangeGetter_C *pgetter, int *b);
+```
+```
+static inline int
+HistoricalRangeGetter_GetSymbol( HistoricalRangeGetter_C *pgetter,
+                                  char **buf,
+                                  size_t *n );
+```
+```
+static inline int
+HistoricalRangeGetter_SetSymbol( HistoricalRangeGetter_C *pgetter,
+                                  const char *symbol );
+```
+```
+static inline int
+HistoricalRangeGetter_GetFrequency( HistoricalRangeGetter_C *pgetter,
+                                    unsigned int *frequency );
+```
+```
+static inline int
+HistoricalRangeGetter_GetFrequencyType( HistoricalRangeGetter_C *pgetter,
+                                        FrequencyType *frequency_type );
+```
+```
+static inline int
+HistoricalRangeGetter_IsExtendedHours( HistoricalRangeGetter_C *pgetter,
+                                       int *is_extended_hours );
+```
+```
+static inline int
+HistoricalRangeGetter_SetExtendedHours( HistoricalRangeGetter_C *pgetter,
+                                        int is_extended_hours );
+```
+```
+static inline int
+HistoricalRangeGetter_GetEndMSecSinceEpoch( HistoricalRangeGetter_C *pgetter,
+                                            unsigned long long *end_msec );
+```
+```
+static inline int
+HistoricalRangeGetter_SetEndMSecSinceEpoch( HistoricalRangeGetter_C *pgetter,
+                                            unsigned long long end_msec );
+```
+```
+static inline int
+HistoricalRangeGetter_GetStartMSecSinceEpoch( HistoricalRangeGetter_C *pgetter,
+                                              unsigned long long *start_msec );
+```
+```
+static inline int
+HistoricalRangeGetter_SetStartMSecSinceEpoch( HistoricalRangeGetter_C *pgetter,
+                                              unsigned long long start_msec );
+```
+```
+static inline int
+HistoricalRangeGetter_SetFrequency( HistoricalRangeGetter_C *pgetter,
+                                     FrequencyType frequency_type,
+                                     unsigned int frequency );
+```
+```
+static inline int
+GetHistoricalRange( struct Credentials *pcreds,
+                    const char* symbol,
                     FrequencyType frequency_type,
                     unsigned int frequency,
                     unsigned long long start_msec_since_epoch,
                     unsigned long long end_msec_since_epoch,
-                    bool extended_hours );
+                    int extended_hours,
+                    char **buf,
+                    size_t *n );
 ```
+
 <br>
+
 
 
 #### OptionChainGetter
 
 Traditional Option chain for a single security. [TDAmeritrade docs.](https://developer.tdameritrade.com/option-chains/apis/get/marketdata/chains)
+
+##### [C++]
 
 **constructors**
 ```
@@ -1065,15 +1661,19 @@ OptionChainGetter::OptionChainGetter(
     strikes        :: type of strikes (see types section below)
     contract_type  :: type of contracts (put, call)
     include_quotes :: include underlying quotes
-    from_date      :: beginning date of range of chains (yyyy-MM-dd or yyyy-MM-dd'T'HH:mm:ssz)
-    to_date        :: end date of range of chains (yyyy-MM-dd or yyyy-MM-dd'T'HH:mm:ssz)
+    from_date      :: start date of range of chains*
+    to_date        :: end date of range of chains*
     exp_month      :: expiration month
     option_type    :: type of option (standard, non-standard)
+
+    * yyyy-MM-dd or yyyy-MM-dd'T'HH:mm:ssz
 
 ```
 
 **types**
-
+```
+class OptionChainGetter : public APIGetter;
+```
 ```
 enum class OptionContractType : int{
     call,
@@ -1117,8 +1717,6 @@ enum class OptionType : int{
     all
 };
 ```
-
-*The following types will be constructed/used by the OptionStrikes class. Use the static methods listed below.*
 ```
 enum class OptionStrikesType : int {
     n_atm,
@@ -1126,13 +1724,15 @@ enum class OptionStrikesType : int {
     range,
     none, 
 };
-
+```
+```
 typedef union {
     unsigned int _n_atm;
     double _single;
     OptionRangeType _range;
 } OptionStrikesValue;
-
+```
+```
 class OptionStrikes {
     using Type = OptionStrikesType;
     Type _type;
@@ -1143,7 +1743,7 @@ class OptionStrikes {
 
 **utilities**
 
-**```OptionStrikes```** - Object used to represent one of three distinct strike 
+**```OptionStrikes```** - Class used to represent one of three distinct strike 
 types and related values. Create with its static method:
 
 ***```N_ATM```*** - return 'n' surrounding, at-the-money strikes.
@@ -1239,7 +1839,7 @@ OptionChainGetter::set_symbol(const string& symbol);
 ```
 ```
 void
-OptionChainGetter::set_strikes(OptionStrikes strikes);
+OptionChainGetter::set_strikes(const OptionStrikes& strikes);
 ```
 ```
 void
@@ -1265,32 +1865,224 @@ OptionChainGetter::set_exp_month(OptionExpMonth exp_month);
 void
 OptionChainGetter::set_option_type(OptionType option_type);
 ```
+```
+static json
+OptionChainGetter::Get( 
+    Credentials& creds,
+    const string& symbol,
+    const OptionStrikes& strikes,
+    OptionContractType contract_type = OptionContractType::all,
+    bool include_quotes = false,
+    const string& from_date = "",
+    const string& to_date = "",
+    OptionExpMonth exp_month = OptionExpMonth::all,
+    OptionType option_type = OptionType::all 
+);
+```
+##### [C]
 
-**convenience function**
+**types**
 ```
-inline json
-GetOptionChain( Credentials& creds,
-                const string& symbol,
-                OptionStrikes strikes,
-                OptionContractType contract_type = OptionContractType::all,
-                bool include_quotes = false,
-                const string& from_date = "",
-                const string& to_date = "",
-                OptionExpMonth exp_month = OptionExpMonth::all,
-                OptionType option_type = OptionType::all );
+struct OptionChainGetter_C;
 ```
+```
+enum OptionContractType {
+    OptionContractType_call,
+    OptionContractType_put,
+    OptionContractType_all
+};
+```
+```
+enum OptionRangeType {
+    OptionRangeType_null, /* this shouldn't be used directly  */
+    OptionRangeType_itm, /* in-the-money */
+    OptionRangeType_ntm, /* near-the-money */
+    OptionRangeType_otm, /* out-of-the-monety */
+    OptionRangeType_sak, /* strikes-above-market */
+    OptionRangeType_sbk, /* strikes-below-market */
+    OptionRangeType_snk, /* strikes-near-market */
+    OptionRangeType_all
+};
+```
+```
+enum OptionExpMonth {
+    OptionExpMonth_jan,
+    OptionExpMonth_feb,
+    OptionExpMonth_mar,
+    OptionExpMonth_apr,
+    OptionExpMonth_may,
+    OptionExpMonth_jun,
+    OptionExpMonth_jul,
+    OptionExpMonth_aug,
+    OptionExpMonth_sep,
+    OptionExpMonth_oct,
+    OptionExpMonth_nov,
+    OptionExpMonth_dec,
+    OptionExpMonth_all
+};
+```
+```
+enum OptionType {
+    OptionType_s, /* standard */
+    OptionType_ns, /* non-standard */
+    OptionType_all
+};
+```
+```
+enum OptionStrikesType {
+    OptionStrikesType_n_atm,
+    OptionStrikesType_single,
+    OptionStrikesType_range,
+    OptionStrikesType_none, /* don't use */
+};
+```
+```
+typedef union {
+    unsigned int _n_atm;
+    double _single;
+    OptionRangeType _range;
+} OptionStrikesValue;
+```
+
+- the OptionStrikesValue field used should match the OptionStrikesType
+
+**functions**
+```
+static inline int
+OptionChainGetter_Create( struct Credentials *pcreds,
+                          const char* symbol,
+                          OptionStrikesType strikes_type,
+                          OptionStrikesValue strikes_value,
+                          OptionContractType contract_type,
+                          int include_quotes,
+                          const char* from_date,
+                          const char* to_date,
+                          OptionExpMonth exp_month,
+                          OptionType option_type,
+                          OptionChainGetter_C *pgetter );
+```
+```
+static inline int
+OptionChainGetter_Destroy(OptionChainGetter_C *pgetter );
+```
+```
+static inline int
+OptionChainGetter_Get( OptionChainGetter_C *pgetter, char** buf,  size_t *n);
+```
+```
+static inline int
+OptionChainGetter_Close(OptionChainGetter_C *pgetter);
+```
+```
+static inline int
+OptionChainGetter_IsClosed(OptionChainGetter_C *pgetter, int *b);
+```
+```
+static inline int
+OptionChainGetter_GetSymbol(OptionChainGetter_C *pgetter, char **buf, size_t *n);
+```
+```
+static inline int
+OptionChainGetter_SetSymbol(OptionChainGetter_C *pgetter, const char *symbol);
+```
+```
+static inline int
+OptionChainGetter_GetStrikes( OptionChainGetter_C *pgetter, 
+                              OptionStrikesType *strikes_type, 
+                              OptionStrikesValue *strikes_value );
+```
+```
+static inline int
+OptionChainGetter_SetStrikes( OptionChainGetter_C *pgetter, 
+                              OptionStrikesType strikes_type, 
+                              OptionStrikesValue strikes_value );
+```
+```
+static inline int
+OptionChainGetter_GetContractType( OptionChainGetter_C *pgetter, 
+                                   OptionContractType *contract_type );
+```
+```
+static inline int
+OptionChainGetter_SetContractType( OptionChainGetter_C *pgetter, 
+                                   OptionContractType contract_type );
+```
+```
+static inline int
+OptionChainGetter_IncludesQuotes( OptionChainGetter_C *pgetter, 
+                                  int *includes_quotes );
+```
+```
+static inline int
+OptionChainGetter_IncludeQuotes( OptionChainGetter_C *pgetter, int include_quotes );
+```
+```
+static inline int
+OptionChainGetter_GetFromDate(OptionChainGetter_C *pgetter, char **buf, size_t *n);
+```
+```
+static inline int
+OptionChainGetter_SetFromDate(OptionChainGetter_C *pgetter, const char *date);
+```
+```
+static inline int
+OptionChainGetter_GetToDate(OptionChainGetter_C *pgetter, char **buf, size_t *n);
+```
+```
+static inline int
+OptionChainGetter_SetToDate(OptionChainGetter_C *pgetter, const char *date);
+```
+```
+static inline int
+OptionChainGetter_GetExpMonth( OptionChainGetter_C *pgetter, 
+                               OptionExpMonth *exp_month );
+```
+```
+static inline int
+OptionChainGetter_SetExpMonth( OptionChainGetter_C *pgetter, 
+                               OptionExpMonth exp_month );
+```
+```
+static inline int
+OptionChainGetter_GetOptionType( OptionChainGetter_C *pgetter, 
+                                 OptionType *option_type );
+```
+```
+static inline int
+OptionChainGetter_SetOptionType( OptionChainGetter_C *pgetter, 
+                                 OptionType option_type );
+```
+```
+static inline int
+GetOptionChain( struct Credentials *pcreds,
+                const char* symbol,
+                OptionStrikesType strikes_type,
+                OptionStrikesValue strikes_value,
+                OptionContractType contract_type,
+                int include_quotes,
+                const char* from_date,
+                const char* to_date,
+                OptionExpMonth exp_month,
+                OptionType option_type,
+                char **buf,
+                size_t *n );
+```
+
 <br>
+
 
 #### OptionChainStrategyGetter
 
 Option chains of strategies (spreads) for a single security. [TDAmeritrade docs.](https://developer.tdameritrade.com/option-chains/apis/get/marketdata/chains)
+
+##### [C++]
 
 **constructors**
 ```
 OptionChainStrategyGetter::OptionChainStrategyGetter( 
         Credentials& creds,
         const string& symbol,  
-        OptionStrategy strategy,                       
+        const OptionStrategy& strategy,                       
         const OptionStrikes& strikes,
         OptionContractType contract_type = OptionContractType::all,
         bool include_quotes = false,
@@ -1308,15 +2100,19 @@ OptionChainStrategyGetter::OptionChainStrategyGetter(
     strategy       :: type of strategy (see types/utilities sections below)
     contract_type  :: type of contracts (put, call)
     include_quotes :: include underlying quotes
-    from_date      :: beginning date of range of chains (yyyy-MM-dd or yyyy-MM-dd'T'HH:mm:ssz)
-    to_date        :: end date of range of chains (yyyy-MM-dd or yyyy-MM-dd'T'HH:mm:ssz)
+    from_date      :: start date of range of chains*
+    to_date        :: end date of range of chains* 
     exp_month      :: expiration month
     option_type    :: type of option (standard, non-standard)
+
+    * yyyy-MM-dd or yyyy-MM-dd'T'HH:mm:ssz
 
 ```
 
 **types**
-
+```
+class OptionChainStrategyGetter : public OptionChainGetter;
+```
 ```
 enum class OptionContractType : int{
     call,
@@ -1374,8 +2170,6 @@ enum class OptionType : int{
     all
 };
 ```
-
-*The following types will be constructed/used by the OptionStrikes class. Use the static methods listed below.*
 ```
 enum class OptionStrikesType : int {
     n_atm,
@@ -1383,13 +2177,15 @@ enum class OptionStrikesType : int {
     range,
     none, 
 };
-
+```
+```
 typedef union {
     unsigned int _n_atm;
     double _single;
     OptionRangeType _range;
 } OptionStrikesValue;
-
+```
+```
 class OptionStrikes {
     using Type = OptionStrikesType;
     Type _type;
@@ -1397,8 +2193,6 @@ class OptionStrikes {
     ...
 };
 ```
-
-*See below for an explanation of ```OptionStrategy```*
 ```
 class OptionStrategy {
     OptionStrategyType _strategy;
@@ -1566,11 +2360,11 @@ OptionChainGetter::set_symbol(const string& symbol);
 ```
 ```
 void
-OptionChainStrategyGetter::set_strategy(OptionStrategy strategy);
+OptionChainStrategyGetter::set_strategy(const OptionStrategy& strategy);
 ```
 ```
 void
-OptionChainGetter::set_strikes(OptionStrikes strikes);
+OptionChainGetter::set_strikes(const OptionStrikes& strikes);
 ```
 ```
 void
@@ -1596,26 +2390,261 @@ OptionChainGetter::set_exp_month(OptionExpMonth exp_month);
 void
 OptionChainGetter::set_option_type(OptionType option_type);
 ```
+```
+static json
+OptionChainStrategyGetter::Get( 
+    Credentials& creds,
+    const string& symbol,
+    const OptionStrategy& strategy,
+    const OptionStrikes& strikes,
+    OptionContractType contract_type = OptionContractType::all,
+    bool include_quotes = false,
+    const string& from_date = "",
+    const string& to_date = "",
+    OptionExpMonth exp_month = OptionExpMonth::all,
+    OptionType option_type = OptionType::all 
+);
+```
+##### [C]
 
-**convenience function**
+**types**
 ```
-inline json
-GetOptionChainStrategy( Credentials& creds,
-                        const string& symbol,
-                        OptionStrategy strategy,
-                        OptionStrikes strikes,
-                        OptionContractType contract_type = OptionContractType::all,
-                        bool include_quotes = false,
-                        const string& from_date = "",
-                        const string& to_date = "",
-                        OptionExpMonth exp_month = OptionExpMonth::all,
-                        OptionType option_type = OptionType::all );
+struct OptionChainStrategyGetter_C;
 ```
+```
+enum OptionContractType {
+    OptionContractType_call,
+    OptionContractType_put,
+    OptionContractType_all
+};
+```
+```
+enum OptionStrategyType { 
+    OptionStrategyType_covered,
+    OptionStrategyType_vertical,
+    OptionStrategyType_calendar,
+    OptionStrategyType_strangle,
+    OptionStrategyType_straddle,
+    OptionStrategyType_butterfly,
+    OptionStrategyType_condor,
+    OptionStrategyType_diagonal,
+    OptionStrategyType_collar,
+    OptionStrategyType_roll
+}
+```
+```
+enum OptionRangeType {
+    OptionRangeType_null, /* this shouldn't be used directly  */
+    OptionRangeType_itm, /* in-the-money */
+    OptionRangeType_ntm, /* near-the-money */
+    OptionRangeType_otm, /* out-of-the-monety */
+    OptionRangeType_sak, /* strikes-above-market */
+    OptionRangeType_sbk, /* strikes-below-market */
+    OptionRangeType_snk, /* strikes-near-market */
+    OptionRangeType_all
+};
+```
+```
+enum OptionExpMonth {
+    OptionExpMonth_jan,
+    OptionExpMonth_feb,
+    OptionExpMonth_mar,
+    OptionExpMonth_apr,
+    OptionExpMonth_may,
+    OptionExpMonth_jun,
+    OptionExpMonth_jul,
+    OptionExpMonth_aug,
+    OptionExpMonth_sep,
+    OptionExpMonth_oct,
+    OptionExpMonth_nov,
+    OptionExpMonth_dec,
+    OptionExpMonth_all
+};
+```
+```
+enum OptionType {
+    OptionType_s, /* standard */
+    OptionType_ns, /* non-standard */
+    OptionType_all
+};
+```
+```
+enum OptionStrikesType {
+    OptionStrikesType_n_atm,
+    OptionStrikesType_single,
+    OptionStrikesType_range,
+    OptionStrikesType_none, /* don't use */
+};
+```
+```
+typedef union {
+    unsigned int _n_atm;
+    double _single;
+    OptionRangeType _range;
+} OptionStrikesValue;
+```
+
+- the OptionStrikesValue field used should match the OptionStrikesType
+
+
+**functions**
+```
+static inline int
+OptionChainStrategyGetter_Create( struct Credentials *pcreds,
+                                  const char* symbol,
+                                  OptionStrategyType strategy_type,
+                                  double spread_interval,
+                                  OptionStrikesType strikes_type,
+                                  OptionStrikesValue strikes_value,
+                                  OptionContractType contract_type,
+                                  int include_quotes,
+                                  const char* from_date,
+                                  const char* to_date,
+                                  OptionExpMonth exp_month,
+                                  OptionType option_type,
+                                  OptionChainStrategyGetter_C *pgetter );
+```
+```
+static inline int
+OptionChainStrategyGetter_Destroy( OptionChainStrategyGetter_C *pgetter );
+```
+```
+static inline int
+OptionChainStrategyGetter_Get( OptionChainStrategyGetter_C *pgetter, 
+                               char** buf,  
+                               size_t *n );
+```
+```
+static inline int
+OptionChainStrategyGetter_Close(OptionChainStrategyGetter_C *pgetter);
+```
+```
+static inline int
+OptionChainStrategyGetter_IsClosed(OptionChainStrategyGetter_C *pgetter, int *b);
+```
+```
+static inline int
+OptionChainStrategyGetter_GetSymbol( OptionChainStrategyGetter_C *pgetter, 
+                                     char **buf, 
+                                     size_t *n );
+```
+```
+static inline int
+OptionChainStrategyGetter_SetSymbol( OptionChainStrategyGetter_C *pgetter, 
+                                     const char *symbol );
+```
+```
+static inline int
+OptionChainStrategyGetter_GetStrikes( OptionChainStrategyGetter_C *pgetter, 
+                                      OptionStrikesType *strikes_type, 
+                                      OptionStrikesValue *strikes_value );
+```
+```
+static inline int
+OptionChainStrategyGetter_SetStrikes( OptionChainStrategyGetter_C *pgetter, 
+                                      OptionStrikesType strikes_type, 
+                                      OptionStrikesValue strikes_value );
+```
+```
+static inline int
+OptionChainStrategyGetter_GetContractType( OptionChainStrategyGetter_C *pgetter, 
+                                           OptionContractType *contract_type );
+```
+```
+static inline int
+OptionChainStrategyGetter_SetContractType( OptionChainStrategyGetter_C *pgetter, 
+                                           OptionContractType contract_type );
+```
+```
+static inline int
+OptionChainStrategyGetter_IncludesQuotes( OptionChainStrategyGetter_C *pgetter, 
+                                          int *includes_quotes );
+```
+```
+static inline int
+OptionChainStrategyGetter_IncludeQuotes( OptionChainStrategyGetter_C *pgetter, 
+                                         int include_quotes );
+```
+```
+static inline int
+OptionChainStrategyGetter_GetFromDate( OptionChainStrategyGetter_C *pgetter, 
+                                       char **buf, 
+                                       size_t *n );
+```
+```
+static inline int
+OptionChainStrategyGetter_SetFromDate( OptionChainStrategyGetter_C *pgetter, 
+                                       const char *date );
+```
+```
+static inline int
+OptionChainStrategyGetter_GetToDate( OptionChainStrategyGetter_C *pgetter, 
+                                     char **buf, 
+                                     size_t *n );
+```
+```
+static inline int
+OptionChainStrategyGetter_SetToDate( OptionChainStrategyGetter_C *pgetter, 
+                                     const char *date );
+```
+```
+static inline int
+OptionChainStrategyGetter_GetExpMonth( OptionChainStrategyGetter_C *pgetter, 
+                                       OptionExpMonth *exp_month );
+```
+```
+static inline int
+OptionChainStrategyGetter_SetExpMonth( OptionChainStrategyGetter_C *pgetter, 
+                                       OptionExpMonth exp_month );
+```
+```
+static inline int
+OptionChainStrategyGetter_GetOptionType( OptionChainStrategyGetter_C *pgetter, 
+                                         OptionType *option_type );
+```
+```
+static inline int
+OptionChainStrategyGetter_SetOptionType( OptionChainStrategyGetter_C *pgetter, 
+                                         OptionType option_type );
+```
+```
+static inline int
+OptionChainStrategyGetter_GetStrategy( OptionChainStrategyGetter_C *pgetter,
+                                       OptionStrategyType *strategy_type,
+                                       double *spread_interval );
+```
+```
+static inline int
+OptionChainStrategyGetter_SetStrategy( OptionChainStrategyGetter_C *pgetter,
+                                        OptionStrategyType strategy_type,
+                                        double spread_interval );
+```
+```
+static inline int
+GetOptionChainStrategy( struct Credentials *pcreds,
+                        const char* symbol,
+                        OptionStrategyType strategy_type,
+                        double spread_interval,
+                        OptionStrikesType strikes_type,
+                        OptionStrikesValue strikes_value,
+                        OptionContractType contract_type,
+                        int include_quotes,
+                        const char* from_date,
+                        const char* to_date,
+                        OptionExpMonth exp_month,
+                        OptionType option_type,
+                        char **buf,
+                        size_t *n );
+```
+
 <br>
+
 
 #### OptionChainAnalyticalGetter
 
 Option chains with analytics, for a single security. [TDAmeritrade docs.](https://developer.tdameritrade.com/option-chains/apis/get/marketdata/chains)
+
+##### [C++]
 
 **constructors**
 ```
@@ -1646,15 +2675,19 @@ OptionChainAnalyticalGetter::OptionChainAnalyticalGetter(
     strategy         :: type of strategy (see types/utilities sections below)
     contract_type    :: type of contracts (put, call)
     include_quotes   :: include underlying quotes
-    from_date        :: beginning date of range of chains (yyyy-MM-dd or yyyy-MM-dd'T'HH:mm:ssz)
-    to_date          :: end date of range of chains (yyyy-MM-dd or yyyy-MM-dd'T'HH:mm:ssz)
+    from_date        :: start date of range of chains*
+    to_date          :: end date of range of chains*
     exp_month        :: expiration month
     option_type      :: type of option (standard, non-standard)
+
+    * yyyy-MM-dd or yyyy-MM-dd'T'HH:mm:ssz
 
 ```
 
 **types**
-
+```
+class OptionChainAnalyticalGetter : public OptionChainGetter;
+```
 ```
 enum class OptionContractType : int{
     call,
@@ -1698,8 +2731,6 @@ enum class OptionType : int{
     all
 };
 ```
-
-*The following types will be constructed/used by the OptionStrikes class. Use the static methods listed below.*
 ```
 enum class OptionStrikesType : int {
     n_atm,
@@ -1852,7 +2883,7 @@ OptionChainAnalyticalGetter::set_days_to_exp(unsigned int days_to_exp);
 ```
 ```
 void
-OptionChainGetter::set_strikes(OptionStrikes strikes);
+OptionChainGetter::set_strikes(const OptionStrikes& strikes);
 ```
 ```
 void
@@ -1878,28 +2909,292 @@ OptionChainGetter::set_exp_month(OptionExpMonth exp_month);
 void
 OptionChainGetter::set_option_type(OptionType option_type);
 ```
-
-**convenience function**
 ```
-inline json
-GetOptionChainAnalytical( Credentials& creds,
+static json
+OptionChainAnalyticalGetter::Get( 
+    Credentials& creds,
+    double volatility,
+    double underlying_price,
+    double interest_rate,
+    unsigned int days_to_exp,
+    const OptionStrikes& strikes,
+    OptionContractType contract_type = OptionContractType::all,
+    bool include_quotes = false,
+    const string& from_date = "",
+    const string& to_date = "",
+    OptionExpMonth exp_month = OptionExpMonth::all,
+    OptionType option_type = OptionType::all  
+);
+```
+##### [C]
+
+**types**
+```
+struct OptionChainAnalyticalGetter_C;
+```
+```
+enum OptionContractType {
+    OptionContractType_call,
+    OptionContractType_put,
+    OptionContractType_all
+};
+```
+```
+enum OptionRangeType {
+    OptionRangeType_null, /* this shouldn't be used directly  */
+    OptionRangeType_itm, /* in-the-money */
+    OptionRangeType_ntm, /* near-the-money */
+    OptionRangeType_otm, /* out-of-the-monety */
+    OptionRangeType_sak, /* strikes-above-market */
+    OptionRangeType_sbk, /* strikes-below-market */
+    OptionRangeType_snk, /* strikes-near-market */
+    OptionRangeType_all
+};
+```
+```
+enum OptionExpMonth {
+    OptionExpMonth_jan,
+    OptionExpMonth_feb,
+    OptionExpMonth_mar,
+    OptionExpMonth_apr,
+    OptionExpMonth_may,
+    OptionExpMonth_jun,
+    OptionExpMonth_jul,
+    OptionExpMonth_aug,
+    OptionExpMonth_sep,
+    OptionExpMonth_oct,
+    OptionExpMonth_nov,
+    OptionExpMonth_dec,
+    OptionExpMonth_all
+};
+```
+```
+enum OptionType {
+    OptionType_s, /* standard */
+    OptionType_ns, /* non-standard */
+    OptionType_all
+};
+```
+```
+enum OptionStrikesType {
+    OptionStrikesType_n_atm,
+    OptionStrikesType_single,
+    OptionStrikesType_range,
+    OptionStrikesType_none, /* don't use */
+};
+```
+```
+typedef union {
+    unsigned int _n_atm;
+    double _single;
+    OptionRangeType _range;
+} OptionStrikesValue;
+```
+
+- the OptionStrikesValue field used should match the OptionStrikesType
+
+
+**functions**
+```
+static inline int
+OptionChainAnalyticalGetter_Create( struct Credentials *pcreds,
+                                    const char* symbol,
+                                    double volatility,
+                                    double underlying_price,
+                                    double interest_rate,
+                                    unsigned int days_to_exp,
+                                    OptionStrikesType strikes_type,
+                                    OptionStrikesValue strikes_value,
+                                    OptionContractType contract_type,
+                                    int include_quotes,
+                                    const char* from_date,
+                                    const char* to_date,
+                                    OptionExpMonth exp_month,
+                                    OptionType option_type,
+                                    OptionChainAnalyticalGetter_C *pgetter );
+```
+```
+static inline int
+OptionChainAnalyticalGetter_Destroy( OptionChainAnalyticalGetter_C *pgetter );
+```
+```
+static inline int
+OptionChainAnalyticalGetter_Get( OptionChainAnalyticalGetter_C *pgetter, 
+                                 char** buf,  
+                                 size_t *n );
+```
+```
+static inline int
+OptionChainAnalyticalGetter_Close(OptionChainAnalyticalGetter_C *pgetter);
+```
+```
+static inline int
+OptionChainAnalyticalGetter_IsClosed(OptionChainAnalyticalGetter_C *pgetter, int *b);
+```
+```
+static inline int
+OptionChainAnalyticalGetter_GetSymbol( OptionChainAnalyticalGetter_C *pgetter, 
+                                       char **buf, 
+                                       size_t *n );
+```
+```
+static inline int
+OptionChainAnalyticalGetter_SetSymbol( OptionChainAnalyticalGetter_C *pgetter, 
+                                       const char *symbol );
+```
+```
+static inline int
+OptionChainAnalyticalGetter_GetStrikes( OptionChainAnalyticalGetter_C *pgetter, 
+                                        OptionStrikesType *strikes_type, 
+                                        OptionStrikesValue *strikes_value );
+```
+```
+static inline int
+OptionChainAnalyticalGetter_SetStrikes( OptionChainAnalyticalGetter_C *pgetter, 
+                                        OptionStrikesType strikes_type, 
+                                        OptionStrikesValue strikes_value );
+```
+```
+static inline int
+OptionChainAnalyticalGetter_GetContractType( OptionChainAnalyticalGetter_C *pgetter, 
+                                             OptionContractType *contract_type );
+```
+```
+static inline int
+OptionChainAnalyticalGetter_SetContractType( OptionChainAnalyticalGetter_C *pgetter, 
+                                             OptionContractType contract_type );
+```
+```
+static inline int
+OptionChainAnalyticalGetter_IncludesQuotes( OptionChainAnalyticalGetter_C *pgetter, 
+                                            int *includes_quotes );
+```
+```
+static inline int
+OptionChainAnalyticalGetter_IncludeQuotes( OptionChainAnalyticalGetter_C *pgetter, 
+                                           int include_quotes );
+```
+```
+static inline int
+OptionChainAnalyticalGetter_GetFromDate( OptionChainAnalyticalGetter_C *pgetter, 
+                                         char **buf, 
+                                         size_t *n );
+```
+```
+static inline int
+OptionChainAnalyticalGetter_SetFromDate( OptionChainAnalyticalGetter_C *pgetter, 
+                                         const char *date );
+```
+```
+static inline int
+OptionChainAnalyticalGetter_GetToDate( OptionChainAnalyticalGetter_C *pgetter, 
+                                       char **buf, 
+                                       size_t *n );
+```
+```
+static inline int
+OptionChainAnalyticalGetter_SetToDate( OptionChainAnalyticalGetter_C *pgetter, 
+                                       const char *date );
+```
+```
+static inline int
+OptionChainAnalyticalGetter_GetExpMonth( OptionChainAnalyticalGetter_C *pgetter, 
+                                         OptionExpMonth *exp_month );
+```
+```
+static inline int
+OptionChainAnalyticalGetter_SetExpMonth( OptionChainAnalyticalGetter_C *pgetter, 
+                                         OptionExpMonth exp_month );
+```
+```
+static inline int
+OptionChainAnalyticalGetter_GetOptionType( OptionChainAnalyticalGetter_C *pgetter, 
+                                           OptionType *option_type );
+```
+```
+static inline int
+OptionChainAnalyticalGetter_SetOptionType( OptionChainAnalyticalGetter_C *pgetter, 
+                                           OptionType option_type );
+```
+```
+static inline int
+OptionChainAnalyticalGetter_GetVolatility(
+    OptionChainAnalyticalGetter_C *pgetter,
+    double *volatility
+    );
+```
+```
+static inline int
+OptionChainAnalyticalGetter_SetVolatility(
+    OptionChainAnalyticalGetter_C *pgetter,
+    double volatility
+    );
+```
+```
+static inline int
+OptionChainAnalyticalGetter_GetUnderlyingPrice(
+    OptionChainAnalyticalGetter_C *pgetter,
+    double *underlying_price
+    );
+```
+```
+static inline int
+OptionChainAnalyticalGetter_SetUnderlyingPrice(
+    OptionChainAnalyticalGetter_C *pgetter,
+    double underlying_price
+    );
+```
+```
+static inline int
+OptionChainAnalyticalGetter_GetInterestRate(
+    OptionChainAnalyticalGetter_C *pgetter,
+    double *interest_rate
+    )
+```
+```
+static inline int
+OptionChainAnalyticalGetter_SetInterestRate( 
+    OptionChainAnalyticalGetter_C *pgetter,
+    double interest_rate
+    );
+```
+```
+static inline int
+OptionChainAnalyticalGetter_GetDaysToExp( OptionChainAnalyticalGetter_C *pgetter,
+                                          unsigned int *days_to_exp );
+```
+```
+static inline int
+OptionChainAnalyticalGetter_SetDaysToExp( OptionChainAnalyticalGetter_C *pgetter,
+                                          unsigned int days_to_exp );
+```
+```
+static inline int
+GetOptionChainAnalytical( struct Credentials *pcreds,
+                          const char* symbol,
                           double volatility,
                           double underlying_price,
                           double interest_rate,
-                          unsigned int days_to_exp,                       
-                          const OptionStrikes& strikes,
-                          OptionContractType contract_type = OptionContractType::all,
-                          bool include_quotes = false,
-                          const string& from_date = "",
-                          const string& to_date = "",
-                          OptionExpMonth exp_month = OptionExpMonth::all,
-                          OptionType option_type = OptionType::all  );
+                          unsigned int days_to_exp,
+                          OptionStrikesType strikes_type,
+                          OptionStrikesValue strikes_value,
+                          OptionContractType contract_type,
+                          int include_quotes,
+                          const char* from_date,
+                          const char* to_date,
+                          OptionExpMonth exp_month,
+                          OptionType option_type,
+                          char **buf,
+                          size_t *n );
 ```
+
 <br>
 
 #### AccountInfoGetter
 
 Account balances, positions, and orders. [TDAmeritrade docs.](https://developer.tdameritrade.com/account-access/apis/get/accounts/{accountId}-0)
+
+##### [C++]
 
 **constructors**
 ```
@@ -1914,7 +3209,10 @@ AccountInfoGetter::AccountInfoGetter( Credentials& creds,
     positions  ::  include positions
     orders     ::  include orders
 ```
-
+**types**
+```
+class AccountInfoGetter : public AccountGetterBase;
+```
 **methods**
 ```
 json 
@@ -1952,32 +3250,106 @@ AccountInfoGetter::return_positions(bool positions);
 void
 AccountInfoGetter::return_orders(bool orders);
 ```
-
-**convenience function**
 ```
-inline json
-GetAccountInfo( Credentials& creds, 
-                const string& account_id,
-                bool positions,
-                bool orders );
+static json
+AccountInfoGetter::Get( Credentials& creds, 
+                   const string& account_id,
+                   bool positions,
+                   bool orders );
+```
+
+##### [C]
+
+**types**
+```
+struct AccountInfoGetter_C;
+```
+
+**functions**
+```
+static inline int
+AccountInfoGetter_Create( struct Credentials *pcreds,
+                          const char* account_id,
+                          int positions,
+                          int orders,
+                          AccountInfoGetter_C *pgetter );
+```
+```
+static inline int
+AccountInfoGetter_Destroy( AccountInfoGetter_C *pgetter);
+```
+```
+static inline int
+AccountInfoGetter_Get(AccountInfoGetter *pgetter, char** buf, size_t *n);
+```
+```
+static inline int
+AccountInfoGetter_Close(AccountInfoGetter *pgetter);
+```
+```
+static inline int
+AccountInfoGetter_IsClosed(AccountInfoGetter_C *pgetter, int *b);
+```
+```
+static inline int 
+AccountInfoGetter_GetAccountId(AccountInfoGetter_C *pgetter, char **buf, size_t *n);
+```
+```
+static inline int 
+AccountInfoGetter_SetAccountId(AccountInfoGetter_C *pgetter, const char *symbol);
+```
+```
+static inline int
+AccountInfoGetter_ReturnsPositions( AccountInfoGetter_C *pgetter, 
+                                    int *returns_positions );
+```
+```
+static inline int
+AccountInfoGetter_ReturnPositions( AccountInfoGetter_C *pgetter,
+                                   int return_positions );
+```
+```
+static inline int
+AccountInfoGetter_ReturnsOrders( AccountInfoGetter_C *pgetter, 
+                                 int *returns_orders );
+```
+```
+static inline int
+AccountInfoGetter_ReturnOrders( AccountInfoGetter_C *pgetter, 
+                                int return_orders )
+```
+```
+static inline int
+GetAccountInfo( struct Credentials *pcreds,
+                const char* account_id,
+                int positions,
+                int orders,
+                char **buf,
+                size_t *n );
 ```
 <br>
+
 
 
 #### PreferencesGetter
 
 Account preferences. [TDAmeritrade docs.](https://developer.tdameritrade.com/user-principal/apis/get/accounts/{accountId}/preferences-0)
 
+##### [C++]
+
 **constructors**
 ```
-AccountPreferencesGetter::AccountPreferencesGetter( Credentials& creds, 
-                                                    const string& account_id );
+PreferencesGetter::PreferencesGetter( Credentials& creds, 
+                                      const string& account_id );
 
     creds      ::  credentials struct received from RequestAccessToken 
                    / LoadCredentials / CredentialsManager.credentials
     account_id ::  id string of account to get preferences for
 ```
-
+**types**
+```
+class PreferencesGetter : public AccountGetterBase;
+```
 **methods**
 ```
 json 
@@ -1999,11 +3371,54 @@ AccountGetterBase::get_account_id() const;
 void
 AccountGetterBase::set_account_id(const string& account_id);
 ```
-
-**convenience function**
 ```
-inline json
-GetAccountPreferences( Credentials& creds, const string& account_id );
+static json
+PreferencesGetter::Get( Credentials& creds, const string& account_id );
+```
+##### [C]
+
+**types**
+```
+struct PreferencesGetter_C;
+```
+
+**functions**
+```
+static inline int
+PreferencesGetter_Create( struct Credentials *pcreds,
+                          const char* account_id,
+                          PreferencesGetter_C *pgetter );
+```
+```
+static inline int
+PreferencesGetter_Destroy( PreferencesGetter_C *pgetter );
+```
+```
+static inline int
+PreferencesGetter_Get( PreferencesGetter *pgetter, char** buf, size_t *n );
+```
+```
+static inline int
+PreferencesGetter_Close(PreferencesGetter *pgetter);
+```
+```
+static inline int
+PreferencesGetter_IsClosed(PreferencesGetter_C *pgetter, int *b);
+```
+```
+static inline int 
+PreferencesGetter_GetAccountId(PreferencesGetter_C *pgetter, char **buf, size_t *n);
+```
+```
+static inline int 
+PreferencesGetter_SetAccountId(PreferencesGetter_C *pgetter, const char *symbol);
+```
+```
+static inline int
+GetPreferences( struct Credentials *pcreds,
+                const char* account_id,
+                char **buf,
+                size_t *n );
 ```
 <br>
 
@@ -2011,6 +3426,7 @@ GetAccountPreferences( Credentials& creds, const string& account_id );
 
 User Principal details. [TDAmeritrade docs.](https://developer.tdameritrade.com/user-principal/apis/get/userprincipals-0)
 
+##### [C++]
 **constructors**
 ```
 UserPrincipalsGetter::UserPrincipalsGetter( Credentials& creds, 
@@ -2026,7 +3442,10 @@ UserPrincipalsGetter::UserPrincipalsGetter( Credentials& creds,
     preferences                :: include streamer preferences
     surrogate_ids              :: include surrogate_ids
 ```
-
+**types**
+```
+class UserPrincipalsGetter : public APIGetter;
+```
 **methods**
 ```
 json 
@@ -2076,21 +3495,105 @@ UserPrincipalsGetter::return_preferences(bool preferences);
 void
 UserPrincipalsGetter::return_surrogate_ids(bool surrogate_ids);
 ```
-
-**convenience function**
 ```
-inline json
-GetUserPrincipals( Credentials& creds, 
-                   bool streamer_subscription_keys,
-                   bool streamer_connection_info,
-                   bool preferences,
-                   bool surrogate_ids );
+static json
+UserPrincipalsGetter::Get( Credentials& creds, 
+                           bool streamer_subscription_keys,
+                           bool streamer_connection_info,
+                           bool preferences,
+                           bool surrogate_ids );
+```
+##### [C]
+
+**types**
+```
+struct UserPrincipalsGetter_C;
+```
+
+**functions**
+```
+static inline int
+UserPrincipalsGetter_Create( struct Credentials *pcreds,
+                             int streamer_subscription_keys,
+                             int streamer_connection_info,
+                             int preferences,
+                             int surrogate_ids,
+                             UserPrincipalsGetter_C *pgetter);
+```
+```
+static inline int
+UserPrincipalsGetter_Destroy(UserPrincipalsGetter_C *pgetter);
+```
+```
+static inline int
+UserPrincipalsGetter_Get(UserPrincipalsGetter *pgetter, char** buf, size_t *n);
+```
+```
+static inline int
+UserPrincipalsGetter_Close(UserPrincipalsGetter *pgetter);
+```
+```
+static inline int
+UserPrincipalsGetter_IsClosed(UserPrincipalsGetter_C *pgetter, int *b);
+```
+```
+static inline int
+UserPrincipalsGetter_ReturnsSubscriptionKeys( UserPrincipalsGetter_C *pgetter,
+                                              int *returns_subscription_keys );
+```
+```
+static inline int
+UserPrincipalsGetter_ReturnSubscriptionKeys( UserPrincipalsGetter_C *pgetter,
+                                             int return_subscription_keys);
+```
+```
+static inline int
+UserPrincipalsGetter_ReturnsConnectionInfo( UserPrincipalsGetter_C *pgetter,
+                                            int *returns_connection_info );
+```
+```
+static inline int
+UserPrincipalsGetter_ReturnConnectionInfo( UserPrincipalsGetter_C *pgetter,
+                                           int return_connection_info );
+```
+```
+static inline int
+UserPrincipalsGetter_ReturnsPreferences( UserPrincipalsGetter_C *pgetter,
+                                         int *returns_preferences);
+```
+```
+static inline int
+UserPrincipalsGetter_ReturnPreferences( UserPrincipalsGetter_C *pgetter,
+                                        int return_preferences );
+```
+```
+static inline int
+UserPrincipalsGetter_ReturnsSurrogateIds( UserPrincipalsGetter_C *pgetter,
+                                          int *returns_surrogate_ids );
+```
+```
+static inline int
+UserPrincipalsGetter_ReturnSurrogateIds(  UserPrincipalsGetter_C *pgetter,
+                                          int return_surrogate_ids );
+```
+```
+static inline int
+GetUserPrincipals( struct Credentials *pcreds,
+                   int streamer_subscription_keys,
+                   int streamer_connection_info,
+                   int preferences,
+                   int surrogate_ids,
+                   char **buf,
+                   size_t *n );
+
 ```
 <br>
 
 #### StreamerSubscriptionKeysGetter
 
 Subscription keys. [TDAmeritrade docs.](https://developer.tdameritrade.com/user-principal/apis/get/userprincipals/streamersubscriptionkeys-0)
+
+##### [C++]
 
 **constructors**
 ```
@@ -2103,7 +3606,10 @@ StreamerSubscriptionKeysGetter::StreamerSubscriptionKeysGetter(
                    / LoadCredentials / CredentialsManager.credentials
     account_id ::  id string of account to get subscription keys for
 ```
-
+**types**
+```
+class StreamerSubscriptionKeysGetter : AccountGetterBase;
+```
 **methods**
 ```
 json 
@@ -2125,11 +3631,67 @@ AccountGetterBase::get_account_id() const;
 void
 AccountGetterBase::set_account_id(const string& account_id);
 ```
-
-**convenience function**
 ```
-inline json
-GetStreamerSubscriptionKeys( Credentials& creds, const string& account_id );
+static json
+StreamerSubscriptionKeysGetter::Get(Credentials& creds, const string& account_id);
+```
+##### [C]
+
+**types**
+```
+struct StreamerSubscriptionKeysGetter_C;
+```
+
+**functions**
+```
+static inline int
+StreamerSubscriptionKeysGetter_Create( struct Credentials *pcreds,
+                                       const char* account_id,
+                                       StreamerSubscriptionKeysGetter_C *pgetter );
+```
+```
+static inline int
+StreamerSubscriptionKeysGetter_Destroy(StreamerSubscriptionKeysGetter_C *pgetter);
+```
+```
+static inline int
+StreamerSubscriptionKeysGetter_Get( StreamerSubscriptionKeysGetter_C *pgetter, 
+                                    char** buf, 
+                                    size_t *n );
+```
+```
+static inline int
+StreamerSubscriptionKeysGetter_Close(StreamerSubscriptionKeysGetter_C *pgetter);
+```
+```
+static inline int
+StreamerSubscriptionKeysGetter_IsClosed(
+    StreamerSubscriptionKeysGetter_C *pgetter, 
+    int *b
+);
+```
+```
+static inline int 
+StreamerSubscriptionKeysGetter_GetAccountId(
+    StreamerSubscriptionKeysGetter_C *pgetter, 
+    char **buf, 
+    size_t *n
+);
+```
+```
+static inline int 
+StreamerSubscriptionKeysGetter_SetAccountId(
+    StreamerSubscriptionKeysGetter_C *pgetter, 
+    const char *symbol
+);
+```
+```
+static inline int
+GetStreamerSubscriptionKeys( struct Credentials *pcreds,
+                             const char* account_id,
+                             char **buf,
+                             size_t *n );
+
 ```
 <br>
 
@@ -2137,6 +3699,8 @@ GetStreamerSubscriptionKeys( Credentials& creds, const string& account_id );
 #### TransactionHistoryGetter
 
 Transactions within a date range. [TDAmeritrade docs.](https://developer.tdameritrade.com/transaction-history/apis/get/accounts/{accountId}/transactions-0)
+
+##### [C++]
 
 **constructors**
 ```
@@ -2159,6 +3723,9 @@ TransactionHistoryGetter::TransactionHistoryGetter(
 ```
 
 **types**
+```
+class TransactionHistoryGetter : public AccountGetterBase;
+```
 ```
 enum class TransactionType : int{
     all,
@@ -2227,22 +3794,141 @@ TransactionHistoryGetter::set_start_date(const string& start_date);
 void
 TransactionHistoryGetter::set_end_date(const string& end_date);
 ```
-
-**convenience function**
 ```
-inline json
-GetTransactionHistory( Credentials& creds, 
-                       const string& account_id 
-                       TransactionType transaction_type = TransactionType::all,
-                       const string& symbol="",
-                       const string& start_date="",
-                       const string& end_date="" );    
+static json
+TransactionHistoryGetter::Get( 
+    Credentials& creds, 
+    const string& account_id 
+    TransactionType transaction_type = TransactionType::all,
+    const string& symbol="",
+    const string& start_date="",
+    const string& end_date="" 
+);
+```
+##### [C]
+
+**types**
+```
+struct TransactionHistoryGetter_C;
+```
+```
+enum TransactionType {
+    TransactionType_all,
+    TransactionType_trade,
+    TransactionType_buy_only,
+    TransactionType_sell_only,
+    TransactionType_cash_in_or_cash_out,
+    TransactionType_checking,
+    TransactionType_dividend,
+    TransactionType_interest,
+    TransactionType_other,
+    TransactionType_advisor_fees
+};
+```
+
+**functions**
+```
+static inline int
+TransactionHistoryGetter_Create( struct Credentials *pcreds,
+                                 const char* account_id,
+                                 TransactionType transaction_type,
+                                 const char* symbol,
+                                 const char* start_date,
+                                 const char* end_date,
+                                 TransactionHistoryGetter_C *pgetter );
+```
+```
+static inline int
+TransactionHistoryGetter_Destroy( TransactionHistoryGetter_C *pgetter );
+```
+```
+static inline int
+TransactionHistoryGetter_Get( TransactionHistoryGetter_C *pgetter, 
+                              char** buf, 
+                              size_t *n );
+```
+```
+static inline int
+TransactionHistoryGetter_Close(TransactionHistoryGetter_C *pgetter);
+```
+```
+static inline int
+TransactionHistoryGetter_IsClosed(TransactionHistoryGetter_C *pgetter,  int *b);
+```
+```
+static inline int 
+TransactionHistoryGetter_GetAccountId( TransactionHistoryGetter_C *pgetter, 
+                                       char **buf, 
+                                       size_t *n );
+```
+```
+static inline int 
+TransactionHistoryGetter_SetAccountId( TransactionHistoryGetter_C *pgetter, 
+                                       const char *symbol );
+```
+```
+static inline int
+TransactionHistoryGetter_GetTransactionType( TransactionHistoryGetter_C *pgetter,
+                                             TransactionType *transaction_type );
+```
+```
+static inline int
+TransactionHistoryGetter_SetTransactionType( TransactionHistoryGetter_C *pgetter,
+                                             TransactionType transaction_type );
+```
+```
+static inline int
+TransactionHistoryGetter_GetSymbol( TransactionHistoryGetter_C *pgetter,
+                                    char **buf,
+                                    size_t *n );
+```
+```
+static inline int
+TransactionHistoryGetter_SetSymbol( TransactionHistoryGetter_C *pgetter,
+                                    const char* symbol );
+```
+```
+static inline int
+TransactionHistoryGetter_GetStartDate( TransactionHistoryGetter_C *pgetter,
+                                       char **buf,
+                                       size_t *n );
+```
+```
+static inline int
+TransactionHistoryGetter_SetStartDate( TransactionHistoryGetter_C *pgetter,
+                                       const char* start_date );
+```
+```
+static inline int
+TransactionHistoryGetter_GetEndDate( TransactionHistoryGetter_C *pgetter,
+                                     char **buf,
+                                     size_t *n );
+```
+```
+static inline int
+TransactionHistoryGetter_SetEndDate( TransactionHistoryGetter_C *pgetter,
+                                     const char* end_date );
+```
+```
+static inline int
+GetTransactionHistory( struct Credentials *pcreds,
+                       const char* account_id,
+                       TransactionType transaction_type,
+                       const char* symbol,
+                       const char* start_date,
+                       const char* end_date,
+                       char **buf,
+                       size_t *n );
+
 ```
 <br>
+
 
 #### IndividualTransactionHistoryGetter
 
 Transactions by id. [TDAmeritrade docs.](https://developer.tdameritrade.com/transaction-history/apis/get/accounts/{accountId}/transactions/{transactionId}-0)
+
+##### [C++]
 
 **constructors**
 ```
@@ -2257,7 +3943,10 @@ IndividualTransactionHistoryGetter::IndividualTransactionHistoryGetter(
     account_id     ::  id string of account to get transactions for
     transaction_id ::  id string of transaction 
 ```
-
+**types**
+```
+class IndividualTransactionHistoryGetter : public AccountGetterBase;
+```
 **methods**
 ```
 json 
@@ -2287,20 +3976,99 @@ AccountGetterBase::set_account_id(const string& account_id);
 void
 IndividualTransactionHistoryGetter::set_transaction_id(const string& transaction_id);
 ```
-
-
-**convenience function**
 ```
-inline json
-GetIndividualTransactionHistory( Credentials& creds, 
-                                 const string& account_id 
-                                 const string& transaction_id );
+static json
+IndividualTransactionHistoryGetter::Get( Credentials& creds, 
+                                         const string& account_id 
+                                         const string& transaction_id );
+```
+##### [C]
+
+**types**
+```
+struct IndividualTransactionHistoryGetter_C;
+```
+
+**functions**
+```
+static inline int
+IndividualTransactionHistoryGetter_Create(
+    struct Credentials *pcreds,
+    const char* account_id,
+    const char* transaction_id,
+    IndividualTransactionHistoryGetter_C *pgetter );
+```
+```
+static inline int
+IndividualTransactionHistoryGetter_Destroy(
+    IndividualTransactionHistoryGetter_C *pgetter
+    )
+```
+```
+static inline int
+IndividualTransactionHistoryGetter_Get( 
+    IndividualTransactionHistoryGetter_C *pgetter, 
+    char** buf, 
+    size_t *n 
+);
+```
+```
+static inline int
+IndividualTransactionHistoryGetter_Close(
+    IndividualTransactionHistoryGetter_C *pgetter
+);
+```
+```
+static inline int
+IndividualTransactionHistoryGetter_IsClosed(
+    IndividualTransactionHistoryGetter_C *pgetter, 
+    int *b
+);
+```
+```
+static inline int 
+IndividualTransactionHistoryGetter_GetAccountId(
+    IndividualTransactionHistoryGetter_C *pgetter, 
+    char **buf, 
+    size_t *n
+);
+```
+```
+static inline int 
+IndividualTransactionHistoryGetter_SetAccountId(
+    IndividualTransactionHistoryGetter_C *pgetter, 
+    const char *symbol
+);
+```
+```
+static inline int
+IndividualTransactionHistoryGetter_GetTransactionId(
+    IndividualTransactionHistoryGetter_C *pgetter,
+    char **buf,
+    size_t *n );
+```
+```
+static inline int
+IndividualTransactionHistoryGetter_SetTransactionId(
+    IndividualTransactionHistoryGetter_C *pgetter,
+    const char* transaction_id );
+```
+```
+static inline int
+GetIndividualTransactionHistory( struct Credentials *pcreds,
+                                 const char* account_id,
+                                 const char* transaction_id,
+                                 char **buf,
+                                 size_t *n );
+
 ```
 <br>
 
 #### InstrumentInfoGetter
 
 Instrument information. [TDAmeritrade docs.](https://developer.tdameritrade.com/instruments/apis)
+
+##### [C++]
 
 **constructors**
 ```
@@ -2314,6 +4082,9 @@ InstrumentInfoGetter::InstrumentInfoGetter( Credentials& creds,
     query_string :: search string
 ```
 **types**
+```
+class InstrumentInfoGetter : public APIGetter;
+```
 ```
 enum class InstrumentSearchType : int{
     symbol_exact,
@@ -2351,20 +4122,87 @@ void
 InstrumentInfoGetter::set_query( InstrumentSearchType search_type, 
                                  const string& query_string );
 ```
-
-**convenience function**
 ```
-inline json
-GetInstrumentInfo( Credentials& creds, 
+static json
+InstrumentInfoGetter::Get( Credentials& creds, 
+                           InstrumentSearchType search_type,
+                           const string& query_string );
+```
+
+##### [C]
+
+**types**
+```
+struct InstrumentInfoGetter_C;
+```
+```
+enum InstrumentSearchType {
+    InstrumentSearchType_symbol_exact,
+    InstrumentSearchType_symbol_search,
+    InstrumentSearchType_symbol_regex,
+    InstrumentSearchType_description_search,
+    InstrumentSearchType_description_regex,
+    InstrumentSearchType_cusip
+};
+```
+**functions**
+```
+static inline int
+InstrumentInfoGetter_Create( struct Credentials *pcreds,
+                             InstrumentSearchType search_type,
+                             const char* query_string,
+                             InstrumentInfoGetter_C *pgetter );
+```
+```
+static inline int
+InstrumentInfoGetter_Destroy(InstrumentInfoGetter_C *pgetter);
+```
+```
+static inline int
+InstrumentInfoGetter_Get(InstrumentInfoGetter_C *pgetter,  char** buf,  size_t *n);
+```
+```
+static inline int
+InstrumentInfoGetter_Close(InstrumentInfoGetter_C *pgetter);
+```
+```
+static inline int
+InstrumentInfoGetter_IsClosed(InstrumentInfoGetter_C *pgetter, int *b);
+```
+```
+static inline int
+InstrumentInfoGetter_GetSearchType( InstrumentInfoGetter_C *pgetter,
+                                    InstrumentSearchType *search_type );
+```
+```
+static inline int
+InstrumentInfoGetter_GetQueryString( InstrumentInfoGetter_C *pgetter,
+                                     char **buf,
+                                     size_t *n );
+```
+```
+static inline int
+InstrumentInfoGetter_SetQuery( InstrumentInfoGetter_C *pgetter,
+                               InstrumentSearchType search_type,
+                               const char* query_string );
+```
+```
+static inline int
+GetInstrumentInfo( struct Credentials *pcreds,
                    InstrumentSearchType search_type,
-                   const string& query_string );
-```
+                   const char* query_string,
+                   char **buf,
+                   size_t *n );
 
+```
 <br>
+
 
 #### OrderGetter
 
 Order information by order id. [TDAmeritrade docs.](https://developer.tdameritrade.com/account-access/apis/get/accounts/{accountId}/orders/{orderId}-0)
+
+##### [C++]
 
 **constructors**
 ```
@@ -2377,7 +4215,10 @@ OrderGetter::OrderGetter( Credentials& creds,
     account_id  ::  id string of account to get order for
     order_id    ::  id string of order
 ```
-
+**types**
+```
+class OrderGetter : public AccountGetterBase;
+```
 **methods**
 ```
 json 
@@ -2407,21 +4248,76 @@ AccountGetterBase::set_account_id(const string& account_id);
 void
 OrderGetter::set_order_id(const string& order_id);
 ```
-
-
-**convenience function**
 ```
-inline json
-GetOrder( Credentials& creds, 
-          const string& account_id 
-          const string& transaction_id );
+static json
+OrderGetter::Get( Credentials& creds, 
+                  const string& account_id 
+                  const string& transaction_id );
 ```
 
+##### [C]
+
+**types**
+```
+struct OrderGetter_C;
+```
+
+**functions**
+```
+static inline int
+OrderGetter_Create( struct Credentials *pcreds,
+                    const char* account_id,
+                    const char* order_id,
+                    OrderGetter_C *pgetter );
+```
+```
+static inline int
+OrderGetter_Destroy(OrderGetter_C *pgetter);
+```
+```
+static inline int
+OrderGetter_Get(OrderGetter_C *pgetter,  char** buf, size_t *n);
+```
+```
+static inline int
+OrderGetter_Close(OrderGetter_C *pgetter);
+```
+```
+static inline int
+OrderGetter_IsClosed(OrderGetter_C *pgetter, int *b);
+```
+```
+static inline int 
+OrderGetter_GetAccountId(OrderGetter_C *pgetter, char **buf, size_t *n);
+```
+```
+static inline int 
+OrderGetter_SetAccountId(OrderGetter_C *pgetter, const char *symbol);
+```
+```
+static inline int
+OrderGetter_GetOrderId(OrderGetter_C *pgetter, char **buf, size_t *n);
+```
+```
+static inline int
+OrderGetter_SetOrderId(OrderGetter_C *pgetter, const char *order_id);
+```
+```
+static inline int
+GetOrder( struct Credentials *pcreds,
+          const char* account_id,
+          const char* order_id,
+          char **buf,
+          size_t *n );
+
+```
 <br>
 
 #### OrdersGetter
 
 Search for orders of a certain type, within a date/time range. [TDAmeritrade docs.](https://developer.tdameritrade.com/account-access/apis/get/accounts/{accountId}/orders-0)
+
+##### [C++]
 
 **constructors**
 ```
@@ -2436,14 +4332,17 @@ OrdersGetter::OrdersGetter( Credentials& creds,
                           / LoadCredentials / CredentialsManager.credentials
     account_id        :: id string of account to get orders for
     nmax_results      :: max number of (order) results to return
-    from_entered_time :: date/time(<= 60 days ago) before which no orders will be
-                         returned (yyyy-MM-dd or yyyy-MM-dd'T'HH:mm:ssz)
-    to_entered_time   :: date/time(<= 60 days ago) after which no orders will be
-                         returned (yyyy-MM-dd or yyyy-MM-dd'T'HH:mm:ssz)
+    from_entered_time :: time(<= 60 days ago) before which no orders will be returned*
+    to_entered_time   :: time(<= 60 days ago) after which no orders will be returned*
     order_status_type :: status type of orders to return
+
+    * yyyy-MM-dd or yyyy-MM-dd'T'HH:mm:ssz
 ```
 
 **types**
+```
+class OrdersGetter : public AccountGetterBase;
+```
 ```
 enum class OrderStatusType : int{
     AWAITING_PARENT_ORDER,
@@ -2519,14 +4418,123 @@ OrdersGetter::set_to_entered_time(const std::string& to_entered_time);
 void
 OrdersGetter::set_order_status_type(OrderStatusType order_status_type);
 ```
+```
+static json
+OrdersGetter::Get( Credentials& creds, 
+                   const string& account_id 
+                   unsigned int nmax_results,
+                   const std::string& from_entered_time,
+                   const std::string& to_entered_time,
+                   OrderStatusType order_status_type );
+```
 
-**convenience function**
+##### [C]
+
+**types**
 ```
-inline json
-GetOrders( Credentials& creds, 
-            const string& account_id 
-            unsigned int nmax_results,
-            const std::string& from_entered_time,
-            const std::string& to_entered_time,
-            OrderStatusType order_status_type );
+struct OrdersGetter_C;
 ```
+```
+enum OrderStatusType {
+    OrderStatusType_AWAITING_PARENT_ORDER,
+    OrderStatusType_AWAITING_CONDITION,
+    OrderStatusType_AWAITING_MANUAL_REVIEW,
+    OrderStatusType_ACCEPTED,
+    OrderStatusType_AWAITING_UR_OUT,
+    OrderStatusType_PENDING_ACTIVATION,
+    OrderStatusType_QUEUED,
+    OrderStatusType_WORKING,
+    OrderStatusType_REJECTED,
+    OrderStatusType_PENDING_CANCEL,
+    OrderStatusType_CANCELED,
+    OrderStatusType_PENDING_REPLACE,
+    OrderStatusType_REPLACED,
+    OrderStatusType_FILLED,
+    OrderStatusType_EXPIRED
+};
+
+```
+**functions**
+```
+static inline int
+OrdersGetter_Create( struct Credentials *pcreds,
+                     const char* account_id,
+                     unsigned int nmax_results,
+                     const char* from_entered_time,
+                     const char* to_entered_time,
+                     OrderStatusType order_status_type,
+                     OrdersGetter_C *pgetter );
+```
+```
+static inline int
+OrdersGetter_Destroy(OrdersGetter_C *pgetter );
+```
+```
+static inline int
+OrdersGetter_Get(OrdersGetter_C *pgetter,  char** buf, size_t *n);
+```
+```
+static inline int
+OrdersGetter_Close(OrdersGetter_C *pgetter);
+```
+```
+static inline int
+OrdersGetter_IsClosed(OrdersGetter_C *pgetter, int *b);
+```
+```
+static inline int 
+OrdersGetter_GetAccountId(OrdersGetter_C *pgetter, char **buf, size_t *n);
+```
+```
+static inline int 
+OrdersGetter_SetAccountId(OrdersGetter_C *pgetter, const char *symbol);
+```
+```
+static inline int
+OrdersGetter_GetNMaxResults(OrdersGetter_C *pgetter, unsigned int *nmax_results);
+```
+```
+static inline int
+OrdersGetter_SetNMaxResults(OrdersGetter_C *pgetter, unsigned int nmax_results);
+```
+```
+static inline int
+OrdersGetter_GetFromEnteredTime(OrdersGetter_C *pgetter, char** buf, size_t *n);
+```
+```
+static inline int
+OrdersGetter_SetFromEnteredTime( OrdersGetter_C *pgetter,
+                                 const char* from_entered_time );
+```
+```
+static inline int
+OrdersGetter_GetToEnteredTime(OrdersGetter_C *pgetter, char** buf, size_t *n);
+```
+```
+static inline int
+OrdersGetter_SetToEnteredTime( OrdersGetter_C *pgetter,
+                               const char* to_entered_time );
+```
+```
+static inline int
+OrdersGetter_GetOrderStatusType( OrdersGetter_C *pgetter,
+                                 OrderStatusType *order_status_type );
+```
+```
+static inline int
+OrdersGetter_SetOrderStatusType( OrdersGetter_C *pgetter,
+                                 OrderStatusType order_status_type );
+```
+```
+static inline int
+GetOrders( struct Credentials *pcreds,
+           const char* account_id,
+           unsigned int nmax_results,
+           const char* from_entered_time,
+           const char* to_entered_time,
+           OrderStatusType order_status_type,
+           char **buf,
+           size_t *n );
+
+```
+<br>

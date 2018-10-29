@@ -31,6 +31,8 @@ void transaction_history_getter(string id, Credentials& c);
 void individual_transaction_history_getter(string id, Credentials& c);
 void order_getters(string id, Credentials& c);
 
+void test_static_gets(string id, Credentials& c);
+
 void
 test_getters(const string& account_id, Credentials& creds)
 {
@@ -40,6 +42,9 @@ test_getters(const string& account_id, Credentials& creds)
     cout<< APIGetter::get_wait_msec().count() << " --> ";
     APIGetter::set_wait_msec( milliseconds(1500) );
     cout<< APIGetter::get_wait_msec().count() << endl;
+
+    //cout<< endl <<"*** STATIC GETS ***" << endl;
+    //test_static_gets(account_id, creds);
 
     cout<< endl << "*** QUOTE DATA ***" << endl;
     quote_getters(creds);
@@ -84,6 +89,19 @@ test_getters(const string& account_id, Credentials& creds)
 
 }
 
+
+template<typename G, typename... Args>
+constexpr bool
+static_get_has_valid_sig()
+{ return util::func::signature<json(Credentials&, Args...)>::matches(G::Get); }
+
+template<typename G, typename... Args>
+constexpr void
+assert_static_get()
+{ static_assert(static_get_has_valid_sig<G, Args...>(),
+                "invalid static Get(...) signature!"); }
+
+
 void
 Get(APIGetter& getter, bool test_exc = false, string test_exc_msg="")
 {
@@ -123,6 +141,10 @@ build_order_date(tm* t)
 void
 order_getters(string id, Credentials& c)
 {
+    assert_static_get<OrderGetter, const string&, const string&>();
+    assert_static_get<OrdersGetter, const string&, unsigned int, const string&,
+                      const string&, OrderStatusType>();
+
     std::vector<string> orders;
 
     auto tp_now = chrono::system_clock::now() - chrono::hours(5);
@@ -291,6 +313,9 @@ order_getters(string id, Credentials& c)
 void
 transaction_history_getter(string id, Credentials& c)
 {
+    assert_static_get<TransactionHistoryGetter, const string&, TransactionType,
+                      const string&, const string&, const string&>();
+
     TransactionHistoryGetter o(c, id, TransactionType::all, "SPy");
     cout<< o.get_account_id() << ' ' << o.get_transaction_type() << ' '
         << o.get_symbol() << ' ' << o.get_start_date() << ' '
@@ -333,6 +358,9 @@ transaction_history_getter(string id, Credentials& c)
 void
 individual_transaction_history_getter(string id, Credentials& c)
 {
+    assert_static_get<IndividualTransactionHistoryGetter, const string&,
+                      const string&>();
+
     IndividualTransactionHistoryGetter o(c, id, "093432432"); // bad id
     cout<< o.get_account_id() << ' ' << o.get_transaction_id() << endl;
     if( o.get_account_id() != id )
@@ -350,6 +378,8 @@ individual_transaction_history_getter(string id, Credentials& c)
 void
 account_info_getter(string id, Credentials& c)
 {
+    assert_static_get<AccountInfoGetter, const string&, bool, bool>();
+
     AccountInfoGetter o(c, id, false, false);
     cout<< o.get_account_id() << ' ' << o.returns_positions() << ' '
         << o.returns_orders() << endl;
@@ -399,6 +429,8 @@ account_info_getter(string id, Credentials& c)
 void
 preferences_getter(string id, Credentials& c)
 {
+    assert_static_get<PreferencesGetter, const string&>();
+
     PreferencesGetter o(c, id);
     cout<< o.get_account_id() << endl;
 
@@ -412,6 +444,8 @@ preferences_getter(string id, Credentials& c)
 void
 user_principals_getter(Credentials& c)
 {
+    assert_static_get<UserPrincipalsGetter, bool, bool, bool, bool>();
+
     UserPrincipalsGetter o(c, false, false, false, false);
     cout<< o.returns_streamer_subscription_keys()
         << ' ' << o.returns_streamer_connection_info() << ' '
@@ -451,6 +485,8 @@ user_principals_getter(Credentials& c)
 void
 subscription_keys_getter(string id, Credentials& c)
 {
+    assert_static_get<StreamerSubscriptionKeysGetter, const string&>();
+
     StreamerSubscriptionKeysGetter o(c, id);
     cout<< o.get_account_id() << endl;
 
@@ -464,6 +500,9 @@ subscription_keys_getter(string id, Credentials& c)
 void
 movers_getter(Credentials& c)
 {
+    assert_static_get<MoversGetter, MoversIndex, MoversDirectionType,
+                      MoversChangeType>();
+
     MoversGetter o(c, MoversIndex::compx, MoversDirectionType::up,
                    MoversChangeType::value);
     cout<< o.get_index() << ' ' << o.get_direction_type() << ' '
@@ -498,6 +537,8 @@ movers_getter(Credentials& c)
 void
 market_hours_getter(Credentials& c)
 {
+    assert_static_get<MarketHoursGetter, MarketType, const string&>();
+
     MarketHoursGetter o(c, MarketType::bond, "2019-07-04");
     cout<< o.get_date() << ' ' << o.get_market_type() << endl;
 
@@ -524,6 +565,9 @@ market_hours_getter(Credentials& c)
 void
 instrument_info_getter(Credentials& c)
 {
+    assert_static_get<InstrumentInfoGetter, InstrumentSearchType,
+                      const string&>();
+
     InstrumentInfoGetter o(c, InstrumentSearchType::symbol_exact, "SPY");
     cout<< o.get_query_string() << ' ' << o.get_search_type() << endl;
 
@@ -625,6 +669,11 @@ check_option_chain_getter( const OptionChainGetter& o,
 
 void option_chain_analytical_getter(Credentials& c)
 {
+    assert_static_get<OptionChainAnalyticalGetter, const string&, double,
+                      double, double, unsigned int, const OptionStrikes&,
+                      OptionContractType, bool, const std::string&,
+                      const std::string&, OptionExpMonth, OptionType>();
+
     auto strikes = OptionStrikes::Single(65.00);
     OptionChainAnalyticalGetter ocg(c, "kORS", 30.50, 65.00, 3.0, 100,
                                     strikes, OptionContractType::call, true,
@@ -672,6 +721,11 @@ void option_chain_analytical_getter(Credentials& c)
 
 void option_chain_strategy_getter(Credentials& c)
 {
+    assert_static_get<OptionChainStrategyGetter, const string&,
+                      const OptionStrategy&, const OptionStrikes&,
+                      OptionContractType, bool, const std::string&,
+                      const std::string&, OptionExpMonth, OptionType>();
+
     auto strikes = OptionStrikes::N_ATM(2);
     auto strategy = OptionStrategy::Vertical();
     OptionChainStrategyGetter ocg(c, "KOrS", strategy, strikes,
@@ -727,6 +781,10 @@ void option_chain_strategy_getter(Credentials& c)
 
 void option_chain_getter(Credentials& c)
 {
+    assert_static_get<OptionChainGetter, const string&, const OptionStrikes&,
+                      OptionContractType, bool, const std::string&,
+                      const std::string&, OptionExpMonth, OptionType>();
+
     auto strikes = OptionStrikes::N_ATM(1);
     OptionChainGetter ocg(c, "kors", strikes, OptionContractType::call,
                           false, "2019-01-18", "2019-02-15");
@@ -794,12 +852,20 @@ operator<<(ostream& out, const HistoricalRangeGetter &hrg)
 void
 historical_getters(Credentials& c)
 {
+    assert_static_get<HistoricalPeriodGetter, const string&, PeriodType,
+                      unsigned int, FrequencyType, unsigned int, bool,
+                      long long>();
+
+    assert_static_get<HistoricalRangeGetter, const string&, FrequencyType,
+                      unsigned int, unsigned long long, unsigned long long,
+                      bool>();
+
     using namespace std::chrono;
     auto tp_now = duration_cast<milliseconds>(
         system_clock::now().time_since_epoch()
         );
     auto tp_tomorrow = tp_now + hours(24);
-    auto tp_yesterday = tp_now - hours(24);
+    auto tp_3ago = tp_now - hours(24*3);
     auto tp_70ago = tp_now - hours(24*70);
 
     HistoricalPeriodGetter hpg(c, "SPY", PeriodType::month, 1,
@@ -875,13 +941,13 @@ historical_getters(Credentials& c)
     }
 
     /* 10-25-18 */
-    hpg.set_msec_since_epoch(tp_yesterday.count());
-    if( hpg.get_msec_since_epoch() != tp_yesterday.count() ){
+    hpg.set_msec_since_epoch(tp_3ago.count());
+    if( hpg.get_msec_since_epoch() != tp_3ago.count() ){
         throw runtime_error("invalid msec_since_epoch");
     }
 
-    hpg.set_msec_since_epoch(tp_yesterday.count() * -1);
-    if( hpg.get_msec_since_epoch() != (tp_yesterday.count()*-1) ){
+    hpg.set_msec_since_epoch(tp_3ago.count() * -1);
+    if( hpg.get_msec_since_epoch() != (tp_3ago.count()*-1) ){
         throw runtime_error("invalid msec_since_epoch");
     }
 
@@ -895,7 +961,7 @@ historical_getters(Credentials& c)
     }
 
     unsigned long long end = tp_tomorrow.count();
-    unsigned long long start = tp_yesterday.count();
+    unsigned long long start = tp_3ago.count();
     //unsigned long day_msec = 86400000;
     HistoricalRangeGetter hrg(c, "SPY", FrequencyType::minute, 30,
                                start, end, true);
@@ -962,9 +1028,13 @@ historical_getters(Credentials& c)
     }
 }
 
+
 void
 quote_getters(Credentials& c)
 {
+    assert_static_get<QuoteGetter, const string&>();
+    assert_static_get<QuotesGetter, const set<string>&>();
+
     QuoteGetter qg(c, "spy");
     cout<< qg.get_symbol() << endl;
 
@@ -1081,5 +1151,126 @@ quote_getters(Credentials& c)
 
     Get(qsg);
 }
+
+
+void
+test_static_gets(string id, Credentials& c)
+{
+    using namespace chrono;
+
+    // ORDERS GETTER
+    auto tp_now = system_clock::now() - hours(5);
+    auto tp_59ago = tp_now - hours(59 * 24);
+    time_t tt_now = system_clock::to_time_t(tp_now);
+    time_t tt_59ago = system_clock::to_time_t(tp_59ago);
+    tm tm_now = *gmtime(&tt_now);
+    tm tm_59ago = *gmtime(&tt_59ago);
+    string fromdate1 = build_order_date(&tm_59ago);
+    string todate1 = build_order_date(&tm_now);
+
+    json j = OrdersGetter::Get(c, id, 10, fromdate1, todate1, OrderStatusType::CANCELED);
+    cout << j << endl;
+
+    // ORDER GETTER
+    try{
+        j = OrderGetter::Get(c, id, "123456789");
+        throw runtime_error("failed to catch InvalidRequest from OrderGet::Get");
+    }catch(InvalidRequest& e){
+        cout<< "successfully caught: " << e << endl << endl;
+    }
+
+    // TRANSACTION HISTORY GETTER
+    j = TransactionHistoryGetter::Get(c, id, TransactionType::all, "SPy");
+    cout<< j << endl;
+
+    // INDIVIDUAL TRANSACTION HISTORY GETTER
+    try{
+        j = IndividualTransactionHistoryGetter::Get(c, id, "123456789");
+        throw runtime_error("failed to catch InvalidRequest from "
+                            "IndividualTransactionHistoryGetter::Get");
+    }catch(InvalidRequest& e){
+        cout<< "successfully caught: " << e << endl << endl;
+    }
+
+    // ACCOUNT INFO GETTER
+    j = AccountInfoGetter::Get(c, id, false, false);
+    cout<< j << endl;
+
+    // PREFERENCES GETTER
+    j = PreferencesGetter::Get(c, id);
+    cout<< j << endl;
+
+    // USER PRINCIPALS GETTER
+    j = UserPrincipalsGetter::Get(c, false, false, false, false);
+    cout<< j << endl;
+
+    // SUBSCRIPTION KEYS GETTER
+    j = StreamerSubscriptionKeysGetter::Get(c, id);
+    cout<< j << endl;
+
+    // MOVERS GETTER
+    j = MoversGetter::Get(c, MoversIndex::compx, MoversDirectionType::up,
+                          MoversChangeType::value);
+    cout<< j << endl;
+
+    // MARKET HOURS GETTER
+    j = MarketHoursGetter::Get(c, MarketType::bond, "2019-07-04");
+    cout<< j << endl;
+
+    // INSTRUMENT INFO GETTER
+    j = InstrumentInfoGetter::Get(c, InstrumentSearchType::symbol_exact, "SPY");
+    cout<< j << endl;
+
+    // OPTION CHAIN ANALYTICAL GETTER
+    OptionStrikes strikes = OptionStrikes::Single(65.00);
+    j = OptionChainAnalyticalGetter::Get(c, "kORS", 30.50, 65.00, 3.0, 100,
+                                         strikes, OptionContractType::call,
+                                         true, "", "", OptionExpMonth::jan);
+    cout<< j << endl;
+
+    // OPTION CHAIN STRATEGY GETTER
+    strikes = OptionStrikes::N_ATM(2);
+    OptionStrategy strategy = OptionStrategy::Vertical();
+    j = OptionChainStrategyGetter::Get(c, "KOrS", strategy, strikes,
+                                       OptionContractType::call, false, "","",
+                                       OptionExpMonth::jan);
+    cout<< j << endl;
+
+    // OPTION CHAIN GETTER
+    strikes = OptionStrikes::N_ATM(1);
+    j = OptionChainGetter::Get(c, "kors", strikes, OptionContractType::call,
+                               false, "2019-01-18", "2019-02-15");
+    cout<< j << endl;
+
+    // HISTORICAL PERIOD GETTER
+    auto tse_now = duration_cast<milliseconds>(
+        system_clock::now().time_since_epoch()
+        );
+    auto tse_tomorrow = tse_now + hours(24);
+    auto tse_yesterday = tse_now - hours(24);
+    j = HistoricalPeriodGetter::Get(c, "SPY", PeriodType::month, 1,
+                                    FrequencyType::daily, 1, true,
+                                    tse_tomorrow.count());
+    cout<< j << endl;
+
+    // HISTORICAL RANGE GETTER
+    unsigned long long end = tse_tomorrow.count();
+    unsigned long long start = tse_yesterday.count();
+    j = HistoricalRangeGetter::Get(c, "SPY", FrequencyType::minute, 30,
+                                   start, end, true);
+    cout<< j << endl;
+
+    // QUOTE GETTER
+    j = QuoteGetter::Get(c, "spy");
+    cout<< j << endl;
+
+    // QUOTES GETTER
+    j = QuotesGetter::Get(c, {"spy", "qqq"});
+    cout<< j << endl;
+}
+
+
+
+
 
 

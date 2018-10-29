@@ -56,6 +56,9 @@ int
 Test_OrderGetters(struct Credentials *creds, const char* acct);
 
 int
+Test_ConvenienceFunctions(struct Credentials *creds, const char* acct);
+
+int
 Test_Getters(struct Credentials *creds, const char* acct, long wait)
 {
     int err = 0;
@@ -76,6 +79,13 @@ Test_Getters(struct Credentials *creds, const char* acct, long wait)
         CHECK_AND_RETURN_ON_ERROR(err, "APIGetter_GetWaitMSec");
 
     printf( "change wait sec: %llu --> %llu \n", w, w2 );
+
+    /*
+    err = Test_ConvenienceFunctions(creds, acct);
+    if( err )
+        return err;
+    SleepFor(wait);
+    */
 
     err = Test_QuoteGetter(creds);
     if( err )
@@ -161,6 +171,142 @@ Test_Getters(struct Credentials *creds, const char* acct, long wait)
     if( err )
         return err;
     SleepFor(wait);
+
+    return err;
+}
+
+void
+print_buffer_and_free(const char* head, char** buf)
+{
+    assert(*buf);
+    printf("%s: %s\n", head, *buf);
+    free(*buf);
+    *buf = NULL;
+}
+
+int
+Test_ConvenienceFunctions(struct Credentials *creds, const char* acct)
+{
+
+    size_t n;
+    char* buf = NULL;
+    int err = 0;
+
+    // GET QUOTE
+    if( (err = GetQuote(creds, "SPY", &buf, &n)) )
+        CHECK_AND_RETURN_ON_ERROR(err, "GetQuote");
+    print_buffer_and_free("GetQuote", &buf);
+
+    // GET QUOTES
+    const char* symbols[] = {"SPY", "QQQ"};
+    if( (err = GetQuotes(creds, symbols, 2, &buf, &n)) )
+        CHECK_AND_RETURN_ON_ERROR(err, "GetQuotes");
+    print_buffer_and_free("GetQuote", &buf);
+
+    // GET MARKET HOURS
+    if( (err = GetMarketHours(creds, MarketType_equity, "2019-07-04", &buf, &n)) )
+        CHECK_AND_RETURN_ON_ERROR(err, "GetMarketHours");
+    print_buffer_and_free("GetMarketHours", &buf);
+
+    // GET MOVERS
+    if( (err = GetMovers(creds, MoversIndex_spx, MoversDirectionType_up,
+                         MoversChangeType_percent, &buf, &n)) )
+        CHECK_AND_RETURN_ON_ERROR(err, "GetMovers");
+    print_buffer_and_free("GetMovers", &buf);
+
+    // GET HISTORICAL PERIOD
+    if( (err = GetHistoricalPeriod(creds, "SPY", PeriodType_day, 2,
+                                   FrequencyType_minute, 30, 0, 0, &buf, &n)) )
+        CHECK_AND_RETURN_ON_ERROR(err, "GetHistoricalPeriod");
+    print_buffer_and_free("GetHistoricalPeriod", &buf);
+
+    // GET HISTORICAL RANGE
+    if( (err = GetHistoricalRange(creds, "SPY", FrequencyType_daily, 1,
+                                  1528119000000, 1528205400000, 1, &buf, &n)) )
+        CHECK_AND_RETURN_ON_ERROR(err, "GetHistoricalRange");
+    print_buffer_and_free("GetHistoricalRange", &buf);
+
+    // GET OPTION CHAIN
+    OptionStrikesValue osv = {.single=300.00};
+    if( (err = GetOptionChain(creds, "SPY", OptionStrikesType_single, osv,
+                              OptionContractType_call, 0, "2019-01-01",
+                              "2019-02-01", OptionExpMonth_all, OptionType_all,
+                              &buf, &n)) )
+        CHECK_AND_RETURN_ON_ERROR(err, "GetOptionChain");
+    print_buffer_and_free("GetOptionChain", &buf);
+
+    // GET OPTION CHAIN STRATEGY
+    osv.n_atm = 1;
+    if( (err = GetOptionChainStrategy(creds, "SPY", OptionStrategyType_vertical,
+                                      3.0, OptionStrikesType_n_atm, osv,
+                                      OptionContractType_put, 1, "", "",
+                                      OptionExpMonth_jan, OptionType_all,
+                                      &buf, &n)) )
+        CHECK_AND_RETURN_ON_ERROR(err, "GetOptionChainStrategy");
+    print_buffer_and_free("GetOptionChainStrategy", &buf);
+
+    // GET OPTION CHAIN ANALYTICAL
+    osv.range = OptionRangeType_itm;
+    if( (err = GetOptionChainAnalytical(creds, "SPY", .40, 250, 2.5, 100,
+                                      OptionStrikesType_range, osv,
+                                      OptionContractType_put, 0, "2019-01-15",
+                                      "2019-01-22", OptionExpMonth_jan,
+                                      OptionType_s, &buf, &n)) )
+        CHECK_AND_RETURN_ON_ERROR(err, "GetOptionChainAnalytical");
+    print_buffer_and_free("GetOptionChainAnalytical", &buf);
+
+    // GET ACCOUNT INFO
+    if( (err = GetAccountInfo(creds, acct, 1, 1, &buf, &n)) )
+        CHECK_AND_RETURN_ON_ERROR(err, "GetAccountInfo");
+    print_buffer_and_free("GetAccountInfo", &buf);
+
+    // GET PREFERENCES
+    if( (err = GetPreferences(creds, acct, &buf, &n)) )
+        CHECK_AND_RETURN_ON_ERROR(err, "GetPreferences");
+    print_buffer_and_free("GetPreferences", &buf);
+
+    // GET STREAMER SUBSCRIPTION KEYS
+    if( (err = GetStreamerSubscriptionKeys(creds, acct, &buf, &n)) )
+        CHECK_AND_RETURN_ON_ERROR(err, "GetStreamerSubscriptionKeys");
+    print_buffer_and_free("GetStreamerSubscriptionKeys", &buf);
+
+    // GET TRANSACTION HISTORY
+    if( (err = GetTransactionHistory(creds, acct, TransactionType_all, "",
+                                     "2018-01-01", "2019-01-01", &buf, &n)) )
+        CHECK_AND_RETURN_ON_ERROR(err, "GetTransactionHistory");
+    print_buffer_and_free("GetTransactionHistory", &buf);
+
+    // GET INDIVIDUAL TRANSACTION HISTORY
+    if( (err = GetIndividualTransactionHistory(creds, acct, "123456789",
+                                               &buf, &n)) != TDMA_API_REQUEST_ERROR ){
+        fprintf(stderr, "GetIndividualTransactionHistory"
+                 " failed to return REQUEST_ERROR: %i", err);
+        return -1;
+    }
+
+    // GET USER PRINCIPALS
+    if( (err = GetUserPrincipals(creds, 1, 1, 1, 1, &buf, &n)) )
+        CHECK_AND_RETURN_ON_ERROR(err, "GetUserPrincipals");
+    print_buffer_and_free("GetUserPrincipals", &buf);
+
+    // GET INSTRUMENT INFO
+    if( (err = GetInstrumentInfo(creds, InstrumentSearchType_symbol_regex,
+                                 "GOOGL?", &buf, &n)) )
+        CHECK_AND_RETURN_ON_ERROR(err, "GetInstrumentInfo");
+    print_buffer_and_free("GetInstrumentInfo", &buf);
+
+    // GET ORDER
+    if( (err = GetOrder(creds, acct, "123456789", &buf, &n))
+        != TDMA_API_REQUEST_ERROR ){
+        fprintf(stderr, "GetOrder failed to return REQUEST_ERROR: %i", err);
+        return -1;
+    }
+
+    // GET ORDERS
+    if( (err = GetOrders(creds, acct, 10, "2018-06-01", "2019-01-01",
+                         OrderStatusType_CANCELED, &buf, &n)) )
+        CHECK_AND_RETURN_ON_ERROR(err, "GetOrders");
+    print_buffer_and_free("GetOrders", &buf);
 
     return err;
 }

@@ -1195,7 +1195,7 @@ APIGetter_Close(Getter_C *pgetter)
 { return APIGetter_Close_ABI(pgetter, 0); }
 
 static inline int
-APIGetter_IsClosed(Getter_C *pgetter, int*b)
+APIGetter_IsClosed(Getter_C *pgetter, int *b)
 { return APIGetter_IsClosed_ABI(pgetter,b, 0); }
 
 static inline int
@@ -1229,6 +1229,16 @@ name##_IsClosed(name##_C *pgetter, int *b) \
 { return APIGetter_IsClosed_ABI( (Getter_C*)pgetter, b, 0); }
 
 
+/* C convenience function BODY */
+#define CONVENIENCE_GET_FUNC_BODY(name, ...) \
+    name##Getter_C g; \
+    int err = name##Getter_Create(pcreds, __VA_ARGS__, &g); \
+    if( err ) return err; \
+    err = name##Getter_Get(&g, buf, n); \
+    name##Getter_Destroy(&g); \
+    return err;
+
+
 /* QuoteGetter -> QuoteGetterImpl */
 static inline int
 QuoteGetter_Create( struct Credentials *pcreds,
@@ -1237,18 +1247,22 @@ QuoteGetter_Create( struct Credentials *pcreds,
 { return QuoteGetter_Create_ABI(pcreds, symbol, pgetter, 0); }
 
 static inline int
-QuoteGetter_Destroy(QuoteGetter_C *getter)
-{ return QuoteGetter_Destroy_ABI(getter, 0); }
+QuoteGetter_Destroy(QuoteGetter_C *pgetter)
+{ return QuoteGetter_Destroy_ABI(pgetter, 0); }
 
 DECL_WRAPPED_API_GETTER_BASE_FUNCS(QuoteGetter)
 
 static inline int
-QuoteGetter_GetSymbol(QuoteGetter_C *getter, char **buf, size_t *n)
-{ return QuoteGetter_GetSymbol_ABI(getter, buf, n, 0); }
+QuoteGetter_GetSymbol(QuoteGetter_C *pgetter, char **buf, size_t *n)
+{ return QuoteGetter_GetSymbol_ABI(pgetter, buf, n, 0); }
 
 static inline int
-QuoteGetter_SetSymbol(QuoteGetter_C *getter, const char *symbol)
-{ return QuoteGetter_SetSymbol_ABI(getter, symbol, 0); }
+QuoteGetter_SetSymbol(QuoteGetter_C *pgetter, const char *symbol)
+{ return QuoteGetter_SetSymbol_ABI(pgetter, symbol, 0); }
+
+static inline int
+GetQuote(struct Credentials *pcreds, const char* symbol, char **buf, size_t *n)
+{ CONVENIENCE_GET_FUNC_BODY(Quote, symbol); }
 
 
 /* QuotesGetter -> QuotesGetterImpl */
@@ -1260,19 +1274,19 @@ QuotesGetter_Create( struct Credentials *pcreds,
 { return QuotesGetter_Create_ABI(pcreds, symbols, nsymbols, pgetter, 0); }
 
 static inline int
-QuotesGetter_Destroy(QuotesGetter_C *getter)
-{ return QuotesGetter_Destroy_ABI(getter, 0); }
+QuotesGetter_Destroy(QuotesGetter_C *pgetter)
+{ return QuotesGetter_Destroy_ABI(pgetter, 0); }
 
 DECL_WRAPPED_API_GETTER_BASE_FUNCS(QuotesGetter)
 
 static inline int
-QuotesGetter_GetSymbols(QuotesGetter_C *getter, char ***buf, size_t *n)
-{ return QuotesGetter_GetSymbols_ABI(getter, buf, n, 0); }
+QuotesGetter_GetSymbols(QuotesGetter_C *pgetter, char ***buf, size_t *n)
+{ return QuotesGetter_GetSymbols_ABI(pgetter, buf, n, 0); }
 
 static inline int
-QuotesGetter_SetSymbols(QuotesGetter_C *getter, const char **symbols,
+QuotesGetter_SetSymbols(QuotesGetter_C *pgetter, const char **symbols,
                         size_t nsymbols)
-{ return QuotesGetter_SetSymbols_ABI(getter, symbols, nsymbols, 0); }
+{ return QuotesGetter_SetSymbols_ABI(pgetter, symbols, nsymbols, 0); }
 
 static inline int
 QuotesGetter_AddSymbol( QuotesGetter_C *pgetter,  const char *symbol)
@@ -1283,14 +1297,23 @@ QuotesGetter_RemoveSymbol( QuotesGetter_C *pgetter, const char *symbol)
 { return QuotesGetter_RemoveSymbol_ABI(pgetter, symbol, 0); }
 
 static inline int
-QuotesGetter_AddSymbols(QuotesGetter_C *getter, const char **symbols,
+QuotesGetter_AddSymbols(QuotesGetter_C *pgetter, const char **symbols,
                         size_t nsymbols)
-{ return QuotesGetter_AddSymbols_ABI(getter, symbols, nsymbols, 0); }
+{ return QuotesGetter_AddSymbols_ABI(pgetter, symbols, nsymbols, 0); }
 
 static inline int
-QuotesGetter_RemoveSymbols(QuotesGetter_C *getter, const char **symbols,
+QuotesGetter_RemoveSymbols(QuotesGetter_C *pgetter, const char **symbols,
                            size_t nsymbols)
-{ return QuotesGetter_RemoveSymbols_ABI(getter, symbols, nsymbols, 0); }
+{ return QuotesGetter_RemoveSymbols_ABI(pgetter, symbols, nsymbols, 0); }
+
+static inline int
+GetQuotes(struct Credentials *pcreds,
+          const char** symbols,
+          size_t nsymbols,
+          char **buf,
+          size_t *n)
+{ CONVENIENCE_GET_FUNC_BODY(Quotes, symbols, nsymbols); }
+
 
 /* MarketHoursGetter */
 static inline int
@@ -1323,6 +1346,15 @@ MarketHoursGetter_GetDate(MarketHoursGetter_C *pgetter, char **buf, size_t *n)
 static inline int
 MarketHoursGetter_SetDate( MarketHoursGetter_C *pgetter, const char* date )
 { return MarketHoursGetter_SetDate_ABI(pgetter, date, 0); }
+
+static inline int
+GetMarketHours( struct Credentials *pcreds,
+                MarketType market_type,
+                const char* date,
+                char **buf,
+                size_t *n )
+{ CONVENIENCE_GET_FUNC_BODY(MarketHours, market_type, date); }
+
 
 /* MoversGetter */
 static inline int
@@ -1367,6 +1399,15 @@ static inline int
 MoversGetter_SetChangeType( MoversGetter_C *pgetter,
                                MoversChangeType change_type)
 { return MoversGetter_SetChangeType_ABI(pgetter, (int)change_type, 0); }
+
+static inline int
+GetMovers( struct Credentials *pcreds,
+           MoversIndex index,
+           MoversDirectionType direction_type,
+           MoversChangeType change_type,
+           char **buf,
+           size_t *n )
+{ CONVENIENCE_GET_FUNC_BODY(Movers, index, direction_type, change_type); }
 
 
 /* HistoricalPeriodGetter */
@@ -1466,6 +1507,22 @@ HistoricalPeriodGetter_GetMSecSinceEpoch( HistoricalPeriodGetter_C *pgetter,
 { return HistoricalPeriodGetter_GetMSecSinceEpoch_ABI( pgetter,
                                                        msec_since_epoch, 0 ); }
 
+static inline int
+GetHistoricalPeriod( struct Credentials *pcreds,
+                     const char* symbol,
+                     int period_type,
+                     unsigned int period,
+                     int frequency_type,
+                     unsigned int frequency,
+                     int extended_hours,
+                     long long msec_since_epoch,
+                     char **buf,
+                     size_t *n )
+{ CONVENIENCE_GET_FUNC_BODY(HistoricalPeriod, symbol, period_type, period,
+                            frequency_type, frequency, extended_hours,
+                            msec_since_epoch); }
+
+
 /* HistoricalRangeGetter */
 static inline int
 HistoricalRangeGetter_Create( struct Credentials *pcreds,
@@ -1555,6 +1612,21 @@ HistoricalRangeGetter_SetFrequency( HistoricalRangeGetter_C *pgetter,
 { return HistoricalGetterBase_SetFrequency_ABI( (Getter_C*)pgetter,
                                                 (int)frequency_type,
                                                 frequency, 0); }
+
+static inline int
+GetHistoricalRange( struct Credentials *pcreds,
+                    const char* symbol,
+                    FrequencyType frequency_type,
+                    unsigned int frequency,
+                    unsigned long long start_msec_since_epoch,
+                    unsigned long long end_msec_since_epoch,
+                    int extended_hours,
+                    char **buf,
+                    size_t *n )
+{ CONVENIENCE_GET_FUNC_BODY(HistoricalRange, symbol, frequency_type, frequency,
+                            start_msec_since_epoch, end_msec_since_epoch,
+                            extended_hours); }
+
 
 /* OptionChainGetter */
 static inline int
@@ -1672,6 +1744,24 @@ name##_SetOptionType(name##_C *pgetter, OptionType option_type) \
 DECL_WRAPPED_API_GETTER_BASE_FUNCS(OptionChainGetter)
 DECL_WRAPPED_OPTION_GETTER_BASE_FUNCS(OptionChainGetter)
 
+static inline int
+GetOptionChain( struct Credentials *pcreds,
+                const char* symbol,
+                OptionStrikesType strikes_type,
+                OptionStrikesValue strikes_value,
+                OptionContractType contract_type,
+                int include_quotes,
+                const char* from_date,
+                const char* to_date,
+                OptionExpMonth exp_month,
+                OptionType option_type,
+                char **buf,
+                size_t *n )
+{ CONVENIENCE_GET_FUNC_BODY(OptionChain, symbol, strikes_type, strikes_value,
+                            contract_type, include_quotes, from_date, to_date,
+                            exp_month, option_type); }
+
+
 /* OptionChainStrategyGetter */
 static inline int
 OptionChainStrategyGetter_Create( struct Credentials *pcreds,
@@ -1721,6 +1811,27 @@ OptionChainStrategyGetter_SetStrategy( OptionChainStrategyGetter_C *pgetter,
     return OptionChainStrategyGetter_SetStrategy_ABI(pgetter, (int)strategy_type,
                                                      spread_interval, 0);
 }
+
+static inline int
+GetOptionChainStrategy( struct Credentials *pcreds,
+                        const char* symbol,
+                        OptionStrategyType strategy_type,
+                        double spread_interval,
+                        OptionStrikesType strikes_type,
+                        OptionStrikesValue strikes_value,
+                        OptionContractType contract_type,
+                        int include_quotes,
+                        const char* from_date,
+                        const char* to_date,
+                        OptionExpMonth exp_month,
+                        OptionType option_type,
+                        char **buf,
+                        size_t *n )
+{ CONVENIENCE_GET_FUNC_BODY(OptionChainStrategy, symbol, strategy_type,
+                            spread_interval, strikes_type, strikes_value,
+                            contract_type, include_quotes, from_date, to_date,
+                            exp_month, option_type); }
+
 
 /* OptionChainAnalyticalGetter */
 static inline int
@@ -1829,6 +1940,30 @@ OptionChainAnalyticalGetter_SetDaysToExp(
     )
 { return OptionChainAnalyticalGetter_SetDaysToExp_ABI(pgetter, days_to_exp, 0); }
 
+static inline int
+GetOptionChainAnalytical( struct Credentials *pcreds,
+                          const char* symbol,
+                          double volatility,
+                          double underlying_price,
+                          double interest_rate,
+                          unsigned int days_to_exp,
+                          OptionStrikesType strikes_type,
+                          OptionStrikesValue strikes_value,
+                          OptionContractType contract_type,
+                          int include_quotes,
+                          const char* from_date,
+                          const char* to_date,
+                          OptionExpMonth exp_month,
+                          OptionType option_type,
+                          char **buf,
+                          size_t *n )
+{ CONVENIENCE_GET_FUNC_BODY(OptionChainAnalytical, symbol, volatility,
+                            underlying_price, interest_rate, days_to_exp,
+                            strikes_type, strikes_value, contract_type,
+                            include_quotes, from_date, to_date, exp_month,
+                            option_type); }
+
+
 /* AccountGetterBase */
 #define DECL_WRAPPED_ACCOUNT_GETTER_BASE_FUNCS(name) \
 static inline int \
@@ -1838,6 +1973,7 @@ name##_GetAccountId( name##_C *pgetter, char **buf, size_t *n) \
 static inline int \
 name##_SetAccountId( name##_C *pgetter, const char *symbol ) \
 { return AccountGetterBase_SetAccountId_ABI( (Getter_C*)pgetter, symbol, 0); }
+
 
 /* AccountInfoGetter */
 static inline int
@@ -1877,6 +2013,16 @@ AccountInfoGetter_ReturnOrders( AccountInfoGetter_C *pgetter,
                                             int return_orders )
 { return AccountInfoGetter_ReturnOrders_ABI(pgetter, return_orders, 0); }
 
+static inline int
+GetAccountInfo( struct Credentials *pcreds,
+                const char* account_id,
+                int positions,
+                int orders,
+                char **buf,
+                size_t *n )
+{ CONVENIENCE_GET_FUNC_BODY(AccountInfo, account_id, positions, orders); }
+
+
 /* PreferencesGetter */
 static inline int
 PreferencesGetter_Create( struct Credentials *pcreds,
@@ -1891,6 +2037,14 @@ PreferencesGetter_Destroy( PreferencesGetter_C *pgetter)
 DECL_WRAPPED_API_GETTER_BASE_FUNCS(PreferencesGetter)
 
 DECL_WRAPPED_ACCOUNT_GETTER_BASE_FUNCS(PreferencesGetter)
+
+static inline int
+GetPreferences( struct Credentials *pcreds,
+                const char* account_id,
+                char **buf,
+                size_t *n )
+{ CONVENIENCE_GET_FUNC_BODY(Preferences, account_id); }
+
 
 /* StreamerSubscriptionKeysGetter */
 static inline int
@@ -1907,6 +2061,14 @@ StreamerSubscriptionKeysGetter_Destroy(StreamerSubscriptionKeysGetter_C *pgetter
 DECL_WRAPPED_API_GETTER_BASE_FUNCS(StreamerSubscriptionKeysGetter)
 
 DECL_WRAPPED_ACCOUNT_GETTER_BASE_FUNCS(StreamerSubscriptionKeysGetter)
+
+static inline int
+GetStreamerSubscriptionKeys( struct Credentials *pcreds,
+                             const char* account_id,
+                             char **buf,
+                             size_t *n )
+{ CONVENIENCE_GET_FUNC_BODY(StreamerSubscriptionKeys, account_id); }
+
 
 /* TransactionHistoryGetter */
 static inline int
@@ -1982,6 +2144,19 @@ TransactionHistoryGetter_SetEndDate( TransactionHistoryGetter_C *pgetter,
                                      const char* end_date )
 { return TransactionHistoryGetter_SetEndDate_ABI(pgetter, end_date, 0); }
 
+static inline int
+GetTransactionHistory( struct Credentials *pcreds,
+                       const char* account_id,
+                       TransactionType transaction_type,
+                       const char* symbol,
+                       const char* start_date,
+                       const char* end_date,
+                       char **buf,
+                       size_t *n )
+{ CONVENIENCE_GET_FUNC_BODY(TransactionHistory, account_id, transaction_type,
+                            symbol, start_date, end_date); }
+
+
 /* IndividualTransactionHistoryGetter */
 static inline int
 IndividualTransactionHistoryGetter_Create(
@@ -2025,6 +2200,16 @@ IndividualTransactionHistoryGetter_SetTransactionId(
             pgetter, transaction_id, 0
             );
 }
+
+static inline int
+GetIndividualTransactionHistory( struct Credentials *pcreds,
+                                 const char* account_id,
+                                 const char* transaction_id,
+                                 char **buf,
+                                 size_t *n )
+{ CONVENIENCE_GET_FUNC_BODY(IndividualTransactionHistory, account_id,
+                            transaction_id); }
+
 
 /* UserPrincipalsGetter */
 static inline int
@@ -2121,6 +2306,19 @@ UserPrincipalsGetter_ReturnSurrogateIds(  UserPrincipalsGetter_C *pgetter,
             );
 }
 
+static inline int
+GetUserPrincipals( struct Credentials *pcreds,
+                   int streamer_subscription_keys,
+                   int streamer_connection_info,
+                   int preferences,
+                   int surrogate_ids,
+                   char **buf,
+                   size_t *n )
+{ CONVENIENCE_GET_FUNC_BODY(UserPrincipals, streamer_subscription_keys,
+                            streamer_connection_info, preferences,
+                            surrogate_ids); }
+
+
 /* InstrumentInfoGetter */
 static inline int
 InstrumentInfoGetter_Create( struct Credentials *pcreds,
@@ -2157,6 +2355,15 @@ InstrumentInfoGetter_SetQuery( InstrumentInfoGetter_C *pgetter,
 { return InstrumentInfoGetter_SetQuery_ABI(pgetter, (int)search_type,
                                            query_string, 0); }
 
+static inline int
+GetInstrumentInfo( struct Credentials *pcreds,
+                   InstrumentSearchType search_type,
+                   const char* query_string,
+                   char **buf,
+                   size_t *n )
+{ CONVENIENCE_GET_FUNC_BODY(InstrumentInfo, search_type, query_string); }
+
+
 /* OrderGetter */
 static inline int
 OrderGetter_Create( struct Credentials *pcreds,
@@ -2180,6 +2387,15 @@ OrderGetter_GetOrderId( OrderGetter_C *pgetter, char **buf, size_t *n )
 static inline int
 OrderGetter_SetOrderId( OrderGetter_C *pgetter, const char *order_id )
 { return OrderGetter_SetOrderId_ABI( pgetter, order_id, 0 ); }
+
+static inline int
+GetOrder( struct Credentials *pcreds,
+          const char* account_id,
+          const char* order_id,
+          char **buf,
+          size_t *n )
+{ CONVENIENCE_GET_FUNC_BODY(Order, account_id, order_id); }
+
 
 /* OrdersGetter */
 static inline int
@@ -2238,25 +2454,24 @@ OrdersGetter_SetOrderStatusType( OrdersGetter_C *pgetter,
                                  OrderStatusType order_status_type )
 { return OrdersGetter_SetOrderStatusType_ABI(pgetter, (int)order_status_type, 0); }
 
+static inline int
+GetOrders( struct Credentials *pcreds,
+           const char* account_id,
+           unsigned int nmax_results,
+           const char* from_entered_time,
+           const char* to_entered_time,
+           OrderStatusType order_status_type,
+           char **buf,
+           size_t *n )
+{ CONVENIENCE_GET_FUNC_BODY(Orders, account_id, nmax_results, from_entered_time,
+                            to_entered_time, order_status_type); }
+
 
 #else
 
 /* C++ Interface */
 
 namespace tdma{
-
-/*
-template<typename T>
-struct func_traits;
-
-template<typename R, typename ...Args>
-struct func_traits<std::function<R(Args...)>>{
-    template<size_t i>
-    struct arg{
-        typedef typename std::tuple_element<i, std::tuple<Args...>>::type type;
-    };
-};
-*/
 
 class APIGetter{
 public:
@@ -2394,11 +2609,11 @@ public:
     {
         call_abi( QuoteGetter_SetSymbol_ABI, cgetter<CType>(), symbol.c_str() );
     }
-};
 
-inline json
-GetQuote(Credentials& creds, const std::string& symbol)
-{ return QuoteGetter(creds, symbol).get(); }
+    static json
+    Get(Credentials& creds, const std::string& symbol)
+    { return QuoteGetter(creds, symbol).get(); }
+};
 
 
 class QuotesGetter
@@ -2459,11 +2674,13 @@ public:
     void
     remove_symbols(const std::set<std::string>& symbols)
     { _str_set_to_abi(QuotesGetter_RemoveSymbols_ABI, symbols); }
+
+    static json
+    Get(Credentials& creds, const std::set<std::string>& symbols)
+    { return QuotesGetter(creds, symbols).get(); }
 };
 
-inline json
-GetQuotes(Credentials& creds, const std::set<std::string>& symbols)
-{ return QuotesGetter(creds, symbols).get(); }
+
 
 // note we only implement the single MarketType version
 // could just add an 'all' field to MarketType enum
@@ -2511,14 +2728,11 @@ public:
         call_abi( MarketHoursGetter_SetMarketType_ABI, cgetter<CType>(),
                   static_cast<int>(market_type) );
     }
+
+    static json
+    Get(Credentials& creds, MarketType market_type, const std::string& date)
+    { return MarketHoursGetter(creds, market_type, date).get(); }
 };
-
-inline json
-GetMarketHours( Credentials& creds,
-                  MarketType market_type,
-                  const std::string& date )
-{ return MarketHoursGetter(creds, market_type, date).get(); }
-
 
 
 class MoversGetter
@@ -2586,15 +2800,14 @@ public:
         call_abi( MoversGetter_SetChangeType_ABI, cgetter<CType>(),
                   static_cast<int>(change_type) );
     }
+
+    static json
+    Get( Credentials& creds,
+          MoversIndex index,
+          MoversDirectionType direction_type,
+          MoversChangeType change_type )
+    { return MoversGetter(creds, index, direction_type, change_type).get(); }
 };
-
-inline json
-GetMovers( Credentials& creds,
-           MoversIndex index,
-           MoversDirectionType direction_type,
-           MoversChangeType change_type )
-{ return MoversGetter(creds, index, direction_type, change_type).get(); }
-
 
 
 class HistoricalGetterBase
@@ -2667,7 +2880,6 @@ public:
         call_abi( HistoricalGetterBase_SetFrequency_ABI, cgetter<>(),
                   static_cast<int>(frequency_type), frequency );
     }
-
 };
 
 
@@ -2738,23 +2950,20 @@ public:
                   cgetter<CType>(), &ms );
         return ms;
     }
+
+    static json
+    Get( Credentials& creds,
+          const std::string& symbol,
+          PeriodType period_type,
+          unsigned int period,
+          FrequencyType frequency_type,
+          unsigned int frequency,
+          bool extended_hours = true,
+          long long msec_since_epoch = 0 )
+    { return HistoricalPeriodGetter( creds, symbol, period_type, period,
+                                     frequency_type, frequency,
+                                     extended_hours, msec_since_epoch ).get(); }
 };
-
-inline json
-GetHistoricalPeriod( Credentials& creds,
-                        const std::string& symbol,
-                        PeriodType period_type,
-                        unsigned int period,
-                        FrequencyType frequency_type,
-                        unsigned int frequency,
-                        bool extended_hours = true,
-                        long long msec_since_epoch = 0 )
-{
-    return HistoricalPeriodGetter( creds, symbol, period_type, period,
-                                   frequency_type, frequency, extended_hours,
-                                   msec_since_epoch ).get();
-}
-
 
 
 class HistoricalRangeGetter
@@ -2814,21 +3023,20 @@ public:
         call_abi( HistoricalRangeGetter_SetStartMSecSinceEpoch_ABI,
                   cgetter<CType>(), start_msec_since_epoch );
     }
-};
 
-inline json
-GetHistoricalRange( Credentials& creds,
-                       const std::string& symbol,
-                       FrequencyType ftype,
-                       unsigned int frequency,
-                       unsigned long long start_msec_since_epoch,
-                       unsigned long long end_msec_since_epoch,
-                       bool extended_hours = true )
-{
-    return HistoricalRangeGetter( creds, symbol, ftype, frequency,
-                                  start_msec_since_epoch, end_msec_since_epoch,
-                                  extended_hours ).get();
-}
+    static json
+    Get( Credentials& creds,
+         const std::string& symbol,
+         FrequencyType ftype,
+         unsigned int frequency,
+         unsigned long long start_msec_since_epoch,
+         unsigned long long end_msec_since_epoch,
+         bool extended_hours = true )
+    { return HistoricalRangeGetter( creds, symbol, ftype, frequency,
+                                    start_msec_since_epoch,
+                                    end_msec_since_epoch,
+                                    extended_hours ).get(); }
+};
 
 
 class OptionStrikes {
@@ -3144,7 +3352,7 @@ public:
     }
 
     void
-    set_strikes(OptionStrikes strikes)
+    set_strikes(const OptionStrikes& strikes)
     {
         call_abi( OptionChainGetter_SetStrikes_ABI, cgetter<CType>(),
                   static_cast<int>(strikes.get_type()), strikes.get_value() );
@@ -3191,23 +3399,23 @@ public:
         call_abi( OptionChainGetter_SetOptionType_ABI, cgetter<CType>(),
                   static_cast<int>(option_type) );
     }
+
+    static json
+    Get( Credentials& creds,
+         const std::string& symbol,
+         const OptionStrikes& strikes,
+         OptionContractType contract_type = OptionContractType::all,
+         bool include_quotes = false,
+         const std::string& from_date = "",
+         const std::string& to_date = "",
+         OptionExpMonth exp_month = OptionExpMonth::all,
+         OptionType option_type = OptionType::all )
+    { return OptionChainGetter( creds, symbol, strikes, contract_type,
+                               include_quotes, from_date, to_date,
+                               exp_month, option_type ).get(); }
 };
 
-inline json
-GetOptionChain( Credentials& creds,
-                const std::string& symbol,
-                OptionStrikes strikes,
-                OptionContractType contract_type = OptionContractType::all,
-                bool include_quotes = false,
-                const std::string& from_date = "",
-                const std::string& to_date = "",
-                OptionExpMonth exp_month = OptionExpMonth::all,
-                OptionType option_type = OptionType::all )
-{
-    return OptionChainGetter( creds, symbol, strikes, contract_type,
-                              include_quotes, from_date, to_date, exp_month,
-                              option_type ).get();
-}
+
 
 
 class OptionChainStrategyGetter
@@ -3218,8 +3426,8 @@ public:
     OptionChainStrategyGetter(
             Credentials& creds,
             const std::string& symbol,
-            OptionStrategy strategy,
-            OptionStrikes strikes,
+            const OptionStrategy& strategy,
+            const OptionStrikes& strikes,
             OptionContractType contract_type = OptionContractType::all,
             bool include_quotes = false,
             const std::string& from_date = "",
@@ -3256,30 +3464,29 @@ public:
     }
 
     void
-    set_strategy(OptionStrategy strategy)
+    set_strategy(const OptionStrategy& strategy)
     {
         call_abi( OptionChainStrategyGetter_SetStrategy_ABI,
                   cgetter<CType>(), static_cast<int>(strategy.get_strategy()),
                   strategy.get_spread_interval() );
     }
-};
 
-inline json
-GetOptionChainStrategy( Credentials& creds,
-                        const std::string& symbol,
-                        OptionStrategy strategy,
-                        OptionStrikes strikes,
-                        OptionContractType contract_type = OptionContractType::all,
-                        bool include_quotes = false,
-                        const std::string& from_date = "",
-                        const std::string& to_date = "",
-                        OptionExpMonth exp_month = OptionExpMonth::all,
-                        OptionType option_type = OptionType::all )
-{
-    return OptionChainStrategyGetter( creds, symbol, strategy, strikes,
-                                      contract_type, include_quotes, from_date,
-                                      to_date, exp_month, option_type ).get();
-}
+    static json
+    Get( Credentials& creds,
+          const std::string& symbol,
+          const OptionStrategy& strategy,
+          const OptionStrikes& strikes,
+          OptionContractType contract_type = OptionContractType::all,
+          bool include_quotes = false,
+          const std::string& from_date = "",
+          const std::string& to_date = "",
+          OptionExpMonth exp_month = OptionExpMonth::all,
+          OptionType option_type = OptionType::all )
+    { return OptionChainStrategyGetter( creds, symbol, strategy, strikes,
+                                        contract_type, include_quotes,
+                                        from_date, to_date,
+                                        exp_month, option_type ).get(); }
+};
 
 
 class OptionChainAnalyticalGetter
@@ -3294,7 +3501,7 @@ public:
             double underlying_price,
             double interest_rate,
             unsigned int days_to_exp,
-            OptionStrikes strikes,
+            const OptionStrikes& strikes,
             OptionContractType contract_type = OptionContractType::all,
             bool include_quotes = false,
             const std::string& from_date = "",
@@ -3385,31 +3592,27 @@ public:
         call_abi( OptionChainAnalyticalGetter_SetDaysToExp_ABI,
                   cgetter<CType>(), days_to_exp );
     }
-};
 
-inline json
-GetOptionChainAnalytical(
-    Credentials& creds,
-    const std::string& symbol,
-    double volatility,
-    double underlying_price,
-    double interest_rate,
-    unsigned int days_to_exp,
-    OptionStrikes strikes,
-    OptionContractType contract_type = OptionContractType::all,
-    bool include_quotes = false,
-    const std::string& from_date = "",
-    const std::string& to_date = "",
-    OptionExpMonth exp_month = OptionExpMonth::all,
-    OptionType option_type = OptionType::all )
-{
-    return OptionChainAnalyticalGetter( creds, symbol, volatility,
-                                        underlying_price, interest_rate,
-                                        days_to_exp, strikes,
-                                        contract_type, include_quotes,
-                                        from_date, to_date,
-                                        exp_month, option_type ).get();
-}
+    static json
+    Get( Credentials& creds,
+         const std::string& symbol,
+         double volatility,
+         double underlying_price,
+         double interest_rate,
+         unsigned int days_to_exp,
+         const OptionStrikes& strikes,
+         OptionContractType contract_type = OptionContractType::all,
+         bool include_quotes = false,
+         const std::string& from_date = "",
+         const std::string& to_date = "",
+         OptionExpMonth exp_month = OptionExpMonth::all,
+         OptionType option_type = OptionType::all )
+    { return OptionChainAnalyticalGetter( creds, symbol, volatility,
+                                          underlying_price, interest_rate,
+                                          days_to_exp, strikes, contract_type,
+                                          include_quotes, from_date, to_date,
+                                          exp_month, option_type ).get(); }
+};
 
 
 class AccountGetterBase
@@ -3496,14 +3699,14 @@ public:
         call_abi( AccountInfoGetter_ReturnOrders_ABI, cgetter<CType>(),
                   static_cast<int>(orders) );
     }
-};
 
-inline json
-GetAccountInfo( Credentials& creds,
-                const std::string& account_id,
-                bool positions = true,
-                bool orders = true )
-{ return AccountInfoGetter(creds, account_id, positions, orders).get(); }
+    static json
+    Get( Credentials& creds,
+         const std::string& account_id,
+         bool positions = true,
+         bool orders = true )
+    { return AccountInfoGetter(creds, account_id, positions, orders).get(); }
+};
 
 
 class PreferencesGetter
@@ -3520,11 +3723,11 @@ public:
                                account_id )
         {
         }
-};
 
-inline json
-GetPreferences(Credentials& creds, const std::string& account_id)
-{ return PreferencesGetter(creds, account_id).get(); }
+    static json
+    Get(Credentials& creds, const std::string& account_id)
+    { return PreferencesGetter(creds, account_id).get(); }
+};
 
 
 class StreamerSubscriptionKeysGetter
@@ -3542,11 +3745,11 @@ public:
                                account_id )
         {
         }
-};
 
-inline json
-GetStreamerSubscriptionKeys(Credentials& creds, const std::string& account_id)
-{ return StreamerSubscriptionKeysGetter(creds, account_id).get(); }
+    static json
+    Get(Credentials& creds, const std::string& account_id)
+    { return StreamerSubscriptionKeysGetter(creds, account_id).get(); }
+};
 
 
 class TransactionHistoryGetter
@@ -3632,20 +3835,16 @@ public:
                   cgetter<CType>(), end_date.c_str() );
     }
 
+    static json
+    Get( Credentials& creds,
+         const std::string& account_id,
+         TransactionType transaction_type = TransactionType::all,
+         const std::string& symbol = "",
+         const std::string& start_date = "",
+         const std::string& end_date = "" )
+    { return TransactionHistoryGetter( creds, account_id, transaction_type,
+                                       symbol, start_date, end_date ).get(); }
 };
-
-inline json
-GetTransactionHistory(
-    Credentials& creds,
-    const std::string& account_id,
-    TransactionType transaction_type = TransactionType::all,
-    const std::string& symbol = "",
-    const std::string& start_date = "",
-    const std::string& end_date = "" )
-{
-    return TransactionHistoryGetter( creds, account_id, transaction_type,
-                                     symbol, start_date, end_date ).get();
-}
 
 
 class IndividualTransactionHistoryGetter
@@ -3682,16 +3881,14 @@ public:
                   cgetter<CType>(), transaction_id.c_str() );
     }
 
+    static json
+    Get( Credentials& creds,
+         const std::string& account_id,
+         const std::string& transaction_id )
+    { return IndividualTransactionHistoryGetter( creds, account_id,
+                                                 transaction_id ).get(); }
 };
 
-inline json
-GetIndividualTransactionHistory( Credentials& creds,
-                                     const std::string& account_id,
-                                     const std::string& transaction_id )
-{
-    return IndividualTransactionHistoryGetter( creds, account_id,
-                                               transaction_id ).get();
-}
 
 
 class UserPrincipalsGetter
@@ -3781,19 +3978,17 @@ public:
         call_abi( UserPrincipalsGetter_ReturnSurrogateIds_ABI,
                   cgetter<CType>(), static_cast<int>(surrogate_ids) );
     }
-};
 
-inline json
-GetUserPrincipals( Credentials& creds,                   
-                     bool streamer_subscription_keys,
-                     bool streamer_connection_info,
-                     bool preferences,
-                     bool surrogate_ids )
-{
-    return UserPrincipalsGetter( creds, streamer_subscription_keys,
-                                 streamer_connection_info, preferences,
-                                 surrogate_ids ).get();
-}
+    static json
+    Get( Credentials& creds,
+         bool streamer_subscription_keys,
+         bool streamer_connection_info,
+         bool preferences,
+         bool surrogate_ids )
+    { return UserPrincipalsGetter( creds, streamer_subscription_keys,
+                                   streamer_connection_info, preferences,
+                                   surrogate_ids ).get(); }
+};
 
 
 class InstrumentInfoGetter
@@ -3837,13 +4032,13 @@ public:
         call_abi( InstrumentInfoGetter_SetQuery_ABI, cgetter<CType>(),
                   static_cast<int>(search_type), query_string.c_str() );
     }
-};
 
-inline json
-GetInstrumentInfo( Credentials& creds,
-                     InstrumentSearchType search_type,
-                     const std::string& query_string )
-{ return InstrumentInfoGetter(creds, search_type, query_string).get(); }
+    static json
+    Get( Credentials& creds,
+         InstrumentSearchType search_type,
+         const std::string& query_string )
+    { return InstrumentInfoGetter(creds, search_type, query_string).get(); }
+};
 
 
 class OrderGetter
@@ -3871,13 +4066,13 @@ public:
     void
     set_order_id(const std::string& order_id)
     { call_abi(OrderGetter_SetOrderId_ABI, cgetter<CType>(), order_id.c_str()); }
-};
 
-inline json
-GetOrder( Credentials& creds,
-          const std::string& account_id,
-          const std::string& order_id )
-{ return OrderGetter(creds, account_id, order_id). get(); }
+    static json
+    Get( Credentials& creds,
+         const std::string& account_id,
+         const std::string& order_id )
+    { return OrderGetter(creds, account_id, order_id). get(); }
+};
 
 
 class OrdersGetter
@@ -3949,17 +4144,17 @@ public:
     set_order_status_type(OrderStatusType order_status_type)
     { call_abi( OrdersGetter_SetOrderStatusType_ABI, cgetter<CType>(),
                 static_cast<int>(order_status_type) ); }
-};
 
-inline json
-GetOrders( Credentials& creds,
-            const std::string& account_id,
-            size_t nmax_results,
-            const std::string& from_entered_time,
-            const std::string& to_entered_time,
-            OrderStatusType order_status_type  )
-{ return OrdersGetter(creds, account_id, nmax_results, from_entered_time,
-                      to_entered_time, order_status_type). get(); }
+    static json
+    Get( Credentials& creds,
+         const std::string& account_id,
+         unsigned int nmax_results,
+         const std::string& from_entered_time,
+         const std::string& to_entered_time,
+         OrderStatusType order_status_type  )
+    { return OrdersGetter(creds, account_id, nmax_results, from_entered_time,
+                          to_entered_time, order_status_type). get(); }
+};
 
 } /* tdma */
 

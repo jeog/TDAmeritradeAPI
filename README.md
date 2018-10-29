@@ -291,12 +291,16 @@ Since all the dependencies are included(or built manually) you'll need to manage
 
 - **ONLY** Symbol strings are converted to upper-case by the library, e.g 'sPy' -> 'SPY'.
 
-- Currently, decimal values are represented with ```double``` type and passed to the API as a string with four decimal places of fixed precision. 
-    - Numbers requiring more precision than that will be passed to the API *incorrectly*.
-    - Very large floating point numbers can lose accuracy. 
-    - Rounding behavior is the default used by stringstream, using std::fixed and std::setprecision(4).
-    - This *shouldn't* be an issue for the current nature of access. (If so, file an issue.)
+- This library generally ignores character encoding issues:
+    - uses 1 byte wide characters: char, std::string etc.
+    - assumes utf-8 encoded string data is returned from server
+    - C -> Python is handled by ctypes.py
 
+- Currently, decimal values are represented with ```double``` type and passed to the API as a string with four decimal places of fixed precision. This **shouldn't** be an issue for the current nature of access, but keep in mind:
+    - Numbers requiring more precision than 4 decimal points will be passed to the API *incorrectly*
+    - Very large floating point numbers can lose accuracy
+    - Rounding behavior is the default used by stringstream with std::fixed and std::setprecision(4)
+    
 - Enums are defined for both C and C++ code using MACROS. Python mimics these enums by defining constant values. For example:
     ```
     DECL_C_CPP_TDMA_ENUM(AdminCommandType, 0, 2,
@@ -571,7 +575,7 @@ CloseCredentials(struct Credentials* pcreds );
 
 - ##### *Get*
 
-    For queries, (non-streaming) real-time data, and account information you'll make HTTPS Get requests through 'Getter' objects and convenience functions that internally use libcurl and return json objects or strings. [Please review the full documentation](README_GET.md).
+    For queries, (non-streaming) real-time data, and account information you'll make HTTPS Get requests through 'Getter' objects that internally use libcurl and return json objects or strings. [Please review the full documentation](README_GET.md).
 
 - ##### *Streaming*
 

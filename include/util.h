@@ -35,6 +35,51 @@ along with this program.  If not, see http://www.gnu.org/licenses.
 
 namespace util{
 
+namespace func{
+
+template<typename R, typename... Args>
+struct traits_base{
+    typedef R return_type;
+    typedef R signature_type(Args...);
+    typedef std::tuple<Args...> args_tuple_type;
+
+    static constexpr size_t nargs = std::tuple_size<args_tuple_type>::value;
+
+    template<size_t i>
+    struct arg{
+        typedef typename std::tuple_element<i, args_tuple_type>::type type;
+    };
+};
+
+template<typename T>
+struct traits;
+
+template<typename R, typename... Args>
+struct traits< std::function<R(Args...)> >
+        : public traits_base<R, Args...>{
+};
+
+template<typename R, typename... Args>
+struct traits< R(*)(Args...) >
+        : public traits_base<R, Args...>{
+};
+
+template<typename T>
+struct signature;
+
+template<typename R, typename... Args>
+struct signature< R(Args...) >
+        : public traits_base<R, Args...> {
+    typedef typename traits_base<R, Args...>::signature_type type;
+
+    template<typename F>
+    static constexpr bool
+    matches(F func)
+    { return std::is_same<type, typename traits<F>::signature_type>::value; }
+};
+
+} /* func */
+
 #ifdef USE_SIGNAL_BLOCKER_
 class SignalBlocker {
     sigset_t _mask, _mask_old;
