@@ -90,8 +90,6 @@ Getter objects are fundamental to accessing the API. Before using you'll need to
 Each object sets up an underlying HTTPS/Get connection(via libcurl) using the credentials object and the relevant arguments for that particular request type. The connection sets the Keep-Alive header and will execute a request each time ```get / Get``` is called, until ```close / Close``` is called. C++ and Python getters will call ```close``` on destruction.
 
 - Symbol strings are automatically converted to upper-case, e.g 'spy' -> 'SPY'.
-- C interface uses an object orient approach that mirrors C++
-- Stateless get calls, that don't require a getter object, are provided for convenience.
 
 #### [C++]
 
@@ -124,16 +122,8 @@ public:
 
     bool /* INHERITED FROM APIGetter */
     is_closed();
-
-    static json
-    Get( Credentials& creds, const string& symbol);
 };
 ```
-
-##### Stateless Convenience Function
-
-If you only need to make the call once, each 'Getter' object has static method ```::Get(...)```
-that constructs the object and calls its ```.get()``` method once before destruction. 
 
 #### [C]
 
@@ -218,10 +208,7 @@ QuoteGetter_IsClosed(QuoteGetter_C *pgetter, int *b)
 
 ##### Stateless Convenience Function
 
-Each object has a similarly named stand-alone function for making a single get call
-per connection. (e.g QuoteGetter -> GetQuote(...), AccountInfoGetter -> GetAccountInfo(...)). This function calls Create, Get, and Destroy, populating a char buffer, as above.
-
-This is the C equivalent of the C++ ```::Get(...)``` static method.
+Each object has a similarly named stand-alone function for making a single get call(e.g ```GetQuote(...)```, ```GetAccountInfo(...)```). This function calls Create, Get, and Destroy, populating a char buffer, as above.
 
 #### [Python]
 
@@ -448,7 +435,7 @@ C++ Getter classes and the equivalent C interfaces are outlined below.
 
 The C interface uses appropriately named functions to mimic the methods of the C++ classes. It requires explicit use of the ```Create``` functions for construction and ```Destroy``` functions for destruction. 
 
-The Python interface matches C++ almost exactly. (see object docstrings in tdma_api/get.py)
+The Python interface matches C++ almost exactly. (See docstrings in tdma_api/get.py.)
 
 #### QuoteGetter
 
@@ -490,10 +477,6 @@ QuoteGetter::get_symbol() const;
 void
 QuoteGetter::set_symbol(const string& symbol);
 ```
-```
-static json
-QuoteGetter::Get(Credentials& creds, const string& symbol);
-```
 
 ##### [C]
 
@@ -508,25 +491,32 @@ static inline int
 QuoteGetter_Create(struct Credentials *pcreds, 
                    const char* symbol, 
                    QuoteGetter_C *pgetter);
-
+```
+```
 static inline int
 QuoteGetter_Destroy(QuoteGetter_C *pgetter);
-
+```
+```
 static inline int
 QuoteGetter_Get(QuoteGetter_C *pgetter, char** buf, size_t *n);
-
+```
+```
 static inline int
 QuoteGetter_Close(QuoteGetter_C *pgetter);
-
+```
+```
 static inline int
 QuoteGetter_IsClosed(QuoteGetter_C *pgetter, int*b);
-
+```
+```
 static inline int
 QuoteGetter_GetSymbol(QuoteGetter_C *pgetter, char **buf, size_t *n);
-
+```
+```
 static inline int
 QuoteGetter_SetSymbol(QuoteGetter_C *pgetter, const char* symbol);
-
+```
+```
 static inline int 
 GetQuote(structCredentials *pcreds, const char* symbol, char **buf, size_t *n);
 ```
@@ -592,10 +582,6 @@ QuotesGetter::add_symbols(const set<string>& symbols);
 ```
 void
 QuotesGetter::remove_symbols(const set<string>& symbols);
-```
-```
-static json
-QuotesGetter::Get(Credentials& creds, const set<string>& symbols);
 ```
 
 ##### [C]
@@ -722,22 +708,16 @@ string
 MarketHoursGetter::get_date() const;
 ```
 ```
+void
+MarketHoursGetter::set_date(const string& date);
+```
+```
 MarketType
 MarketHoursGetter::get_market_type() const;
 ```
 ```
 void
-MarketHoursGetter::set_date(const string& date);
-```
-```
-void
 MarketHoursGetter::set_market_type(MarketType market_type);
-```
-```
-static json
-MarketHoursGetter::Get( Credentials& creds, 
-                        MarketType market_type, 
-                        const string& date );
 ```
 
 ##### [C]
@@ -873,8 +853,16 @@ MoversIndex
 MoversGetter::get_index() const;
 ```
 ```
+void
+MoversGetter::set_index(MoversIndex index);
+```
+```
 MoversDirectionType
 MoversGetter::get_direction_type() const;
+```
+```
+void
+MoversGetter::set_direction_type(MoversDirectionType direction_type);
 ```
 ```
 MoversChangeType
@@ -882,22 +870,7 @@ MoversGetter::get_change_type() const
 ```
 ```
 void
-MoversGetter::set_index(MoversIndex index);
-```
-```
-void
-MoversGetter::set_direction_type(MoversDirectionType direction_type);
-```
-```
-void
 MoversGetter::set_change_type(MoversChangeType change_type);
-```
-```
-static json
-MoversGetter::Get( Credentials& creds,  
-                   MoversIndex index,
-                   MoversDirectionType direction_type,
-                   MoversChangeType change_type );
 ```
 
 ##### [C]
@@ -1139,12 +1112,8 @@ string
 HistoricalGetterBase::get_symbol() const;
 ```
 ```
-PeriodType
-HistoricalPeriodGetter::get_period_type() const;
-```
-```
-unsigned int
-HistoricalPeriodGetter::get_period() const;
+void  
+HistoricalGetterBase::set_symbol(const string& symbol);
 ```
 ```
 unsigned int 
@@ -1155,16 +1124,25 @@ FrequencyType
 HistoricalGetterBase::get_frequency_type() const;
 ```
 ```
+void
+HistoricalGetterBase::set_frequency( FrequencyType frequency_type,
+                                       unsigned int frequency );
+```
+```
 bool 
 HistoricalGetterBase::is_extended_hours() const;  
 ```
 ```
-long long
-HistoricalPeriodGetter::get_msec_since_epoch() const;
+void 
+HistoricalGetterBase::set_extended_hours(bool extended_hours);
 ```
 ```
-void  
-HistoricalGetterBase::set_symbol(const string& symbol);
+PeriodType
+HistoricalPeriodGetter::get_period_type() const;
+```
+```
+unsigned int
+HistoricalPeriodGetter::get_period() const;
 ```
 ```
 void
@@ -1172,28 +1150,12 @@ HistoricalPeriodGetter::set_period( PeriodType period_type,
                                     usigned int period );
 ```
 ```
-void
-HistoricalGetterBase::set_frequency( FrequencyType frequency_type,
-                                       unsigned int frequency );
-```
-```
-void 
-HistoricalGetterBase::set_extended_hours(bool extended_hours);
+long long
+HistoricalPeriodGetter::get_msec_since_epoch() const;
 ```
 ```
 void
 HistoricalPeriodGetter::set_msec_since_epoch( long long msec_since_epoch );
-```
-```
-static json
-HistoricalPeriodGetter::Get( Credentials& creds,
-                             const string& symbol,
-                             PeriodType period_type,
-                             unsigned int period,
-                             FrequencyType frequency_type,
-                             unsigned int frequency,
-                             bool extended_hours,
-                             long long msec_since_epoch = 0 );
 ```
 
 ##### [C]
@@ -1313,6 +1275,12 @@ HistoricalPeriodGetter_GetFrequencyType( HistoricalPeriodGetter_C *pgetter,
 ```
 ```
 static inline int
+HistoricalPeriodGetter_SetFrequency( HistoricalPeriodGetter_C *pgetter,
+                                     FrequencyType frequency_type,
+                                     unsigned int frequency );
+```
+```
+static inline int
 HistoricalPeriodGetter_IsExtendedHours( HistoricalPeriodGetter_C *pgetter,
                                         int *is_extended_hours );
 ```
@@ -1336,12 +1304,6 @@ static inline int
 HistoricalPeriodGetter_SetPeriod( HistoricalPeriodGetter_C *pgetter,
                                   PeriodType period_type,
                                   unsigned int period );
-```
-```
-static inline int
-HistoricalPeriodGetter_SetFrequency( HistoricalPeriodGetter_C *pgetter,
-                                     FrequencyType frequency_type,
-                                     unsigned int frequency );
 ```
 ```
 static inline int
@@ -1448,6 +1410,10 @@ string
 HistoricalGetterBase::get_symbol() const;
 ```
 ```
+void  
+HistoricalGetterBase::set_symbol(const string& symbol);
+```
+```
 unsigned int 
 HistoricalGetterBase::get_frequency() const;
 ```
@@ -1456,25 +1422,21 @@ FrequencyType
 HistoricalGetterBase::get_frequency_type() const;
 ```
 ```
-PeriodType
-HistoricalRangeGetter::get_end_msec_since_epoch() const;
-```
-```
-unsigned int
-HistoricalRangeGetter::get_start_msec_since_epoch() const;
+void
+HistoricalGetterBase::set_frequency( FrequencyType frequency_type,
+                                       unsigned int frequency );
 ```
 ```
 bool 
 HistoricalGetterBase::is_extended_hours() const;  
 ```
 ```
-void  
-HistoricalGetterBase::set_symbol(const string& symbol);
+void 
+HistoricalGetterBase::set_extended_hours(bool extended_hours);
 ```
 ```
-void
-HistoricalGetterBase::set_frequency( FrequencyType frequency_type,
-                                       unsigned int frequency );
+PeriodType
+HistoricalRangeGetter::get_end_msec_since_epoch() const;
 ```
 ```
 void
@@ -1483,25 +1445,16 @@ HistoricalRangeGetter::set_end_msec_since_epoch(
 );
 ```
 ```
+unsigned int
+HistoricalRangeGetter::get_start_msec_since_epoch() const;
+```
+```
 void
 HistoricalRangeGetter::set_stat_msec_since_epoch(
     unsigned long long start_msec_since_epoch
 );
 ```
-```
-void 
-HistoricalGetterBase::set_extended_hours(bool extended_hours);
-```
-```
-static json
-HistoricalRangeGetter::Get( Credentials& creds,
-                            const string& symbol,
-                            FrequencyType frequency_type,
-                            unsigned int frequency,
-                            unsigned long long start_msec_since_epoch,
-                            unsigned long long end_msec_since_epoch,
-                            bool extended_hours );
-```
+
 
 ##### [C]
 
@@ -1584,6 +1537,12 @@ HistoricalRangeGetter_GetFrequencyType( HistoricalRangeGetter_C *pgetter,
 ```
 ```
 static inline int
+HistoricalRangeGetter_SetFrequency( HistoricalRangeGetter_C *pgetter,
+                                     FrequencyType frequency_type,
+                                     unsigned int frequency );
+```
+```
+static inline int
 HistoricalRangeGetter_IsExtendedHours( HistoricalRangeGetter_C *pgetter,
                                        int *is_extended_hours );
 ```
@@ -1611,12 +1570,6 @@ HistoricalRangeGetter_GetStartMSecSinceEpoch( HistoricalRangeGetter_C *pgetter,
 static inline int
 HistoricalRangeGetter_SetStartMSecSinceEpoch( HistoricalRangeGetter_C *pgetter,
                                               unsigned long long start_msec );
-```
-```
-static inline int
-HistoricalRangeGetter_SetFrequency( HistoricalRangeGetter_C *pgetter,
-                                     FrequencyType frequency_type,
-                                     unsigned int frequency );
 ```
 ```
 static inline int
@@ -1806,28 +1759,56 @@ string
 OptionChainGetter::get_symbol() const;
 ```
 ```
+void
+OptionChainGetter::set_symbol(const string& symbol);
+```
+```
 OptionStrikes
 OptionChainGetter::get_strikes() const;
+```
+```
+void
+OptionChainGetter::set_strikes(const OptionStrikes& strikes);
 ```
 ```
 OptionContractType
 OptionChainGetter::get_contract_type() const;
 ```
 ```
+void
+OptionChainGetter::set_contract_type(OptionContractType contract_type);
+```
+```
 bool
 OptionChainGetter::includes_quotes() const;
+```
+```
+void
+OptionChainGetter::include_quotes(bool includes_quotes);
 ```
 ```
 string
 OptionChainGetter::get_from_date() const;
 ```
 ```
+void
+OptionChainGetter::set_from_date(const string& from_date);
+```
+```
 string
 OptionChainGetter::get_to_date() const;
 ```
 ```
+void
+OptionChainGetter::set_to_date(const string& to_date);
+```
+```
 OptionExpMonth
 OptionChainGetter::get_exp_month() const;
+```
+```
+void
+OptionChainGetter::set_exp_month(OptionExpMonth exp_month);
 ```
 ```
 OptionType
@@ -1835,50 +1816,9 @@ OptionChainGetter::get_option_type() const
 ```
 ```
 void
-OptionChainGetter::set_symbol(const string& symbol);
-```
-```
-void
-OptionChainGetter::set_strikes(const OptionStrikes& strikes);
-```
-```
-void
-OptionChainGetter::set_contract_type(OptionContractType contract_type);
-```
-```
-void
-OptionChainGetter::include_quotes(bool includes_quotes);
-```
-```
-void
-OptionChainGetter::set_from_date(const string& from_date);
-```
-```
-void
-OptionChainGetter::set_to_date(const string& to_date);
-```
-```
-void
-OptionChainGetter::set_exp_month(OptionExpMonth exp_month);
-```
-```
-void
 OptionChainGetter::set_option_type(OptionType option_type);
 ```
-```
-static json
-OptionChainGetter::Get( 
-    Credentials& creds,
-    const string& symbol,
-    const OptionStrikes& strikes,
-    OptionContractType contract_type = OptionContractType::all,
-    bool include_quotes = false,
-    const string& from_date = "",
-    const string& to_date = "",
-    OptionExpMonth exp_month = OptionExpMonth::all,
-    OptionType option_type = OptionType::all 
-);
-```
+
 ##### [C]
 
 **types**
@@ -2323,32 +2263,56 @@ string
 OptionChainGetter::get_symbol() const;
 ```
 ```
-OptionStrategy
-OptionChainStrategyGetter::get_strategy() const;
+void
+OptionChainGetter::set_symbol(const string& symbol);
 ```
 ```
 OptionStrikes
 OptionChainGetter::get_strikes() const;
 ```
 ```
+void
+OptionChainGetter::set_strikes(const OptionStrikes& strikes);
+```
+```
 OptionContractType
 OptionChainGetter::get_contract_type() const;
+```
+```
+void
+OptionChainGetter::set_contract_type(OptionContractType contract_type);
 ```
 ```
 bool
 OptionChainGetter::includes_quotes() const;
 ```
 ```
+void
+OptionChainGetter::include_quotes(bool includes_quotes);
+```
+```
 string
 OptionChainGetter::get_from_date() const;
+```
+```
+void
+OptionChainGetter::set_from_date(const string& from_date);
 ```
 ```
 string
 OptionChainGetter::get_to_date() const;
 ```
 ```
+void
+OptionChainGetter::set_to_date(const string& to_date);
+```
+```
 OptionExpMonth
 OptionChainGetter::get_exp_month() const;
+```
+```
+void
+OptionChainGetter::set_exp_month(OptionExpMonth exp_month);
 ```
 ```
 OptionType
@@ -2356,55 +2320,18 @@ OptionChainGetter::get_option_type() const
 ```
 ```
 void
-OptionChainGetter::set_symbol(const string& symbol);
+OptionChainGetter::set_option_type(OptionType option_type);
+```
+```
+OptionStrategy
+OptionChainStrategyGetter::get_strategy() const;
 ```
 ```
 void
 OptionChainStrategyGetter::set_strategy(const OptionStrategy& strategy);
 ```
-```
-void
-OptionChainGetter::set_strikes(const OptionStrikes& strikes);
-```
-```
-void
-OptionChainGetter::set_contract_type(OptionContractType contract_type);
-```
-```
-void
-OptionChainGetter::include_quotes(bool includes_quotes);
-```
-```
-void
-OptionChainGetter::set_from_date(const string& from_date);
-```
-```
-void
-OptionChainGetter::set_to_date(const string& to_date);
-```
-```
-void
-OptionChainGetter::set_exp_month(OptionExpMonth exp_month);
-```
-```
-void
-OptionChainGetter::set_option_type(OptionType option_type);
-```
-```
-static json
-OptionChainStrategyGetter::Get( 
-    Credentials& creds,
-    const string& symbol,
-    const OptionStrategy& strategy,
-    const OptionStrikes& strikes,
-    OptionContractType contract_type = OptionContractType::all,
-    bool include_quotes = false,
-    const string& from_date = "",
-    const string& to_date = "",
-    OptionExpMonth exp_month = OptionExpMonth::all,
-    OptionType option_type = OptionType::all 
-);
-```
+
+
 ##### [C]
 
 **types**
@@ -2818,44 +2745,56 @@ string
 OptionChainGetter::get_symbol() const;
 ```
 ```
-double 
-OptionChainAnalyticalGetter::get_volatility() const;
-```
-```
-double 
-OptionChainAnalyticalGetter::get_underlying_price() const;
-```
-```
-double
-OptionChainAnalyticalGetter::get_interest_rate() const;
-```
-```
-unsigned int
-OptionChainAnalyticalGetter::get_days_to_exp() const;
+void
+OptionChainGetter::set_symbol(const string& symbol);
 ```
 ```
 OptionStrikes
 OptionChainGetter::get_strikes() const;
 ```
 ```
+void
+OptionChainGetter::set_strikes(const OptionStrikes& strikes);
+```
+```
 OptionContractType
 OptionChainGetter::get_contract_type() const;
+```
+```
+void
+OptionChainGetter::set_contract_type(OptionContractType contract_type);
 ```
 ```
 bool
 OptionChainGetter::includes_quotes() const;
 ```
 ```
+void
+OptionChainGetter::include_quotes(bool includes_quotes);
+```
+```
 string
 OptionChainGetter::get_from_date() const;
+```
+```
+void
+OptionChainGetter::set_from_date(const string& from_date);
 ```
 ```
 string
 OptionChainGetter::get_to_date() const;
 ```
 ```
+void
+OptionChainGetter::set_to_date(const string& to_date);
+```
+```
 OptionExpMonth
 OptionChainGetter::get_exp_month() const;
+```
+```
+void
+OptionChainGetter::set_exp_month(OptionExpMonth exp_month);
 ```
 ```
 OptionType
@@ -2863,69 +2802,41 @@ OptionChainGetter::get_option_type() const
 ```
 ```
 void
-OptionChainGetter::set_symbol(const string& symbol);
+OptionChainGetter::set_option_type(OptionType option_type);
+```
+```
+double 
+OptionChainAnalyticalGetter::get_volatility() const;
 ```
 ```
 void
 OptionChainAnalyticalGetter::set_volatility(double volatility);
 ```
 ```
+double 
+OptionChainAnalyticalGetter::get_underlying_price() const;
+```
+```
 void
 OptionChainAnalyticalGetter::set_underlying_price(double underlying_price);
+```
+```
+double
+OptionChainAnalyticalGetter::get_interest_rate() const;
 ```
 ```
 void
 OptionChainAnalyticalGetter::set_interest_rate(double interest_rate);
 ```
 ```
+unsigned int
+OptionChainAnalyticalGetter::get_days_to_exp() const;
+```
+```
 void
 OptionChainAnalyticalGetter::set_days_to_exp(unsigned int days_to_exp);
 ```
-```
-void
-OptionChainGetter::set_strikes(const OptionStrikes& strikes);
-```
-```
-void
-OptionChainGetter::set_contract_type(OptionContractType contract_type);
-```
-```
-void
-OptionChainGetter::include_quotes(bool includes_quotes);
-```
-```
-void
-OptionChainGetter::set_from_date(const string& from_date);
-```
-```
-void
-OptionChainGetter::set_to_date(const string& to_date);
-```
-```
-void
-OptionChainGetter::set_exp_month(OptionExpMonth exp_month);
-```
-```
-void
-OptionChainGetter::set_option_type(OptionType option_type);
-```
-```
-static json
-OptionChainAnalyticalGetter::Get( 
-    Credentials& creds,
-    double volatility,
-    double underlying_price,
-    double interest_rate,
-    unsigned int days_to_exp,
-    const OptionStrikes& strikes,
-    OptionContractType contract_type = OptionContractType::all,
-    bool include_quotes = false,
-    const string& from_date = "",
-    const string& to_date = "",
-    OptionExpMonth exp_month = OptionExpMonth::all,
-    OptionType option_type = OptionType::all  
-);
-```
+
 ##### [C]
 
 **types**
@@ -3231,8 +3142,16 @@ string
 AccountGetterBase::get_account_id() const;
 ```
 ```
+void
+AccountGetterBase::set_account_id(const string& account_id);
+```
+```
 bool
 AccountInfoGetter::returns_positions() const;
+```
+```
+void
+AccountInfoGetter::return_positions(bool positions);
 ```
 ```
 bool
@@ -3240,22 +3159,7 @@ AccountInfoGetter::returns_orders() const
 ```
 ```
 void
-AccountGetterBase::set_account_id(const string& account_id);
-```
-```
-void
-AccountInfoGetter::return_positions(bool positions);
-```
-```
-void
 AccountInfoGetter::return_orders(bool orders);
-```
-```
-static json
-AccountInfoGetter::Get( Credentials& creds, 
-                   const string& account_id,
-                   bool positions,
-                   bool orders );
 ```
 
 ##### [C]
@@ -3371,10 +3275,7 @@ AccountGetterBase::get_account_id() const;
 void
 AccountGetterBase::set_account_id(const string& account_id);
 ```
-```
-static json
-PreferencesGetter::Get( Credentials& creds, const string& account_id );
-```
+
 ##### [C]
 
 **types**
@@ -3464,22 +3365,14 @@ bool
 UserPrincipalsGetter::returns_streamer_subscription_keys() const;
 ```
 ```
-bool 
-UserPrincipalsGetter::returns_streamer_connection_info() const;
-```
-```
-bool
-UserPrincipalsGetter::returns_preferences() const;
-```
-```
-bool
-UserPrincipalsGetter::returns_surrogate_ids() const;
-```
-```
 void
 UserPrincipalsGetter::return_streamer_subscription_keys(
     bool streamer_subscription_keys
 );
+```
+```
+bool 
+UserPrincipalsGetter::returns_streamer_connection_info() const;
 ```
 ```
 void
@@ -3488,21 +3381,22 @@ UserPrincipalsGetter::return_streamer_connection_info(
 );
 ```
 ```
+bool
+UserPrincipalsGetter::returns_preferences() const;
+```
+```
 void
 UserPrincipalsGetter::return_preferences(bool preferences);
+```
+```
+bool
+UserPrincipalsGetter::returns_surrogate_ids() const;
 ```
 ```
 void
 UserPrincipalsGetter::return_surrogate_ids(bool surrogate_ids);
 ```
-```
-static json
-UserPrincipalsGetter::Get( Credentials& creds, 
-                           bool streamer_subscription_keys,
-                           bool streamer_connection_info,
-                           bool preferences,
-                           bool surrogate_ids );
-```
+
 ##### [C]
 
 **types**
@@ -3631,10 +3525,7 @@ AccountGetterBase::get_account_id() const;
 void
 AccountGetterBase::set_account_id(const string& account_id);
 ```
-```
-static json
-StreamerSubscriptionKeysGetter::Get(Credentials& creds, const string& account_id);
-```
+
 ##### [C]
 
 **types**
@@ -3759,16 +3650,32 @@ string
 AccountGetterBase::get_account_id() const;
 ```
 ```
+void
+AccountGetterBase::set_account_id(const string& account_id);
+```
+```
 TransactionType
 TransactionHistoryGetter::get_transaction_type() const;
+```
+```
+void
+TransactionHistoryGetter::set_transaction_type(TransactionType transaction_type);
 ```
 ```
 string
 TransactionHistoryGetter::get_symbol() const;
 ```
 ```
+void
+TransactionHistoryGetter::set_symbol(const string& symbol);
+```
+```
 string
 TransactionHistoryGetter::get_start_date() const;
+```
+```
+void
+TransactionHistoryGetter::set_start_date(const string& start_date);
 ```
 ```
 string
@@ -3776,35 +3683,9 @@ TransactionHistoryGetter::get_end_date() const;
 ```
 ```
 void
-AccountGetterBase::set_account_id(const string& account_id);
-```
-```
-void
-TransactionHistoryGetter::set_transaction_type(TransactionType transaction_type);
-```
-```
-void
-TransactionHistoryGetter::set_symbol(const string& symbol);
-```
-```
-void
-TransactionHistoryGetter::set_start_date(const string& start_date);
-```
-```
-void
 TransactionHistoryGetter::set_end_date(const string& end_date);
 ```
-```
-static json
-TransactionHistoryGetter::Get( 
-    Credentials& creds, 
-    const string& account_id 
-    TransactionType transaction_type = TransactionType::all,
-    const string& symbol="",
-    const string& start_date="",
-    const string& end_date="" 
-);
-```
+
 ##### [C]
 
 **types**
@@ -3965,23 +3846,18 @@ string
 AccountGetterBase::get_account_id() const;
 ```
 ```
+void
+AccountGetterBase::set_account_id(const string& account_id);
+```
+```
 string
 IndividualTransactionHistoryGetter::get_transaction_id() const;
 ```
 ```
 void
-AccountGetterBase::set_account_id(const string& account_id);
-```
-```
-void
 IndividualTransactionHistoryGetter::set_transaction_id(const string& transaction_id);
 ```
-```
-static json
-IndividualTransactionHistoryGetter::Get( Credentials& creds, 
-                                         const string& account_id 
-                                         const string& transaction_id );
-```
+
 ##### [C]
 
 **types**
@@ -4122,12 +3998,6 @@ void
 InstrumentInfoGetter::set_query( InstrumentSearchType search_type, 
                                  const string& query_string );
 ```
-```
-static json
-InstrumentInfoGetter::Get( Credentials& creds, 
-                           InstrumentSearchType search_type,
-                           const string& query_string );
-```
 
 ##### [C]
 
@@ -4237,23 +4107,18 @@ string
 AccountGetterBase::get_account_id() const;
 ```
 ```
+void
+AccountGetterBase::set_account_id(const string& account_id);
+```
+```
 string
 OrderGetter::get_order_id() const;
 ```
 ```
 void
-AccountGetterBase::set_account_id(const string& account_id);
-```
-```
-void
 OrderGetter::set_order_id(const string& order_id);
 ```
-```
-static json
-OrderGetter::Get( Credentials& creds, 
-                  const string& account_id 
-                  const string& transaction_id );
-```
+
 
 ##### [C]
 
@@ -4383,16 +4248,32 @@ string
 AccountGetterBase::get_account_id() const;
 ```
 ```
+void
+AccountGetterBase::set_account_id(const string& account_id);
+```
+```
 unsigned int
 OrdersGetter::get_nmax_results() const;
+```
+```
+void
+OrdersGetter::set_nmax_results(unsigned int nmax_results);
 ```
 ```
 string
 OrdersGetter::get_from_entered_time() const;
 ```
 ```
+void
+OrdersGetter::set_from_entered_time(const std::string& from_entered_time);
+```
+```
 string
 OrdersGetter::get_to_entered_time() const;
+```
+```
+void
+OrdersGetter::set_to_entered_time(const std::string& to_entered_time);
 ```
 ```
 OrderStatusType
@@ -4400,32 +4281,7 @@ OrdersGetter::get_order_status_type() const;
 ```
 ```
 void
-AccountGetterBase::set_account_id(const string& account_id);
-```
-```
-void
-OrdersGetter::set_nmax_results(unsigned int nmax_results);
-```
-```
-void
-OrdersGetter::set_from_entered_time(const std::string& from_entered_time);
-```
-```
-void
-OrdersGetter::set_to_entered_time(const std::string& to_entered_time);
-```
-```
-void
 OrdersGetter::set_order_status_type(OrderStatusType order_status_type);
-```
-```
-static json
-OrdersGetter::Get( Credentials& creds, 
-                   const string& account_id 
-                   unsigned int nmax_results,
-                   const std::string& from_entered_time,
-                   const std::string& to_entered_time,
-                   OrderStatusType order_status_type );
 ```
 
 ##### [C]
