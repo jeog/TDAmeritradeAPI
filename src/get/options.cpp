@@ -30,7 +30,12 @@ using std::vector;
 using std::pair;
 using std::tie;
 
+using util::is_valid_iso8601_datetime;
+using util::to_fixedpoint_string;
+
 namespace tdma {
+
+using std::to_string;
 
 class OptionChainGetterImpl
         : public APIGetterImpl {
@@ -65,14 +70,11 @@ protected:
 
         switch( _strikes.get_type() ){
         case OptionStrikes::Type::n_atm:
-            params.emplace_back(
-                "strikeCount", std::to_string(_strikes.get_n_atm())
-            );
+            params.emplace_back("strikeCount", to_string(_strikes.get_n_atm()));
             break;
         case OptionStrikes::Type::single:
-            params.emplace_back(
-                "strike", util::to_fixedpoint_string(_strikes.get_single())
-            );
+            params.emplace_back( "strike",
+                                 to_fixedpoint_string(_strikes.get_single()) );
             break;
         case OptionStrikes::Type::range:
             params.emplace_back("range", to_string(_strikes.get_range()));
@@ -108,14 +110,14 @@ public:
     static const int TYPE_ID_HIGH = TYPE_ID_GETTER_OPTION_CHAIN_ANALYTICAL;
 
     OptionChainGetterImpl( Credentials& creds,
-                               const string& symbol,
-                               const OptionStrikes& strikes,
-                               OptionContractType contract_type = OptionContractType::all,
-                               bool include_quotes = false,
-                               const string& from_date = "",
-                               const string& to_date = "",
-                               OptionExpMonth exp_month = OptionExpMonth::all,
-                               OptionType option_type = OptionType::all )
+                           const string& symbol,
+                           const OptionStrikes& strikes,
+                           OptionContractType contract_type,
+                           bool include_quotes,
+                           const string& from_date,
+                           const string& to_date,
+                           OptionExpMonth exp_month,
+                           OptionType option_type )
         :
             APIGetterImpl(creds, data_api_on_error_callback),
             _symbol( util::toupper(symbol) ),
@@ -130,11 +132,15 @@ public:
             if( symbol.empty() )
                 TDMA_API_THROW(ValueException, "empty symbol" );
 
-            if( !from_date.empty() && !util::is_valid_iso8601_datetime(from_date) )
-               TDMA_API_THROW(ValueException,"invalid ISO-8601 date string: " + from_date);
+            if( !from_date.empty() && !is_valid_iso8601_datetime(from_date) ){
+               TDMA_API_THROW( ValueException,
+                               "invalid ISO-8601 date string: " + from_date );
+            }
 
-            if( !to_date.empty() && !util::is_valid_iso8601_datetime(to_date) )
-               TDMA_API_THROW(ValueException,"invalid ISO-8601 date string: " + to_date);
+            if( !to_date.empty() && !is_valid_iso8601_datetime(to_date) ){
+               TDMA_API_THROW( ValueException,
+                               "invalid ISO-8601 date string: " + to_date );
+            }
 
             _build();
         }
@@ -204,8 +210,10 @@ public:
     void
     set_from_date(const string& from_date)
     {
-        if( !from_date.empty() && !util::is_valid_iso8601_datetime(from_date) )
-           TDMA_API_THROW(ValueException,"invalid ISO-8601 date string: " + from_date);
+        if( !from_date.empty() && !is_valid_iso8601_datetime(from_date) ){
+           TDMA_API_THROW( ValueException,
+                           "invalid ISO-8601 date string: " + from_date );
+        }
 
         _from_date = from_date;
         build();
@@ -214,8 +222,10 @@ public:
     void
     set_to_date(const string& to_date)
     {
-        if( !to_date.empty() && !util::is_valid_iso8601_datetime(to_date) )
-           TDMA_API_THROW(ValueException,"invalid ISO-8601 date string: " + to_date);
+        if( !to_date.empty() && !is_valid_iso8601_datetime(to_date) ){
+           TDMA_API_THROW( ValueException,
+                           "invalid ISO-8601 date string: " + to_date );
+        }
 
         _to_date = to_date;
         build();
@@ -273,17 +283,16 @@ public:
     static const int TYPE_ID_LOW = TYPE_ID_GETTER_OPTION_CHAIN_STRATEGY;
     static const int TYPE_ID_HIGH = TYPE_ID_GETTER_OPTION_CHAIN_STRATEGY;
 
-    OptionChainStrategyGetterImpl(
-            Credentials& creds,
-            const string& symbol,
-            OptionStrategy strategy,
-            OptionStrikes strikes,
-            OptionContractType contract_type = OptionContractType::all,
-            bool include_quotes = false,
-            const string& from_date = "",
-            const string& to_date = "",
-            OptionExpMonth exp_month = OptionExpMonth::all,
-            OptionType option_type = OptionType::all )
+    OptionChainStrategyGetterImpl( Credentials& creds,
+                                   const string& symbol,
+                                   OptionStrategy strategy,
+                                   OptionStrikes strikes,
+                                   OptionContractType contract_type,
+                                   bool include_quotes,
+                                   const string& from_date,
+                                   const string& to_date,
+                                   OptionExpMonth exp_month,
+                                   OptionType option_type )
         :
              OptionChainGetterImpl( creds, symbol, strikes, contract_type,
                                     include_quotes, from_date, to_date,
@@ -335,10 +344,10 @@ protected:
 
         vector<pair<string,string>> aparams{
             {"strategy", "ANALYTICAL"},
-            {"volatility", util::to_fixedpoint_string(_volatility)},
-            {"underlyingPrice", util::to_fixedpoint_string(_underlying_price)},
-            {"interestRate", util::to_fixedpoint_string(_interest_rate)},
-            {"daysToExpiration", std::to_string(_days_to_exp)}
+            {"volatility", to_fixedpoint_string(_volatility)},
+            {"underlyingPrice", to_fixedpoint_string(_underlying_price)},
+            {"interestRate", to_fixedpoint_string(_interest_rate)},
+            {"daysToExpiration", to_string(_days_to_exp)}
         };
         params.insert(params.end(), aparams.begin(), aparams.end());
         return params;
@@ -349,24 +358,23 @@ public:
     static const int TYPE_ID_LOW = TYPE_ID_GETTER_OPTION_CHAIN_ANALYTICAL;
     static const int TYPE_ID_HIGH = TYPE_ID_GETTER_OPTION_CHAIN_ANALYTICAL;
 
-    OptionChainAnalyticalGetterImpl(
-            Credentials& creds,
-            const string& symbol,
-            double volatility,
-            double underlying_price,
-            double interest_rate,
-            unsigned int days_to_exp,
-            OptionStrikes strikes,
-            OptionContractType contract_type = OptionContractType::all,
-            bool include_quotes = false,
-            const string& from_date = "",
-            const string& to_date = "",
-            OptionExpMonth exp_month = OptionExpMonth::all,
-            OptionType option_type = OptionType::all )
+    OptionChainAnalyticalGetterImpl( Credentials& creds,
+                                     const string& symbol,
+                                     double volatility,
+                                     double underlying_price,
+                                     double interest_rate,
+                                     unsigned int days_to_exp,
+                                     OptionStrikes strikes,
+                                     OptionContractType contract_type,
+                                     bool include_quotes,
+                                     const string& from_date,
+                                     const string& to_date,
+                                     OptionExpMonth exp_month,
+                                     OptionType option_type )
         :
             OptionChainGetterImpl( creds, symbol, strikes, contract_type,
-                                   include_quotes, from_date, to_date, exp_month,
-                                   option_type ),
+                                   include_quotes, from_date, to_date,
+                                   exp_month, option_type ),
             _volatility(volatility),
             _underlying_price(underlying_price),
             _interest_rate(interest_rate),
@@ -427,17 +435,17 @@ using namespace tdma;
 
 int
 OptionChainGetter_Create_ABI( struct Credentials *pcreds,
-                                  const char* symbol,
-                                  int strikes_type,
-                                  OptionStrikesValue strikes_value,
-                                  int contract_type,
-                                  int include_quotes,
-                                  const char* from_date,
-                                  const char* to_date,
-                                  int exp_month,
-                                  int option_type,
-                                  OptionChainGetter_C *pgetter,
-                                  int allow_exceptions )
+                              const char* symbol,
+                              int strikes_type,
+                              OptionStrikesValue strikes_value,
+                              int contract_type,
+                              int include_quotes,
+                              const char* from_date,
+                              const char* to_date,
+                              int exp_month,
+                              int option_type,
+                              OptionChainGetter_C *pgetter,
+                              int allow_exceptions )
 {
     using ImplTy = OptionChainGetterImpl;
 
@@ -485,37 +493,39 @@ OptionChainGetter_Create_ABI( struct Credentials *pcreds,
 
 int
 OptionChainGetter_Destroy_ABI( OptionChainGetter_C *pgetter,
-                                  int allow_exceptions )
+                               int allow_exceptions )
 { return destroy_proxy<OptionChainGetterImpl>(pgetter, allow_exceptions); }
 
 int
 OptionChainGetter_GetSymbol_ABI( OptionChainGetter_C *pgetter,
-                                      char **buf,
-                                      size_t *n,
-                                      int allow_exceptions)
+                                 char **buf,
+                                 size_t *n,
+                                 int allow_exceptions )
 {
     return ImplAccessor<char**>::template
         get<OptionChainGetterImpl>(
-            pgetter, &OptionChainGetterImpl::get_symbol, buf, n, allow_exceptions
+            pgetter, &OptionChainGetterImpl::get_symbol, buf, n,
+            allow_exceptions
         );
 }
 
 int
 OptionChainGetter_SetSymbol_ABI( OptionChainGetter_C *pgetter,
-                                      const char *symbol,
-                                      int allow_exceptions )
+                                 const char *symbol,
+                                 int allow_exceptions )
 {
     return ImplAccessor<char**>::template
         set<OptionChainGetterImpl>(
-            pgetter, &OptionChainGetterImpl::set_symbol, symbol, allow_exceptions
+            pgetter, &OptionChainGetterImpl::set_symbol, symbol,
+            allow_exceptions
         );
 }
 
 int
 OptionChainGetter_GetStrikes_ABI( OptionChainGetter_C *pgetter,
-                                          int *strikes_type,
-                                          OptionStrikesValue *strikes_value,
-                                          int allow_exceptions)
+                                  int *strikes_type,
+                                  OptionStrikesValue *strikes_value,
+                                  int allow_exceptions )
 {
     int err = proxy_is_callable<OptionChainGetterImpl>(
         pgetter, allow_exceptions
@@ -542,9 +552,9 @@ OptionChainGetter_GetStrikes_ABI( OptionChainGetter_C *pgetter,
 
 int
 OptionChainGetter_SetStrikes_ABI( OptionChainGetter_C *pgetter,
-                                          int strikes_type,
-                                          OptionStrikesValue strikes_value,
-                                          int allow_exceptions)
+                                  int strikes_type,
+                                  OptionStrikesValue strikes_value,
+                                  int allow_exceptions )
 {
     int err = proxy_is_callable<OptionChainGetterImpl>(
         pgetter, allow_exceptions
@@ -565,8 +575,8 @@ OptionChainGetter_SetStrikes_ABI( OptionChainGetter_C *pgetter,
 
 int
 OptionChainGetter_GetContractType_ABI( OptionChainGetter_C *pgetter,
-                                           int *contract_type,
-                                           int allow_exceptions)
+                                       int *contract_type,
+                                       int allow_exceptions )
 {
     return ImplAccessor<int>::template
         get<OptionChainGetterImpl, OptionContractType>(
@@ -577,8 +587,8 @@ OptionChainGetter_GetContractType_ABI( OptionChainGetter_C *pgetter,
 
 int
 OptionChainGetter_SetContractType_ABI( OptionChainGetter_C *pgetter,
-                                            int contract_type,
-                                           int allow_exceptions)
+                                       int contract_type,
+                                       int allow_exceptions )
 {
     CHECK_ENUM(OptionContractType, contract_type, allow_exceptions);
 
@@ -591,8 +601,8 @@ OptionChainGetter_SetContractType_ABI( OptionChainGetter_C *pgetter,
 
 int
 OptionChainGetter_IncludesQuotes_ABI( OptionChainGetter_C *pgetter,
-                                           int *includes_quotes,
-                                           int allow_exceptions)
+                                      int *includes_quotes,
+                                      int allow_exceptions )
 {
     return ImplAccessor<int>::template
         get<OptionChainGetterImpl, bool>(
@@ -603,8 +613,8 @@ OptionChainGetter_IncludesQuotes_ABI( OptionChainGetter_C *pgetter,
 
 int
 OptionChainGetter_IncludeQuotes_ABI( OptionChainGetter_C *pgetter,
-                                          int include_quotes,
-                                          int allow_exceptions)
+                                     int include_quotes,
+                                     int allow_exceptions )
 {
     return ImplAccessor<int>::template
         set<OptionChainGetterImpl, bool>(
@@ -615,9 +625,9 @@ OptionChainGetter_IncludeQuotes_ABI( OptionChainGetter_C *pgetter,
 
 int
 OptionChainGetter_GetFromDate_ABI( OptionChainGetter_C *pgetter,
-                                      char **buf,
-                                      size_t *n,
-                                      int allow_exceptions)
+                                   char **buf,
+                                   size_t *n,
+                                   int allow_exceptions )
 {
     return ImplAccessor<char**>::template
         get<OptionChainGetterImpl>(
@@ -628,8 +638,8 @@ OptionChainGetter_GetFromDate_ABI( OptionChainGetter_C *pgetter,
 
 int
 OptionChainGetter_SetFromDate_ABI( OptionChainGetter_C *pgetter,
-                                      const char *date,
-                                      int allow_exceptions )
+                                   const char *date,
+                                   int allow_exceptions )
 {
     return ImplAccessor<char**>::template
         set<OptionChainGetterImpl>(
@@ -640,9 +650,9 @@ OptionChainGetter_SetFromDate_ABI( OptionChainGetter_C *pgetter,
 
 int
 OptionChainGetter_GetToDate_ABI( OptionChainGetter_C *pgetter,
-                                      char **buf,
-                                      size_t *n,
-                                      int allow_exceptions)
+                                 char **buf,
+                                 size_t *n,
+                                 int allow_exceptions )
 {
     return ImplAccessor<char**>::template
         get<OptionChainGetterImpl>(
@@ -654,8 +664,8 @@ OptionChainGetter_GetToDate_ABI( OptionChainGetter_C *pgetter,
 
 int
 OptionChainGetter_SetToDate_ABI( OptionChainGetter_C *pgetter,
-                                      const char *date,
-                                      int allow_exceptions )
+                                 const char *date,
+                                 int allow_exceptions )
 {
     return ImplAccessor<char**>::template
         set<OptionChainGetterImpl>(
@@ -666,8 +676,8 @@ OptionChainGetter_SetToDate_ABI( OptionChainGetter_C *pgetter,
 
 int
 OptionChainGetter_GetExpMonth_ABI( OptionChainGetter_C *pgetter,
-                                           int *exp_month,
-                                           int allow_exceptions)
+                                   int *exp_month,
+                                   int allow_exceptions )
 {
     return ImplAccessor<int>::template
         get<OptionChainGetterImpl, OptionExpMonth>(
@@ -678,8 +688,8 @@ OptionChainGetter_GetExpMonth_ABI( OptionChainGetter_C *pgetter,
 
 int
 OptionChainGetter_SetExpMonth_ABI( OptionChainGetter_C *pgetter,
-                                           int exp_month,
-                                           int allow_exceptions)
+                                   int exp_month,
+                                   int allow_exceptions )
 {
     CHECK_ENUM(OptionExpMonth, exp_month, allow_exceptions);
 
@@ -692,8 +702,8 @@ OptionChainGetter_SetExpMonth_ABI( OptionChainGetter_C *pgetter,
 
 int
 OptionChainGetter_GetOptionType_ABI( OptionChainGetter_C *pgetter,
-                                           int *option_type,
-                                           int allow_exceptions)
+                                     int *option_type,
+                                     int allow_exceptions )
 {
     return ImplAccessor<int>::template
         get<OptionChainGetterImpl, OptionType>(
@@ -704,8 +714,8 @@ OptionChainGetter_GetOptionType_ABI( OptionChainGetter_C *pgetter,
 
 int
 OptionChainGetter_SetOptionType_ABI( OptionChainGetter_C *pgetter,
-                                           int option_type,
-                                           int allow_exceptions)
+                                     int option_type,
+                                     int allow_exceptions )
 {
     CHECK_ENUM(OptionType, option_type, allow_exceptions);
 
@@ -719,19 +729,19 @@ OptionChainGetter_SetOptionType_ABI( OptionChainGetter_C *pgetter,
 
 int
 OptionChainStrategyGetter_Create_ABI( struct Credentials *pcreds,
-                                          const char* symbol,
-                                          int strategy_type,
-                                          double spread_interval,
-                                          int strikes_type,
-                                          OptionStrikesValue strikes_value,
-                                          int contract_type,
-                                          int include_quotes,
-                                          const char* from_date,
-                                          const char* to_date,
-                                          int exp_month,
-                                          int option_type,
-                                          OptionChainStrategyGetter_C *pgetter,
-                                          int allow_exceptions )
+                                      const char* symbol,
+                                      int strategy_type,
+                                      double spread_interval,
+                                      int strikes_type,
+                                      OptionStrikesValue strikes_value,
+                                      int contract_type,
+                                      int include_quotes,
+                                      const char* from_date,
+                                      const char* to_date,
+                                      int exp_month,
+                                      int option_type,
+                                      OptionChainStrategyGetter_C *pgetter,
+                                      int allow_exceptions )
 {
     using ImplTy = OptionChainStrategyGetterImpl;
 
@@ -767,9 +777,10 @@ OptionChainStrategyGetter_Create_ABI( struct Credentials *pcreds,
 
     ImplTy *obj;
     tie(obj, err) = CallImplFromABI( allow_exceptions, meth, pcreds, symbol,
-                                     strategy_type, spread_interval, strikes_type,
-                                     strikes_value, contract_type, include_quotes,
-                                     from_date, to_date, exp_month, option_type );
+                                     strategy_type, spread_interval,
+                                     strikes_type, strikes_value, contract_type,
+                                     include_quotes, from_date, to_date,
+                                     exp_month, option_type );
     if( err ){
         kill_proxy(pgetter);
         return err;
@@ -782,7 +793,7 @@ OptionChainStrategyGetter_Create_ABI( struct Credentials *pcreds,
 
 int
 OptionChainStrategyGetter_Destroy_ABI( OptionChainStrategyGetter_C *pgetter,
-                                            int allow_exceptions )
+                                       int allow_exceptions )
 {
     return destroy_proxy<OptionChainStrategyGetterImpl>(
         pgetter, allow_exceptions
@@ -850,21 +861,21 @@ OptionChainStrategyGetter_SetStrategy_ABI(
 /* OptionChainAnalyticalGetter */
 int
 OptionChainAnalyticalGetter_Create_ABI( struct Credentials *pcreds,
-                                          const char* symbol,
-                                          double volatility,
-                                          double underlying_price,
-                                          double interest_rate,
-                                          unsigned int days_to_exp,
-                                          int strikes_type,
-                                          OptionStrikesValue strikes_value,
-                                          int contract_type,
-                                          int include_quotes,
-                                          const char* from_date,
-                                          const char* to_date,
-                                          int exp_month,
-                                          int option_type,
-                                          OptionChainAnalyticalGetter_C *pgetter,
-                                          int allow_exceptions )
+                                        const char* symbol,
+                                        double volatility,
+                                        double underlying_price,
+                                        double interest_rate,
+                                        unsigned int days_to_exp,
+                                        int strikes_type,
+                                        OptionStrikesValue strikes_value,
+                                        int contract_type,
+                                        int include_quotes,
+                                        const char* from_date,
+                                        const char* to_date,
+                                        int exp_month,
+                                        int option_type,
+                                        OptionChainAnalyticalGetter_C *pgetter,
+                                        int allow_exceptions )
 {
     using ImplTy = OptionChainAnalyticalGetterImpl;
 

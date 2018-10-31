@@ -111,15 +111,18 @@ public:
         T val;
 
         std::unique_lock<std::mutex> lock(_push_mtx);
-        _push_cond.wait( lock, [this, &val]{
-                                   std::lock_guard<std::mutex> _(_mtx);
-                                   if( !_queue.empty() ){
-                                       val = _queue.front();
-                                       _queue.pop();
-                                       return true;
-                                   }
-                                   return false;
-                                });
+        _push_cond.wait(
+            lock,
+            [this, &val]{
+                 std::lock_guard<std::mutex> _(_mtx);
+                 if( !_queue.empty() ){
+                     val = _queue.front();
+                     _queue.pop();
+                     return true;
+                 }
+                 return false;
+            }
+        );
         return val;
     }
 
@@ -129,16 +132,18 @@ public:
         std::pair<T, bool> val;
 
         std::unique_lock<std::mutex> lock(_push_mtx);
-        _push_cond.wait_for( lock, timeout,
-                             [this, &val]{
-                                  std::lock_guard<std::mutex> _(_mtx);
-                                  if( !_queue.empty() ){
-                                      val = std::make_pair(_queue.front(), true);
-                                      _queue.pop();
-                                      return true;
-                                  }
-                                  return false;
-                            });
+        _push_cond.wait_for(
+            lock, timeout,
+            [this, &val]{
+                 std::lock_guard<std::mutex> _(_mtx);
+                 if( !_queue.empty() ){
+                     val = std::make_pair(_queue.front(), true);
+                     _queue.pop();
+                     return true;
+                 }
+                 return false;
+            }
+        );
         return val;
     }
 

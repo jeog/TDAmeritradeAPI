@@ -118,11 +118,11 @@ DECL_C_CPP_TDMA_ENUM(OrderStrategyType, 0, 2,
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 OrderLeg_Create_ABI(  int asset_type,
-                       const char* symbol,
-                       int instruction,
-                       size_t quantity,
-                       OrderLeg_C *pleg,
-                       int allow_exceptions );
+                      const char* symbol,
+                      int instruction,
+                      size_t quantity,
+                      OrderLeg_C *pleg,
+                      int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 OrderLeg_Destroy_ABI( OrderLeg_C *pleg, int allow_exceptions );
@@ -324,9 +324,9 @@ public:
     using OrderObjectProxy::OrderObjectProxy;
 
     OrderLeg( OrderAssetType asset_type,
-               std::string symbol,
-               OrderInstruction instruction,
-               size_t quantity )
+              std::string symbol,
+              OrderInstruction instruction,
+              size_t quantity )
         :
             OrderObjectProxy()
         {
@@ -919,41 +919,41 @@ public:
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 BuildOrder_Simple_ABI( int asset_type,
-                         const char* symbol,
-                         size_t quantity,
-                         int instruction,
-                         int order_type,
-                         double limit_price,
-                         double stop_price,
-                         OrderTicket_C *porder,
-                         int allow_exceptions );
+                       const char* symbol,
+                       size_t quantity,
+                       int instruction,
+                       int order_type,
+                       double limit_price,
+                       double stop_price,
+                       OrderTicket_C *porder,
+                       int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 SimpleOrder_CheckPrices_ABI( int order_type,
-                                 double limit_price,
-                                 double stop_price,
-                                 int allow_exceptions );
+                             double limit_price,
+                             double stop_price,
+                             int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 BuildOrder_Equity_ABI( const char* symbol,
-                         size_t quantity,
-                         int is_buy,
-                         int to_open,
-                         int order_type,
-                         double limit_price,
-                         double stop_price,
-                         OrderTicket_C *porder,
-                         int allow_exceptions );
+                       size_t quantity,
+                       int is_buy,
+                       int to_open,
+                       int order_type,
+                       double limit_price,
+                       double stop_price,
+                       OrderTicket_C *porder,
+                       int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 BuildOrder_Option_ABI( const char* symbol,
-                         size_t quantity,
-                         int is_buy,
-                         int to_open,
-                         int is_market_order,
-                         double price,
-                         OrderTicket_C *porder,
-                         int allow_exceptions );
+                       size_t quantity,
+                       int is_buy,
+                       int to_open,
+                       int is_market_order,
+                       double price,
+                       OrderTicket_C *porder,
+                       int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 BuildOrder_OptionEx_ABI( const char* underlying,
@@ -1465,7 +1465,7 @@ BuildOrder_Spread( ComplexOrderStrategyType complex_strategy_type,
                    size_t n,
                    int is_market_order,
                    double price,
-                   OrderTicket_C *porder)
+                   OrderTicket_C *porder )
 { return BuildOrder_Spread_ABI( complex_strategy_type, plegs, n, is_market_order, price,
                            porder, 0 ); }
 
@@ -2793,12 +2793,12 @@ class SimpleOrderBuilder
 
     static OrderTicket
     build( OrderAssetType asset_type,
-            const std::string& symbol,
-            size_t quantity,
-            OrderInstruction instruction,
-            OrderType order_type,
-            double limit_price = 0.0,
-            double stop_price = 0.0)
+           const std::string& symbol,
+           size_t quantity,
+           OrderInstruction instruction,
+           OrderType order_type,
+           double limit_price = 0.0,
+           double stop_price = 0.0 )
     {
         call_abi( SimpleOrder_CheckPrices_ABI, static_cast<int>(order_type),
                   limit_price, stop_price );
@@ -2828,9 +2828,9 @@ public:
 
         static OrderTicket
         build( ARGS_RAW,
-                OrderType order_type,
-                double limit_price = 0.0,
-                double stop_price = 0.0)
+               OrderType order_type,
+               double limit_price = 0.0,
+               double stop_price = 0.0)
         { return SimpleOrderBuilder::build(OrderAssetType::EQUITY, symbol,
                                            quantity, eq_instr(is_buy, to_open),
                                            order_type, limit_price, stop_price); }
@@ -2942,9 +2942,9 @@ class SpreadOrderBuilder
 
     static OrderTicket
     build( ComplexOrderStrategyType complex_strategy_type,
-            const std::vector<OrderLeg>& legs,
-            bool is_market_order = true,
-            double price = 0.0 )
+           const std::vector<OrderLeg>& legs,
+           bool is_market_order = true,
+           double price = 0.0 )
     {
         OrderTicket o;
         o.set_type(OrderType::MARKET)
@@ -3107,8 +3107,8 @@ public:
 
             static OrderTicket
             build( ARGS_NEW_EXP(size_t quantity_close, size_t quantity_open),
-                    bool is_market_order = true,
-                    double price = 0 )
+                   bool is_market_order = true,
+                   double price = 0 )
             {
                 auto o = Vertical::Build(underlying, month_open, day_open,
                                          year_open, are_calls, strike_open_buy,
@@ -3279,8 +3279,8 @@ public:
 
         static OrderTicket
         build( ARGS_RAW(size_t quantity1, size_t quantity2),
-                bool is_market_order = true,
-                double price = 0.0 )
+               bool is_market_order = true,
+               double price = 0.0 )
         {
             return SpreadOrderBuilder::build( strategy,
                 {make_leg(symbol_outer1, op_instr(is_buy, to_open), quantity1),
@@ -3292,8 +3292,8 @@ public:
 
         static OrderTicket
         build( ARGS( size_t quantity1, size_t quantity2),
-                bool is_market_order = true,
-                double price = 0.0 )
+               bool is_market_order = true,
+               double price = 0.0 )
         {
             return build(
                 O(underlying, month, day, year, are_calls, strike_outer1),
@@ -3957,8 +3957,8 @@ public:
 
         static OrderTicket
         build( ARGS_RAW(size_t quantity1, size_t quantity2),
-                bool is_market_order = true,
-                double price = 0.0 )
+               bool is_market_order = true,
+               double price = 0.0 )
         {
             auto instr_outer = op_instr(is_buy, to_open);
             auto instr_inner = op_instr(!is_buy, to_open);
@@ -3972,8 +3972,8 @@ public:
 
         static OrderTicket
         build( ARGS(size_t quantity1, size_t quantity2),
-                bool is_market_order = true,
-                double price = 0.0 )
+               bool is_market_order = true,
+               double price = 0.0 )
         {
             return build(
                 O(underlying, month, day, year, are_calls, strike_outer1),
@@ -4095,8 +4095,8 @@ public:
 
         static OrderTicket
         build( ARGS_RAW(size_t quantity_call, size_t quantity_put),
-                bool is_market_order = true,
-                double price = 0.0 )
+               bool is_market_order = true,
+               double price = 0.0 )
         {
             return SpreadOrderBuilder::build( strategy,
                 {make_leg(symbol_call_buy, op_instr(true,to_open), quantity_call),
@@ -4108,8 +4108,8 @@ public:
 
         static OrderTicket
         build( ARGS(size_t quantity_call, size_t quantity_put),
-                bool is_market_order = true,
-                double price = 0.0 )
+               bool is_market_order = true,
+               double price = 0.0 )
         {
             return build(
                 O(underlying, month, day, year, true, strike_call_buy),
@@ -4303,15 +4303,18 @@ public:
     static OrderTicket
     OTO(const OrderTicket& primary, const OrderTicket& conditional)
     {
-        return OrderTicket(primary).set_strategy_type(OrderStrategyType::TRIGGER)
-                             .add_child(conditional);
+        return OrderTicket(primary)
+            .set_strategy_type(OrderStrategyType::TRIGGER)
+            .add_child(conditional);
     }
 
     static OrderTicket
     OCO(const OrderTicket& order1, const OrderTicket& order2)
     {
-        return OrderTicket().set_strategy_type(OrderStrategyType::OCO)
-                      .add_child(order1).add_child(order2);
+        return OrderTicket()
+            .set_strategy_type(OrderStrategyType::OCO)
+            .add_child(order1)
+            .add_child(order2);
     }
 };
 
@@ -4322,35 +4325,35 @@ public:
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 Execute_SendOrder_ABI( struct Credentials *creds,
-                           const char* account_id,
-                           OrderTicket_C *porder,
-                           char** buf,
-                           size_t *n,
-                           int allow_exceptions );
+                       const char* account_id,
+                       OrderTicket_C *porder,
+                       char** buf,
+                       size_t *n,
+                       int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 Execute_CancelOrder_ABI( struct Credentials *creds,
-                             const char* account_id,
-                             const char* order_id,
-                             int *success,
-                             int allow_exceptions );
+                         const char* account_id,
+                         const char* order_id,
+                         int *success,
+                         int allow_exceptions );
 
 #ifndef __cplusplus
 
 static inline int
 Execute_SendOrder( struct Credentials *creds,
-                     const char* account_id,
-                     OrderTicket_C *porder,
-                     char** buf,
-                     size_t *n )
+                   const char* account_id,
+                   OrderTicket_C *porder,
+                   char** buf,
+                   size_t *n )
 { return Execute_SendOrder_ABI(creds, account_id, porder, buf, n, 0); }
 
 
 static inline int
 Execute_CancelOrder( struct Credentials *creds,
-                        const char* account_id,
-                        const char* order_id,
-                       int *success )
+                     const char* account_id,
+                     const char* order_id,
+                     int *success )
 { return Execute_CancelOrder_ABI(creds, account_id, order_id, success, 0); }
 
 
@@ -4360,15 +4363,15 @@ namespace tdma {
 
 inline std::string
 Execute_SendOrder( Credentials& creds,
-                      const std::string& account_id,
-                      const OrderTicket& order )
+                   const std::string& account_id,
+                   const OrderTicket& order )
 { return str_from_abi_vargs( Execute_SendOrder_ABI, ALLOW_EXCEPTIONS,
                              &creds, account_id.c_str(), order.get_cproxy() ); }
 
 inline bool
 Execute_CancelOrder( Credentials& creds,
-                        const std::string& account_id,
-                        const std::string& order_id )
+                     const std::string& account_id,
+                     const std::string& order_id )
 {
     int success;
     call_abi( Execute_CancelOrder_ABI, &creds, account_id.c_str(),

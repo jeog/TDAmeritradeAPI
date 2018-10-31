@@ -160,22 +160,22 @@ struct Credentials;
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 LoadCredentials_ABI( const char* path,
-                       const char* password,
-                       struct Credentials* pcreds,
-                       int allow_exceptions );
+                     const char* password,
+                     struct Credentials* pcreds,
+                     int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 StoreCredentials_ABI( const char* path,
-                        const char* password,
-                        const struct Credentials* pcreds,
-                        int allow_exceptions );
+                      const char* password,
+                      const struct Credentials* pcreds,
+                      int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 RequestAccessToken_ABI( const char* code,
-                          const char* client_id,
-                          const char* redirect_uri,
-                          struct Credentials* pcreds,
-                          int allow_exceptions );
+                        const char* client_id,
+                        const char* redirect_uri,
+                        struct Credentials* pcreds,
+                        int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 RefreshAccessToken_ABI(struct Credentials* creds, int allow_exceptions );
@@ -188,16 +188,16 @@ GetCertificateBundlePath_ABI(char **path, size_t *n, int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 GetDefaultCertificateBundlePath_ABI( char **path,
-                                          size_t *n,
-                                          int allow_exceptions );
+                                     size_t *n,
+                                     int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 CloseCredentials_ABI(struct Credentials* pcreds, int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 CopyCredentials_ABI( const struct Credentials* from,
-                       struct Credentials *to,
-                       int allow_exceptions );
+                     struct Credentials *to,
+                     int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 FreeBuffer_ABI( char* buf, int allow_exceptions );
@@ -234,23 +234,23 @@ LastErrorFilename_ABI( char** buf, size_t *n, int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 LastErrorState_ABI( int *code,
-                      char **buf_msg,
-                      size_t *n_msg,
-                      int *lineno,
-                      char **buf_filename,
-                      size_t *n_filename,
-                      int allow_exceptions );
+                    char **buf_msg,
+                    size_t *n_msg,
+                    int *lineno,
+                    char **buf_filename,
+                    size_t *n_filename,
+                    int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 BuildOptionSymbol_ABI( const char* underlying,
-                         unsigned int month,
-                         unsigned int day,
-                         unsigned int year,
-                         int is_call,
-                         double strike,
-                         char **buf,
-                         size_t *n,
-                         int allow_exceptions );
+                       unsigned int month,
+                       unsigned int day,
+                       unsigned int year,
+                       int is_call,
+                       double strike,
+                       char **buf,
+                       size_t *n,
+                       int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 CheckOptionSymbol_ABI(const char* symbol, int allow_exceptions);
@@ -264,21 +264,21 @@ LibraryBuildDateTime_ABI(char **buf, size_t *n, int allow_exceptions);
 
 static inline int
 LoadCredentials( const char* path,
-                   const char* password,
-                   struct Credentials* pcreds )
+                 const char* password,
+                 struct Credentials* pcreds )
 { return LoadCredentials_ABI(path, password, pcreds,0); }
 
 static inline int
 StoreCredentials( const char* path,
-                    const char* password,
-                    const struct Credentials* pcreds )
+                  const char* password,
+                  const struct Credentials* pcreds )
 { return StoreCredentials_ABI(path, password, pcreds, 0); }
 
 static inline int
 RequestAccessToken( const char* code,
-                      const char* client_id,
-                      const char* redirect_uri,
-                      struct Credentials* pcreds )
+                    const char* client_id,
+                    const char* redirect_uri,
+                    struct Credentials* pcreds )
 { return RequestAccessToken_ABI(code, client_id, redirect_uri, pcreds, 0); }
 
 static inline int
@@ -347,13 +347,13 @@ LastErrorFilename( char** buf, size_t *n )
 
 static inline int
 BuildOptionSymbol( const char* underlying,
-                     unsigned int month,
-                     unsigned int day,
-                     unsigned int year,
-                     int is_call,
-                     double strike,
-                     char **buf,
-                     size_t *n )
+                   unsigned int month,
+                   unsigned int day,
+                   unsigned int year,
+                   int is_call,
+                   double strike,
+                   char **buf,
+                   size_t *n )
 { return BuildOptionSymbol_ABI(underlying, month, day, year, is_call, strike,
                                buf, n, 0); }
 
@@ -567,8 +567,8 @@ struct CredentialsManager{
 
 inline Credentials
 RequestAccessToken( std::string code,
-                      std::string client_id,
-                      std::string redirect_uri = "https://127.0.0.1")
+                    std::string client_id,
+                    std::string redirect_uri = "https://127.0.0.1")
 {
     Credentials c;
     call_abi( RequestAccessToken_ABI, code.c_str(), client_id.c_str(),
@@ -619,11 +619,11 @@ LastErrorFilename()
 
 inline std::string
 BuildOptionSymbol( const std::string& underlying,
-                     unsigned int month,
-                     unsigned int day,
-                     unsigned int year,
-                     bool is_call,
-                     double strike )
+                   unsigned int month,
+                   unsigned int day,
+                   unsigned int year,
+                   bool is_call,
+                   double strike )
 { return str_from_abi_vargs( BuildOptionSymbol_ABI, ALLOW_EXCEPTIONS,
                              underlying.c_str(),
                              month, day, year, static_cast<int>(is_call),
@@ -759,15 +759,15 @@ public:
     static const int ERROR_CODE = TDMA_API_CONNECT_ERROR;
 
     ConnectException( std::string what,
-                        int lineno,
-                        const std::string& filename )
+                      int lineno,
+                      const std::string& filename )
         : APIException(what, lineno, filename)
         {}
 
     ConnectException( std::string what,
-                         int status_code,
-                         int lineno,
-                         const std::string& filename )
+                      int status_code,
+                      int lineno,
+                      const std::string& filename )
         : APIException( what + "(response code =" + std::to_string(status_code)
                         + ')', lineno, filename)
         {}

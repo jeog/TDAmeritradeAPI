@@ -461,9 +461,9 @@ DECL_CSUB_DURATION_CREATE_FUNC(OTCBBActivesSubscription);
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 OptionActivesSubscription_Create_ABI( int venue,
-                                           int duration_type,
-                                           OptionActivesSubscription_C *psub,
-                                           int allow_exceptions );
+                                      int duration_type,
+                                      OptionActivesSubscription_C *psub,
+                                      int allow_exceptions );
 
 
 /* SUBSCRIPTION DESTROY METHODS */
@@ -493,8 +493,8 @@ DECL_CSUB_DESTROY_FUNC(OptionActivesSubscription);
 
 /* Generic destroy (cast to StreamingSubscription_C*) */
 EXTERN_C_SPEC_ DLL_SPEC_ int
-StreamingSubscription_Destroy_ABI(StreamingSubscription_C* psub,
-                                      int allow_exceptions);
+StreamingSubscription_Destroy_ABI( StreamingSubscription_C* psub,
+                                   int allow_exceptions );
 
 
 /* SUBSCRIPTION GET METHODS */
@@ -502,21 +502,21 @@ StreamingSubscription_Destroy_ABI(StreamingSubscription_C* psub,
 /* StreamingSubscription Base Methods */
 EXTERN_C_SPEC_ DLL_SPEC_ int
 StreamingSubscription_GetService_ABI( StreamingSubscription_C *psub,
-                                          int *service,
-                                          int allow_exceptions );
+                                      int *service,
+                                      int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 StreamingSubscription_GetCommand_ABI( StreamingSubscription_C *psub,
-                                          char **buf,
-                                          size_t *n,
-                                          int allow_exceptions );
+                                      char **buf,
+                                      size_t *n,
+                                      int allow_exceptions );
 
 /* SubscriptionBySymbolBase Base Methods */
 EXTERN_C_SPEC_ DLL_SPEC_ int
 SubscriptionBySymbolBase_GetSymbols_ABI( StreamingSubscription_C *psub,
-                                              char ***buffers,
-                                              size_t *n,
-                                              int allow_exceptions );
+                                         char ***buffers,
+                                         size_t *n,
+                                         int allow_exceptions );
 
 #define DECL_CSUB_GET_FIELDS_FUNC(name) \
 EXTERN_C_SPEC_ DLL_SPEC_ int \
@@ -544,14 +544,14 @@ DECL_CSUB_GET_FIELDS_BASE_FUNC(TimesaleSubscriptionBase);
 
 /* Get duration in base */
 EXTERN_C_SPEC_ DLL_SPEC_ int
-ActivesSubscriptionBase_GetDuration_ABI(StreamingSubscription_C *psub,
-                                             int *duration,
-                                             int allow_exceptions);
+ActivesSubscriptionBase_GetDuration_ABI( StreamingSubscription_C *psub,
+                                         int *duration,
+                                         int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
-OptionActivesSubscription_GetVenue_ABI(OptionActivesSubscription_C *psub,
-                                            int *venue,
-                                            int allow_exceptions);
+OptionActivesSubscription_GetVenue_ABI( OptionActivesSubscription_C *psub,
+                                        int *venue,
+                                        int allow_exceptions );
 
 #ifndef __cplusplus
 
@@ -767,8 +767,8 @@ DECL_CSUB_GET_DURATION(OptionActivesSubscription, ActivesSubscription)
 
 /* GetVenue */
 static inline int
-OptionActivesSubscription_GetVenue(OptionActivesSubscription_C *psub,
-                                   VenueType *venue)
+OptionActivesSubscription_GetVenue( OptionActivesSubscription_C *psub,
+                                    VenueType *venue )
 { return OptionActivesSubscription_GetVenue_ABI(psub, (int*)venue, 0); }
 
 
@@ -869,9 +869,9 @@ protected:
 
     template<typename CTy, typename F, typename FTy>
     SubscriptionBySymbolBase( CTy _,
-                                 F create_func,
-                                 const std::set<std::string>& symbols,
-                                 const std::set<FTy>& fields )
+                              F create_func,
+                              const std::set<std::string>& symbols,
+                              const std::set<FTy>& fields )
         :
             StreamingSubscription(_)
         {
@@ -911,7 +911,7 @@ public:
         StreamerServiceType::QUOTE;
 
     QuotesSubscription( const std::set<std::string>& symbols,
-                          const std::set<FieldType>& fields )
+                        const std::set<FieldType>& fields )
         :
             SubscriptionBySymbolBase( QuotesSubscription_C{},
                                       QuotesSubscription_Create_ABI,
@@ -962,7 +962,7 @@ public:
         StreamerServiceType::LEVELONE_FUTURES;
 
     LevelOneFuturesSubscription( const std::set<std::string>& symbols,
-                                    const std::set<FieldType>& fields )
+                                 const std::set<FieldType>& fields )
         :
             SubscriptionBySymbolBase( LevelOneFuturesSubscription_C{},
                                       LevelOneFuturesSubscription_Create_ABI,
@@ -991,7 +991,7 @@ public:
         StreamerServiceType::LEVELONE_FOREX;
 
     LevelOneForexSubscription( const std::set<std::string>& symbols,
-                                  const std::set<FieldType>& fields )
+                               const std::set<FieldType>& fields )
         :
             SubscriptionBySymbolBase( LevelOneForexSubscription_C{},
                                       LevelOneForexSubscription_Create_ABI,
@@ -1019,8 +1019,8 @@ public:
     static const StreamerServiceType STREAMER_SERVICE_TYPE =
         StreamerServiceType::LEVELONE_FUTURES_OPTIONS;
 
-    LevelOneFuturesOptionsSubscription(const std::set<std::string>& symbols,
-                                           const std::set<FieldType>& fields )
+    LevelOneFuturesOptionsSubscription( const std::set<std::string>& symbols,
+                                        const std::set<FieldType>& fields )
         :
             SubscriptionBySymbolBase(
                 LevelOneFuturesOptionsSubscription_C{},
@@ -1051,7 +1051,7 @@ public:
         StreamerServiceType::NEWS_HEADLINE;
 
     NewsHeadlineSubscription( const std::set<std::string>& symbols,
-                                 const std::set<FieldType>& fields )
+                              const std::set<FieldType>& fields )
         :
             SubscriptionBySymbolBase( NewsHeadlineSubscription_C{},
                                       NewsHeadlineSubscription_Create_ABI,
@@ -1108,9 +1108,9 @@ public:
 protected:
     template<typename CTy, typename F>
     ChartSubscriptionBase( CTy _,
-                              F func,
-                              const std::set<std::string>& symbols,
-                              const std::set<FieldType>& fields )
+                           F func,
+                           const std::set<std::string>& symbols,
+                           const std::set<FieldType>& fields )
         :
             SubscriptionBySymbolBase( _, func, symbols, fields )
         {
@@ -1149,7 +1149,7 @@ public:
         StreamerServiceType::CHART_FUTURES;
 
     ChartFuturesSubscription( const std::set<std::string>& symbols,
-                                 const std::set<FieldType>& fields )
+                              const std::set<FieldType>& fields )
         :
             ChartSubscriptionBase( ChartFuturesSubscription_C{},
                                    ChartFuturesSubscription_Create_ABI,
@@ -1168,7 +1168,7 @@ public:
         StreamerServiceType::CHART_OPTIONS;
 
     ChartOptionsSubscription( const std::set<std::string>& symbols,
-                                 const std::set<FieldType>& fields )
+                              const std::set<FieldType>& fields )
         :
             ChartSubscriptionBase( ChartOptionsSubscription_C{},
                                    ChartOptionsSubscription_Create_ABI,
@@ -1186,9 +1186,9 @@ public:
 protected:
     template<typename CTy, typename F>
     TimesaleSubscriptionBase( CTy _,
-                                 F func,
-                                 const std::set<std::string>& symbols,
-                                 const std::set<FieldType>& fields )
+                              F func,
+                              const std::set<std::string>& symbols,
+                              const std::set<FieldType>& fields )
         :
             SubscriptionBySymbolBase( _, func, symbols, fields )
         {
@@ -1214,7 +1214,7 @@ public:
         StreamerServiceType::TIMESALE_EQUITY;
 
     TimesaleEquitySubscription( const std::set<std::string>& symbols,
-                                   const std::set<FieldType>& fields )
+                                const std::set<FieldType>& fields )
         :
             TimesaleSubscriptionBase( TimesaleEquitySubscription_C{},
                                       TimesaleEquitySubscription_Create_ABI,
@@ -1247,7 +1247,7 @@ public:
         StreamerServiceType::TIMESALE_FUTURES;
 
     TimesaleFuturesSubscription( const std::set<std::string>& symbols,
-                                   const std::set<FieldType>& fields )
+                                 const std::set<FieldType>& fields )
         :
             TimesaleSubscriptionBase( TimesaleFuturesSubscription_C{},
                                       TimesaleFuturesSubscription_Create_ABI,
@@ -1265,7 +1265,7 @@ public:
         StreamerServiceType::TIMESALE_OPTIONS;
 
     TimesaleOptionsSubscription( const std::set<std::string>& symbols,
-                                    const std::set<FieldType>& fields )
+                                 const std::set<FieldType>& fields )
         :
             TimesaleSubscriptionBase( TimesaleOptionsSubscription_C{},
                                       TimesaleOptionsSubscription_Create_ABI,
@@ -1279,7 +1279,7 @@ class ActivesSubscriptionBase
         : public StreamingSubscription {
 protected:
     template<typename CTy, typename F, typename... Args>
-    ActivesSubscriptionBase( CTy _, F func, Args... args)
+    ActivesSubscriptionBase( CTy _, F func, Args... args )
         :
             StreamingSubscription(_, func, nullptr, args...)
         {
@@ -1393,52 +1393,52 @@ typedef void(*streaming_cb_ty)(int, int, unsigned long long, const char*);
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 StreamingSession_Create_ABI( struct Credentials *pcreds,
-                                streaming_cb_ty callback,
-                                unsigned long connect_timeout,
-                                unsigned long listening_timeout,
-                                unsigned long subscribe_timeout,
-                                StreamingSession_C *psession,
-                                int allow_exceptions );
+                             streaming_cb_ty callback,
+                             unsigned long connect_timeout,
+                             unsigned long listening_timeout,
+                             unsigned long subscribe_timeout,
+                             StreamingSession_C *psession,
+                             int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 StreamingSession_Destroy_ABI( StreamingSession_C *psession,
-                                 int allow_exceptions );
+                              int allow_exceptions );
 
 
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 StreamingSession_Start_ABI( StreamingSession_C *psession,
-                               StreamingSubscription_C **subs,
-                               size_t nsubs,
-                               int *results_buffer,
-                               int allow_exceptions );
+                            StreamingSubscription_C **subs,
+                            size_t nsubs,
+                            int *results_buffer,
+                            int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 StreamingSession_AddSubscriptions_ABI( StreamingSession_C *psession,
-                                           StreamingSubscription_C **subs,
-                                           size_t nsubs,
-                                           int *results_buffer,
-                                           int allow_exceptions );
+                                       StreamingSubscription_C **subs,
+                                       size_t nsubs,
+                                       int *results_buffer,
+                                       int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 StreamingSession_Stop_ABI( StreamingSession_C *psession,
-                               int allow_exceptions );
+                           int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 StreamingSession_IsActive_ABI( StreamingSession_C *psession,
-                                  int *is_active,
-                                  int allow_exceptions );
+                               int *is_active,
+                               int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 StreamingSession_SetQOS_ABI( StreamingSession_C *psession,
-                                int qos,
-                                int *result,
-                                int allow_exceptions );
+                             int qos,
+                             int *result,
+                             int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 StreamingSession_GetQOS_ABI( StreamingSession_C *psession,
-                                int *qos,
-                                int allow_exceptions );
+                             int *qos,
+                             int allow_exceptions );
 
 #ifndef __cplusplus
 
@@ -1446,8 +1446,8 @@ StreamingSession_GetQOS_ABI( StreamingSession_C *psession,
 
 static inline int
 StreamingSession_Create( struct Credentials *pcreds,
-                        streaming_cb_ty callback,
-                        StreamingSession_C *psession )
+                         streaming_cb_ty callback,
+                         StreamingSession_C *psession )
 {
     return StreamingSession_Create_ABI(pcreds, callback,
                                        STREAMING_DEF_CONNECT_TIMEOUT,
@@ -1458,11 +1458,11 @@ StreamingSession_Create( struct Credentials *pcreds,
 
 static inline int
 StreamingSession_CreateEx( struct Credentials *pcreds,
-                            streaming_cb_ty callback,
-                            unsigned long connect_timeout,
-                            unsigned long listening_timeout,
-                            unsigned long subscribe_timeout,
-                            StreamingSession_C *psession )
+                           streaming_cb_ty callback,
+                           unsigned long connect_timeout,
+                           unsigned long listening_timeout,
+                           unsigned long subscribe_timeout,
+                           StreamingSession_C *psession )
 {
     return StreamingSession_Create_ABI(pcreds, callback,
                                        connect_timeout, listening_timeout,
@@ -1594,11 +1594,11 @@ public:
     operator=( const StreamingSession& ) = delete;
 
     std::deque<bool> // success/fails in the order passed
-    start(const std::vector<StreamingSubscription>& subscriptions)
+    start( const std::vector<StreamingSubscription>& subscriptions )
     { return _call_abi_with_subs(StreamingSession_Start_ABI,subscriptions); }
 
     bool 
-    start(const StreamingSubscription& subscription)
+    start( const StreamingSubscription& subscription )
     { return start(std::vector<StreamingSubscription>{subscription})[0]; }
 
     void

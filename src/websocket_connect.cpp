@@ -83,9 +83,9 @@ WebSocketClient::Callbacks::on_connect( uws_client_ty *ws, uWS::HttpRequest r)
 
 void
 WebSocketClient::Callbacks::on_disconnect( uws_client_ty *ws,
-                                                int code,
-                                                char* msg,
-                                                size_t msg_len )
+                                           int code,
+                                           char* msg,
+                                           size_t msg_len )
 {
     D("on_disconnect", wsc);
 
@@ -117,9 +117,9 @@ WebSocketClient::Callbacks::on_error(void *v)
 
 void
 WebSocketClient::Callbacks::on_message( uws_client_ty *ws,
-                                             char* msg,
-                                             size_t msg_len,
-                                             uWS::OpCode op )
+                                        char* msg,
+                                        size_t msg_len,
+                                        uWS::OpCode op )
 {
     D("on_message", wsc);
 
@@ -332,7 +332,8 @@ WebSocketClient::recv_n_or_wait_for(size_t n, milliseconds timeout)
         if( !p.second )
             break;
         ret.emplace_back(p.first);
-        auto t_elapsed = duration_cast<milliseconds>(steady_clock::now() - t_beg);
+        auto t_elapsed =
+            duration_cast<milliseconds>(steady_clock::now() - t_beg);
         t_left = timeout - t_elapsed;
     }
     return ret;

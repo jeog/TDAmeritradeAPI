@@ -34,9 +34,9 @@ public:
     static const int TYPE_ID_HIGH = 1;
 
     OrderLegImpl( OrderAssetType asset_type,
-                   std::string symbol,
-                   OrderInstruction instruction,
-                   size_t quantity );
+                  std::string symbol,
+                  OrderInstruction instruction,
+                  size_t quantity );
 
     OrderLegImpl();
 
@@ -202,9 +202,9 @@ public:
 template<typename T>
 int
 order_obj_is_same( typename T::ProxyType::CType *pl,
-                      typename T::ProxyType::CType *pr,
-                      int *is_same,
-                      int allow_exceptions )
+                   typename T::ProxyType::CType *pr,
+                   int *is_same,
+                   int allow_exceptions )
 {
     int err = proxy_is_callable<T>(pl, allow_exceptions);
     if( err )

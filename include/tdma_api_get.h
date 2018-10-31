@@ -306,9 +306,9 @@ DECL_CGETTER_STRUCT(OrdersGetter_C);
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 APIGetter_Get_ABI( Getter_C *pgetter,
-                     char** buf,
-                     size_t *n,
-                     int allow_exceptions );
+                   char** buf,
+                   size_t *n,
+                   int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 APIGetter_Close_ABI(Getter_C *pgetter, int allow_exceptions);
@@ -331,182 +331,182 @@ APIGetter_WaitRemaining_ABI(unsigned long long *msec, int allow_exceptions);
 /* QuoteGetter */
 EXTERN_C_SPEC_ DLL_SPEC_ int
 QuoteGetter_Create_ABI( struct Credentials *pcreds,
-                           const char* symbol,
-                           QuoteGetter_C *pgetter,
-                           int allow_exceptions );
+                        const char* symbol,
+                        QuoteGetter_C *pgetter,
+                        int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 QuoteGetter_Destroy_ABI(QuoteGetter_C *pgetter, int allow_exceptions);
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 QuoteGetter_GetSymbol_ABI( QuoteGetter_C *pgetter,
-                              char **buf,
-                              size_t *n,
-                              int allow_exceptions);
+                           char **buf,
+                           size_t *n,
+                           int allow_exceptions);
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 QuoteGetter_SetSymbol_ABI( QuoteGetter_C *pgetter,
-                              const char *symbol,
-                              int allow_exceptions );
+                           const char *symbol,
+                           int allow_exceptions );
 
 /* QuotesGetter */
 EXTERN_C_SPEC_ DLL_SPEC_ int
 QuotesGetter_Create_ABI( struct Credentials *pcreds,
-                            const char** symbols,
-                            size_t nsymbols,
-                            QuotesGetter_C *pgetter,
-                            int allow_exceptions );
+                         const char** symbols,
+                         size_t nsymbols,
+                         QuotesGetter_C *pgetter,
+                         int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 QuotesGetter_Destroy_ABI(QuotesGetter_C *pgetter, int allow_exceptions);
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 QuotesGetter_GetSymbols_ABI( QuotesGetter_C *pgetter,
-                                char ***buf,
-                                size_t *n,
-                                int allow_exceptions);
+                             char ***buf,
+                             size_t *n,
+                             int allow_exceptions);
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 QuotesGetter_SetSymbols_ABI( QuotesGetter_C *pgetter,
-                                 const char** symbols,
-                                 size_t nymbols,
-                                 int allow_exceptions );
+                             const char** symbols,
+                             size_t nymbols,
+                             int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 QuotesGetter_AddSymbol_ABI( QuotesGetter_C *pgetter,
+                            const char *symbol,
+                            int allow_exceptions );
+
+EXTERN_C_SPEC_ DLL_SPEC_ int
+QuotesGetter_RemoveSymbol_ABI( QuotesGetter_C *pgetter,
                                const char *symbol,
                                int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
-QuotesGetter_RemoveSymbol_ABI( QuotesGetter_C *pgetter,
-                                  const char *symbol,
-                                  int allow_exceptions );
-
-EXTERN_C_SPEC_ DLL_SPEC_ int
 QuotesGetter_AddSymbols_ABI( QuotesGetter_C *pgetter,
-                                 const char** symbols,
-                                 size_t nymbols,
-                                 int allow_exceptions );
+                             const char** symbols,
+                             size_t nymbols,
+                             int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 QuotesGetter_RemoveSymbols_ABI( QuotesGetter_C *pgetter,
-                                   const char** symbols,
-                                   size_t nymbols,
-                                   int allow_exceptions );
+                                const char** symbols,
+                                size_t nymbols,
+                                int allow_exceptions );
 
 /* MarketHoursGetter */
 EXTERN_C_SPEC_ DLL_SPEC_ int
 MarketHoursGetter_Create_ABI( struct Credentials *pcreds,
-                                 int market_type,
-                                 const char* date,
-                                 MarketHoursGetter_C *pgetter,
-                                 int allow_exceptions );
+                              int market_type,
+                              const char* date,
+                              MarketHoursGetter_C *pgetter,
+                              int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
-MarketHoursGetter_Destroy_ABI(MarketHoursGetter_C *pgetter,
-                                 int allow_exceptions);
+MarketHoursGetter_Destroy_ABI( MarketHoursGetter_C *pgetter,
+                               int allow_exceptions);
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 MarketHoursGetter_GetMarketType_ABI( MarketHoursGetter_C *pgetter,
-                                          int *market_type,
-                                          int allow_exceptions);
+                                     int *market_type,
+                                     int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 MarketHoursGetter_SetMarketType_ABI( MarketHoursGetter_C *pgetter,
-                                         int market_type,
-                                         int allow_exceptions );
+                                     int market_type,
+                                     int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 MarketHoursGetter_GetDate_ABI( MarketHoursGetter_C *pgetter,
-                                   char **buf,
-                                   size_t *n,
-                                   int allow_exceptions);
+                               char **buf,
+                               size_t *n,
+                               int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 MarketHoursGetter_SetDate_ABI( MarketHoursGetter_C *pgetter,
-                                  const char* date,
-                                  int allow_exceptions );
+                               const char* date,
+                               int allow_exceptions );
 
 /* MoversGetter */
 EXTERN_C_SPEC_ DLL_SPEC_ int
 MoversGetter_Create_ABI( struct Credentials *pcreds,
-                            int index,
-                            int direction_type,
-                            int change_type,
-                            MoversGetter_C *pgetter,
-                            int allow_exceptions );
+                         int index,
+                         int direction_type,
+                         int change_type,
+                         MoversGetter_C *pgetter,
+                         int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 MoversGetter_Destroy_ABI( MoversGetter_C *pgetter,
-                             int allow_exceptions);
+                          int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 MoversGetter_GetIndex_ABI( MoversGetter_C *pgetter,
-                              int *index,
-                              int allow_exceptions);
+                           int *index,
+                           int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 MoversGetter_SetIndex_ABI( MoversGetter_C *pgetter,
-                              int index,
-                              int allow_exceptions );
+                           int index,
+                           int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 MoversGetter_GetDirectionType_ABI( MoversGetter_C *pgetter,
-                                       int *direction_type,
-                                       int allow_exceptions);
+                                   int *direction_type,
+                                   int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 MoversGetter_SetDirectionType_ABI( MoversGetter_C *pgetter,
-                                       int direction_type,
-                                       int allow_exceptions );
+                                   int direction_type,
+                                   int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 MoversGetter_GetChangeType_ABI( MoversGetter_C *pgetter,
-                                   int *change_type,
-                                   int allow_exceptions);
+                                int *change_type,
+                                int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 MoversGetter_SetChangeType_ABI( MoversGetter_C *pgetter,
-                                   int change_type,
-                                   int allow_exceptions );
+                                int change_type,
+                                int allow_exceptions );
 
 /* HistoricalGetterBase */
 EXTERN_C_SPEC_ DLL_SPEC_ int
 HistoricalGetterBase_GetSymbol_ABI( Getter_C *pgetter,
-                                        char **buf,
-                                        size_t *n,
-                                        int allow_exceptions );
+                                    char **buf,
+                                    size_t *n,
+                                    int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 HistoricalGetterBase_SetSymbol_ABI( Getter_C *pgetter,
-                                        const char *symbol,
-                                        int allow_exceptions );
+                                    const char *symbol,
+                                    int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 HistoricalGetterBase_GetFrequency_ABI( Getter_C *pgetter,
-                                           unsigned int *frequency,
-                                           int allow_exceptions );
+                                       unsigned int *frequency,
+                                       int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 HistoricalGetterBase_GetFrequencyType_ABI( Getter_C *pgetter,
-                                                int *frequency_type,
-                                                int allow_exceptions );
+                                           int *frequency_type,
+                                           int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 HistoricalGetterBase_IsExtendedHours_ABI( Getter_C *pgetter,
-                                               int *is_extended_hours,
-                                               int allow_exceptions );
+                                          int *is_extended_hours,
+                                          int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 HistoricalGetterBase_SetExtendedHours_ABI( Getter_C *pgetter,
-                                               int is_extended_hours,
-                                               int allow_exceptions );
+                                           int is_extended_hours,
+                                           int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 HistoricalGetterBase_SetFrequency_ABI( Getter_C *pgetter,
-                                             int frequency_type,
-                                             unsigned int frequency,
-                                             int allow_exceptions );
+                                       int frequency_type,
+                                       unsigned int frequency,
+                                       int allow_exceptions );
 
 /* HistoricalPeriodGetter */
 EXTERN_C_SPEC_ DLL_SPEC_ int
@@ -524,24 +524,23 @@ HistoricalPeriodGetter_Create_ABI(
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 HistoricalPeriodGetter_Destroy_ABI( HistoricalPeriodGetter_C *pgetter,
-                                        int allow_exceptions);
+                                    int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 HistoricalPeriodGetter_GetPeriodType_ABI( HistoricalPeriodGetter_C *pgetter,
-                                               int *period_type,
-                                               int allow_exceptions );
-
+                                          int *period_type,
+                                          int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 HistoricalPeriodGetter_GetPeriod_ABI( HistoricalPeriodGetter_C *pgetter,
-                                           unsigned int *period,
-                                           int allow_exceptions );
+                                      unsigned int *period,
+                                      int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 HistoricalPeriodGetter_SetPeriod_ABI( HistoricalPeriodGetter_C *pgetter,
-                                           int period_type,
-                                           unsigned int period,
-                                           int allow_exceptions );
+                                      int period_type,
+                                      unsigned int period,
+                                      int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 HistoricalPeriodGetter_SetMSecSinceEpoch_ABI(
@@ -558,18 +557,18 @@ HistoricalPeriodGetter_GetMSecSinceEpoch_ABI(
 /* HistoricalRangeGetter */
 EXTERN_C_SPEC_ DLL_SPEC_ int
 HistoricalRangeGetter_Create_ABI( struct Credentials *pcreds,
-                                       const char* symbol,
-                                       int frequency_type,
-                                       unsigned int frequency,
-                                       unsigned long long start_msec_since_epoch,
-                                       unsigned long long end_msec_since_epoch,
-                                       int extended_hours,
-                                       HistoricalRangeGetter_C *pgetter,
-                                       int allow_exceptions );
+                                  const char* symbol,
+                                  int frequency_type,
+                                  unsigned int frequency,
+                                  unsigned long long start_msec_since_epoch,
+                                  unsigned long long end_msec_since_epoch,
+                                  int extended_hours,
+                                  HistoricalRangeGetter_C *pgetter,
+                                  int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 HistoricalRangeGetter_Destroy_ABI( HistoricalRangeGetter_C *pgetter,
-                                        int allow_exceptions);
+                                   int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 HistoricalRangeGetter_GetEndMSecSinceEpoch_ABI(
@@ -599,127 +598,127 @@ HistoricalRangeGetter_SetStartMSecSinceEpoch_ABI(
 /* OptionChainGetter */
 EXTERN_C_SPEC_ DLL_SPEC_ int
 OptionChainGetter_Create_ABI( struct Credentials *pcreds,
-                                  const char* symbol,
-                                  int strikes_type,
-                                  OptionStrikesValue strikes_value,
-                                  int contract_type,
-                                  int include_quotes,
-                                  const char* from_date,
-                                  const char* to_date,
-                                  int exp_month,
-                                  int option_type,
-                                  OptionChainGetter_C *pgetter,
-                                  int allow_exceptions );
+                              const char* symbol,
+                              int strikes_type,
+                              OptionStrikesValue strikes_value,
+                              int contract_type,
+                              int include_quotes,
+                              const char* from_date,
+                              const char* to_date,
+                              int exp_month,
+                              int option_type,
+                              OptionChainGetter_C *pgetter,
+                              int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 OptionChainGetter_Destroy_ABI( OptionChainGetter_C *pgetter,
-                                   int allow_exceptions );
+                               int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 OptionChainGetter_GetSymbol_ABI( OptionChainGetter_C *pgetter,
-                                     char **buf,
-                                     size_t *n,
-                                     int allow_exceptions);
+                                 char **buf,
+                                 size_t *n,
+                                 int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 OptionChainGetter_SetSymbol_ABI( OptionChainGetter_C *pgetter,
-                                     const char *symbol,
-                                     int allow_exceptions );
+                                 const char *symbol,
+                                 int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 OptionChainGetter_GetStrikes_ABI( OptionChainGetter_C *pgetter,
-                                      int *strikes_type,
-                                      OptionStrikesValue *strikes_value,
-                                      int allow_exceptions);
+                                  int *strikes_type,
+                                  OptionStrikesValue *strikes_value,
+                                  int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 OptionChainGetter_SetStrikes_ABI( OptionChainGetter_C *pgetter,
-                                      int strikes_type,
-                                      OptionStrikesValue strikes_value,
-                                      int allow_exceptions);
+                                  int strikes_type,
+                                  OptionStrikesValue strikes_value,
+                                  int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 OptionChainGetter_GetContractType_ABI( OptionChainGetter_C *pgetter,
-                                           int *contract_type,
-                                           int allow_exceptions);
-
-EXTERN_C_SPEC_ DLL_SPEC_ int
-OptionChainGetter_SetContractType_ABI( OptionChainGetter_C *pgetter,
-                                            int contract_type,
-                                            int allow_exceptions);
-
-EXTERN_C_SPEC_ DLL_SPEC_ int
-OptionChainGetter_IncludesQuotes_ABI( OptionChainGetter_C *pgetter,
-                                           int *includes_quotes,
-                                           int allow_exceptions);
-
-EXTERN_C_SPEC_ DLL_SPEC_ int
-OptionChainGetter_IncludeQuotes_ABI( OptionChainGetter_C *pgetter,
-                                          int include_quotes,
-                                          int allow_exceptions);
-
-EXTERN_C_SPEC_ DLL_SPEC_ int
-OptionChainGetter_GetFromDate_ABI( OptionChainGetter_C *pgetter,
-                                       char **buf,
-                                       size_t *n,
-                                       int allow_exceptions);
-
-EXTERN_C_SPEC_ DLL_SPEC_ int
-OptionChainGetter_SetFromDate_ABI( OptionChainGetter_C *pgetter,
-                                       const char *date,
+                                       int *contract_type,
                                        int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
-OptionChainGetter_GetToDate_ABI( OptionChainGetter_C *pgetter,
-                                     char **buf,
-                                     size_t *n,
-                                     int allow_exceptions);
+OptionChainGetter_SetContractType_ABI( OptionChainGetter_C *pgetter,
+                                       int contract_type,
+                                       int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
-OptionChainGetter_SetToDate_ABI( OptionChainGetter_C *pgetter,
-                                     const char *date,
+OptionChainGetter_IncludesQuotes_ABI( OptionChainGetter_C *pgetter,
+                                      int *includes_quotes,
+                                      int allow_exceptions );
+
+EXTERN_C_SPEC_ DLL_SPEC_ int
+OptionChainGetter_IncludeQuotes_ABI( OptionChainGetter_C *pgetter,
+                                     int include_quotes,
                                      int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
+OptionChainGetter_GetFromDate_ABI( OptionChainGetter_C *pgetter,
+                                   char **buf,
+                                   size_t *n,
+                                   int allow_exceptions );
+
+EXTERN_C_SPEC_ DLL_SPEC_ int
+OptionChainGetter_SetFromDate_ABI( OptionChainGetter_C *pgetter,
+                                   const char *date,
+                                   int allow_exceptions );
+
+EXTERN_C_SPEC_ DLL_SPEC_ int
+OptionChainGetter_GetToDate_ABI( OptionChainGetter_C *pgetter,
+                                 char **buf,
+                                 size_t *n,
+                                 int allow_exceptions );
+
+EXTERN_C_SPEC_ DLL_SPEC_ int
+OptionChainGetter_SetToDate_ABI( OptionChainGetter_C *pgetter,
+                                 const char *date,
+                                 int allow_exceptions );
+
+EXTERN_C_SPEC_ DLL_SPEC_ int
 OptionChainGetter_GetExpMonth_ABI( OptionChainGetter_C *pgetter,
-                                       int *exp_month,
-                                       int allow_exceptions);
+                                   int *exp_month,
+                                   int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 OptionChainGetter_SetExpMonth_ABI( OptionChainGetter_C *pgetter,
-                                       int exp_month,
-                                       int allow_exceptions);
+                                   int exp_month,
+                                   int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 OptionChainGetter_GetOptionType_ABI( OptionChainGetter_C *pgetter,
-                                         int *option_type,
-                                         int allow_exceptions);
+                                     int *option_type,
+                                     int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 OptionChainGetter_SetOptionType_ABI( OptionChainGetter_C *pgetter,
-                                         int option_type,
-                                         int allow_exceptions);
+                                     int option_type,
+                                     int allow_exceptions );
 
 /* OptionChainStrategyGetter */
 EXTERN_C_SPEC_ DLL_SPEC_ int
 OptionChainStrategyGetter_Create_ABI( struct Credentials *pcreds,
-                                          const char* symbol,
-                                          int strategy_type,
-                                          double spread_interval,
-                                          int strikes_type,
-                                          OptionStrikesValue strikes_value,
-                                          int contract_type,
-                                          int include_quotes,
-                                          const char* from_date,
-                                          const char* to_date,
-                                          int exp_month,
-                                          int option_type,
-                                          OptionChainStrategyGetter_C *pgetter,
-                                          int allow_exceptions );
+                                      const char* symbol,
+                                      int strategy_type,
+                                      double spread_interval,
+                                      int strikes_type,
+                                      OptionStrikesValue strikes_value,
+                                      int contract_type,
+                                      int include_quotes,
+                                      const char* from_date,
+                                      const char* to_date,
+                                      int exp_month,
+                                      int option_type,
+                                      OptionChainStrategyGetter_C *pgetter,
+                                      int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 OptionChainStrategyGetter_Destroy_ABI( OptionChainStrategyGetter_C *pgetter,
-                                            int allow_exceptions );
+                                       int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 OptionChainStrategyGetter_GetStrategy_ABI(
@@ -823,59 +822,59 @@ OptionChainAnalyticalGetter_SetDaysToExp_ABI(
 /* AccountGetterBase */
 EXTERN_C_SPEC_ DLL_SPEC_ int
 AccountGetterBase_GetAccountId_ABI( Getter_C *pgetter,
-                                        char **buf,
-                                        size_t *n,
-                                        int allow_exceptions );
+                                    char **buf,
+                                    size_t *n,
+                                    int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 AccountGetterBase_SetAccountId_ABI( Getter_C *pgetter,
-                                        const char *account_id,
-                                        int allow_exceptions );
+                                    const char *account_id,
+                                    int allow_exceptions );
 
 /* AccountInfoGetter */
 EXTERN_C_SPEC_ DLL_SPEC_ int
 AccountInfoGetter_Create_ABI( struct Credentials *pcreds,
-                                 const char* account_id,
-                                 int positions,
-                                 int orders,
-                                 AccountInfoGetter_C *pgetter,
-                                 int allow_exceptions );
+                              const char* account_id,
+                              int positions,
+                              int orders,
+                              AccountInfoGetter_C *pgetter,
+                              int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 AccountInfoGetter_Destroy_ABI( AccountInfoGetter_C *pgetter,
-                                  int allow_exceptions );
+                               int allow_exceptions );
 
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 AccountInfoGetter_ReturnsPositions_ABI( AccountInfoGetter_C *pgetter,
-                                            int *returns_positions,
-                                            int allow_exceptions );
+                                        int *returns_positions,
+                                        int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 AccountInfoGetter_ReturnPositions_ABI( AccountInfoGetter_C *pgetter,
-                                            int return_positions,
-                                            int allow_exceptions );
+                                       int return_positions,
+                                       int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 AccountInfoGetter_ReturnsOrders_ABI( AccountInfoGetter_C *pgetter,
-                                            int *returns_orders,
-                                            int allow_exceptions );
+                                     int *returns_orders,
+                                     int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 AccountInfoGetter_ReturnOrders_ABI( AccountInfoGetter_C *pgetter,
-                                            int return_orders,
-                                            int allow_exceptions );
+                                    int return_orders,
+                                    int allow_exceptions );
 
 /* PreferencesGetter */
 EXTERN_C_SPEC_ DLL_SPEC_ int
 PreferencesGetter_Create_ABI( struct Credentials *pcreds,
-                                 const char* account_id,
-                                 PreferencesGetter_C *pgetter,
-                                 int allow_exceptions );
+                              const char* account_id,
+                              PreferencesGetter_C *pgetter,
+                              int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 PreferencesGetter_Destroy_ABI( PreferencesGetter_C *pgetter,
-                                  int allow_exceptions );
+                               int allow_exceptions );
 
 /* StreamerSubscriptionKeysGetter */
 EXTERN_C_SPEC_ DLL_SPEC_ int
@@ -895,17 +894,17 @@ StreamerSubscriptionKeysGetter_Destroy_ABI(
 /* TransactionHistoryGetter */
 EXTERN_C_SPEC_ DLL_SPEC_ int
 TransactionHistoryGetter_Create_ABI( struct Credentials *pcreds,
-                                         const char* account_id,
-                                         int transaction_type,
-                                         const char* symbol,
-                                         const char* start_date,
-                                         const char* end_date,
-                                         TransactionHistoryGetter_C *pgetter,
-                                         int allow_exceptions);
+                                     const char* account_id,
+                                     int transaction_type,
+                                     const char* symbol,
+                                     const char* start_date,
+                                     const char* end_date,
+                                     TransactionHistoryGetter_C *pgetter,
+                                     int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 TransactionHistoryGetter_Destroy_ABI( TransactionHistoryGetter_C *pgetter,
-                                          int allow_exceptions );
+                                      int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 TransactionHistoryGetter_GetTransactionType_ABI(
@@ -992,16 +991,16 @@ IndividualTransactionHistoryGetter_SetTransactionId_ABI(
 /* UserPrincipalsGetter */
 EXTERN_C_SPEC_ DLL_SPEC_ int
 UserPrincipalsGetter_Create_ABI( struct Credentials *pcreds,
-                                     int streamer_subscription_keys,
-                                     int streamer_connection_info,
-                                     int preferences,
-                                     int surrogate_ids,
-                                     UserPrincipalsGetter_C *pgetter,
-                                     int allow_exceptions );
+                                 int streamer_subscription_keys,
+                                 int streamer_connection_info,
+                                 int preferences,
+                                 int surrogate_ids,
+                                 UserPrincipalsGetter_C *pgetter,
+                                 int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 UserPrincipalsGetter_Destroy_ABI( UserPrincipalsGetter_C *pgetter,
-                                      int allow_exceptions );
+                                  int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 UserPrincipalsGetter_ReturnsSubscriptionKeys_ABI(
@@ -1062,110 +1061,110 @@ UserPrincipalsGetter_ReturnSurrogateIds_ABI(
 /* InstrumentInfoGetter */
 EXTERN_C_SPEC_ DLL_SPEC_ int
 InstrumentInfoGetter_Create_ABI( struct Credentials *pcreds,
-                                     int search_type,
-                                     const char* query_string,
-                                     InstrumentInfoGetter_C *pgetter,
-                                     int allow_exceptions );
+                                 int search_type,
+                                 const char* query_string,
+                                 InstrumentInfoGetter_C *pgetter,
+                                 int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 InstrumentInfoGetter_Destroy_ABI( InstrumentInfoGetter_C *pgetter,
-                                      int allow_exceptions );
+                                  int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 InstrumentInfoGetter_GetSearchType_ABI( InstrumentInfoGetter_C *pgetter,
-                                              int *search_type,
-                                              int allow_exceptions );
+                                        int *search_type,
+                                        int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 InstrumentInfoGetter_GetQueryString_ABI( InstrumentInfoGetter_C *pgetter,
-                                              char **buf,
-                                              size_t *n,
-                                              int allow_exceptions );
+                                         char **buf,
+                                         size_t *n,
+                                         int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 InstrumentInfoGetter_SetQuery_ABI( InstrumentInfoGetter_C *pgetter,
-                                       int search_type,
-                                       const char* query_string,
-                                       int allow_exceptions );
+                                   int search_type,
+                                   const char* query_string,
+                                   int allow_exceptions );
 
 /* OrderGetter */
 EXTERN_C_SPEC_ DLL_SPEC_ int
 OrderGetter_Create_ABI( struct Credentials *pcreds,
-                           const char* account_id,
-                           const char* order_id,
-                           OrderGetter_C *pgetter,
-                           int allow_exceptions );
+                        const char* account_id,
+                        const char* order_id,
+                        OrderGetter_C *pgetter,
+                        int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 OrderGetter_Destroy_ABI(OrderGetter_C *pgetter, int allow_exceptions);
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 OrderGetter_GetOrderId_ABI( OrderGetter_C *pgetter,
-                                char **buf,
-                                size_t *n,
-                                int allow_exceptions);
+                            char **buf,
+                            size_t *n,
+                            int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 OrderGetter_SetOrderId_ABI( OrderGetter_C *pgetter,
-                                const char *order_id,
-                                int allow_exceptions );
+                            const char *order_id,
+                            int allow_exceptions );
 
 
 /* OrdersGetter */
 EXTERN_C_SPEC_ DLL_SPEC_ int
 OrdersGetter_Create_ABI( struct Credentials *pcreds,
-                           const char* account_id,
-                           unsigned int nmax_results,
-                           const char* from_entered_time,
-                           const char* to_entered_time,
-                           int order_status_type,
-                           OrdersGetter_C *pgetter,
-                           int allow_exceptions );
+                         const char* account_id,
+                         unsigned int nmax_results,
+                         const char* from_entered_time,
+                         const char* to_entered_time,
+                         int order_status_type,
+                         OrdersGetter_C *pgetter,
+                         int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 OrdersGetter_Destroy_ABI(OrdersGetter_C *pgetter, int allow_exceptions);
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 OrdersGetter_GetNMaxResults_ABI( OrdersGetter_C *pgetter,
-                                     unsigned int *nmax_results,
-                                    int allow_exceptions);
+                                 unsigned int *nmax_results,
+                                 int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 OrdersGetter_SetNMaxResults_ABI( OrdersGetter_C *pgetter,
-                                     unsigned int nmax_results,
-                                    int allow_exceptions );
+                                 unsigned int nmax_results,
+                                 int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 OrdersGetter_GetFromEnteredTime_ABI( OrdersGetter_C *pgetter,
-                                         char** buf,
-                                         size_t *n,
-                                         int allow_exceptions );
+                                     char** buf,
+                                     size_t *n,
+                                     int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 OrdersGetter_SetFromEnteredTime_ABI( OrdersGetter_C *pgetter,
-                                          const char* from_entered_time,
-                                          int allow_exceptions );
+                                      const char* from_entered_time,
+                                      int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 OrdersGetter_GetToEnteredTime_ABI( OrdersGetter_C *pgetter,
-                                       char** buf,
-                                       size_t *n,
-                                       int allow_exceptions );
+                                   char** buf,
+                                   size_t *n,
+                                   int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 OrdersGetter_SetToEnteredTime_ABI( OrdersGetter_C *pgetter,
-                                        const char* to_entered_time,
-                                        int allow_exceptions );
+                                   const char* to_entered_time,
+                                   int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 OrdersGetter_GetOrderStatusType_ABI( OrdersGetter_C *pgetter,
-                                         int *order_status_type,
-                                         int allow_exceptions );
+                                     int *order_status_type,
+                                     int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 OrdersGetter_SetOrderStatusType_ABI( OrdersGetter_C *pgetter,
-                                         int order_status_type,
-                                         int allow_exceptions );
+                                     int order_status_type,
+                                     int allow_exceptions );
 
 #ifndef __cplusplus
 
@@ -1242,8 +1241,8 @@ name##_IsClosed(name##_C *pgetter, int *b) \
 /* QuoteGetter -> QuoteGetterImpl */
 static inline int
 QuoteGetter_Create( struct Credentials *pcreds,
-                      const char* symbol,
-                      QuoteGetter_C *pgetter )
+                    const char* symbol,
+                    QuoteGetter_C *pgetter )
 { return QuoteGetter_Create_ABI(pcreds, symbol, pgetter, 0); }
 
 static inline int
@@ -1268,9 +1267,9 @@ GetQuote(struct Credentials *pcreds, const char* symbol, char **buf, size_t *n)
 /* QuotesGetter -> QuotesGetterImpl */
 static inline int
 QuotesGetter_Create( struct Credentials *pcreds,
-                      const char** symbols,
-                      size_t nsymbols,
-                      QuotesGetter_C *pgetter )
+                     const char** symbols,
+                     size_t nsymbols,
+                     QuotesGetter_C *pgetter )
 { return QuotesGetter_Create_ABI(pcreds, symbols, nsymbols, pgetter, 0); }
 
 static inline int
@@ -1284,8 +1283,9 @@ QuotesGetter_GetSymbols(QuotesGetter_C *pgetter, char ***buf, size_t *n)
 { return QuotesGetter_GetSymbols_ABI(pgetter, buf, n, 0); }
 
 static inline int
-QuotesGetter_SetSymbols(QuotesGetter_C *pgetter, const char **symbols,
-                        size_t nsymbols)
+QuotesGetter_SetSymbols( QuotesGetter_C *pgetter,
+                         const char **symbols,
+                         size_t nsymbols )
 { return QuotesGetter_SetSymbols_ABI(pgetter, symbols, nsymbols, 0); }
 
 static inline int
@@ -1297,30 +1297,32 @@ QuotesGetter_RemoveSymbol( QuotesGetter_C *pgetter, const char *symbol)
 { return QuotesGetter_RemoveSymbol_ABI(pgetter, symbol, 0); }
 
 static inline int
-QuotesGetter_AddSymbols(QuotesGetter_C *pgetter, const char **symbols,
-                        size_t nsymbols)
+QuotesGetter_AddSymbols( QuotesGetter_C *pgetter,
+                         const char **symbols,
+                         size_t nsymbols )
 { return QuotesGetter_AddSymbols_ABI(pgetter, symbols, nsymbols, 0); }
 
 static inline int
-QuotesGetter_RemoveSymbols(QuotesGetter_C *pgetter, const char **symbols,
-                           size_t nsymbols)
+QuotesGetter_RemoveSymbols( QuotesGetter_C *pgetter,
+                            const char **symbols,
+                            size_t nsymbols )
 { return QuotesGetter_RemoveSymbols_ABI(pgetter, symbols, nsymbols, 0); }
 
 static inline int
-GetQuotes(struct Credentials *pcreds,
-          const char** symbols,
-          size_t nsymbols,
-          char **buf,
-          size_t *n)
+GetQuotes( struct Credentials *pcreds,
+           const char** symbols,
+           size_t nsymbols,
+           char **buf,
+           size_t *n )
 { CONVENIENCE_GET_FUNC_BODY(Quotes, symbols, nsymbols); }
 
 
 /* MarketHoursGetter */
 static inline int
 MarketHoursGetter_Create( struct Credentials *pcreds,
-                             MarketType market_type,
-                             const char* date,
-                             MarketHoursGetter_C *pgetter )
+                          MarketType market_type,
+                          const char* date,
+                          MarketHoursGetter_C *pgetter )
 { return MarketHoursGetter_Create_ABI(pcreds, (int)market_type, date, pgetter, 0); }
 
 static inline int
@@ -1331,12 +1333,12 @@ DECL_WRAPPED_API_GETTER_BASE_FUNCS(MarketHoursGetter)
 
 static inline int
 MarketHoursGetter_GetMarketType( MarketHoursGetter_C *pgetter,
-                                     MarketType *market_type )
+                                 MarketType *market_type )
 { return MarketHoursGetter_GetMarketType_ABI(pgetter, (int*)market_type, 0); }
 
 static inline int
 MarketHoursGetter_SetMarketType( MarketHoursGetter_C *pgetter,
-                                     MarketType market_type )
+                                 MarketType market_type )
 { return MarketHoursGetter_SetMarketType_ABI(pgetter, (int)market_type, 0); }
 
 static inline int
@@ -1359,10 +1361,10 @@ GetMarketHours( struct Credentials *pcreds,
 /* MoversGetter */
 static inline int
 MoversGetter_Create( struct Credentials *pcreds,
-                       MoversIndex index,
-                       MoversDirectionType direction_type,
-                       MoversChangeType change_type,
-                       MoversGetter_C *pgetter)
+                     MoversIndex index,
+                     MoversDirectionType direction_type,
+                     MoversChangeType change_type,
+                     MoversGetter_C *pgetter )
 { return MoversGetter_Create_ABI(pcreds, (int)index, (int)direction_type,
                                  (int)change_type, pgetter, 0);}
 
@@ -1382,22 +1384,22 @@ MoversGetter_SetIndex( MoversGetter_C *pgetter,  MoversIndex index)
 
 static inline int
 MoversGetter_GetDirectionType( MoversGetter_C *pgetter,
-                                  MoversDirectionType *direction_type )
+                               MoversDirectionType *direction_type )
 { return MoversGetter_GetDirectionType_ABI(pgetter, (int*)direction_type, 0); }
 
 static inline int
 MoversGetter_SetDirectionType( MoversGetter_C *pgetter,
-                                  MoversDirectionType direction_type)
+                               MoversDirectionType direction_type)
 { return MoversGetter_SetDirectionType_ABI(pgetter, (int)direction_type, 0); }
 
 static inline int
 MoversGetter_GetChangeType( MoversGetter_C *pgetter,
-                               MoversChangeType *change_type )
+                            MoversChangeType *change_type )
 { return MoversGetter_GetChangeType_ABI(pgetter, (int*)change_type, 0); }
 
 static inline int
 MoversGetter_SetChangeType( MoversGetter_C *pgetter,
-                               MoversChangeType change_type)
+                            MoversChangeType change_type)
 { return MoversGetter_SetChangeType_ABI(pgetter, (int)change_type, 0); }
 
 static inline int
@@ -1459,13 +1461,13 @@ HistoricalPeriodGetter_GetFrequencyType( HistoricalPeriodGetter_C *pgetter,
 
 static inline int
 HistoricalPeriodGetter_IsExtendedHours( HistoricalPeriodGetter_C *pgetter,
-                                               int *is_extended_hours )
+                                        int *is_extended_hours )
 { return HistoricalGetterBase_IsExtendedHours_ABI( (Getter_C*)pgetter,
                                                    is_extended_hours, 0); }
 
 static inline int
 HistoricalPeriodGetter_SetExtendedHours( HistoricalPeriodGetter_C *pgetter,
-                                               int is_extended_hours )
+                                         int is_extended_hours )
 { return HistoricalGetterBase_SetExtendedHours_ABI( (Getter_C*)pgetter,
                                                     is_extended_hours, 0); }
 
@@ -1476,14 +1478,14 @@ HistoricalPeriodGetter_GetPeriodType( HistoricalPeriodGetter_C *pgetter,
 
 
 static inline int
-HistoricalPeriodGetter_GetPeriod(HistoricalPeriodGetter_C *pgetter,
-                                 unsigned int *period)
+HistoricalPeriodGetter_GetPeriod( HistoricalPeriodGetter_C *pgetter,
+                                  unsigned int *period )
 { return HistoricalPeriodGetter_GetPeriod_ABI( pgetter, period, 0); }
 
 static inline int
 HistoricalPeriodGetter_SetPeriod( HistoricalPeriodGetter_C *pgetter,
-                                   PeriodType period_type,
-                                   unsigned int period )
+                                  PeriodType period_type,
+                                  unsigned int period )
 { return HistoricalPeriodGetter_SetPeriod_ABI( pgetter, (int)period_type,
                                                period, 0); }
 
@@ -1526,13 +1528,13 @@ GetHistoricalPeriod( struct Credentials *pcreds,
 /* HistoricalRangeGetter */
 static inline int
 HistoricalRangeGetter_Create( struct Credentials *pcreds,
-                               const char* symbol,
-                               FrequencyType frequency_type,
-                               unsigned int frequency,
-                               unsigned long long start_msec_since_epoch,
-                               unsigned long long end_msec_since_epoch,
-                               int extended_hours,
-                               HistoricalRangeGetter_C *pgetter )
+                              const char* symbol,
+                              FrequencyType frequency_type,
+                              unsigned int frequency,
+                              unsigned long long start_msec_since_epoch,
+                              unsigned long long end_msec_since_epoch,
+                              int extended_hours,
+                              HistoricalRangeGetter_C *pgetter )
 {
     return HistoricalRangeGetter_Create_ABI(pcreds, symbol, (int)frequency_type,
                                           frequency, start_msec_since_epoch,
@@ -1548,13 +1550,13 @@ DECL_WRAPPED_API_GETTER_BASE_FUNCS(HistoricalRangeGetter)
 
 static inline int
 HistoricalRangeGetter_GetSymbol( HistoricalRangeGetter_C *pgetter,
-                                  char **buf,
-                                  size_t *n )
+                                 char **buf,
+                                 size_t *n )
 { return HistoricalGetterBase_GetSymbol_ABI( (Getter_C*)pgetter, buf, n, 0); }
 
 static inline int
 HistoricalRangeGetter_SetSymbol( HistoricalRangeGetter_C *pgetter,
-                                  const char *symbol )
+                                 const char *symbol )
 { return HistoricalGetterBase_SetSymbol_ABI( (Getter_C*)pgetter, symbol, 0); }
 
 static inline int
@@ -1571,13 +1573,13 @@ HistoricalRangeGetter_GetFrequencyType( HistoricalRangeGetter_C *pgetter,
 
 static inline int
 HistoricalRangeGetter_IsExtendedHours( HistoricalRangeGetter_C *pgetter,
-                                               int *is_extended_hours )
+                                       int *is_extended_hours )
 { return HistoricalGetterBase_IsExtendedHours_ABI( (Getter_C*)pgetter,
                                                    is_extended_hours, 0); }
 
 static inline int
 HistoricalRangeGetter_SetExtendedHours( HistoricalRangeGetter_C *pgetter,
-                                               int is_extended_hours )
+                                        int is_extended_hours )
 { return HistoricalGetterBase_SetExtendedHours_ABI( (Getter_C*)pgetter,
                                                     is_extended_hours, 0); }
 
@@ -1607,8 +1609,8 @@ HistoricalRangeGetter_SetStartMSecSinceEpoch(
 
 static inline int
 HistoricalRangeGetter_SetFrequency( HistoricalRangeGetter_C *pgetter,
-                                     FrequencyType frequency_type,
-                                     unsigned int frequency)
+                                    FrequencyType frequency_type,
+                                    unsigned int frequency )
 { return HistoricalGetterBase_SetFrequency_ABI( (Getter_C*)pgetter,
                                                 (int)frequency_type,
                                                 frequency, 0); }
@@ -1778,12 +1780,11 @@ OptionChainStrategyGetter_Create( struct Credentials *pcreds,
                                   OptionType option_type,
                                   OptionChainStrategyGetter_C *pgetter )
 {
-    return OptionChainStrategyGetter_Create_ABI( pcreds, symbol, (int)strategy_type,
-                                                 spread_interval, (int)strikes_type,
-                                                 strikes_value, (int)contract_type,
-                                                 include_quotes, from_date, to_date,
-                                                 (int)exp_month, (int)option_type,
-                                                 pgetter, 0 );
+    return OptionChainStrategyGetter_Create_ABI(
+        pcreds, symbol, (int)strategy_type, spread_interval, (int)strikes_type,
+        strikes_value, (int)contract_type, include_quotes, from_date, to_date,
+        (int)exp_month, (int)option_type, pgetter, 0
+        );
 }
 
 DECL_WRAPPED_API_GETTER_BASE_FUNCS(OptionChainStrategyGetter)
@@ -1805,8 +1806,8 @@ OptionChainStrategyGetter_GetStrategy( OptionChainStrategyGetter_C *pgetter,
 
 static inline int
 OptionChainStrategyGetter_SetStrategy( OptionChainStrategyGetter_C *pgetter,
-                                        OptionStrategyType strategy_type,
-                                        double spread_interval )
+                                       OptionStrategyType strategy_type,
+                                       double spread_interval )
 {
     return OptionChainStrategyGetter_SetStrategy_ABI(pgetter, (int)strategy_type,
                                                      spread_interval, 0);
@@ -1851,13 +1852,12 @@ OptionChainAnalyticalGetter_Create( struct Credentials *pcreds,
                                     OptionType option_type,
                                     OptionChainAnalyticalGetter_C *pgetter )
 {
-    return OptionChainAnalyticalGetter_Create_ABI( pcreds, symbol, volatility,
-                                                   underlying_price, interest_rate,
-                                                   days_to_exp, (int)strikes_type,
-                                                   strikes_value, (int)contract_type,
-                                                   include_quotes, from_date,
-                                                   to_date, (int)exp_month,
-                                                   (int)option_type, pgetter, 0);
+    return OptionChainAnalyticalGetter_Create_ABI(
+        pcreds, symbol, volatility, underlying_price, interest_rate,
+        days_to_exp, (int)strikes_type, strikes_value, (int)contract_type,
+        include_quotes, from_date, to_date, (int)exp_month,
+        (int)option_type, pgetter, 0
+        );
 }
 
 static inline int
@@ -2000,17 +2000,17 @@ AccountInfoGetter_ReturnsPositions( AccountInfoGetter_C *pgetter,
 
 static inline int
 AccountInfoGetter_ReturnPositions( AccountInfoGetter_C *pgetter,
-                                            int return_positions )
+                                   int return_positions )
 { return AccountInfoGetter_ReturnPositions_ABI(pgetter, return_positions, 0); }
 
 static inline int
 AccountInfoGetter_ReturnsOrders( AccountInfoGetter_C *pgetter,
-                                 int *returns_orders)
+                                 int *returns_orders )
 { return AccountInfoGetter_ReturnsOrders_ABI(pgetter, returns_orders, 0); }
 
 static inline int
 AccountInfoGetter_ReturnOrders( AccountInfoGetter_C *pgetter,
-                                            int return_orders )
+                                int return_orders )
 { return AccountInfoGetter_ReturnOrders_ABI(pgetter, return_orders, 0); }
 
 static inline int
@@ -2298,8 +2298,8 @@ UserPrincipalsGetter_ReturnsSurrogateIds( UserPrincipalsGetter_C *pgetter,
 }
 
 static inline int
-UserPrincipalsGetter_ReturnSurrogateIds(  UserPrincipalsGetter_C *pgetter,
-                                          int return_surrogate_ids )
+UserPrincipalsGetter_ReturnSurrogateIds( UserPrincipalsGetter_C *pgetter,
+                                         int return_surrogate_ids )
 {
     return UserPrincipalsGetter_ReturnSurrogateIds_ABI(
             pgetter, return_surrogate_ids, 0
@@ -2619,10 +2619,8 @@ public:
 
 private:
     void
-    _str_set_to_abi(
-        int(*abicall)(CType*, const char**, size_t, int),
-        const std::set<std::string>& symbols
-        ) const
+    _str_set_to_abi( int(*abicall)(CType*, const char**, size_t, int),
+                     const std::set<std::string>& symbols ) const
     {
         const char** tmp = set_to_new_cstrs(symbols);
         new_array_to_abi( abicall, tmp, cgetter<CType>(), tmp, symbols.size() );
@@ -2682,8 +2680,8 @@ public:
     typedef MarketHoursGetter_C CType;
 
     MarketHoursGetter( Credentials& creds,
-                          MarketType market_type,
-                          const std::string& date )
+                       MarketType market_type,
+                       const std::string& date )
         :
             APIGetter( MarketHoursGetter_C{},
                        MarketHoursGetter_Create_ABI,
@@ -2796,11 +2794,11 @@ class HistoricalGetterBase
 protected:
     template<typename CTy, typename F, typename F2, typename... Args>
     HistoricalGetterBase( CTy _,
-                             F create_func,
-                             F2 destroy_func,
-                             Credentials& creds,
-                             const std::string& symbol,
-                             Args... args )
+                          F create_func,
+                          F2 destroy_func,
+                          Credentials& creds,
+                          const std::string& symbol,
+                          Args... args )
         :
             APIGetter( _,
                        create_func,
@@ -2942,12 +2940,12 @@ public:
     typedef HistoricalRangeGetter_C CType;
 
     HistoricalRangeGetter( Credentials& creds,
-                              const std::string& symbol,
-                              FrequencyType frequency_type,
-                              unsigned int frequency,
-                              unsigned long long start_msec_since_epoch,
-                              unsigned long long end_msec_since_epoch,
-                              bool extended_hours = true )
+                           const std::string& symbol,
+                           FrequencyType frequency_type,
+                           unsigned int frequency,
+                           unsigned long long start_msec_since_epoch,
+                           unsigned long long end_msec_since_epoch,
+                           bool extended_hours = true )
         :
             HistoricalGetterBase( HistoricalRangeGetter_C{},
                                   HistoricalRangeGetter_Create_ABI,
@@ -3203,11 +3201,11 @@ class OptionChainGetter
 protected:
     template<typename CTy, typename F, typename F2, typename... Args>
     OptionChainGetter( CTy _,
-                         F create_func,
-                         F2 destroy_func,
-                         Credentials& creds,
-                         const std::string& symbol,
-                         Args... args )
+                       F create_func,
+                       F2 destroy_func,
+                       Credentials& creds,
+                       const std::string& symbol,
+                       Args... args )
         :
             APIGetter( _,
                        create_func,
@@ -3527,11 +3525,11 @@ class AccountGetterBase
 protected:
     template< typename CTy, typename F, typename F2, typename... Args>
     AccountGetterBase( CTy _,
-                         F create_func,
-                         F2 destroy_func,
-                         Credentials& creds,
-                         const std::string& account_id,
-                         Args... args )
+                       F create_func,
+                       F2 destroy_func,
+                       Credentials& creds,
+                       const std::string& account_id,
+                       Args... args )
         :
             APIGetter( _,
                        create_func,
@@ -3563,9 +3561,9 @@ public:
     typedef AccountInfoGetter_C CType;
 
     AccountInfoGetter( Credentials& creds,
-                         const std::string& account_id,
-                         bool positions = true,
-                         bool orders = true )
+                       const std::string& account_id,
+                       bool positions = true,
+                       bool orders = true )
         :
             AccountGetterBase( AccountInfoGetter_C{},
                                AccountInfoGetter_Create_ABI,
@@ -3632,7 +3630,7 @@ public:
     typedef StreamerSubscriptionKeysGetter_C CType;
 
     StreamerSubscriptionKeysGetter( Credentials& creds,
-                                        const std::string& account_id )
+                                    const std::string& account_id )
         :
             AccountGetterBase( StreamerSubscriptionKeysGetter_C{},
                                StreamerSubscriptionKeysGetter_Create_ABI,
@@ -3862,15 +3860,16 @@ public:
     typedef InstrumentInfoGetter_C CType;
 
     InstrumentInfoGetter( Credentials& creds,
-                            InstrumentSearchType search_type,
-                            const std::string& query_string )
-        : APIGetter( InstrumentInfoGetter_C{},
-                     InstrumentInfoGetter_Create_ABI,
-                     InstrumentInfoGetter_Destroy_ABI,
-                     nullptr,
-                     &creds,
-                     static_cast<int>(search_type),
-                     query_string.c_str() )
+                          InstrumentSearchType search_type,
+                          const std::string& query_string )
+        :
+            APIGetter( InstrumentInfoGetter_C{},
+                       InstrumentInfoGetter_Create_ABI,
+                       InstrumentInfoGetter_Destroy_ABI,
+                       nullptr,
+                       &creds,
+                       static_cast<int>(search_type),
+                       query_string.c_str() )
         {
         }
 
@@ -3906,8 +3905,8 @@ public:
     typedef OrderGetter_C CType;
 
     OrderGetter( Credentials& creds,
-                  const std::string& account_id,
-                  const std::string& order_id )
+                 const std::string& account_id,
+                 const std::string& order_id )
         :
             AccountGetterBase( OrderGetter_C{},
                                OrderGetter_Create_ABI,
@@ -3934,11 +3933,11 @@ public:
     typedef OrdersGetter_C CType;
 
     OrdersGetter( Credentials& creds,
-                    const std::string& account_id,
-                    unsigned int nmax_results,
-                    const std::string& from_entered_time,
-                    const std::string& to_entered_time,
-                    OrderStatusType order_status_type )
+                  const std::string& account_id,
+                  unsigned int nmax_results,
+                  const std::string& from_entered_time,
+                  const std::string& to_entered_time,
+                  OrderStatusType order_status_type )
         :
             AccountGetterBase( OrdersGetter_C{},
                                OrdersGetter_Create_ABI,

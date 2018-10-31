@@ -32,6 +32,8 @@ using std::tie;
 
 namespace tdma {
 
+using std::to_string;
+
 class HistoricalGetterBaseImpl
         : public APIGetterImpl {
     string _symbol;
@@ -49,7 +51,7 @@ class HistoricalGetterBaseImpl
         assert( valid != end(VALID_FREQUENCIES_BY_FREQUENCY_TYPE) );
         if( valid->second.count(f) == 0 ){
             TDMA_API_THROW(ValueException,
-                "invalid frequency(" + std::to_string(f)
+                "invalid frequency(" + to_string(f)
                 + ") for frequency type(" + to_string(fty) + ")"
                 );
         }
@@ -57,10 +59,10 @@ class HistoricalGetterBaseImpl
 
 protected:
     HistoricalGetterBaseImpl( Credentials& creds,
-                          const string& symbol,
-                          FrequencyType frequency_type,
-                          unsigned int frequency,
-                          bool extended_hours )
+                              const string& symbol,
+                              FrequencyType frequency_type,
+                              unsigned int frequency,
+                              bool extended_hours )
         :
             APIGetterImpl(creds, data_api_on_error_callback),
             _symbol( util::toupper(symbol) ),
@@ -77,7 +79,7 @@ protected:
     build_query_params() const
     {
         return { {"frequencyType", to_string(_frequency_type)},
-                 {"frequency", std::to_string(_frequency)},
+                 {"frequency", to_string(_frequency)},
                  {"needExtendedHoursData", _extended_hours ? "true" : "false"} };
     }
 
@@ -141,7 +143,7 @@ class HistoricalPeriodGetterImpl
     {
         vector<pair<string,string>> params( build_query_params() );
         params.emplace_back( "periodType", to_string(_period_type) );
-        params.emplace_back( "period", std::to_string(_period) );
+        params.emplace_back( "period", to_string(_period) );
 
         /* FEATURE FIX - Oct 25 2018
          *
@@ -150,7 +152,7 @@ class HistoricalPeriodGetterImpl
         if( _msec_since_epoch != 0 ){
             string f = _msec_since_epoch > 0 ? "endDate" : "startDate";
             params.emplace_back(
-                f, std::to_string( std::llabs(_msec_since_epoch) )
+                f, to_string( std::llabs(_msec_since_epoch) )
             );
         }
 
@@ -184,7 +186,7 @@ class HistoricalPeriodGetterImpl
         assert( valid != end(VALID_PERIODS_BY_PERIOD_TYPE) );
         if( valid->second.count(p) == 0 ){
             TDMA_API_THROW(ValueException,
-                "invalid period(" + std::to_string(p)
+                "invalid period(" + to_string(p)
                 + ") for period type(" + to_string(pty) + ")"
                 );
         }
@@ -196,13 +198,13 @@ public:
     static const int TYPE_ID_HIGH = TYPE_ID_GETTER_HISTORICAL_PERIOD;
 
     HistoricalPeriodGetterImpl( Credentials& creds,
-                            const string& symbol,
-                            PeriodType period_type,
-                            unsigned int period,
-                            FrequencyType frequency_type,
-                            unsigned int frequency,
-                            bool extended_hours,
-                            long long msec_since_epoch )
+                                const string& symbol,
+                                PeriodType period_type,
+                                unsigned int period,
+                                FrequencyType frequency_type,
+                                unsigned int frequency,
+                                bool extended_hours,
+                                long long msec_since_epoch )
     :
         HistoricalGetterBaseImpl(creds, symbol, frequency_type, frequency,
                                  extended_hours),
@@ -265,12 +267,8 @@ class HistoricalRangeGetterImpl
     _build()
     {
         vector<pair<string,string>> params( build_query_params() );
-        params.emplace_back(
-            "startDate", std::to_string(_start_msec_since_epoch)
-        );
-        params.emplace_back(
-            "endDate", std::to_string(_end_msec_since_epoch)
-        );
+        params.emplace_back( "startDate", to_string(_start_msec_since_epoch) );
+        params.emplace_back( "endDate", to_string(_end_msec_since_epoch) );
 
         /* BUG FIX - Oct 25 2018
          *
@@ -300,12 +298,12 @@ public:
     static const int TYPE_ID_HIGH = TYPE_ID_GETTER_HISTORICAL_RANGE;
 
     HistoricalRangeGetterImpl( Credentials& creds,
-                              const string& symbol,
-                              FrequencyType frequency_type,
-                              unsigned int frequency,
-                              unsigned long long start_msec_since_epoch,
-                              unsigned long long end_msec_since_epoch,
-                              bool extended_hours )
+                               const string& symbol,
+                               FrequencyType frequency_type,
+                               unsigned int frequency,
+                               unsigned long long start_msec_since_epoch,
+                               unsigned long long end_msec_since_epoch,
+                               bool extended_hours )
         :
             HistoricalGetterBaseImpl(creds, symbol, frequency_type, frequency,
                                      extended_hours),
@@ -345,9 +343,9 @@ using namespace tdma;
 
 int
 HistoricalGetterBase_GetSymbol_ABI( Getter_C *pgetter,
-                                        char **buf,
-                                        size_t *n,
-                                        int allow_exceptions )
+                                    char **buf,
+                                    size_t *n,
+                                    int allow_exceptions )
 {
     return ImplAccessor<char**>::template get<HistoricalGetterBaseImpl>(
         pgetter, &HistoricalGetterBaseImpl::get_symbol, buf, n, allow_exceptions
@@ -356,8 +354,8 @@ HistoricalGetterBase_GetSymbol_ABI( Getter_C *pgetter,
 
 int
 HistoricalGetterBase_SetSymbol_ABI( Getter_C *pgetter,
-                                        const char *symbol,
-                                        int allow_exceptions )
+                                    const char *symbol,
+                                    int allow_exceptions )
 {
     return ImplAccessor<char**>::template set<HistoricalGetterBaseImpl>(
         pgetter, &HistoricalGetterBaseImpl::set_symbol, symbol, allow_exceptions
@@ -366,8 +364,8 @@ HistoricalGetterBase_SetSymbol_ABI( Getter_C *pgetter,
 
 int
 HistoricalGetterBase_GetFrequency_ABI( Getter_C *pgetter,
-                                           unsigned int *frequency,
-                                           int allow_exceptions )
+                                       unsigned int *frequency,
+                                       int allow_exceptions )
 {
     return ImplAccessor<unsigned int>::template
         get<HistoricalGetterBaseImpl>(
@@ -378,8 +376,8 @@ HistoricalGetterBase_GetFrequency_ABI( Getter_C *pgetter,
 
 int
 HistoricalGetterBase_GetFrequencyType_ABI( Getter_C *pgetter,
-                                                int *frequency_type,
-                                                int allow_exceptions )
+                                           int *frequency_type,
+                                           int allow_exceptions )
 {
     return ImplAccessor<int>::template
         get<HistoricalGetterBaseImpl, FrequencyType>(
@@ -390,8 +388,8 @@ HistoricalGetterBase_GetFrequencyType_ABI( Getter_C *pgetter,
 
 int
 HistoricalGetterBase_IsExtendedHours_ABI( Getter_C *pgetter,
-                                               int *is_extended_hours,
-                                               int allow_exceptions )
+                                          int *is_extended_hours,
+                                          int allow_exceptions )
 {
     return ImplAccessor<int>::template
         get<HistoricalGetterBaseImpl, bool>(
@@ -402,8 +400,8 @@ HistoricalGetterBase_IsExtendedHours_ABI( Getter_C *pgetter,
 
 int
 HistoricalGetterBase_SetExtendedHours_ABI( Getter_C *pgetter,
-                                               int is_extended_hours,
-                                               int allow_exceptions )
+                                           int is_extended_hours,
+                                           int allow_exceptions )
 {
     return ImplAccessor<int>::template
         set<HistoricalGetterBaseImpl, bool>(
@@ -414,9 +412,9 @@ HistoricalGetterBase_SetExtendedHours_ABI( Getter_C *pgetter,
 
 int
 HistoricalGetterBase_SetFrequency_ABI( Getter_C *pgetter,
-                                             int frequency_type,
-                                             unsigned int frequency,
-                                             int allow_exceptions )
+                                       int frequency_type,
+                                       unsigned int frequency,
+                                       int allow_exceptions )
 {
     CHECK_ENUM(FrequencyType, frequency_type, allow_exceptions);
 
@@ -429,18 +427,16 @@ HistoricalGetterBase_SetFrequency_ABI( Getter_C *pgetter,
 
 /* HistoricalPeriodGetter */
 int
-HistoricalPeriodGetter_Create_ABI(
-    struct Credentials *pcreds,
-    const char* symbol,
-    int period_type,
-    unsigned int period,
-    int frequency_type,
-    unsigned int frequency,
-    int extended_hours,
-    long long msec_since_epoch,
-    HistoricalPeriodGetter_C *pgetter,
-    int allow_exceptions
-    )
+HistoricalPeriodGetter_Create_ABI( struct Credentials *pcreds,
+                                   const char* symbol,
+                                   int period_type,
+                                   unsigned int period,
+                                   int frequency_type,
+                                   unsigned int frequency,
+                                   int extended_hours,
+                                   long long msec_since_epoch,
+                                   HistoricalPeriodGetter_C *pgetter,
+                                   int allow_exceptions )
 {
     using ImplTy = HistoricalPeriodGetterImpl;
 
@@ -480,13 +476,13 @@ HistoricalPeriodGetter_Create_ABI(
 
 int
 HistoricalPeriodGetter_Destroy_ABI( HistoricalPeriodGetter_C *pgetter,
-                                        int allow_exceptions)
+                                    int allow_exceptions )
 { return destroy_proxy<HistoricalPeriodGetterImpl>(pgetter, allow_exceptions); }
 
 int
 HistoricalPeriodGetter_GetPeriodType_ABI( HistoricalPeriodGetter_C *pgetter,
-                                               int *period_type,
-                                               int allow_exceptions )
+                                          int *period_type,
+                                          int allow_exceptions )
 {
     return ImplAccessor<int>::template
         get<HistoricalPeriodGetterImpl, PeriodType>(
@@ -498,8 +494,8 @@ HistoricalPeriodGetter_GetPeriodType_ABI( HistoricalPeriodGetter_C *pgetter,
 
 int
 HistoricalPeriodGetter_GetPeriod_ABI( HistoricalPeriodGetter_C *pgetter,
-                                           unsigned int *period,
-                                           int allow_exceptions )
+                                      unsigned int *period,
+                                      int allow_exceptions )
 {
     return ImplAccessor<unsigned int>::template
         get<HistoricalPeriodGetterImpl>(
@@ -510,9 +506,9 @@ HistoricalPeriodGetter_GetPeriod_ABI( HistoricalPeriodGetter_C *pgetter,
 
 int
 HistoricalPeriodGetter_SetPeriod_ABI( HistoricalPeriodGetter_C *pgetter,
-                                           int period_type,
-                                           unsigned int period,
-                                           int allow_exceptions )
+                                      int period_type,
+                                      unsigned int period,
+                                      int allow_exceptions )
 {
     CHECK_ENUM(PeriodType, period_type, allow_exceptions);
 
@@ -554,14 +550,14 @@ HistoricalPeriodGetter_GetMSecSinceEpoch_ABI(
 /* HistoricalRangeGetter */
 int
 HistoricalRangeGetter_Create_ABI( struct Credentials *pcreds,
-                                       const char* symbol,
-                                       int frequency_type,
-                                       unsigned int frequency,
-                                       unsigned long long start_msec_since_epoch,
-                                       unsigned long long end_msec_since_epoch,
-                                       int extended_hours,
-                                       HistoricalRangeGetter_C *pgetter,
-                                       int allow_exceptions )
+                                  const char* symbol,
+                                  int frequency_type,
+                                  unsigned int frequency,
+                                  unsigned long long start_msec_since_epoch,
+                                  unsigned long long end_msec_since_epoch,
+                                  int extended_hours,
+                                  HistoricalRangeGetter_C *pgetter,
+                                  int allow_exceptions )
 {
     using ImplTy = HistoricalRangeGetterImpl;
 
@@ -599,7 +595,7 @@ HistoricalRangeGetter_Create_ABI( struct Credentials *pcreds,
 
 int
 HistoricalRangeGetter_Destroy_ABI( HistoricalRangeGetter_C *pgetter,
-                                        int allow_exceptions)
+                                   int allow_exceptions )
 { return destroy_proxy<HistoricalRangeGetterImpl>(pgetter, allow_exceptions); }
 
 int

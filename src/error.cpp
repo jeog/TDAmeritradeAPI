@@ -41,9 +41,9 @@ namespace tdma{
 
 void
 set_error_state( int code,
-                   const string& msg,
-                   int lineno,
-                   const string& filename )
+                 const string& msg,
+                 int lineno,
+                 const string& filename )
 {
     last_error_code = code;
     last_error_msg = msg;
@@ -87,12 +87,12 @@ LastErrorFilename_ABI( char** buf, size_t *n, int allow_exceptions )
 
 int
 LastErrorState_ABI( int *code,
-                      char **buf_msg,
-                      size_t *n_msg,
-                      int *lineno,
-                      char **buf_filename,
-                      size_t *n_filename,
-                      int allow_exceptions )
+                    char **buf_msg,
+                    size_t *n_msg,
+                    int *lineno,
+                    char **buf_filename,
+                    size_t *n_filename,
+                    int allow_exceptions )
 {
     *code = last_error_code;
     *lineno = last_error_lineno;

@@ -355,8 +355,8 @@ decrypt(SmartByteBuffer in, SmartByteBuffer iv, const string& key)
 
 bool
 store_credentials( const string& path,
-                     const string& password,
-                     const Credentials* creds )
+                   const string& password,
+                   const Credentials* creds )
 {
     fstream file(path, ios_base::out | ios_base::trunc | ios_base::binary );
     if( !file.is_open() ){
@@ -400,9 +400,9 @@ store_credentials( const string& path,
 
 Credentials
 create_credentials_struct( const string& access_token,
-                              const string& refresh_token,
-                              long long epoch_sec_token_expiration,
-                              const string& client_id )
+                           const string& refresh_token,
+                           long long epoch_sec_token_expiration,
+                           const string& client_id )
 {
     Credentials creds;
     size_t at_sz = access_token.size();
@@ -590,8 +590,8 @@ namespace tdma {
 
 void
 LoadCredentialsImpl( const string& path,
-                       const string& password,
-                       Credentials *pcreds )
+                     const string& password,
+                     Credentials *pcreds )
 {
     fstream file(path, ios_base::in | ios_base::binary );
     if( file.is_open() ){
@@ -628,8 +628,8 @@ LoadCredentialsImpl( const string& path,
 
 void
 StoreCredentialsImpl( const string& path,
-                        const string& password,
-                        const Credentials* creds )
+                      const string& password,
+                      const Credentials* creds )
 {
     if( !store_credentials(path, password, creds) ){
         cerr << "  revert to " << path + ".backup" << endl;
@@ -647,9 +647,9 @@ StoreCredentialsImpl( const string& path,
 
 void
 RequestAccessTokenImpl( const string& code,
-                           const string& client_id,
-                           const string& redirect_uri,
-                           Credentials *pcreds )
+                        const string& client_id,
+                        const string& redirect_uri,
+                        Credentials *pcreds )
 {
     if( code.empty() )
         TDMA_API_THROW(LocalCredentialException,"'code' is empty");
@@ -787,9 +787,9 @@ using namespace tdma;
 
 int
 LoadCredentials_ABI( const char* path,
-                       const char* password,
-                       Credentials *pcreds,
-                       int allow_exceptions )
+                     const char* password,
+                     Credentials *pcreds,
+                     int allow_exceptions )
 {
     CHECK_PTR(path, "path", allow_exceptions);
     CHECK_PTR(password, "password", allow_exceptions);
@@ -815,9 +815,9 @@ LoadCredentials_ABI( const char* path,
 
 int
 StoreCredentials_ABI( const char* path,
-                         const char* password,
-                         const Credentials* pcreds,
-                         int allow_exceptions )
+                      const char* password,
+                      const Credentials* pcreds,
+                      int allow_exceptions )
 {
     CHECK_PTR(path, "path", allow_exceptions);
     CHECK_PTR(password, "password", allow_exceptions);
@@ -836,10 +836,10 @@ StoreCredentials_ABI( const char* path,
 
 int
 RequestAccessToken_ABI( const char* code,
-                           const char* client_id,
-                           const char* redirect_uri,
-                           Credentials *pcreds,
-                           int allow_exceptions )
+                        const char* client_id,
+                        const char* redirect_uri,
+                        Credentials *pcreds,
+                        int allow_exceptions )
 {
     CHECK_PTR(code, "code", allow_exceptions);
     CHECK_PTR(client_id, "client_id", allow_exceptions);
@@ -897,8 +897,8 @@ GetCertificateBundlePath_ABI(char **path, size_t *n, int allow_exceptions)
 
 int
 GetDefaultCertificateBundlePath_ABI( char **path,
-                                         size_t *n,
-                                         int allow_exceptions )
+                                     size_t *n,
+                                     int allow_exceptions )
 {
     CHECK_PTR(path, "path", allow_exceptions);
 
@@ -923,8 +923,8 @@ CloseCredentials_ABI(Credentials* pcreds, int allow_exceptions)
 
 int
 CopyCredentials_ABI( const struct Credentials* from,
-                       struct Credentials* to,
-                       int allow_exceptions )
+                     struct Credentials* to,
+                     int allow_exceptions )
 {
     static const int FAIL_LEN = Credentials::CRED_FIELD_MAX_STR_LEN + 1;
 

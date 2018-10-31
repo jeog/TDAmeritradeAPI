@@ -13,30 +13,30 @@ struct TestLeg{
 
 int test_order_leg(size_t nleg, OrderLeg_C* l1, struct TestLeg *l2); /*DONE*/
 
-int test_order(OrderTicket_C* porder,
-                        OrderDuration duration,
-                        OrderSession session,
-                        OrderType order_type,
-                        OrderStrategyType strategy_type,
-                        ComplexOrderStrategyType complex_type,
-                        double price,
-                        double stop_price ,
-                        struct TestLeg* legs,
-                        size_t nlegs ); /*DONE*/
+int test_order( OrderTicket_C* porder,
+                OrderDuration duration,
+                OrderSession session,
+                OrderType order_type,
+                OrderStrategyType strategy_type,
+                ComplexOrderStrategyType complex_type,
+                double price,
+                double stop_price ,
+                struct TestLeg* legs,
+                size_t nlegs ); /*DONE*/
 
-int test_option_order(OrderTicket_C* porder,
-                        OrderType order_type,
-                        ComplexOrderStrategyType complex_type,
-                        double price,
-                        struct TestLeg *legs,
-                        size_t nlegs ); /*DONE*/
+int test_option_order( OrderTicket_C* porder,
+                       OrderType order_type,
+                       ComplexOrderStrategyType complex_type,
+                       double price,
+                       struct TestLeg *legs,
+                       size_t nlegs ); /*DONE*/
 
-int test_equity_order(OrderTicket_C* porder,
-                        OrderType order_type,
-                        double price,
-                        double stop_price,
-                        struct TestLeg *legs,
-                        size_t nlegs ); /*DONE*/
+int test_equity_order( OrderTicket_C* porder,
+                       OrderType order_type,
+                       double price,
+                       double stop_price,
+                       struct TestLeg *legs,
+                       size_t nlegs ); /*DONE*/
 
 int test_order_access(); /*DONE*/
 int test_simple_equity_order_builder(); /*DONE*/
@@ -5341,16 +5341,16 @@ int test_order_leg(size_t nleg, OrderLeg_C* l1, struct TestLeg *l2)
 
 
 
-int test_order(OrderTicket_C* porder,
-                        OrderDuration duration,
-                        OrderSession session,
-                        OrderType order_type,
-                        OrderStrategyType strategy_type,
-                        ComplexOrderStrategyType complex_type,
-                        double price,
-                        double stop_price ,
-                        struct TestLeg* legs,
-                        size_t nlegs )
+int test_order( OrderTicket_C* porder,
+                OrderDuration duration,
+                OrderSession session,
+                OrderType order_type,
+                OrderStrategyType strategy_type,
+                ComplexOrderStrategyType complex_type,
+                double price,
+                double stop_price ,
+                struct TestLeg* legs,
+                size_t nlegs )
 {
     int err = 0;
 
@@ -5430,24 +5430,24 @@ cleanup_and_exit:
     return err;
 }
 
-int test_option_order(OrderTicket_C* porder,
-                        OrderType order_type,
-                        ComplexOrderStrategyType complex_type,
-                        double price,
-                        struct TestLeg *legs,
-                        size_t nlegs )
+int test_option_order( OrderTicket_C* porder,
+                       OrderType order_type,
+                       ComplexOrderStrategyType complex_type,
+                       double price,
+                       struct TestLeg *legs,
+                       size_t nlegs )
 {
     return test_order(porder, OrderDuration_DAY, OrderSession_NORMAL,
                              order_type, OrderStrategyType_SINGLE, complex_type,
                              price, 0., legs, nlegs);
 }
 
-int test_equity_order(OrderTicket_C* porder,
-                        OrderType order_type,
-                        double price,
-                        double stop_price,
-                        struct TestLeg *legs,
-                        size_t nlegs )
+int test_equity_order( OrderTicket_C* porder,
+                       OrderType order_type,
+                       double price,
+                       double stop_price,
+                       struct TestLeg *legs,
+                       size_t nlegs )
 {
     return test_order(porder, OrderDuration_DAY, OrderSession_NORMAL,
                              order_type, OrderStrategyType_SINGLE,

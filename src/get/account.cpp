@@ -24,6 +24,7 @@ using std::string;
 using std::vector;
 using std::tie;
 using std::pair;
+using util::is_valid_iso8601_datetime;
 
 namespace tdma {
 
@@ -95,9 +96,9 @@ public:
     static const int TYPE_ID_HIGH = TYPE_ID_GETTER_ACCOUNT_INFO;
 
     AccountInfoGetterImpl( Credentials& creds,
-                       const string& account_id,
-                       bool positions,
-                       bool orders )
+                           const string& account_id,
+                           bool positions,
+                           bool orders )
         :
             AccountGetterBaseImpl(creds, account_id),
             _positions(positions),
@@ -224,13 +225,12 @@ public:
     static const int TYPE_ID_LOW = TYPE_ID_GETTER_TRANSACTION_HISTORY;
     static const int TYPE_ID_HIGH = TYPE_ID_GETTER_TRANSACTION_HISTORY;
 
-    TransactionHistoryGetterImpl(
-            Credentials& creds,
-            const string& account_id,
-            TransactionType transaction_type = TransactionType::all,
-            const string& symbol = "",
-            const string& start_date = "",
-            const string& end_date = "")
+    TransactionHistoryGetterImpl( Credentials& creds,
+                                  const string& account_id,
+                                  TransactionType transaction_type,
+                                  const string& symbol,
+                                  const string& start_date,
+                                  const string& end_date )
         :
             AccountGetterBaseImpl(creds, account_id),
             _transaction_type(transaction_type),
@@ -238,11 +238,15 @@ public:
             _start_date(start_date),
             _end_date(end_date)
         {
-            if( !start_date.empty() && !util::is_valid_iso8601_datetime(start_date) )
-                TDMA_API_THROW(ValueException,"invalid ISO-8601 date: " + start_date);
+            if( !start_date.empty() && !is_valid_iso8601_datetime(start_date) ){
+                TDMA_API_THROW( ValueException,
+                                "invalid ISO-8601 date: " + start_date );
+            }
 
-            if( !end_date.empty() && !util::is_valid_iso8601_datetime(end_date) )
-                TDMA_API_THROW(ValueException,"invalid ISO-8601 date: " + end_date);
+            if( !end_date.empty() && !is_valid_iso8601_datetime(end_date) ){
+                TDMA_API_THROW( ValueException,
+                                "invalid ISO-8601 date: " + end_date );
+            }
 
             _build();
         }
@@ -280,8 +284,9 @@ public:
     void
     set_start_date(const string& start_date)
     {
-        if( !start_date.empty() && !util::is_valid_iso8601_datetime(start_date) ){
-            TDMA_API_THROW(ValueException,"invalid ISO-8601 date: " + start_date);
+        if( !start_date.empty() && !is_valid_iso8601_datetime(start_date) ){
+            TDMA_API_THROW( ValueException,
+                            "invalid ISO-8601 date: " + start_date );
         }
         _start_date = start_date;
         build();
@@ -290,8 +295,9 @@ public:
     void
     set_end_date(const string& end_date)
     {
-        if( !end_date.empty() && !util::is_valid_iso8601_datetime(end_date) ){
-            TDMA_API_THROW(ValueException,"invalid ISO-8601 date: " + end_date);
+        if( !end_date.empty() && !is_valid_iso8601_datetime(end_date) ){
+            TDMA_API_THROW( ValueException,
+                            "invalid ISO-8601 date: " + end_date );
         }
         _end_date = end_date;
         build();
@@ -307,7 +313,6 @@ class IndividualTransactionHistoryGetterImpl
     void
     _build()
     {
-
         string url = URL_ACCOUNTS + util::url_encode(get_account_id())
                      + "/transactions/" + util::url_encode(_transaction_id);
         APIGetterImpl::set_url(url);
@@ -322,10 +327,9 @@ public:
     static const int TYPE_ID_LOW = TYPE_ID_GETTER_IND_TRANSACTION_HISTORY;
     static const int TYPE_ID_HIGH = TYPE_ID_GETTER_IND_TRANSACTION_HISTORY;
 
-    IndividualTransactionHistoryGetterImpl(
-            Credentials& creds,
-            const string& account_id,
-            const string& transaction_id)
+    IndividualTransactionHistoryGetterImpl( Credentials& creds,
+                                            const string& account_id,
+                                            const string& transaction_id )
         :
             AccountGetterBaseImpl(creds, account_id),
             _transaction_id(transaction_id)
@@ -392,10 +396,10 @@ public:
     static const int TYPE_ID_HIGH = TYPE_ID_GETTER_USER_PRINCIPALS;
 
     UserPrincipalsGetterImpl( Credentials& creds,
-                          bool streamer_subscription_keys,
-                          bool streamer_connection_info,
-                          bool preferences,
-                          bool surrogate_ids )
+                              bool streamer_subscription_keys,
+                              bool streamer_connection_info,
+                              bool preferences,
+                              bool surrogate_ids )
         :
             APIGetterImpl(creds, account_api_on_error_callback),
             _streamer_subscription_keys(streamer_subscription_keys),
@@ -481,8 +485,8 @@ public:
     static const int TYPE_ID_HIGH = TYPE_ID_GETTER_ORDER;
 
     OrderGetterImpl( Credentials& creds,
-                       const string& account_id,
-                       const string& order_id )
+                     const string& account_id,
+                     const string& order_id )
         :
             AccountGetterBaseImpl(creds, account_id),
             _order_id(order_id)
@@ -543,11 +547,11 @@ public:
     static const int TYPE_ID_HIGH = TYPE_ID_GETTER_ORDERS;
 
     OrdersGetterImpl( Credentials& creds,
-                        const string& account_id,
-                        unsigned int nmax_results,
-                        const string& from_entered_time,
-                        const string& to_entered_time,
-                        OrderStatusType order_status_type )
+                      const string& account_id,
+                      unsigned int nmax_results,
+                      const string& from_entered_time,
+                      const string& to_entered_time,
+                      OrderStatusType order_status_type )
         :
             AccountGetterBaseImpl(creds, account_id),
             _nmax_results(nmax_results),
@@ -558,13 +562,13 @@ public:
             if( nmax_results < 1 ){
                 TDMA_API_THROW(ValueException,"nmax_results < 1");
             }
-            if( !util::is_valid_iso8601_datetime(from_entered_time) ){
+            if( !is_valid_iso8601_datetime(from_entered_time) ){
                 TDMA_API_THROW( ValueException,
                     "invalid ISO-8601 date/time: " + from_entered_time );
             }
-            if( !util::is_valid_iso8601_datetime(to_entered_time) ){
-                    TDMA_API_THROW( ValueException,
-                        "invalid ISO-8601 date/time: " + to_entered_time );
+            if( !is_valid_iso8601_datetime(to_entered_time) ){
+                TDMA_API_THROW( ValueException,
+                    "invalid ISO-8601 date/time: " + to_entered_time );
             }
             _build();
         }
@@ -590,6 +594,7 @@ public:
     {
         if( nmax_results < 1 )
             TDMA_API_THROW(ValueException,"nmax_results < 1");
+
         _nmax_results = nmax_results;
         build();
     }
@@ -597,22 +602,24 @@ public:
     void
     set_from_entered_time(const string& from_entered_time)
     {
-        _from_entered_time = from_entered_time;
-        if( !util::is_valid_iso8601_datetime(from_entered_time) ){
+        if( !is_valid_iso8601_datetime(from_entered_time) ){
             TDMA_API_THROW( ValueException,
-                "invalid ISO-8601 date/time: " + from_entered_time );
+                            "invalid ISO-8601 date/time: " + from_entered_time );
         }
+
+        _from_entered_time = from_entered_time;
         build();
     }
 
     void
     set_to_entered_time(const string& to_entered_time)
     {
-        _to_entered_time = to_entered_time;
-        if( !util::is_valid_iso8601_datetime(to_entered_time) ){
-                TDMA_API_THROW( ValueException,
-                    "invalid ISO-8601 date/time: " + to_entered_time );
+        if( !is_valid_iso8601_datetime(to_entered_time) ){
+            TDMA_API_THROW( ValueException,
+                            "invalid ISO-8601 date/time: " + to_entered_time );
         }
+
+        _to_entered_time = to_entered_time;
         build();
     }
 
@@ -652,11 +659,11 @@ AccountGetterBase_SetAccountId_ABI( Getter_C *pgetter,
 
 int
 AccountInfoGetter_Create_ABI( struct Credentials *pcreds,
-                                 const char* account_id,
-                                 int positions,
-                                 int orders,
-                                 AccountInfoGetter_C *pgetter,
-                                 int allow_exceptions)
+                              const char* account_id,
+                              int positions,
+                              int orders,
+                              AccountInfoGetter_C *pgetter,
+                              int allow_exceptions )
 {
     using ImplTy = AccountInfoGetterImpl;
 
@@ -687,15 +694,15 @@ AccountInfoGetter_Create_ABI( struct Credentials *pcreds,
 
 int
 AccountInfoGetter_Destroy_ABI( AccountInfoGetter_C *pgetter,
-                                  int allow_exceptions )
+                               int allow_exceptions )
 {
     return destroy_proxy<AccountInfoGetterImpl>(pgetter, allow_exceptions);
 }
 
 int
 AccountInfoGetter_ReturnsPositions_ABI( AccountInfoGetter_C *pgetter,
-                                            int *returns_positions,
-                                            int allow_exceptions )
+                                        int *returns_positions,
+                                        int allow_exceptions )
 {
     return ImplAccessor<int>::template
         get<AccountInfoGetterImpl, bool>(
@@ -706,8 +713,8 @@ AccountInfoGetter_ReturnsPositions_ABI( AccountInfoGetter_C *pgetter,
 
 int
 AccountInfoGetter_ReturnPositions_ABI( AccountInfoGetter_C *pgetter,
-                                            int return_positions,
-                                            int allow_exceptions )
+                                       int return_positions,
+                                       int allow_exceptions )
 {
     return ImplAccessor<int>::template
         set<AccountInfoGetterImpl, bool>(
@@ -718,8 +725,8 @@ AccountInfoGetter_ReturnPositions_ABI( AccountInfoGetter_C *pgetter,
 
 int
 AccountInfoGetter_ReturnsOrders_ABI( AccountInfoGetter_C *pgetter,
-                                            int *returns_orders,
-                                            int allow_exceptions )
+                                     int *returns_orders,
+                                     int allow_exceptions )
 {
     return ImplAccessor<int>::template
         get<AccountInfoGetterImpl, bool>(
@@ -730,8 +737,8 @@ AccountInfoGetter_ReturnsOrders_ABI( AccountInfoGetter_C *pgetter,
 
 int
 AccountInfoGetter_ReturnOrders_ABI( AccountInfoGetter_C *pgetter,
-                                            int return_orders,
-                                            int allow_exceptions )
+                                    int return_orders,
+                                    int allow_exceptions )
 {
     return ImplAccessor<int>::template
         set<AccountInfoGetterImpl, bool>(
@@ -742,9 +749,9 @@ AccountInfoGetter_ReturnOrders_ABI( AccountInfoGetter_C *pgetter,
 
 int
 PreferencesGetter_Create_ABI( struct Credentials *pcreds,
-                                 const char* account_id,
-                                 PreferencesGetter_C *pgetter,
-                                 int allow_exceptions )
+                              const char* account_id,
+                              PreferencesGetter_C *pgetter,
+                              int allow_exceptions )
 {
     using ImplTy = PreferencesGetterImpl;
 
@@ -774,7 +781,7 @@ PreferencesGetter_Create_ABI( struct Credentials *pcreds,
 
 int
 PreferencesGetter_Destroy_ABI( PreferencesGetter_C *pgetter,
-                                  int allow_exceptions )
+                               int allow_exceptions )
 { return destroy_proxy<PreferencesGetterImpl>(pgetter, allow_exceptions); }
 
 
@@ -826,13 +833,13 @@ StreamerSubscriptionKeysGetter_Destroy_ABI(
 
 int
 TransactionHistoryGetter_Create_ABI( struct Credentials *pcreds,
-                                         const char* account_id,
-                                         int transaction_type,
-                                         const char* symbol,
-                                         const char* start_date,
-                                         const char* end_date,
-                                         TransactionHistoryGetter_C *pgetter,
-                                         int allow_exceptions)
+                                     const char* account_id,
+                                     int transaction_type,
+                                     const char* symbol,
+                                     const char* start_date,
+                                     const char* end_date,
+                                     TransactionHistoryGetter_C *pgetter,
+                                     int allow_exceptions )
 {
     using ImplTy = TransactionHistoryGetterImpl;
 
@@ -1062,12 +1069,12 @@ IndividualTransactionHistoryGetter_SetTransactionId_ABI(
 
 int
 UserPrincipalsGetter_Create_ABI( struct Credentials *pcreds,
-                                     int streamer_subscription_keys,
-                                     int streamer_connection_info,
-                                     int preferences,
-                                     int surrogate_ids,
-                                     UserPrincipalsGetter_C *pgetter,
-                                     int allow_exceptions )
+                                 int streamer_subscription_keys,
+                                 int streamer_connection_info,
+                                 int preferences,
+                                 int surrogate_ids,
+                                 UserPrincipalsGetter_C *pgetter,
+                                 int allow_exceptions )
 {
     using ImplTy = UserPrincipalsGetterImpl;
 
@@ -1098,7 +1105,7 @@ UserPrincipalsGetter_Create_ABI( struct Credentials *pcreds,
 
 int
 UserPrincipalsGetter_Destroy_ABI( UserPrincipalsGetter_C *pgetter,
-                                      int allow_exceptions )
+                                  int allow_exceptions )
 { return destroy_proxy<UserPrincipalsGetterImpl>(pgetter, allow_exceptions); }
 
 int
@@ -1216,10 +1223,10 @@ UserPrincipalsGetter_ReturnSurrogateIds_ABI(
 
 int
 OrderGetter_Create_ABI( Credentials *pcreds,
-                           const char* account_id,
-                           const char* order_id,
-                           OrderGetter_C *pgetter,
-                           int allow_exceptions )
+                        const char* account_id,
+                        const char* order_id,
+                        OrderGetter_C *pgetter,
+                        int allow_exceptions )
 {
     using ImplTy = OrderGetterImpl;
 
@@ -1257,9 +1264,9 @@ OrderGetter_Destroy_ABI(OrderGetter_C *pgetter, int allow_exceptions)
 
 int
 OrderGetter_GetOrderId_ABI( OrderGetter_C *pgetter,
-                               char **buf,
-                               size_t *n,
-                               int allow_exceptions)
+                            char **buf,
+                            size_t *n,
+                            int allow_exceptions)
 {
     return ImplAccessor<char**>::template get<OrderGetterImpl>(
         pgetter, &OrderGetterImpl::get_order_id, buf, n, allow_exceptions
@@ -1269,8 +1276,8 @@ OrderGetter_GetOrderId_ABI( OrderGetter_C *pgetter,
 
 int
 OrderGetter_SetOrderId_ABI( OrderGetter_C *pgetter,
-                               const char *order_id,
-                               int allow_exceptions )
+                            const char *order_id,
+                            int allow_exceptions )
 {
     return ImplAccessor<char**>::template set<OrderGetterImpl>(
         pgetter, &OrderGetterImpl::set_order_id, order_id, allow_exceptions
@@ -1280,13 +1287,13 @@ OrderGetter_SetOrderId_ABI( OrderGetter_C *pgetter,
 
 int
 OrdersGetter_Create_ABI( struct Credentials *pcreds,
-                            const char* account_id,
-                            unsigned int nmax_results,
-                            const char* from_entered_time,
-                            const char* to_entered_time,
-                            int order_status_type,
-                            OrdersGetter_C *pgetter,
-                            int allow_exceptions )
+                         const char* account_id,
+                         unsigned int nmax_results,
+                         const char* from_entered_time,
+                         const char* to_entered_time,
+                         int order_status_type,
+                         OrdersGetter_C *pgetter,
+                         int allow_exceptions )
 {
     using ImplTy = OrdersGetterImpl;
 
@@ -1330,8 +1337,8 @@ OrdersGetter_Destroy_ABI(OrdersGetter_C *pgetter, int allow_exceptions)
 
 int
 OrdersGetter_GetNMaxResults_ABI( OrdersGetter_C *pgetter,
-                                     unsigned int *nmax_results,
-                                    int allow_exceptions)
+                                 unsigned int *nmax_results,
+                                 int allow_exceptions)
 {
     return ImplAccessor<unsigned int>::template
         get<OrdersGetterImpl>(
@@ -1342,8 +1349,8 @@ OrdersGetter_GetNMaxResults_ABI( OrdersGetter_C *pgetter,
 
 int
 OrdersGetter_SetNMaxResults_ABI( OrdersGetter_C *pgetter,
-                                     unsigned int nmax_results,
-                                     int allow_exceptions )
+                                 unsigned int nmax_results,
+                                 int allow_exceptions )
 {
     return ImplAccessor<unsigned int>::template
         set<OrdersGetterImpl>(
@@ -1354,9 +1361,9 @@ OrdersGetter_SetNMaxResults_ABI( OrdersGetter_C *pgetter,
 
 int
 OrdersGetter_GetFromEnteredTime_ABI( OrdersGetter_C *pgetter,
-                                         char** buf,
-                                         size_t *n,
-                                         int allow_exceptions )
+                                     char** buf,
+                                     size_t *n,
+                                     int allow_exceptions )
 {
     return ImplAccessor<char**>::template
         get<OrdersGetterImpl>(
@@ -1367,8 +1374,8 @@ OrdersGetter_GetFromEnteredTime_ABI( OrdersGetter_C *pgetter,
 
 int
 OrdersGetter_SetFromEnteredTime_ABI( OrdersGetter_C *pgetter,
-                                          const char* from_entered_time,
-                                          int allow_exceptions )
+                                     const char* from_entered_time,
+                                     int allow_exceptions )
 {
     return ImplAccessor<char**>::template
         set<OrdersGetterImpl>(
@@ -1379,9 +1386,9 @@ OrdersGetter_SetFromEnteredTime_ABI( OrdersGetter_C *pgetter,
 
 int
 OrdersGetter_GetToEnteredTime_ABI( OrdersGetter_C *pgetter,
-                                       char** buf,
-                                       size_t *n,
-                                       int allow_exceptions )
+                                   char** buf,
+                                   size_t *n,
+                                   int allow_exceptions )
 {
     return ImplAccessor<char**>::template
         get<OrdersGetterImpl>(
@@ -1392,8 +1399,8 @@ OrdersGetter_GetToEnteredTime_ABI( OrdersGetter_C *pgetter,
 
 int
 OrdersGetter_SetToEnteredTime_ABI( OrdersGetter_C *pgetter,
-                                        const char* to_entered_time,
-                                        int allow_exceptions )
+                                   const char* to_entered_time,
+                                   int allow_exceptions )
 {
     return ImplAccessor<char**>::template
         set<OrdersGetterImpl>(
@@ -1404,8 +1411,8 @@ OrdersGetter_SetToEnteredTime_ABI( OrdersGetter_C *pgetter,
 
 int
 OrdersGetter_GetOrderStatusType_ABI( OrdersGetter_C *pgetter,
-                                         int *order_status_type,
-                                         int allow_exceptions )
+                                     int *order_status_type,
+                                     int allow_exceptions )
 {
     return ImplAccessor<int>::template
         get<OrdersGetterImpl, OrderStatusType>(
@@ -1416,8 +1423,8 @@ OrdersGetter_GetOrderStatusType_ABI( OrdersGetter_C *pgetter,
 
 int
 OrdersGetter_SetOrderStatusType_ABI( OrdersGetter_C *pgetter,
-                                         int order_status_type,
-                                         int allow_exceptions )
+                                     int order_status_type,
+                                     int allow_exceptions )
 {
     CHECK_ENUM(OrderStatusType, order_status_type, allow_exceptions);
 

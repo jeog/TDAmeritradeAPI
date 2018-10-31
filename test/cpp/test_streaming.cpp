@@ -8,7 +8,10 @@ using namespace tdma;
 using namespace std;
 
 void
-callback(int cb_type, int ss_type, unsigned long long timestamp, const char* msg )
+callback( int cb_type,
+          int ss_type,
+          unsigned long long timestamp,
+          const char* msg )
 {
     cout<< to_string(static_cast<StreamingCallbackType>(cb_type)) << endl
         << "\t service: "
@@ -19,8 +22,9 @@ callback(int cb_type, int ss_type, unsigned long long timestamp, const char* msg
 
 
 template<typename S>
-void display_sub(S& sub,
-    typename enable_if<is_base_of<SubscriptionBySymbolBase, S>::value, S>::type* _ = nullptr)
+void display_sub( S& sub,
+                  typename enable_if<is_base_of<SubscriptionBySymbolBase, S>
+                      ::value, S>::type* _ = nullptr )
 {
     cout<< "COMMAND: " << sub.get_command() << endl;
     cout<< "SERVICE: " << to_string(sub.get_service()) << endl;
@@ -37,9 +41,10 @@ void display_sub(S& sub,
 }
 
 template<typename S>
-void display_sub(S& sub,
-    typename enable_if<is_base_of<ActivesSubscriptionBase, S>::value &&
-    !is_same<S,OptionActivesSubscription>::value>::type* _ = nullptr)
+void display_sub( S& sub,
+                  typename enable_if<is_base_of<ActivesSubscriptionBase, S>
+                      ::value && !is_same<S,OptionActivesSubscription>::value>
+                          ::type* _ = nullptr )
 {
     cout<< "COMMAND: " << sub.get_command() << endl;
     cout<< "SERVICE: " << to_string(sub.get_service()) << endl;
@@ -55,9 +60,12 @@ void display_sub(OptionActivesSubscription& sub)
 
 template<typename S, typename F>
 void
-test_sub_fields_symbols(S& sub, std::string name, std::set<std::string> symbols,
-                           std::set<F> fields, StreamerServiceType sst,
-                           std::string command="SUBS")
+test_sub_fields_symbols( S& sub,
+                         std::string name,
+                         std::set<std::string> symbols,
+                         std::set<F> fields,
+                         StreamerServiceType sst,
+                         std::string command="SUBS" )
 {
     if( symbols != sub.get_symbols() )
         throw std::runtime_error(name + ": bad symbols");
@@ -72,8 +80,11 @@ test_sub_fields_symbols(S& sub, std::string name, std::set<std::string> symbols,
 
 template<typename S>
 void
-test_sub_duration(S& sub, std::string name, DurationType dt,
-                    StreamerServiceType sst, std::string command="SUBS")
+test_sub_duration( S& sub,
+                   std::string name,
+                   DurationType dt,
+                   StreamerServiceType sst,
+                   std::string command="SUBS" )
 {
     if( dt != sub.get_duration() )
         throw std::runtime_error(name + ": bad duration");
@@ -85,9 +96,12 @@ test_sub_duration(S& sub, std::string name, DurationType dt,
 
 template<typename S>
 void
-test_sub_duration_venue(S& sub, std::string name, DurationType dt,
-                           VenueType vt, StreamerServiceType sst,
-                           std::string command="SUBS")
+test_sub_duration_venue( S& sub,
+                         std::string name,
+                         DurationType dt,
+                         VenueType vt,
+                         StreamerServiceType sst,
+                         std::string command="SUBS" )
 {
     if( vt != sub.get_venue() )
         throw std::runtime_error(name + ": bad venue");

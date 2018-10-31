@@ -17,12 +17,17 @@ get_exec_obj_title(OrderType ot, OrderInstruction oi, OrderAssetType oa)
 }
 
 void
-test_simple_exec_obj_json(json j, OrderType ot, OrderInstruction oi,
-                             OrderAssetType oa, string os, size_t q,
-                             double limit_price=0, double stop_price=0,
-                             bool has_children=false,
-                             bool is_single = true,
-                             bool to_stdout=true)
+test_simple_exec_obj_json( json j,
+                           OrderType ot,
+                           OrderInstruction oi,
+                           OrderAssetType oa,
+                           string os,
+                           size_t q,
+                           double limit_price=0,
+                           double stop_price=0,
+                           bool has_children=false,
+                           bool is_single = true,
+                           bool to_stdout=true)
 {
     string s;
     string e = get_exec_obj_title(ot, oi, oa);
@@ -282,8 +287,9 @@ test_simple_exec_option_limit()
 }
 
 string
-get_exec_obj_title(OrderType ot, ComplexOrderStrategyType cmplx,
-                      const vector<OrderLeg>& legs)
+get_exec_obj_title( OrderType ot,
+                    ComplexOrderStrategyType cmplx,
+                    const vector<OrderLeg>& legs )
 {
     stringstream ss;
     ss << to_string(cmplx) << "-" << to_string(ot) << "-(";
@@ -297,11 +303,13 @@ get_exec_obj_title(OrderType ot, ComplexOrderStrategyType cmplx,
 }
 
 void
-test_spread_exec_obj_json(json j, OrderType ot, ComplexOrderStrategyType cmplx,
-                             const vector<OrderLeg>& legs, double p = 0,
-                             bool has_children=false,
-                             bool is_single=true,
-                             bool to_stdout=true)
+test_spread_exec_obj_json( json j,
+                           OrderType ot,
+                           ComplexOrderStrategyType cmplx,
+                           const vector<OrderLeg>& legs, double p = 0,
+                           bool has_children=false,
+                           bool is_single=true,
+                           bool to_stdout=true )
 
 {
     string s;

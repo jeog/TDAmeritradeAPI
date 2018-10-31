@@ -177,10 +177,7 @@ streamer_service_from_str(string service_name)
 using namespace tdma;
 
 int
-AdminCommandType_to_string_ABI( int v,
-                                    char** buf,
-                                    size_t* n,
-                                    int allow_exceptions )
+AdminCommandType_to_string_ABI( TDMA_API_TO_STRING_ABI_ARGS )
 {
     CHECK_ENUM(AdminCommandType, v, allow_exceptions);
 
@@ -197,7 +194,7 @@ AdminCommandType_to_string_ABI( int v,
 }
 
 int
-QOSType_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
+QOSType_to_string_ABI( TDMA_API_TO_STRING_ABI_ARGS )
 {
     CHECK_ENUM(QOSType, v, allow_exceptions);
 
@@ -220,10 +217,7 @@ QOSType_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
 }
 
 int
-DurationType_to_string_ABI( int v,
-                               char** buf,
-                               size_t* n,
-                               int allow_exceptions )
+DurationType_to_string_ABI( TDMA_API_TO_STRING_ABI_ARGS )
 {
     CHECK_ENUM(DurationType, v, allow_exceptions);
 
@@ -246,7 +240,7 @@ DurationType_to_string_ABI( int v,
 }
 
 int
-VenueType_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
+VenueType_to_string_ABI( TDMA_API_TO_STRING_ABI_ARGS )
 {
     CHECK_ENUM(VenueType, v, allow_exceptions);
 
@@ -268,10 +262,7 @@ VenueType_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
 }
 
 int
-StreamingCallbackType_to_string_ABI( int v,
-                                          char** buf,
-                                          size_t* n,
-                                          int allow_exceptions )
+StreamingCallbackType_to_string_ABI( TDMA_API_TO_STRING_ABI_ARGS )
 {
     CHECK_ENUM(StreamingCallbackType, v, allow_exceptions);
 
@@ -296,10 +287,7 @@ StreamingCallbackType_to_string_ABI( int v,
 }
 
 int
-StreamerServiceType_to_string_ABI( int v,
-                                       char** buf,
-                                       size_t* n,
-                                       int allow_exceptions )
+StreamerServiceType_to_string_ABI( TDMA_API_TO_STRING_ABI_ARGS )
 {
     if( v ){ // ::NONE (0) can't be allowed to fail in this particular case
         CHECK_ENUM(StreamerServiceType, v, allow_exceptions);
@@ -355,7 +343,7 @@ StreamerServiceType_to_string_ABI( int v,
 /* TODO return actual strings for fields */
 #define DEF_TEMP_FIELD_TO_STRING(name) \
 int \
-name##_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions) \
+name##_to_string_ABI( TDMA_API_TO_STRING_ABI_ARGS ) \
 { \
     CHECK_ENUM(name, v, allow_exceptions); \
     return to_new_char_buffer( \

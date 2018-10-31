@@ -60,8 +60,8 @@ public:
     static const int TYPE_ID_HIGH = TYPE_ID_GETTER_INSTRUMENT_INFO;
 
     InstrumentInfoGetterImpl( Credentials& creds,
-                                 InstrumentSearchType search_type,
-                                 const string& query_string )
+                              InstrumentSearchType search_type,
+                              const string& query_string )
         :
             APIGetterImpl(creds, query_api_on_error_callback),
             _query_string(query_string),
@@ -69,6 +69,7 @@ public:
         {
             if( query_string.empty() )
                 TDMA_API_THROW(ValueException,"empty query_string");
+
             _build();
         }
 
@@ -85,6 +86,7 @@ public:
     {
         if( query_string.empty() )
             TDMA_API_THROW(ValueException,"empty query_string");
+
         _search_type = search_type;
         _query_string = query_string;
         build();
@@ -97,10 +99,10 @@ using namespace tdma;
 
 int
 InstrumentInfoGetter_Create_ABI( struct Credentials *pcreds,
-                                     int search_type,
-                                     const char* query_string,
-                                     InstrumentInfoGetter_C *pgetter,
-                                     int allow_exceptions )
+                                 int search_type,
+                                 const char* query_string,
+                                 InstrumentInfoGetter_C *pgetter,
+                                 int allow_exceptions )
 {
     using ImplTy = InstrumentInfoGetterImpl;
 
@@ -133,13 +135,13 @@ InstrumentInfoGetter_Create_ABI( struct Credentials *pcreds,
 
 int
 InstrumentInfoGetter_Destroy_ABI( InstrumentInfoGetter_C *pgetter,
-                                      int allow_exceptions )
+                                  int allow_exceptions )
 { return destroy_proxy<InstrumentInfoGetterImpl>(pgetter, allow_exceptions); }
 
 int
 InstrumentInfoGetter_GetSearchType_ABI( InstrumentInfoGetter_C *pgetter,
-                                              int *search_type,
-                                              int allow_exceptions )
+                                        int *search_type,
+                                        int allow_exceptions )
 {
     return ImplAccessor<int>::template
         get<InstrumentInfoGetterImpl, InstrumentSearchType>(
@@ -150,9 +152,9 @@ InstrumentInfoGetter_GetSearchType_ABI( InstrumentInfoGetter_C *pgetter,
 
 int
 InstrumentInfoGetter_GetQueryString_ABI( InstrumentInfoGetter_C *pgetter,
-                                              char **buf,
-                                              size_t *n,
-                                              int allow_exceptions )
+                                         char **buf,
+                                         size_t *n,
+                                         int allow_exceptions )
 {
     return ImplAccessor<char**>::template
         get<InstrumentInfoGetterImpl>(
@@ -163,9 +165,9 @@ InstrumentInfoGetter_GetQueryString_ABI( InstrumentInfoGetter_C *pgetter,
 
 int
 InstrumentInfoGetter_SetQuery_ABI( InstrumentInfoGetter_C *pgetter,
-                                       int search_type,
-                                       const char* query_string,
-                                       int allow_exceptions )
+                                   int search_type,
+                                   const char* query_string,
+                                   int allow_exceptions )
 {
     CHECK_ENUM(InstrumentSearchType, search_type,allow_exceptions);
 

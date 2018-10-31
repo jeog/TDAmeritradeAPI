@@ -24,9 +24,9 @@ using std::vector;
 namespace tdma{
 
 OrderLegImpl::OrderLegImpl( OrderAssetType asset_type,
-                               string symbol,
-                               OrderInstruction instruction,
-                               size_t quantity )
+                            string symbol,
+                            OrderInstruction instruction,
+                            size_t quantity )
     :
         _asset_type(asset_type),
         _symbol( util::toupper(symbol) ),
@@ -110,11 +110,11 @@ using namespace tdma;
 
 int
 OrderLeg_Create_ABI( int asset_type,
-                        const char* symbol,
-                        int instruction,
-                        size_t quantity,
-                        OrderLeg_C *pleg,
-                        int allow_exceptions )
+                     const char* symbol,
+                     int instruction,
+                     size_t quantity,
+                     OrderLeg_C *pleg,
+                     int allow_exceptions )
 {
     CHECK_PTR(pleg, "order leg", allow_exceptions);
     CHECK_PTR_KILL_PROXY(symbol, "symbol", allow_exceptions, pleg);
@@ -168,16 +168,16 @@ OrderLeg_Copy_ABI( OrderLeg_C *from, OrderLeg_C *to, int allow_exceptions  )
 
 int
 OrderLeg_IsSame_ABI( OrderLeg_C* pl,
-                        OrderLeg_C* pr,
-                        int *is_same,
-                        int allow_exceptions )
+                     OrderLeg_C* pr,
+                     int *is_same,
+                     int allow_exceptions )
 { return order_obj_is_same<OrderLegImpl>(pl, pr, is_same, allow_exceptions); }
 
 
 int
 OrderLeg_GetAssetType_ABI( OrderLeg_C* pleg,
-                              int *asset_type,
-                              int allow_exceptions )
+                           int *asset_type,
+                           int allow_exceptions )
 {
     return ImplAccessor<int>::template
         get<OrderLegImpl, OrderAssetType>(
@@ -188,9 +188,9 @@ OrderLeg_GetAssetType_ABI( OrderLeg_C* pleg,
 
 int
 OrderLeg_GetSymbol_ABI( OrderLeg_C* pleg,
-                           char **buf,
-                           size_t *n,
-                          int allow_exceptions )
+                        char **buf,
+                        size_t *n,
+                        int allow_exceptions )
 {
     return ImplAccessor<char**>::template
         get<OrderLegImpl>(
@@ -201,8 +201,8 @@ OrderLeg_GetSymbol_ABI( OrderLeg_C* pleg,
 
 int
 OrderLeg_GetInstruction_ABI( OrderLeg_C* pleg,
-                                int *instruction,
-                                int allow_exceptions )
+                             int *instruction,
+                             int allow_exceptions )
 {
     return ImplAccessor<int>::template
         get<OrderLegImpl, OrderInstruction>(
@@ -213,8 +213,8 @@ OrderLeg_GetInstruction_ABI( OrderLeg_C* pleg,
 
 int
 OrderLeg_GetQuantity_ABI( OrderLeg_C* pleg,
-                             size_t *quantity,
-                             int allow_exceptions )
+                          size_t *quantity,
+                          int allow_exceptions )
 {
     return ImplAccessor<size_t>::template
         get<OrderLegImpl>(pleg, &OrderLegImpl::get_quantity,
@@ -224,8 +224,8 @@ OrderLeg_GetQuantity_ABI( OrderLeg_C* pleg,
 
 int
 OrderLeg_AsJsonString_ABI( OrderLeg_C* pleg,
-                              char **buf,
-                              size_t *n,
+                           char **buf,
+                           size_t *n,
                               int allow_exceptions )
 {
     return ImplAccessor<char**>::template

@@ -26,7 +26,7 @@ along with this program.  If not, see http://www.gnu.org/licenses.
 #include "../../include/_get.h"
 
 using std::string;
-
+using util::is_valid_iso8601_datetime;
 
 namespace tdma {
 
@@ -54,15 +54,16 @@ public:
     static const int TYPE_ID_HIGH = TYPE_ID_GETTER_MARKET_HOURS;
 
     MarketHoursGetterImpl( Credentials& creds,
-                              MarketType market_type,
-                              const string& date )
+                           MarketType market_type,
+                           const string& date )
         :
             APIGetterImpl(creds, data_api_on_error_callback),
             _market_type(market_type),
             _date(date)
         {
-            if( !util::is_valid_iso8601_datetime(date) ){
-                TDMA_API_THROW(ValueException,"invalid ISO-8601 date/time: " + date);
+            if( !is_valid_iso8601_datetime(date) ){
+                TDMA_API_THROW( ValueException,
+                                "invalid ISO-8601 date/time: " + date );
             }
             _build();
         }
@@ -86,8 +87,9 @@ public:
     void
     set_date(const string& date)
     {
-        if( !util::is_valid_iso8601_datetime(date) ){
-            TDMA_API_THROW(ValueException,"invalid ISO-8601 date/time: " + date);
+        if( !is_valid_iso8601_datetime(date) ){
+            TDMA_API_THROW( ValueException,
+                            "invalid ISO-8601 date/time: " + date );
         }
         _date = date;
         build();
@@ -102,10 +104,10 @@ using namespace tdma;
 
 int
 MarketHoursGetter_Create_ABI( struct Credentials *pcreds,
-                                 int market_type,
-                                 const char* date,
-                                 MarketHoursGetter_C *pgetter,
-                                 int allow_exceptions )
+                              int market_type,
+                              const char* date,
+                              MarketHoursGetter_C *pgetter,
+                              int allow_exceptions )
 {
     using ImplTy = MarketHoursGetterImpl;
 
@@ -137,7 +139,7 @@ MarketHoursGetter_Create_ABI( struct Credentials *pcreds,
 
 int
 MarketHoursGetter_Destroy_ABI( MarketHoursGetter_C *pgetter,
-                                  int allow_exceptions )
+                               int allow_exceptions )
 {
     return destroy_proxy<MarketHoursGetterImpl>(pgetter, allow_exceptions);
 }
@@ -145,8 +147,8 @@ MarketHoursGetter_Destroy_ABI( MarketHoursGetter_C *pgetter,
 
 int
 MarketHoursGetter_GetMarketType_ABI( MarketHoursGetter_C *pgetter,
-                                          int *market_type,
-                                          int allow_exceptions)
+                                     int *market_type,
+                                     int allow_exceptions )
 {
     return ImplAccessor<int>::template
         get<MarketHoursGetterImpl, MarketType>(
@@ -158,8 +160,8 @@ MarketHoursGetter_GetMarketType_ABI( MarketHoursGetter_C *pgetter,
 
 int
 MarketHoursGetter_SetMarketType_ABI( MarketHoursGetter_C *pgetter,
-                                         int market_type,
-                                         int allow_exceptions )
+                                     int market_type,
+                                     int allow_exceptions )
 {
     CHECK_ENUM(MarketType, market_type, allow_exceptions);
 
@@ -173,9 +175,9 @@ MarketHoursGetter_SetMarketType_ABI( MarketHoursGetter_C *pgetter,
 
 int
 MarketHoursGetter_GetDate_ABI( MarketHoursGetter_C *pgetter,
-                                   char **buf,
-                                   size_t *n,
-                                   int allow_exceptions)
+                               char **buf,
+                               size_t *n,
+                               int allow_exceptions )
 {
     return ImplAccessor<char**>::template get<MarketHoursGetterImpl>(
         pgetter, &MarketHoursGetterImpl::get_date, buf, n, allow_exceptions
@@ -185,8 +187,8 @@ MarketHoursGetter_GetDate_ABI( MarketHoursGetter_C *pgetter,
 
 int
 MarketHoursGetter_SetDate_ABI( MarketHoursGetter_C *pgetter,
-                                  const char* date,
-                                  int allow_exceptions )
+                               const char* date,
+                               int allow_exceptions )
 {
     return ImplAccessor<char**>::template set<MarketHoursGetterImpl>(
         pgetter, &MarketHoursGetterImpl::set_date, date, allow_exceptions

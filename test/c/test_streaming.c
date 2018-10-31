@@ -25,7 +25,10 @@ const int TYPE_ID_SUB_ACTIVES_OPTION = 18;
 const int TYPE_ID_STREAMING_SESSION = 100;
 
 void
-streaming_callback( int cb_type, int ss_type, unsigned long long ts, const char* msg)
+streaming_callback( int cb_type,
+                    int ss_type,
+                    unsigned long long ts,
+                    const char* msg )
 {
     int err;
     char *buf = NULL;

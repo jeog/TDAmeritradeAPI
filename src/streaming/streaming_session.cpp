@@ -58,6 +58,8 @@ using std::chrono::milliseconds;
 
 namespace tdma{
 
+using std::to_string;
+
 class StreamingSessionImpl;
 
 void
@@ -72,7 +74,7 @@ class AdminSubscriptionImpl
         : public StreamingSubscriptionImpl {
 public:
     AdminSubscriptionImpl( AdminCommandType command,
-                              const map<string, string>& params = {} )
+                           const map<string, string>& params = {} )
         :
             StreamingSubscriptionImpl( StreamerServiceType::ADMIN,
                                        to_string(command), params )
@@ -187,7 +189,7 @@ public:
     {
         return {
            {"service", to_string(_service)},
-           {"requestid", std::to_string(_request_id)},
+           {"requestid", to_string(_request_id)},
            {"command", _command},
            {"account", _account_id},
            {"source", _source_id},
@@ -206,14 +208,15 @@ public:
     {}
 
     StreamingRequests( const vector<StreamingSubscriptionImpl>& subscriptions,
-                         const string& account_id,
-                         const string& source_id,
-                         const vector<int>& request_ids )
+                       const string& account_id,
+                       const string& source_id,
+                       const vector<int>& request_ids )
         {
             assert( subscriptions.size() == request_ids.size() );
+
             for( size_t i = 0; i < subscriptions.size(); ++i ){
-                _requests.emplace_back( subscriptions[i], account_id, source_id,
-                                        request_ids[i] );
+                _requests.emplace_back( subscriptions[i], account_id,
+                                        source_id, request_ids[i] );
             }
         }
 
@@ -318,18 +321,18 @@ class StreamingSessionImpl{
 
     void
     _subscribe( const vector<StreamingSubscriptionImpl>& subscriptions,
-                 PendingResponse::response_cb_ty callback = nullptr );
+                PendingResponse::response_cb_ty callback = nullptr );
 
     void
     _exec_callback( StreamingCallbackType cb_type,
-                      StreamerServiceType ss_type,
-                      unsigned long long ts,
-                      json j )
+                    StreamerServiceType ss_type,
+                    unsigned long long ts,
+                    json j )
     {
-        if( _callback )
+        if( _callback ){
             _callback( static_cast<int>(cb_type), static_cast<int>(ss_type),
-                       ts, j.dump().c_str()
-                       );
+                       ts, j.dump().c_str() );
+        }
     }
 
 public:
@@ -338,10 +341,10 @@ public:
     typedef StreamingSession ProxyType;
 
     StreamingSessionImpl( const StreamerInfo& streamer_info,
-                            streaming_cb_ty callback,
-                            milliseconds connect_timeout,
-                            milliseconds listening_timeout,
-                            milliseconds subscribe_timeout )
+                          streaming_cb_ty callback,
+                          milliseconds connect_timeout,
+                          milliseconds listening_timeout,
+                          milliseconds subscribe_timeout )
         :
             _streamer_info( streamer_info ),
             _client(nullptr),
@@ -349,9 +352,9 @@ public:
             _connect_timeout( max(connect_timeout,
                                   StreamingSession::MIN_TIMEOUT) ),
             _listening_timeout( max(listening_timeout,
-                                StreamingSession::MIN_LISTENING_TIMEOUT) ),
+                                    StreamingSession::MIN_LISTENING_TIMEOUT) ),
             _subscribe_timeout( max(listening_timeout,
-                                StreamingSession::MIN_TIMEOUT) ),
+                                    StreamingSession::MIN_TIMEOUT) ),
             _listener_thread(),
             _server_id(),
             _next_request_id(0),
@@ -363,12 +366,9 @@ public:
         {
             D("construct", this);
             D("primary account: " + streamer_info.primary_acct_id, this);
-            D("connect_timeout: " + std::to_string(connect_timeout.count()),
-                this);
-            D("listening_timeout: " + std::to_string(listening_timeout.count()),
-                this);
-            D("subscribe_timeout: " + std::to_string(subscribe_timeout.count()),
-                this);
+            D("connect_timeout: " + to_string(connect_timeout.count()), this);
+            D("listening_timeout: " + to_string(listening_timeout.count()), this);
+            D("subscribe_timeout: " + to_string(subscribe_timeout.count()), this);
         }
 
     virtual
@@ -671,8 +671,10 @@ StreamingSessionImpl::_login()
         TDMA_API_THROW(StreamingException,"invalid response JSON");
 
     string response_ty = r.key();
-    if( response_ty != "response" )
-        TDMA_API_THROW(StreamingException,"invalid login response: " + response_ty);
+    if( response_ty != "response" ){
+        TDMA_API_THROW( StreamingException,
+                        "invalid login response: " + response_ty );
+    }
 
     auto info = r.value()[0];
     string service = info["service"];
@@ -681,7 +683,7 @@ StreamingSessionImpl::_login()
 
     if( service != to_string(StreamerServiceType::ADMIN) ||
         command != to_string(AdminCommandType::LOGIN ) ||
-        response_req_id != std::to_string(req_id) )
+        response_req_id != to_string(req_id) )
     {
         /*
          *  since login is first we can assume no other responses will be on 
@@ -772,7 +774,7 @@ StreamingSessionImpl::_logout()
 
             if( service == to_string(StreamerServiceType::ADMIN) &&
                 command == to_string(AdminCommandType::LOGOUT ) &&
-                response_req_id == std::to_string(req_id) )
+                response_req_id == to_string(req_id) )
             {
                 auto content = info["content"];
                 int code = content["code"];
@@ -815,8 +817,10 @@ StreamingSessionImpl::set_qos(const QOSType& qos)
 {
     if( _client ){
         assert( _client->is_connected() );
-    }else
-        TDMA_API_THROW(StreamingException,"can not set QOS on a stopped session");
+    }else{
+        TDMA_API_THROW( StreamingException,
+                        "can not set QOS on a stopped session" );
+    }
 
     std::shared_ptr<PendingResponseBundle> bndl(new PendingResponseBundle());
     PendingResponse::response_cb_ty cb =
@@ -843,7 +847,7 @@ StreamingSessionImpl::set_qos(const QOSType& qos)
 
     AdminSubscriptionImpl sub(
         AdminCommandType::QOS,
-        {{"qoslevel", std::to_string(static_cast<int>(qos))}}
+        {{"qoslevel", to_string(static_cast<int>(qos))}}
     );
     _subscribe( {sub}, cb );
 
@@ -906,13 +910,15 @@ StreamingSessionImpl::_subscribe(
 
 deque<bool>
 StreamingSessionImpl::add_subscriptions(
-        const vector<StreamingSubscriptionImpl>& subscriptions
-        )
+    const vector<StreamingSubscriptionImpl>& subscriptions
+    )
 {
     if( _client ){
         assert( _client->is_connected() );
-    }else
-        TDMA_API_THROW(StreamingException,"can not add subscriptions to a stopped session");
+    }else{
+        TDMA_API_THROW( StreamingException,
+                        "can not add subscriptions to a stopped session" );
+    }
 
     if( subscriptions.empty() )
         return {};
@@ -957,7 +963,9 @@ StreamingSessionImpl::add_subscriptions(
 
 
 deque<bool>
-StreamingSessionImpl::start(const vector<StreamingSubscriptionImpl>& subscriptions)
+StreamingSessionImpl::start(
+    const vector<StreamingSubscriptionImpl>& subscriptions
+    )
 {
     D("start", this);
 
@@ -969,9 +977,11 @@ StreamingSessionImpl::start(const vector<StreamingSubscriptionImpl>& subscriptio
 
     D("check unique session", this);
     string acct = get_primary_account_id();
-    if( active_accounts.count(acct) )
-        TDMA_API_THROW(StreamingException, "Can not start Session; "
-            "one is already active for this primary account: " + acct );
+    if( active_accounts.count(acct) ){
+        TDMA_API_THROW( StreamingException,
+                        "Can not start Session; one is already active "
+                        "for this primary account: " + acct );
+    }
 
     D("_client->reset", this);
     _client.reset( new conn::WebSocketClient(_streamer_info.url) );
@@ -980,7 +990,8 @@ StreamingSessionImpl::start(const vector<StreamingSubscriptionImpl>& subscriptio
     _client->connect( _connect_timeout );
     if( !_client->is_connected() ){
         _client.reset();
-        TDMA_API_THROW(StreamingException,"streaming session failed to connect");
+        TDMA_API_THROW( StreamingException,
+                        "streaming session failed to connect" );
     }
 
     _logged_in = _login();
@@ -1080,10 +1091,11 @@ call_session_with_subs(
     if( err )
         return err;
 
-    if( nsubs > STREAMING_MAX_SUBSCRIPTIONS )
-        return HANDLE_ERROR(ValueException,
-            "nsubs > STREAMING_MAX_SUBSCRIPTIONS", allow_exceptions
-            );
+    if( nsubs > STREAMING_MAX_SUBSCRIPTIONS ){
+        return HANDLE_ERROR( ValueException,
+                             "nsubs > STREAMING_MAX_SUBSCRIPTIONS",
+                             allow_exceptions );
+    }
 
     if( nsubs == 0 )
         return HANDLE_ERROR(ValueException,"nsubs == 0", allow_exceptions);
@@ -1122,21 +1134,22 @@ using namespace tdma;
 
 int
 StreamingSession_Create_ABI( struct Credentials *pcreds,
-                                streaming_cb_ty callback,
-                                unsigned long connect_timeout,
-                                unsigned long listening_timeout,
-                                unsigned long subscribe_timeout,
-                                StreamingSession_C *psession,
-                                int allow_exceptions )
+                             streaming_cb_ty callback,
+                             unsigned long connect_timeout,
+                             unsigned long listening_timeout,
+                             unsigned long subscribe_timeout,
+                             StreamingSession_C *psession,
+                             int allow_exceptions )
 {
     CHECK_PTR(psession, "session", allow_exceptions);
     CHECK_PTR_KILL_PROXY(pcreds, "credentials", allow_exceptions, psession);
     CHECK_PTR_KILL_PROXY(callback, "callback", allow_exceptions, psession);
 
-    if( !pcreds->access_token | !pcreds->refresh_token | !pcreds->client_id )
-        return HANDLE_ERROR_EX(LocalCredentialException,
-            "invalid credentials struct", allow_exceptions, psession
-            );
+    if( !pcreds->access_token | !pcreds->refresh_token | !pcreds->client_id ){
+        return HANDLE_ERROR_EX( LocalCredentialException,
+                                "invalid credentials struct",
+                                allow_exceptions, psession );
+    }
 
     static auto meth = +[](struct Credentials *pcreds, streaming_cb_ty cb,
                            unsigned long cto, unsigned long lto,
@@ -1150,8 +1163,8 @@ StreamingSession_Create_ABI( struct Credentials *pcreds,
     int err;
     StreamingSessionImpl *obj;
     tie(obj, err) = CallImplFromABI( allow_exceptions, meth, pcreds,
-                                          callback, connect_timeout,
-                                          listening_timeout, subscribe_timeout);
+                                     callback, connect_timeout,
+                                     listening_timeout, subscribe_timeout);
     if( err ){
         kill_proxy(psession);
         return err;
@@ -1166,16 +1179,16 @@ StreamingSession_Create_ABI( struct Credentials *pcreds,
 
 int
 StreamingSession_Destroy_ABI( StreamingSession_C *psession,
-                                 int allow_exceptions )
+                              int allow_exceptions )
 
 { return destroy_proxy<StreamingSessionImpl>(psession, allow_exceptions); }
 
 int
 StreamingSession_Start_ABI( StreamingSession_C *psession,
-                               StreamingSubscription_C **subs,
-                               size_t nsubs,
-                               int *results_buffer,
-                               int allow_exceptions )
+                            StreamingSubscription_C **subs,
+                            size_t nsubs,
+                            int *results_buffer,
+                            int allow_exceptions )
 {
     auto meth = +[](void *obj, const vector<StreamingSubscriptionImpl>& s){
         return reinterpret_cast<StreamingSessionImpl*>(obj)->start(s);
@@ -1187,7 +1200,7 @@ StreamingSession_Start_ABI( StreamingSession_C *psession,
 
 int
 StreamingSession_Stop_ABI( StreamingSession_C *psession,
-                               int allow_exceptions )
+                           int allow_exceptions )
 {
     int err = proxy_is_callable<StreamingSessionImpl>(psession, allow_exceptions);
     if( err )
@@ -1203,8 +1216,8 @@ StreamingSession_Stop_ABI( StreamingSession_C *psession,
 
 int
 StreamingSession_IsActive_ABI( StreamingSession_C *psession,
-                                   int *is_active,
-                                   int allow_exceptions )
+                               int *is_active,
+                               int allow_exceptions )
 {
     int err = proxy_is_callable<StreamingSessionImpl>(psession, allow_exceptions);
     if( err )
@@ -1222,13 +1235,14 @@ StreamingSession_IsActive_ABI( StreamingSession_C *psession,
 
 int
 StreamingSession_AddSubscriptions_ABI( StreamingSession_C *psession,
-                                           StreamingSubscription_C **subs,
-                                           size_t nsubs,
-                                           int *results_buffer,
-                                           int allow_exceptions )
+                                       StreamingSubscription_C **subs,
+                                       size_t nsubs,
+                                       int *results_buffer,
+                                       int allow_exceptions )
 {
     auto meth = +[](void *obj, const vector<StreamingSubscriptionImpl>& s){
-        return reinterpret_cast<StreamingSessionImpl*>(obj)->add_subscriptions(s);
+        return reinterpret_cast<StreamingSessionImpl*>(obj)
+            ->add_subscriptions(s);
     };
 
     return call_session_with_subs(psession, subs, nsubs, results_buffer,
@@ -1237,9 +1251,9 @@ StreamingSession_AddSubscriptions_ABI( StreamingSession_C *psession,
 
 int
 StreamingSession_SetQOS_ABI( StreamingSession_C *psession,
-                                int qos,
-                                int *result,
-                                int allow_exceptions )
+                             int qos,
+                             int *result,
+                             int allow_exceptions )
 {
     int err = proxy_is_callable<StreamingSessionImpl>(psession, allow_exceptions);
     if( err )
@@ -1249,9 +1263,8 @@ StreamingSession_SetQOS_ABI( StreamingSession_C *psession,
 
     auto meth = +[](void *obj, int q){
         return static_cast<int>(
-            reinterpret_cast<StreamingSessionImpl*>(obj)->set_qos(
-                static_cast<QOSType>(q)
-                )
+            reinterpret_cast<StreamingSessionImpl*>(obj)
+                ->set_qos( static_cast<QOSType>(q) )
             );
     };
 
@@ -1262,8 +1275,8 @@ StreamingSession_SetQOS_ABI( StreamingSession_C *psession,
 
 int
 StreamingSession_GetQOS_ABI( StreamingSession_C *psession,
-                                int *qos,
-                                int allow_exceptions )
+                             int *qos,
+                             int allow_exceptions )
 {
     int err = proxy_is_callable<StreamingSessionImpl>(psession, allow_exceptions);
     if( err )

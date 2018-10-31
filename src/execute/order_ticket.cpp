@@ -26,9 +26,9 @@ namespace {
 template<typename BTy, typename... Args>
 int
 build( int allow_exceptions,
-        BTy build_method,
-        OrderTicket_C *porder,
-        Args... args )
+       BTy build_method,
+       OrderTicket_C *porder,
+       Args... args )
 {
     using namespace tdma;
     CHECK_PTR(porder, "order", allow_exceptions);
@@ -296,8 +296,8 @@ OrderTicket_Destroy_ABI( OrderTicket_C *porder, int allow_exceptions )
 
 int
 OrderTicket_Copy_ABI( OrderTicket_C *from,
-                         OrderTicket_C *to,
-                         int allow_exceptions )
+                      OrderTicket_C *to,
+                      int allow_exceptions )
 {
     CHECK_PTR(to, "to order", allow_exceptions);
 
@@ -323,15 +323,15 @@ OrderTicket_Copy_ABI( OrderTicket_C *from,
 
 int
 OrderTicket_IsSame_ABI( OrderTicket_C* pl,
-                           OrderTicket_C* pr,
-                           int *is_same,
-                           int allow_exceptions )
+                        OrderTicket_C* pr,
+                        int *is_same,
+                        int allow_exceptions )
 { return order_obj_is_same<OrderTicketImpl>(pl, pr, is_same, allow_exceptions); }
 
 int
 OrderTicket_GetSession_ABI( OrderTicket_C *porder,
-                               int *session,
-                               int allow_exceptions )
+                            int *session,
+                            int allow_exceptions )
 {
     return ImplAccessor<int>::template
         get<OrderTicketImpl, OrderSession>(
@@ -342,8 +342,8 @@ OrderTicket_GetSession_ABI( OrderTicket_C *porder,
 
 int
 OrderTicket_SetSession_ABI( OrderTicket_C *porder,
-                               int session,
-                               int allow_exceptions )
+                            int session,
+                            int allow_exceptions )
 {
     CHECK_ENUM(OrderSession, session, allow_exceptions);
 
@@ -355,8 +355,8 @@ OrderTicket_SetSession_ABI( OrderTicket_C *porder,
 
 int
 OrderTicket_GetDuration_ABI( OrderTicket_C *porder,
-                                 int *duration,
-                                 int allow_exceptions )
+                             int *duration,
+                             int allow_exceptions )
 {
     return ImplAccessor<int>::template
         get<OrderTicketImpl, OrderDuration>(
@@ -367,8 +367,8 @@ OrderTicket_GetDuration_ABI( OrderTicket_C *porder,
 
 int
 OrderTicket_SetDuration_ABI( OrderTicket_C *porder,
-                                int duration,
-                                int allow_exceptions )
+                             int duration,
+                             int allow_exceptions )
 {
     CHECK_ENUM(OrderDuration, duration, allow_exceptions);
 
@@ -380,9 +380,9 @@ OrderTicket_SetDuration_ABI( OrderTicket_C *porder,
 
 int
 OrderTicket_GetCancelTime_ABI( OrderTicket_C *porder,
-                                   char **buf,
-                                   size_t* n,
-                                   int allow_exceptions )
+                               char **buf,
+                               size_t* n,
+                               int allow_exceptions )
 {
     return ImplAccessor<char**>::template
         get<OrderTicketImpl>(
@@ -392,8 +392,8 @@ OrderTicket_GetCancelTime_ABI( OrderTicket_C *porder,
 
 int
 OrderTicket_SetCancelTime_ABI( OrderTicket_C *porder,
-                                   const char* cancel_time,
-                                   int allow_exceptions )
+                               const char* cancel_time,
+                               int allow_exceptions )
 {
     return ImplAccessor<char**>::template
         set<OrderTicketImpl>(
@@ -404,8 +404,8 @@ OrderTicket_SetCancelTime_ABI( OrderTicket_C *porder,
 
 int
 OrderTicket_GetType_ABI( OrderTicket_C *porder,
-                            int *order_type,
-                            int allow_exceptions )
+                         int *order_type,
+                         int allow_exceptions )
 {
     return ImplAccessor<int>::template
         get<OrderTicketImpl, OrderType>(
@@ -416,8 +416,8 @@ OrderTicket_GetType_ABI( OrderTicket_C *porder,
 
 int
 OrderTicket_SetType_ABI( OrderTicket_C *porder,
-                            int order_type,
-                            int allow_exceptions )
+                         int order_type,
+                         int allow_exceptions )
 {
     CHECK_ENUM(OrderType, order_type, allow_exceptions);
 
@@ -429,8 +429,8 @@ OrderTicket_SetType_ABI( OrderTicket_C *porder,
 
 int
 OrderTicket_GetComplexStrategyType_ABI( OrderTicket_C *porder,
-                                             int *complex_strategy_type,
-                                             int allow_exceptions )
+                                        int *complex_strategy_type,
+                                        int allow_exceptions )
 {
     return ImplAccessor<int>::template
         get<OrderTicketImpl, ComplexOrderStrategyType>(
@@ -441,8 +441,8 @@ OrderTicket_GetComplexStrategyType_ABI( OrderTicket_C *porder,
 
 int
 OrderTicket_SetComplexStrategyType_ABI( OrderTicket_C *porder,
-                                             int complex_strategy_type,
-                                             int allow_exceptions )
+                                        int complex_strategy_type,
+                                        int allow_exceptions )
 {
     CHECK_ENUM(ComplexOrderStrategyType, complex_strategy_type,
                allow_exceptions);
@@ -456,8 +456,8 @@ OrderTicket_SetComplexStrategyType_ABI( OrderTicket_C *porder,
 
 int
 OrderTicket_GetStrategyType_ABI( OrderTicket_C *porder,
-                                     int *strategy_type,
-                                     int allow_exceptions )
+                                 int *strategy_type,
+                                 int allow_exceptions )
 {
     return ImplAccessor<int>::template
         get<OrderTicketImpl, OrderStrategyType>(
@@ -468,8 +468,8 @@ OrderTicket_GetStrategyType_ABI( OrderTicket_C *porder,
 
 int
 OrderTicket_SetStrategyType_ABI( OrderTicket_C *porder,
-                                     int strategy_type,
-                                     int allow_exceptions )
+                                 int strategy_type,
+                                 int allow_exceptions )
 {
     CHECK_ENUM(OrderStrategyType, strategy_type, allow_exceptions);
 
@@ -482,8 +482,8 @@ OrderTicket_SetStrategyType_ABI( OrderTicket_C *porder,
 
 int
 OrderTicket_GetPrice_ABI( OrderTicket_C *porder,
-                             double *price,
-                             int allow_exceptions )
+                          double *price,
+                          int allow_exceptions )
 {
     return ImplAccessor<double>::template
         get<OrderTicketImpl>(
@@ -494,8 +494,8 @@ OrderTicket_GetPrice_ABI( OrderTicket_C *porder,
 
 int
 OrderTicket_SetPrice_ABI( OrderTicket_C *porder,
-                             double price,
-                             int allow_exceptions )
+                          double price,
+                          int allow_exceptions )
 {
     return ImplAccessor<double>::template
         set<OrderTicketImpl>(porder, &OrderTicketImpl::set_price, price,
@@ -505,8 +505,8 @@ OrderTicket_SetPrice_ABI( OrderTicket_C *porder,
 
 int
 OrderTicket_GetStopPrice_ABI( OrderTicket_C *porder,
-                                 double *stop_price,
-                                 int allow_exceptions )
+                              double *stop_price,
+                              int allow_exceptions )
 {
     return ImplAccessor<double>::template
         get<OrderTicketImpl>(
@@ -517,8 +517,8 @@ OrderTicket_GetStopPrice_ABI( OrderTicket_C *porder,
 
 int
 OrderTicket_SetStopPrice_ABI( OrderTicket_C *porder,
-                                 double stop_price,
-                                 int allow_exceptions )
+                              double stop_price,
+                              int allow_exceptions )
 {
     return ImplAccessor<double>::template
         set<OrderTicketImpl>(
@@ -530,9 +530,9 @@ OrderTicket_SetStopPrice_ABI( OrderTicket_C *porder,
 
 int
 OrderTicket_GetLegs_ABI( OrderTicket_C *porder,
-                            OrderLeg_C** plegs,
-                            size_t* n,
-                            int allow_exceptions )
+                         OrderLeg_C** plegs,
+                         size_t* n,
+                         int allow_exceptions )
 {
     int err = proxy_is_callable<OrderTicketImpl>(porder, allow_exceptions);
     if( err )
@@ -570,9 +570,9 @@ OrderTicket_GetLegs_ABI( OrderTicket_C *porder,
 
 int
 OrderTicket_GetLeg_ABI( OrderTicket_C *porder,
-                           size_t pos,
-                           OrderLeg_C* pleg,
-                           int allow_exceptions )
+                        size_t pos,
+                        OrderLeg_C* pleg,
+                        int allow_exceptions )
 {
     int err = proxy_is_callable<OrderTicketImpl>(porder, allow_exceptions);
     if( err )
@@ -591,9 +591,9 @@ OrderTicket_GetLeg_ABI( OrderTicket_C *porder,
 
 int
 OrderTicket_AddLegs_ABI( OrderTicket_C *porder,
-                            OrderLeg_C* plegs,
-                            size_t n,
-                            int allow_exceptions )
+                         OrderLeg_C* plegs,
+                         size_t n,
+                         int allow_exceptions )
 {
     int err = proxy_is_callable<OrderTicketImpl>(porder, allow_exceptions);
     if( err )
@@ -614,8 +614,8 @@ OrderTicket_AddLegs_ABI( OrderTicket_C *porder,
 
 int
 OrderTicket_RemoveLeg_ABI( OrderTicket_C *porder,
-                              size_t pos,
-                              int allow_exceptions )
+                           size_t pos,
+                           int allow_exceptions )
 {
     int err = proxy_is_callable<OrderTicketImpl>(porder, allow_exceptions);
     if( err )
@@ -631,9 +631,9 @@ OrderTicket_RemoveLeg_ABI( OrderTicket_C *porder,
 
 int
 OrderTicket_ReplaceLeg_ABI( OrderTicket_C *porder,
-                               size_t pos,
-                               OrderLeg_C* pleg,
-                               int allow_exceptions )
+                            size_t pos,
+                            OrderLeg_C* pleg,
+                            int allow_exceptions )
 {
     int err = proxy_is_callable<OrderTicketImpl>(porder, allow_exceptions);
     if( err )
@@ -666,9 +666,9 @@ OrderTicket_ClearLegs_ABI( OrderTicket_C *porder, int allow_exceptions )
 
 int
 OrderTicket_GetChildren_ABI( OrderTicket_C *porder,
-                                OrderTicket_C** pchildren,
-                                size_t* n,
-                                int allow_exceptions )
+                             OrderTicket_C** pchildren,
+                             size_t* n,
+                             int allow_exceptions )
 {
     int err = proxy_is_callable<OrderTicketImpl>(porder, allow_exceptions);
     if( err )
@@ -707,8 +707,8 @@ OrderTicket_GetChildren_ABI( OrderTicket_C *porder,
 
 int
 OrderTicket_AddChild_ABI( OrderTicket_C *porder,
-                             OrderTicket_C* pchild,
-                             int allow_exceptions )
+                          OrderTicket_C* pchild,
+                          int allow_exceptions )
 {
     int err = proxy_is_callable<OrderTicketImpl>(porder, allow_exceptions);
     if( err )
@@ -741,9 +741,9 @@ OrderTicket_ClearChildren_ABI( OrderTicket_C *porder, int allow_exceptions )
 
 int
 OrderTicket_AsJsonString_ABI( OrderTicket_C* porder,
-                                  char **buf,
-                                  size_t *n,
-                                  int allow_exceptions )
+                              char **buf,
+                              size_t *n,
+                              int allow_exceptions )
 {
     return ImplAccessor<char**>::template
         get<OrderTicketImpl>(porder, &OrderTicketImpl::as_json_string, buf, n,
@@ -770,14 +770,14 @@ FreeOrderTicketBuffer_ABI( OrderTicket_C *orders, int allow_exceptions )
 
 int
 BuildOrder_Simple_ABI( int asset_type,
-                          const char* symbol,
-                          size_t quantity,
-                          int instruction,
-                          int order_type,
-                          double limit_price,
-                          double stop_price,
-                          OrderTicket_C *porder,
-                          int allow_exceptions  )
+                       const char* symbol,
+                       size_t quantity,
+                       int instruction,
+                       int order_type,
+                       double limit_price,
+                       double stop_price,
+                       OrderTicket_C *porder,
+                       int allow_exceptions  )
 {
     CHECK_PTR_KILL_PROXY(symbol, "symbol", allow_exceptions, porder);
     CHECK_ENUM_KILL_PROXY(OrderType, order_type, allow_exceptions, porder);
@@ -797,9 +797,9 @@ BuildOrder_Simple_ABI( int asset_type,
 
 int
 SimpleOrder_CheckPrices_ABI( int order_type,
-                                 double limit_price,
-                                 double stop_price,
-                                 int allow_exceptions )
+                             double limit_price,
+                             double stop_price,
+                             int allow_exceptions )
 {
     using EXC = ValueException;
     switch( static_cast<OrderType>(order_type) ){
@@ -837,14 +837,14 @@ SimpleOrder_CheckPrices_ABI( int order_type,
 
 int
 BuildOrder_Equity_ABI( const char* symbol,
-                          size_t quantity,
-                          int is_buy,
-                          int to_open,
-                          int order_type,
-                          double limit_price,
-                          double stop_price,
-                          OrderTicket_C *porder,
-                          int allow_exceptions )
+                       size_t quantity,
+                       int is_buy,
+                       int to_open,
+                       int order_type,
+                       double limit_price,
+                       double stop_price,
+                       OrderTicket_C *porder,
+                       int allow_exceptions )
 {
     CHECK_PTR_KILL_PROXY(symbol, "symbol", allow_exceptions, porder);
     CHECK_ENUM_KILL_PROXY(OrderType, order_type, allow_exceptions, porder);
@@ -859,13 +859,13 @@ BuildOrder_Equity_ABI( const char* symbol,
 
 int
 BuildOrder_Option_ABI( const char* symbol,
-                          size_t quantity,
-                          int is_buy,
-                          int to_open,
-                          int is_market_order,
-                          double price,
-                          OrderTicket_C *porder,
-                          int allow_exceptions )
+                       size_t quantity,
+                       int is_buy,
+                       int to_open,
+                       int is_market_order,
+                       double price,
+                       OrderTicket_C *porder,
+                       int allow_exceptions )
 {
     CHECK_PTR_KILL_PROXY(symbol, "symbol", allow_exceptions, porder);
 
@@ -877,18 +877,18 @@ BuildOrder_Option_ABI( const char* symbol,
 
 int
 BuildOrder_OptionEx_ABI( const char* underlying,
-                            unsigned int month,
-                            unsigned int day,
-                            unsigned int year,
-                            int is_call,
-                            double strike,
-                            size_t quantity,
-                            int is_buy,
-                            int to_open,
-                            int is_market_order,
-                            double price,
-                            OrderTicket_C *porder,
-                            int allow_exceptions )
+                         unsigned int month,
+                         unsigned int day,
+                         unsigned int year,
+                         int is_call,
+                         double strike,
+                         size_t quantity,
+                         int is_buy,
+                         int to_open,
+                         int is_market_order,
+                         double price,
+                         OrderTicket_C *porder,
+                         int allow_exceptions )
 {
     CHECK_PTR_KILL_PROXY(underlying, "underlying", allow_exceptions, porder);
 
@@ -901,12 +901,12 @@ BuildOrder_OptionEx_ABI( const char* underlying,
 
 int
 BuildOrder_Spread_ABI( int complex_strategy_type,
-                          OrderLeg_C *plegs,
-                          size_t n,
-                          int is_market_order,
-                          double price,
-                          OrderTicket_C *porder,
-                          int allow_exceptions )
+                       OrderLeg_C *plegs,
+                       size_t n,
+                       int is_market_order,
+                       double price,
+                       OrderTicket_C *porder,
+                       int allow_exceptions )
 {
     CHECK_PTR_KILL_PROXY(plegs, "legs", allow_exceptions, porder);
     CHECK_ENUM_KILL_PROXY(ComplexOrderStrategyType, complex_strategy_type,
@@ -926,13 +926,13 @@ BuildOrder_Spread_ABI( int complex_strategy_type,
 
 int
 BuildOrder_Spread_Vertical_ABI( const char* symbol_buy,
-                                    const char* symbol_sell,
-                                    size_t quantity,
-                                    int to_open,
-                                    int is_market_order,
-                                    double price,
-                                    OrderTicket_C *porder,
-                                    int allow_exceptions )
+                                const char* symbol_sell,
+                                size_t quantity,
+                                int to_open,
+                                int is_market_order,
+                                double price,
+                                OrderTicket_C *porder,
+                                int allow_exceptions )
 {
     CHECK_PTR_KILL_PROXY(symbol_buy, "buy symbol", allow_exceptions, porder);
     CHECK_PTR_KILL_PROXY(symbol_sell, "sell symbol", allow_exceptions, porder);
@@ -946,18 +946,18 @@ BuildOrder_Spread_Vertical_ABI( const char* symbol_buy,
 
 int
 BuildOrder_Spread_VerticalEx_ABI( const char* underlying,
-                                      unsigned int month,
-                                      unsigned int day,
-                                      unsigned int year,
-                                      int are_calls,
-                                      double strike_buy,
-                                      double strike_sell,
-                                      size_t quantity,
-                                      int to_open,
-                                      int is_market_order,
-                                      double price,
-                                      OrderTicket_C *porder,
-                                      int allow_exceptions )
+                                  unsigned int month,
+                                  unsigned int day,
+                                  unsigned int year,
+                                  int are_calls,
+                                  double strike_buy,
+                                  double strike_sell,
+                                  size_t quantity,
+                                  int to_open,
+                                  int is_market_order,
+                                  double price,
+                                  OrderTicket_C *porder,
+                                  int allow_exceptions )
 {
     CHECK_PTR_KILL_PROXY(underlying, "underlying", allow_exceptions, porder);
 
@@ -971,15 +971,15 @@ BuildOrder_Spread_VerticalEx_ABI( const char* underlying,
 
 int
 BuildOrder_Spread_VerticalRoll_ABI( const char* symbol_close_buy,
-                                        const char* symbol_close_sell,
-                                        const char* symbol_open_buy,
-                                        const char* symbol_open_sell,
-                                        size_t quantity_close,
-                                        size_t quantity_open,
-                                        int is_market_order,
-                                        double price,
-                                        OrderTicket_C *porder,
-                                        int allow_exceptions )
+                                    const char* symbol_close_sell,
+                                    const char* symbol_open_buy,
+                                    const char* symbol_open_sell,
+                                    size_t quantity_close,
+                                    size_t quantity_open,
+                                    int is_market_order,
+                                    double price,
+                                    OrderTicket_C *porder,
+                                    int allow_exceptions )
 {
     CHECK_PTR_KILL_PROXY( symbol_close_buy, "symbol close buy",
                           allow_exceptions, porder );
@@ -1002,23 +1002,23 @@ BuildOrder_Spread_VerticalRoll_ABI( const char* symbol_close_buy,
 
 int
 BuildOrder_Spread_VerticalRollEx_ABI( const char* underlying,
-                                           unsigned int month_close,
-                                           unsigned int day_close,
-                                           unsigned int year_close,
-                                           unsigned int month_open,
-                                           unsigned int day_open,
-                                           unsigned int year_open,
-                                           int are_calls,
-                                           double strike_close_buy,
-                                           double strike_close_sell,
-                                           double strike_open_buy,
-                                           double strike_open_sell,
-                                           size_t quantity_close,
-                                           size_t quantity_open,
-                                           int is_market_order,
-                                           double price,
-                                           OrderTicket_C *porder,
-                                           int allow_exceptions )
+                                      unsigned int month_close,
+                                      unsigned int day_close,
+                                      unsigned int year_close,
+                                      unsigned int month_open,
+                                      unsigned int day_open,
+                                      unsigned int year_open,
+                                      int are_calls,
+                                      double strike_close_buy,
+                                      double strike_close_sell,
+                                      double strike_open_buy,
+                                      double strike_open_sell,
+                                      size_t quantity_close,
+                                      size_t quantity_open,
+                                      int is_market_order,
+                                      double price,
+                                      OrderTicket_C *porder,
+                                      int allow_exceptions )
 {
     CHECK_PTR_KILL_PROXY( underlying, "underlying", allow_exceptions, porder );
 
@@ -1036,16 +1036,16 @@ BuildOrder_Spread_VerticalRollEx_ABI( const char* underlying,
 
 int
 BuildOrder_Spread_Butterfly_ABI( const char* symbol_outer1,
-                                     const char* symbol_inner1,
-                                     const char* symbol_outer2,
-                                     size_t quantity_outer1,
-                                     size_t quantity_outer2,
-                                     int is_buy,
-                                     int to_open,
-                                     int is_market_order,
-                                     double price,
-                                     OrderTicket_C *porder,
-                                     int allow_exceptions )
+                                 const char* symbol_inner1,
+                                 const char* symbol_outer2,
+                                 size_t quantity_outer1,
+                                 size_t quantity_outer2,
+                                 int is_buy,
+                                 int to_open,
+                                 int is_market_order,
+                                 double price,
+                                 OrderTicket_C *porder,
+                                 int allow_exceptions )
 {
     CHECK_PTR_KILL_PROXY( symbol_outer1, "symbol_outer1",
                           allow_exceptions, porder );
@@ -1066,21 +1066,21 @@ BuildOrder_Spread_Butterfly_ABI( const char* symbol_outer1,
 
 int
 BuildOrder_Spread_ButterflyEx_ABI( const char* underlying,
-                                       unsigned int month,
-                                       unsigned int day,
-                                       unsigned int year,
-                                       int are_calls,
-                                       double strike_outer1,
-                                       double strike_inner1,
-                                       double strike_outer2,
-                                       size_t quantity_outer1,
-                                       size_t quantity_outer2,
-                                       int is_buy,
-                                       int to_open,
-                                       int is_market_order,
-                                       double price,
-                                       OrderTicket_C *porder,
-                                       int allow_exceptions )
+                                   unsigned int month,
+                                   unsigned int day,
+                                   unsigned int year,
+                                   int are_calls,
+                                   double strike_outer1,
+                                   double strike_inner1,
+                                   double strike_outer2,
+                                   size_t quantity_outer1,
+                                   size_t quantity_outer2,
+                                   int is_buy,
+                                   int to_open,
+                                   int is_market_order,
+                                   double price,
+                                   OrderTicket_C *porder,
+                                   int allow_exceptions )
 {
     CHECK_PTR_KILL_PROXY( underlying, "underlying",
                           allow_exceptions, porder );
@@ -1099,14 +1099,14 @@ BuildOrder_Spread_ButterflyEx_ABI( const char* underlying,
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 BuildOrder_Spread_BackRatio_ABI( const char* symbol_buy,
-                                     const char* symbol_sell,
-                                     size_t quantity_buy,
-                                     size_t quantity_sell,
-                                     int to_open,
-                                     int is_market_order,
-                                     double price,
-                                     OrderTicket_C *porder,
-                                     int allow_exceptions )
+                                 const char* symbol_sell,
+                                 size_t quantity_buy,
+                                 size_t quantity_sell,
+                                 int to_open,
+                                 int is_market_order,
+                                 double price,
+                                 OrderTicket_C *porder,
+                                 int allow_exceptions )
 {
     CHECK_PTR_KILL_PROXY( symbol_buy, "symbol_buy",
                           allow_exceptions, porder );
@@ -1123,19 +1123,19 @@ BuildOrder_Spread_BackRatio_ABI( const char* symbol_buy,
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 BuildOrder_Spread_BackRatioEx_ABI( const char* underlying,
-                                       unsigned int month,
-                                       unsigned int day,
-                                       unsigned int year,
-                                       int are_calls,
-                                       double strike_buy,
-                                       double strike_sell,
-                                       size_t quantity_buy,
-                                       size_t quantity_sell,
-                                       int to_open,
-                                       int is_market_order,
-                                       double price,
-                                       OrderTicket_C *porder,
-                                       int allow_exceptions )
+                                   unsigned int month,
+                                   unsigned int day,
+                                   unsigned int year,
+                                   int are_calls,
+                                   double strike_buy,
+                                   double strike_sell,
+                                   size_t quantity_buy,
+                                   size_t quantity_sell,
+                                   int to_open,
+                                   int is_market_order,
+                                   double price,
+                                   OrderTicket_C *porder,
+                                   int allow_exceptions )
 {
     CHECK_PTR_KILL_PROXY( underlying, "underlying",
                           allow_exceptions, porder );
@@ -1150,13 +1150,13 @@ BuildOrder_Spread_BackRatioEx_ABI( const char* underlying,
 
 int
 BuildOrder_Spread_Calendar_ABI( const char* symbol_buy,
-                                    const char* symbol_sell,
-                                    size_t quantity,
-                                    int to_open,
-                                    int is_market_order,
-                                    double price,
-                                    OrderTicket_C *porder,
-                                    int allow_exceptions )
+                                const char* symbol_sell,
+                                size_t quantity,
+                                int to_open,
+                                int is_market_order,
+                                double price,
+                                OrderTicket_C *porder,
+                                int allow_exceptions )
 {
     CHECK_PTR_KILL_PROXY( symbol_buy, "symbol_buy",
                           allow_exceptions, porder );
@@ -1172,20 +1172,20 @@ BuildOrder_Spread_Calendar_ABI( const char* symbol_buy,
 
 int
 BuildOrder_Spread_CalendarEx_ABI( const char* underlying,
-                                      unsigned int month_buy,
-                                      unsigned int day_buy,
-                                      unsigned int year_buy,
-                                      unsigned int month_sell,
-                                      unsigned int day_sell,
-                                      unsigned int year_sell,
-                                      int are_calls,
-                                      double strike,
-                                      size_t quantity,
-                                      int to_open,
-                                      int is_market_order,
-                                      double price,
-                                      OrderTicket_C *porder,
-                                      int allow_exceptions )
+                                  unsigned int month_buy,
+                                  unsigned int day_buy,
+                                  unsigned int year_buy,
+                                  unsigned int month_sell,
+                                  unsigned int day_sell,
+                                  unsigned int year_sell,
+                                  int are_calls,
+                                  double strike,
+                                  size_t quantity,
+                                  int to_open,
+                                  int is_market_order,
+                                  double price,
+                                  OrderTicket_C *porder,
+                                  int allow_exceptions )
 {
     CHECK_PTR_KILL_PROXY( underlying, "underlying",
                           allow_exceptions, porder );
@@ -1200,13 +1200,13 @@ BuildOrder_Spread_CalendarEx_ABI( const char* underlying,
 
 int
 BuildOrder_Spread_Diagonal_ABI( const char* symbol_buy,
-                                    const char* symbol_sell,
-                                    size_t quantity,
-                                    int to_open,
-                                    int is_market_order,
-                                    double price,
-                                    OrderTicket_C *porder,
-                                    int allow_exceptions )
+                                const char* symbol_sell,
+                                size_t quantity,
+                                int to_open,
+                                int is_market_order,
+                                double price,
+                                OrderTicket_C *porder,
+                                int allow_exceptions )
 {
     CHECK_PTR_KILL_PROXY( symbol_buy, "symbol_buy",
                           allow_exceptions, porder );
@@ -1222,21 +1222,21 @@ BuildOrder_Spread_Diagonal_ABI( const char* symbol_buy,
 
 int
 BuildOrder_Spread_DiagonalEx_ABI( const char* underlying,
-                                      unsigned int month_buy,
-                                      unsigned int day_buy,
-                                      unsigned int year_buy,
-                                      unsigned int month_sell,
-                                      unsigned int day_sell,
-                                      unsigned int year_sell,
-                                      int are_calls,
-                                      double strike_buy,
-                                      double strike_sell,
-                                      size_t quantity,
-                                      int to_open,
-                                      int is_market_order,
-                                      double price,
-                                      OrderTicket_C *porder,
-                                      int allow_exceptions )
+                                  unsigned int month_buy,
+                                  unsigned int day_buy,
+                                  unsigned int year_buy,
+                                  unsigned int month_sell,
+                                  unsigned int day_sell,
+                                  unsigned int year_sell,
+                                  int are_calls,
+                                  double strike_buy,
+                                  double strike_sell,
+                                  size_t quantity,
+                                  int to_open,
+                                  int is_market_order,
+                                  double price,
+                                  OrderTicket_C *porder,
+                                  int allow_exceptions )
 {
     CHECK_PTR_KILL_PROXY( underlying, "underlying",
                           allow_exceptions, porder );
@@ -1251,14 +1251,14 @@ BuildOrder_Spread_DiagonalEx_ABI( const char* underlying,
 
 int
 BuildOrder_Spread_Straddle_ABI( const char* symbol_call,
-                                    const char* symbol_put,
-                                    size_t quantity,
-                                    int is_buy,
-                                    int to_open,
-                                    int is_market_order,
-                                    double price,
-                                    OrderTicket_C *porder,
-                                    int allow_exceptions )
+                                const char* symbol_put,
+                                size_t quantity,
+                                int is_buy,
+                                int to_open,
+                                int is_market_order,
+                                double price,
+                                OrderTicket_C *porder,
+                                int allow_exceptions )
 {
     CHECK_PTR_KILL_PROXY( symbol_call, "symbol_call",
                           allow_exceptions, porder );
@@ -1274,17 +1274,17 @@ BuildOrder_Spread_Straddle_ABI( const char* symbol_call,
 
 int
 BuildOrder_Spread_StraddleEx_ABI( const char* underlying,
-                                      unsigned int month,
-                                      unsigned int day,
-                                      unsigned int year,
-                                      double strike,
-                                      size_t quantity,
-                                      int is_buy,
-                                      int to_open,
-                                      int is_market_order,
-                                      double price,
-                                      OrderTicket_C *porder,
-                                      int allow_exceptions )
+                                  unsigned int month,
+                                  unsigned int day,
+                                  unsigned int year,
+                                  double strike,
+                                  size_t quantity,
+                                  int is_buy,
+                                  int to_open,
+                                  int is_market_order,
+                                  double price,
+                                  OrderTicket_C *porder,
+                                  int allow_exceptions )
 {
     CHECK_PTR_KILL_PROXY( underlying, "underlying",
                           allow_exceptions, porder );
@@ -1298,14 +1298,14 @@ BuildOrder_Spread_StraddleEx_ABI( const char* underlying,
 
 int
 BuildOrder_Spread_Strangle_ABI( const char* symbol_call,
-                                     const char* symbol_put,
-                                     size_t quantity,
-                                     int is_buy,
-                                     int to_open,
-                                     int is_market_order,
-                                     double price,
-                                     OrderTicket_C *porder,
-                                     int allow_exceptions )
+                                const char* symbol_put,
+                                size_t quantity,
+                                int is_buy,
+                                int to_open,
+                                int is_market_order,
+                                double price,
+                                OrderTicket_C *porder,
+                                int allow_exceptions )
 {
     CHECK_PTR_KILL_PROXY( symbol_call, "symbol_call",
                           allow_exceptions, porder );
@@ -1321,18 +1321,18 @@ BuildOrder_Spread_Strangle_ABI( const char* symbol_call,
 
 int
 BuildOrder_Spread_StrangleEx_ABI( const char* underlying,
-                                      unsigned int month,
-                                      unsigned int day,
-                                      unsigned int year,
-                                      double strike_call,
-                                      double strike_put,
-                                      size_t quantity,
-                                      int is_buy,
-                                      int to_open,
-                                      int is_market_order,
-                                      double price,
-                                      OrderTicket_C *porder,
-                                      int allow_exceptions )
+                                  unsigned int month,
+                                  unsigned int day,
+                                  unsigned int year,
+                                  double strike_call,
+                                  double strike_put,
+                                  size_t quantity,
+                                  int is_buy,
+                                  int to_open,
+                                  int is_market_order,
+                                  double price,
+                                  OrderTicket_C *porder,
+                                  int allow_exceptions )
 {
     CHECK_PTR_KILL_PROXY( underlying, "underlying",
                           allow_exceptions, porder );
@@ -1346,13 +1346,13 @@ BuildOrder_Spread_StrangleEx_ABI( const char* underlying,
 
 int
 BuildOrder_Spread_CollarSynthetic_ABI( const char* symbol_buy,
-                                            const char* symbol_sell,
-                                            size_t quantity,
-                                            int to_open,
-                                            int is_market_order,
-                                            double price,
-                                            OrderTicket_C *porder,
-                                            int allow_exceptions )
+                                       const char* symbol_sell,
+                                       size_t quantity,
+                                       int to_open,
+                                       int is_market_order,
+                                       double price,
+                                       OrderTicket_C *porder,
+                                       int allow_exceptions )
 {
     CHECK_PTR_KILL_PROXY( symbol_buy, "symbol_buy",
                           allow_exceptions, porder );
@@ -1368,18 +1368,18 @@ BuildOrder_Spread_CollarSynthetic_ABI( const char* symbol_buy,
 
 int
 BuildOrder_Spread_CollarSyntheticEx_ABI( const char* underlying,
-                                              unsigned int month,
-                                              unsigned int day,
-                                              unsigned int year,
-                                              double strike_call,
-                                              double strike_put,
-                                              size_t quantity,
-                                              int is_buy,
-                                              int to_open,
-                                              int is_market_order,
-                                              double price,
-                                              OrderTicket_C *porder,
-                                              int allow_exceptions )
+                                         unsigned int month,
+                                         unsigned int day,
+                                         unsigned int year,
+                                         double strike_call,
+                                         double strike_put,
+                                         size_t quantity,
+                                         int is_buy,
+                                         int to_open,
+                                         int is_market_order,
+                                         double price,
+                                         OrderTicket_C *porder,
+                                         int allow_exceptions )
 {
     CHECK_PTR_KILL_PROXY( underlying, "underlying",
                           allow_exceptions, porder );
@@ -1393,15 +1393,15 @@ BuildOrder_Spread_CollarSyntheticEx_ABI( const char* underlying,
 
 int
 BuildOrder_Spread_CollarWithStock_ABI( const char* symbol_buy,
-                                            const char* symbol_sell,
-                                            const char* symbol_stock,
-                                            size_t quantity,
-                                            int is_buy,
-                                            int to_open,
-                                            int is_market_order,
-                                            double price,
-                                            OrderTicket_C *porder,
-                                            int allow_exceptions )
+                                       const char* symbol_sell,
+                                       const char* symbol_stock,
+                                       size_t quantity,
+                                       int is_buy,
+                                       int to_open,
+                                       int is_market_order,
+                                       double price,
+                                       OrderTicket_C *porder,
+                                       int allow_exceptions )
 {
     CHECK_PTR_KILL_PROXY( symbol_buy, "symbol_buy",
                           allow_exceptions, porder );
@@ -1419,18 +1419,18 @@ BuildOrder_Spread_CollarWithStock_ABI( const char* symbol_buy,
 
 int
 BuildOrder_Spread_CollarWithStockEx_ABI( const char* underlying,
-                                              unsigned int month,
-                                              unsigned int day,
-                                              unsigned int year,
-                                              double strike_call,
-                                              double strike_put,
-                                              size_t quantity,
-                                              int is_buy,
-                                              int to_open,
-                                              int is_market_order,
-                                              double price,
-                                              OrderTicket_C *porder,
-                                              int allow_exceptions )
+                                         unsigned int month,
+                                         unsigned int day,
+                                         unsigned int year,
+                                         double strike_call,
+                                         double strike_put,
+                                         size_t quantity,
+                                         int is_buy,
+                                         int to_open,
+                                         int is_market_order,
+                                         double price,
+                                         OrderTicket_C *porder,
+                                         int allow_exceptions )
 {
     CHECK_PTR_KILL_PROXY( underlying, "underlying",
                           allow_exceptions, porder );
@@ -1444,17 +1444,17 @@ BuildOrder_Spread_CollarWithStockEx_ABI( const char* underlying,
 
 int
 BuildOrder_Spread_Condor_ABI( const char* symbol_outer1,
-                                  const char* symbol_inner1,
-                                  const char* symbol_inner2,
-                                  const char* symbol_outer2,
-                                  size_t quantity1,
-                                  size_t quantity2,
-                                  int is_buy,
-                                  int to_open,
-                                  int is_market_order,
-                                  double price,
-                                  OrderTicket_C *porder,
-                                  int allow_exceptions )
+                              const char* symbol_inner1,
+                              const char* symbol_inner2,
+                              const char* symbol_outer2,
+                              size_t quantity1,
+                              size_t quantity2,
+                              int is_buy,
+                              int to_open,
+                              int is_market_order,
+                              double price,
+                              OrderTicket_C *porder,
+                              int allow_exceptions )
 {
     CHECK_PTR_KILL_PROXY( symbol_outer1, "symbol_outer1",
                           allow_exceptions, porder );
@@ -1478,22 +1478,22 @@ BuildOrder_Spread_Condor_ABI( const char* symbol_outer1,
 // position or are_calls not consistent w/ rest of ABI
 int
 BuildOrder_Spread_CondorEx_ABI( const char* underlying,
-                                    unsigned int month,
-                                    unsigned int day,
-                                    unsigned int year,
-                                    double strike_outer1,
-                                    double strike_inner1,
-                                    double strike_inner2,
-                                    double strike_outer2,
-                                    int are_calls,
-                                    size_t quantity1,
-                                    size_t quantity2,
-                                    int is_buy,
-                                    int to_open,
-                                    int is_market_order,
-                                    double price,
-                                    OrderTicket_C *porder,
-                                    int allow_exceptions )
+                                unsigned int month,
+                                unsigned int day,
+                                unsigned int year,
+                                double strike_outer1,
+                                double strike_inner1,
+                                double strike_inner2,
+                                double strike_outer2,
+                                int are_calls,
+                                size_t quantity1,
+                                size_t quantity2,
+                                int is_buy,
+                                int to_open,
+                                int is_market_order,
+                                double price,
+                                OrderTicket_C *porder,
+                                int allow_exceptions )
 {
     CHECK_PTR_KILL_PROXY( underlying, "underlying",
                           allow_exceptions, porder );
@@ -1511,16 +1511,16 @@ BuildOrder_Spread_CondorEx_ABI( const char* underlying,
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 BuildOrder_Spread_IronCondor_ABI( const char* symbol_call_buy,
-                                      const char* symbol_call_sell,
-                                      const char* symbol_put_buy,
-                                      const char* symbol_put_sell,
-                                      size_t quantity_call,
-                                      size_t quantity_put,
-                                      int to_open,
-                                      int is_market_order,
-                                      double price,
-                                      OrderTicket_C *porder,
-                                      int allow_exceptions )
+                                  const char* symbol_call_sell,
+                                  const char* symbol_put_buy,
+                                  const char* symbol_put_sell,
+                                  size_t quantity_call,
+                                  size_t quantity_put,
+                                  int to_open,
+                                  int is_market_order,
+                                  double price,
+                                  OrderTicket_C *porder,
+                                  int allow_exceptions )
 {
     CHECK_PTR_KILL_PROXY( symbol_call_buy, "symbol_call_buy",
                           allow_exceptions, porder );
@@ -1543,20 +1543,20 @@ BuildOrder_Spread_IronCondor_ABI( const char* symbol_call_buy,
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 BuildOrder_Spread_IronCondorEx_ABI( const char* underlying,
-                                        unsigned int month,
-                                        unsigned int day,
-                                        unsigned int year,
-                                        double strike_call_buy,
-                                        double strike_call_sell,
-                                        double strike_put_buy,
-                                        double strike_put_sell,
-                                        size_t quantity_call,
-                                        size_t quantity_put,
-                                        int to_open,
-                                        int is_market_order,
-                                        double price,
-                                        OrderTicket_C *porder,
-                                        int allow_exceptions )
+                                    unsigned int month,
+                                    unsigned int day,
+                                    unsigned int year,
+                                    double strike_call_buy,
+                                    double strike_call_sell,
+                                    double strike_put_buy,
+                                    double strike_put_sell,
+                                    size_t quantity_call,
+                                    size_t quantity_put,
+                                    int to_open,
+                                    int is_market_order,
+                                    double price,
+                                    OrderTicket_C *porder,
+                                    int allow_exceptions )
 {
     CHECK_PTR_KILL_PROXY( underlying, "underlying",
                           allow_exceptions, porder );
@@ -1574,15 +1574,15 @@ BuildOrder_Spread_IronCondorEx_ABI( const char* underlying,
 
 int
 BuildOrder_Spread_DoubleDiagonal_ABI( const char* symbol_call_buy,
-                                           const char* symbol_call_sell,
-                                           const char* symbol_put_buy,
-                                           const char* symbol_put_sell,
-                                           size_t quantity,
-                                           int to_open,
-                                           int is_market_order,
-                                           double price,
-                                           OrderTicket_C *porder,
-                                           int allow_exceptions )
+                                      const char* symbol_call_sell,
+                                      const char* symbol_put_buy,
+                                      const char* symbol_put_sell,
+                                      size_t quantity,
+                                      int to_open,
+                                      int is_market_order,
+                                      double price,
+                                      OrderTicket_C *porder,
+                                      int allow_exceptions )
 {
     CHECK_PTR_KILL_PROXY( symbol_call_buy, "symbol_call_buy",
                           allow_exceptions, porder );
@@ -1602,22 +1602,22 @@ BuildOrder_Spread_DoubleDiagonal_ABI( const char* symbol_call_buy,
 
 int
 BuildOrder_Spread_DoubleDiagonalEx_ABI( const char* underlying,
-                                             unsigned int month_buy,
-                                             unsigned int day_buy,
-                                             unsigned int year_buy,
-                                             unsigned int month_sell,
-                                             unsigned int day_sell,
-                                             unsigned int year_sell,
-                                             double strike_call_buy,
-                                             double strike_call_sell,
-                                             double strike_put_buy,
-                                             double strike_put_sell,
-                                             size_t quantity,
-                                             int to_open,
-                                             int is_market_order,
-                                             double price,
-                                             OrderTicket_C *porder,
-                                             int allow_exceptions )
+                                        unsigned int month_buy,
+                                        unsigned int day_buy,
+                                        unsigned int year_buy,
+                                        unsigned int month_sell,
+                                        unsigned int day_sell,
+                                        unsigned int year_sell,
+                                        double strike_call_buy,
+                                        double strike_call_sell,
+                                        double strike_put_buy,
+                                        double strike_put_sell,
+                                        size_t quantity,
+                                        int to_open,
+                                        int is_market_order,
+                                        double price,
+                                        OrderTicket_C *porder,
+                                        int allow_exceptions )
 {
     CHECK_PTR_KILL_PROXY( underlying, "underlying",
                           allow_exceptions, porder );
@@ -1633,9 +1633,9 @@ BuildOrder_Spread_DoubleDiagonalEx_ABI( const char* underlying,
 
 int
 BuildOrder_OneCancelsOther_ABI( OrderTicket_C *porder1,
-                                    OrderTicket_C *porder2,
-                                    OrderTicket_C *porder,
-                                    int allow_exceptions )
+                                OrderTicket_C *porder2,
+                                OrderTicket_C *porder,
+                                int allow_exceptions )
 {
     CHECK_PTR_KILL_PROXY(porder1, "order1", allow_exceptions, porder);
     CHECK_PTR_KILL_PROXY(porder2, "order2", allow_exceptions, porder);
@@ -1646,9 +1646,9 @@ BuildOrder_OneCancelsOther_ABI( OrderTicket_C *porder1,
 
 int
 BuildOrder_OneTriggersOther_ABI( OrderTicket_C *porder_primary,
-                                     OrderTicket_C *porder_conditional,
-                                     OrderTicket_C *porder,
-                                     int allow_exceptions )
+                                 OrderTicket_C *porder_conditional,
+                                 OrderTicket_C *porder,
+                                 int allow_exceptions )
 {
     CHECK_PTR_KILL_PROXY(porder_primary, "primary order",
                          allow_exceptions, porder);

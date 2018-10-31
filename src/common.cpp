@@ -31,11 +31,11 @@ namespace tdma{
 
 string
 BuildOptionSymbolImpl( const string& underlying,
-                         unsigned int month,
-                         unsigned int day,
-                         unsigned int year,
-                         bool is_call,
-                         double strike )
+                       unsigned int month,
+                       unsigned int day,
+                       unsigned int year,
+                       bool is_call,
+                       double strike )
 {
     using std::setw;
     using std::setfill;
@@ -128,9 +128,9 @@ CheckOptionSymbolImpl(const string& option) // ABC_MMDDYY[C|P]{STRIKE}
 
 int
 to_new_char_buffer( const string& s,
-                      char** buf, 
-                      size_t* n,
-                      bool allow_exceptions )
+                    char** buf,
+                    size_t* n,
+                    bool allow_exceptions )
 {
     assert(buf);
     assert(n);
@@ -148,9 +148,9 @@ to_new_char_buffer( const string& s,
 
 int
 to_new_char_buffers( const std::set<string>& strs,
-                       char*** bufs,
-                       size_t *n,
-                       bool allow_exceptions )
+                     char*** bufs,
+                     size_t *n,
+                     bool allow_exceptions )
 {
     assert(bufs);
     assert(n);
@@ -198,14 +198,14 @@ LibraryBuildDateTime_ABI(char **buf, size_t *n, int allow_exceptions)
 
 int
 BuildOptionSymbol_ABI( const char* underlying,
-                         unsigned int month,
-                         unsigned int day,
-                         unsigned int year,
-                         int is_call,
-                         double strike,
-                         char **buf,
-                         size_t *n,
-                         int allow_exceptions )
+                       unsigned int month,
+                       unsigned int day,
+                       unsigned int year,
+                       int is_call,
+                       double strike,
+                       char **buf,
+                       size_t *n,
+                       int allow_exceptions )
 {
     CHECK_PTR(underlying, "underlying", allow_exceptions);
     CHECK_PTR(buf, "buf", allow_exceptions);

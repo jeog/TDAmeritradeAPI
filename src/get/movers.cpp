@@ -65,9 +65,9 @@ public:
     static const int TYPE_ID_HIGH = TYPE_ID_GETTER_MOVERS;
 
     MoversGetterImpl( Credentials& creds,
-                        MoversIndex index,
-                        MoversDirectionType direction_type,
-                        MoversChangeType change_type )
+                      MoversIndex index,
+                      MoversDirectionType direction_type,
+                      MoversChangeType change_type )
         :
             APIGetterImpl(creds, data_api_on_error_callback),
             _index(index),
@@ -117,11 +117,11 @@ using namespace tdma;
 
 int
 MoversGetter_Create_ABI( struct Credentials *pcreds,
-                            int index,
-                            int direction_type,
-                            int change_type,
-                            MoversGetter_C *pgetter,
-                            int allow_exceptions )
+                         int index,
+                         int direction_type,
+                         int change_type,
+                         MoversGetter_C *pgetter,
+                         int allow_exceptions )
 {
     using ImplTy = MoversGetterImpl;
 
@@ -163,8 +163,8 @@ MoversGetter_Destroy_ABI( MoversGetter_C *pgetter, int allow_exceptions)
 
 int
 MoversGetter_GetIndex_ABI( MoversGetter_C *pgetter,
-                              int *index,
-                              int allow_exceptions)
+                           int *index,
+                           int allow_exceptions )
 {
     return ImplAccessor<int>::template get<MoversGetterImpl, MoversIndex>(
         pgetter, &MoversGetterImpl::get_index, index, "index", allow_exceptions
@@ -173,8 +173,8 @@ MoversGetter_GetIndex_ABI( MoversGetter_C *pgetter,
 
 int
 MoversGetter_SetIndex_ABI( MoversGetter_C *pgetter,
-                              int index,
-                              int allow_exceptions )
+                           int index,
+                           int allow_exceptions )
 {
     CHECK_ENUM(MoversIndex, index, allow_exceptions);
 
@@ -185,8 +185,8 @@ MoversGetter_SetIndex_ABI( MoversGetter_C *pgetter,
 
 int
 MoversGetter_GetDirectionType_ABI( MoversGetter_C *pgetter,
-                                       int *direction_type,
-                                       int allow_exceptions)
+                                   int *direction_type,
+                                   int allow_exceptions)
 {
     return ImplAccessor<int>::template
         get<MoversGetterImpl, MoversDirectionType>(
@@ -197,8 +197,8 @@ MoversGetter_GetDirectionType_ABI( MoversGetter_C *pgetter,
 
 int
 MoversGetter_SetDirectionType_ABI( MoversGetter_C *pgetter,
-                                       int direction_type,
-                                       int allow_exceptions )
+                                   int direction_type,
+                                   int allow_exceptions )
 {
     CHECK_ENUM( MoversDirectionType, direction_type, allow_exceptions );
 
@@ -211,8 +211,8 @@ MoversGetter_SetDirectionType_ABI( MoversGetter_C *pgetter,
 
 int
 MoversGetter_GetChangeType_ABI( MoversGetter_C *pgetter,
-                                   int *change_type,
-                                   int allow_exceptions)
+                                int *change_type,
+                                int allow_exceptions )
 {
     return ImplAccessor<int>::template
         get<MoversGetterImpl, MoversChangeType>(
@@ -223,8 +223,8 @@ MoversGetter_GetChangeType_ABI( MoversGetter_C *pgetter,
 
 int
 MoversGetter_SetChangeType_ABI( MoversGetter_C *pgetter,
-                                   int change_type,
-                                   int allow_exceptions )
+                                int change_type,
+                                int allow_exceptions )
 {
     CHECK_ENUM( MoversChangeType, change_type, allow_exceptions );
 

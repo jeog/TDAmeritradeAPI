@@ -47,8 +47,8 @@ namespace tdma{
 
 string
 Execute_SendOrderImpl( Credentials& creds,
-                           const string& account_id,
-                           const OrderTicketImpl& order )
+                       const string& account_id,
+                       const OrderTicketImpl& order )
 {
     string url = URL_ACCOUNTS + util::url_encode(account_id) + "/orders";
     string body = order.as_json_string();
@@ -70,8 +70,8 @@ Execute_SendOrderImpl( Credentials& creds,
 
 bool
 Execute_CancelOrderImpl( Credentials& creds,
-                             const string& account_id,
-                             const string& order_id )
+                         const string& account_id,
+                         const string& order_id )
 {
     string url = URL_ACCOUNTS + util::url_encode(account_id)
                + "/orders/" + util::url_encode(order_id); // encode uncessary
@@ -91,11 +91,11 @@ using namespace tdma;
 
 int
 Execute_SendOrder_ABI( Credentials *creds,
-                           const char* account_id,
-                           OrderTicket_C *porder,
-                           char** buf,
-                           size_t *n,
-                           int allow_exceptions )
+                       const char* account_id,
+                       OrderTicket_C *porder,
+                       char** buf,
+                       size_t *n,
+                       int allow_exceptions )
 {
     int err = proxy_is_callable<OrderTicketImpl>(porder, allow_exceptions);
     if( err )
@@ -123,10 +123,10 @@ Execute_SendOrder_ABI( Credentials *creds,
 
 int
 Execute_CancelOrder_ABI( Credentials *creds,
-                             const char* account_id,
-                             const char* order_id,
-                             int *success,
-                             int allow_exceptions )
+                         const char* account_id,
+                         const char* order_id,
+                         int *success,
+                         int allow_exceptions )
 {
     CHECK_PTR(account_id, "account id", allow_exceptions);
     CHECK_PTR(order_id, "order id", allow_exceptions);
@@ -144,10 +144,7 @@ Execute_CancelOrder_ABI( Credentials *creds,
 
 
 int
-OrderSession_to_string_ABI( int v,
-                               char** buf,
-                               size_t* n,
-                               int allow_exceptions )
+OrderSession_to_string_ABI( TDMA_API_TO_STRING_ABI_ARGS )
 {
     CHECK_ENUM(OrderSession, v, allow_exceptions);
 
@@ -166,10 +163,7 @@ OrderSession_to_string_ABI( int v,
 }
 
 int
-OrderDuration_to_string_ABI( int v,
-                                char** buf,
-                                size_t* n,
-                                int allow_exceptions )
+OrderDuration_to_string_ABI( TDMA_API_TO_STRING_ABI_ARGS )
 {
     CHECK_ENUM(OrderDuration, v, allow_exceptions);
 
@@ -187,10 +181,7 @@ OrderDuration_to_string_ABI( int v,
 
 
 int
-OrderAssetType_to_string_ABI( int v,
-                                  char** buf,
-                                  size_t* n,
-                                  int allow_exceptions )
+OrderAssetType_to_string_ABI( TDMA_API_TO_STRING_ABI_ARGS )
 {
     CHECK_ENUM(OrderAssetType, v, allow_exceptions);
 
@@ -216,10 +207,7 @@ OrderAssetType_to_string_ABI( int v,
 
 
 int
-OrderInstruction_to_string_ABI( int v,
-                                    char** buf,
-                                    size_t* n,
-                                    int allow_exceptions )
+OrderInstruction_to_string_ABI( TDMA_API_TO_STRING_ABI_ARGS )
 {
     CHECK_ENUM(OrderInstruction, v, allow_exceptions);
 
@@ -249,7 +237,7 @@ OrderInstruction_to_string_ABI( int v,
 
 
 int
-OrderType_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
+OrderType_to_string_ABI( TDMA_API_TO_STRING_ABI_ARGS )
 {
     CHECK_ENUM(OrderType, v, allow_exceptions);
 
@@ -284,10 +272,7 @@ OrderType_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
 
 
 int
-ComplexOrderStrategyType_to_string_ABI( int v,
-                                             char** buf,
-                                             size_t* n,
-                                             int allow_exceptions )
+ComplexOrderStrategyType_to_string_ABI( TDMA_API_TO_STRING_ABI_ARGS )
 {
     CHECK_ENUM(ComplexOrderStrategyType, v, allow_exceptions);
 
@@ -342,10 +327,7 @@ ComplexOrderStrategyType_to_string_ABI( int v,
 
 
 int
-OrderStrategyType_to_string_ABI( int v,
-                                     char** buf,
-                                     size_t* n,
-                                     int allow_exceptions )
+OrderStrategyType_to_string_ABI( TDMA_API_TO_STRING_ABI_ARGS )
 {
     CHECK_ENUM(OrderStrategyType, v, allow_exceptions);
 

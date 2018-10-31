@@ -165,10 +165,10 @@ curl_execute(conn::HTTPSConnection& connection, bool return_header_data)
 
 bool
 on_return( long code,
-            long success_code,
-            const string& data,
-            bool allow_refresh,
-            api_on_error_cb_ty on_error_cb )
+           long success_code,
+           const string& data,
+           bool allow_refresh,
+           api_on_error_cb_ty on_error_cb )
 {
     if( code == success_code )
         return true;
@@ -196,7 +196,7 @@ on_return( long code,
 
 vector<pair<string,string>>
 build_auth_headers( const vector<pair<string,string>>& headers,
-                      const string& access_token )
+                    const string& access_token )
 {
     vector<pair<string,string>> tmp(headers);
     tmp.emplace_back( "Authorization", "Bearer " + access_token);
@@ -206,11 +206,11 @@ build_auth_headers( const vector<pair<string,string>>& headers,
 
 tuple<string, string, conn::clock_ty::time_point>
 connect( conn::HTTPSConnection& connection,
-          Credentials& creds,
-          const vector<pair<string,string>>& static_headers,
-          api_on_error_cb_ty on_error_cb,
-          bool return_headers,
-          long success_code )
+         Credentials& creds,
+         const vector<pair<string,string>>& static_headers,
+         api_on_error_cb_ty on_error_cb,
+         bool return_headers,
+         long success_code )
 {
     if( !creds.access_token || !creds.client_id )
         TDMA_API_THROW( LocalCredentialException, "invalid credentials" );
@@ -318,8 +318,8 @@ connect( conn::HTTPSConnection& connection,
 
 pair<string, conn::clock_ty::time_point>
 connect_get( conn::HTTPSConnection& connection,
-              Credentials& creds,
-              api_on_error_cb_ty on_error_cb )
+             Credentials& creds,
+             api_on_error_cb_ty on_error_cb )
 {
     static const vector<pair<string,string>> STATIC_HEADERS = {
         {"Accept", "application/json"}
@@ -337,8 +337,8 @@ connect_get( conn::HTTPSConnection& connection,
 
 pair<string, conn::clock_ty::time_point>
 connect_execute( conn::HTTPSConnection& connection,
-                   Credentials& creds,
-                   long success_code )
+                 Credentials& creds,
+                 long success_code )
 {
     static const vector<pair<string,string>> STATIC_HEADERS = {
         {"Accept", "*/*"},

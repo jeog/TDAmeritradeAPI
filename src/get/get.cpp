@@ -41,8 +41,8 @@ milliseconds APIGetterImpl::last_get_msec(
 
 std::mutex APIGetterImpl::get_mtx;
 
-APIGetterImpl::APIGetterImpl(Credentials& creds,
-                                 api_on_error_cb_ty on_error_callback)
+APIGetterImpl::APIGetterImpl( Credentials& creds,
+                              api_on_error_cb_ty on_error_callback )
     :
         _on_error_callback(on_error_callback),
         _credentials(creds),
@@ -136,9 +136,9 @@ using namespace tdma;
 
 int
 APIGetter_Get_ABI( Getter_C *pgetter,
-                     char **buf,
-                     size_t *n,
-                     int allow_exceptions )
+                   char **buf,
+                   size_t *n,
+                   int allow_exceptions )
 {
     return ImplAccessor<char**>::template
         get<APIGetterImpl>(
@@ -223,7 +223,7 @@ APIGetter_WaitRemaining_ABI(unsigned long long *msec, int allow_exceptions)
 }
 
 int
-PeriodType_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
+PeriodType_to_string_ABI( TDMA_API_TO_STRING_ABI_ARGS )
 {
     CHECK_ENUM(PeriodType, v, allow_exceptions);
 
@@ -242,10 +242,7 @@ PeriodType_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
 }
 
 int
-FrequencyType_to_string_ABI( int v,
-                                char** buf,
-                                size_t* n,
-                                int allow_exceptions )
+FrequencyType_to_string_ABI( TDMA_API_TO_STRING_ABI_ARGS )
 {
     CHECK_ENUM(FrequencyType, v, allow_exceptions);
 
@@ -264,10 +261,7 @@ FrequencyType_to_string_ABI( int v,
 }
 
 int
-OptionContractType_to_string_ABI( int v,
-                                      char** buf,
-                                      size_t* n,
-                                      int allow_exceptions )
+OptionContractType_to_string_ABI( TDMA_API_TO_STRING_ABI_ARGS )
 {
     CHECK_ENUM(OptionContractType, v, allow_exceptions);
 
@@ -284,10 +278,7 @@ OptionContractType_to_string_ABI( int v,
 }
 
 int
-OptionStrategyType_to_string_ABI( int v,
-                                      char** buf,
-                                      size_t* n,
-                                      int allow_exceptions )
+OptionStrategyType_to_string_ABI( TDMA_API_TO_STRING_ABI_ARGS )
 {
     CHECK_ENUM(OptionStrategyType, v, allow_exceptions);
 
@@ -321,10 +312,7 @@ OptionStrategyType_to_string_ABI( int v,
 
 
 int
-OptionRangeType_to_string_ABI( int v,
-                                    char** buf,
-                                    size_t* n,
-                                    int allow_exceptions )
+OptionRangeType_to_string_ABI( TDMA_API_TO_STRING_ABI_ARGS )
 {
     CHECK_ENUM(OptionRangeType, v, allow_exceptions);
 
@@ -352,10 +340,7 @@ OptionRangeType_to_string_ABI( int v,
 
 
 int
-OptionExpMonth_to_string_ABI( int v,
-                                  char** buf,
-                                  size_t* n,
-                                  int allow_exceptions )
+OptionExpMonth_to_string_ABI( TDMA_API_TO_STRING_ABI_ARGS )
 {
     CHECK_ENUM(OptionExpMonth, v, allow_exceptions);
 
@@ -393,7 +378,7 @@ OptionExpMonth_to_string_ABI( int v,
 
 
 int
-OptionType_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
+OptionType_to_string_ABI( TDMA_API_TO_STRING_ABI_ARGS )
 {
     CHECK_ENUM(OptionType, v, allow_exceptions);
 
@@ -410,10 +395,7 @@ OptionType_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
 
 
 int
-TransactionType_to_string_ABI( int v,
-                                    char** buf,
-                                    size_t* n,
-                                    int allow_exceptions )
+TransactionType_to_string_ABI( TDMA_API_TO_STRING_ABI_ARGS )
 {
     CHECK_ENUM(TransactionType, v, allow_exceptions);
 
@@ -444,10 +426,7 @@ TransactionType_to_string_ABI( int v,
 }
 
 int
-InstrumentSearchType_to_string_ABI( int v,
-                                        char** buf,
-                                        size_t* n,
-                                        int allow_exceptions )
+InstrumentSearchType_to_string_ABI( TDMA_API_TO_STRING_ABI_ARGS )
 {
     CHECK_ENUM(InstrumentSearchType, v, allow_exceptions);
 
@@ -471,7 +450,7 @@ InstrumentSearchType_to_string_ABI( int v,
 
 
 int
-MarketType_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
+MarketType_to_string_ABI( TDMA_API_TO_STRING_ABI_ARGS )
 {
     CHECK_ENUM(MarketType, v, allow_exceptions);
 
@@ -492,7 +471,7 @@ MarketType_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
 }
 
 int
-MoversIndex_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
+MoversIndex_to_string_ABI( TDMA_API_TO_STRING_ABI_ARGS )
 {
     CHECK_ENUM(MoversIndex, v, allow_exceptions);
 
@@ -510,10 +489,7 @@ MoversIndex_to_string_ABI(int v, char** buf, size_t* n, int allow_exceptions)
 
 
 int
-MoversDirectionType_to_string_ABI( int v,
-                                        char** buf,
-                                        size_t* n,
-                                        int allow_exceptions )
+MoversDirectionType_to_string_ABI( TDMA_API_TO_STRING_ABI_ARGS )
 {
     CHECK_ENUM(MoversDirectionType, v, allow_exceptions);
 
@@ -530,10 +506,7 @@ MoversDirectionType_to_string_ABI( int v,
 }
 
 int
-MoversChangeType_to_string_ABI( int v,
-                                    char** buf,
-                                    size_t* n,
-                                    int allow_exceptions )
+MoversChangeType_to_string_ABI( TDMA_API_TO_STRING_ABI_ARGS )
 {
     CHECK_ENUM(MoversChangeType, v, allow_exceptions);
 
@@ -548,10 +521,7 @@ MoversChangeType_to_string_ABI( int v,
 }
 
 int
-OptionStrikesType_to_string_ABI( int v,
-                                     char** buf,
-                                     size_t* n,
-                                     int allow_exceptions )
+OptionStrikesType_to_string_ABI( TDMA_API_TO_STRING_ABI_ARGS )
 {
     CHECK_ENUM(OptionStrikesType, v, allow_exceptions);
 
@@ -570,10 +540,7 @@ OptionStrikesType_to_string_ABI( int v,
 }
 
 int
-OrderStatusType_to_string_ABI( int v,
-                                   char** buf,
-                                   size_t *n,
-                                   int allow_exceptions )
+OrderStatusType_to_string_ABI( TDMA_API_TO_STRING_ABI_ARGS )
 {
     CHECK_ENUM(OrderStatusType, v, allow_exceptions);
 

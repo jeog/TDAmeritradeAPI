@@ -75,7 +75,7 @@ class SubscriptionBySymbolBaseImpl
     template<typename F>
     map<string, string>
     build_paramaters( const set<string>& symbols,
-                        const set<F>& fields )
+                      const set<F>& fields )
     {
         if( symbols.empty() )
             TDMA_API_THROW(ValueException,"no symbols");
@@ -111,9 +111,9 @@ public:
 protected:
     template<typename F>
     SubscriptionBySymbolBaseImpl( StreamerServiceType service,
-                                      string command,
-                                      const set<string>& symbols,
-                                      const set<F>& fields )
+                                  string command,
+                                  const set<string>& symbols,
+                                  const set<F>& fields )
         :
             StreamingSubscriptionImpl(service, command,
                                       build_paramaters(symbols, fields)),
@@ -138,10 +138,10 @@ public:
     static function<bool(int)> is_valid_field;
 
     QuotesSubscriptionImpl( const set<string>& symbols,
-                               const set<FieldType>& fields )
+                            const set<FieldType>& fields )
         :
             SubscriptionBySymbolBaseImpl(StreamerServiceType::QUOTE, "SUBS",
-                                     symbols, fields),
+                                         symbols, fields),
             _fields(fields)
         {
         }
@@ -167,10 +167,10 @@ public:
     static function<bool(int)> is_valid_field;
 
     OptionsSubscriptionImpl( const set<string>& symbols,
-                         const set<FieldType>& fields )
+                             const set<FieldType>& fields )
         :
             SubscriptionBySymbolBaseImpl(StreamerServiceType::OPTION, "SUBS",
-                                     symbols, fields),
+                                         symbols, fields),
             _fields(fields)
         {
         }
@@ -196,10 +196,10 @@ public:
     static function<bool(int)> is_valid_field;
 
     LevelOneFuturesSubscriptionImpl( const set<string>& symbols,
-                                 const set<FieldType>& fields )
+                                     const set<FieldType>& fields )
         :
-            SubscriptionBySymbolBaseImpl(StreamerServiceType::LEVELONE_FUTURES, "SUBS",
-                                    symbols, fields),
+            SubscriptionBySymbolBaseImpl(StreamerServiceType::LEVELONE_FUTURES,
+                                         "SUBS", symbols, fields),
             _fields(fields)
         {
         }
@@ -225,10 +225,10 @@ public:
     static function<bool(int)> is_valid_field;
 
     LevelOneForexSubscriptionImpl( const set<string>& symbols,
-                               const set<FieldType>& fields )
+                                   const set<FieldType>& fields )
         :
-            SubscriptionBySymbolBaseImpl(StreamerServiceType::LEVELONE_FOREX, "SUBS",
-                                     symbols, fields),
+            SubscriptionBySymbolBaseImpl(StreamerServiceType::LEVELONE_FOREX,
+                                         "SUBS", symbols, fields),
             _fields(fields)
         {
         }
@@ -254,10 +254,12 @@ public:
     static function<bool(int)> is_valid_field;
 
     LevelOneFuturesOptionsSubscriptionImpl( const set<string>& symbols,
-                                        const set<FieldType>& fields )
+                                            const set<FieldType>& fields )
         :
-            SubscriptionBySymbolBaseImpl(StreamerServiceType::LEVELONE_FUTURES_OPTIONS,
-                                     "SUBS", symbols, fields),
+            SubscriptionBySymbolBaseImpl(
+                StreamerServiceType::LEVELONE_FUTURES_OPTIONS, "SUBS",
+                symbols, fields
+                ),
             _fields(fields)
         {
         }
@@ -283,10 +285,10 @@ public:
     static function<bool(int)> is_valid_field;
 
     NewsHeadlineSubscriptionImpl( const set<string>& symbols,
-                              const set<FieldType>& fields )
+                                  const set<FieldType>& fields )
         :
             SubscriptionBySymbolBaseImpl(StreamerServiceType::NEWS_HEADLINE,
-                                     "SUBS", symbols, fields),
+                                         "SUBS", symbols, fields),
             _fields(fields)
         {
         }
@@ -313,10 +315,10 @@ public:
     static function<bool(int)> is_valid_field;
 
     ChartEquitySubscriptionImpl( const set<string>& symbols,
-                             const set<FieldType>& fields )
+                                 const set<FieldType>& fields )
         :
             SubscriptionBySymbolBaseImpl(StreamerServiceType::CHART_EQUITY,
-                                     "SUBS", symbols, fields),
+                                         "SUBS", symbols, fields),
             _fields(fields)
         {
         }
@@ -337,8 +339,8 @@ private:
 
 protected:
     ChartSubscriptionBaseImpl( StreamerServiceType service,
-                             const set<string>& symbols,
-                             const set<FieldType>& fields )
+                               const set<string>& symbols,
+                               const set<FieldType>& fields )
         :
             SubscriptionBySymbolBaseImpl(service, "SUBS", symbols, fields),
             _fields(fields)
@@ -382,9 +384,9 @@ public:
     static const int TYPE_ID_HIGH = TYPE_ID_SUB_CHART_FUTURES;
 
     ChartFuturesSubscriptionImpl( const set<string>& symbols,
-                              const set<FieldType>& fields )
+                                  const set<FieldType>& fields )
         : ChartSubscriptionBaseImpl( StreamerServiceType::CHART_FUTURES,
-                                 symbols, fields )
+                                     symbols, fields )
     {}
 };
 
@@ -397,9 +399,9 @@ public:
     static const int TYPE_ID_HIGH = TYPE_ID_SUB_CHART_OPTIONS;
 
     ChartOptionsSubscriptionImpl( const set<string>& symbols,
-                              const set<FieldType>& fields )
+                                  const set<FieldType>& fields )
         : ChartSubscriptionBaseImpl( StreamerServiceType::CHART_OPTIONS,
-                                 symbols, fields )
+                                     symbols, fields )
     {}
 };
 
@@ -414,8 +416,8 @@ private:
 
 protected:
     TimesaleSubscriptionBaseImpl( StreamerServiceType service,
-                               const set<string>& symbols,
-                               const set<FieldType>& fields )
+                                  const set<string>& symbols,
+                                  const set<FieldType>& fields )
         :
             SubscriptionBySymbolBaseImpl(service, "SUBS", symbols, fields),
             _fields(fields)
@@ -443,9 +445,9 @@ public:
     static const int TYPE_ID_HIGH = TYPE_ID_SUB_TIMESALE_EQUITY;
 
     TimesaleEquitySubscriptionImpl( const set<string>& symbols,
-                                const set<FieldType>& fields )
+                                    const set<FieldType>& fields )
         : TimesaleSubscriptionBaseImpl( StreamerServiceType::TIMESALE_EQUITY,
-                                    symbols, fields)
+                                        symbols, fields)
     {}
 };
 
@@ -473,9 +475,9 @@ public:
     static const int TYPE_ID_HIGH = TYPE_ID_SUB_TIMESALE_FUTURES;
 
     TimesaleFuturesSubscriptionImpl( const set<string>& symbols,
-                                 const set<FieldType>& fields )
+                                     const set<FieldType>& fields )
         : TimesaleSubscriptionBaseImpl( StreamerServiceType::TIMESALE_FUTURES,
-                                    symbols, fields)
+                                        symbols, fields)
     {}
 };
 
@@ -487,9 +489,9 @@ public:
     static const int TYPE_ID_HIGH = TYPE_ID_SUB_TIMESALE_OPTIONS;
 
     TimesaleOptionsSubscriptionImpl( const set<string>& symbols,
-                                 const set<FieldType>& fields )
+                                     const set<FieldType>& fields )
         : TimesaleSubscriptionBaseImpl( StreamerServiceType::TIMESALE_OPTIONS,
-                                    symbols, fields)
+                                        symbols, fields)
     {}
 };
 
@@ -500,12 +502,13 @@ class ActivesSubscriptionBaseImpl
     DurationType _duration;
 
 protected:
-    ActivesSubscriptionBaseImpl(StreamerServiceType service,
-                            string venue,
-                            DurationType duration)
+    ActivesSubscriptionBaseImpl( StreamerServiceType service,
+                                 string venue,
+                                DurationType duration )
         :
             StreamingSubscriptionImpl( service, "SUBS",
-                { {"keys", venue + "-" + to_string(duration)}, {"fields", "0,1"} } ),
+                {{"keys", venue + "-" + to_string(duration)},
+                 {"fields", "0,1"}} ),
             _venue(venue),
             _duration(duration)
         {
@@ -546,7 +549,7 @@ public:
 
     NYSEActivesSubscriptionImpl(DurationType duration)
         : ActivesSubscriptionBaseImpl(StreamerServiceType::ACTIVES_NYSE,
-                                  "NYSE", duration)
+                                      "NYSE", duration)
     {}
 };
 
@@ -559,7 +562,7 @@ public:
 
     OTCBBActivesSubscriptionImpl(DurationType duration)
         : ActivesSubscriptionBaseImpl(StreamerServiceType::ACTIVES_OTCBB,
-                                  "OTCBB", duration)
+                                      "OTCBB", duration)
     {}
 };
 
@@ -576,7 +579,7 @@ public:
     OptionActivesSubscriptionImpl(VenueType venue, DurationType duration)
         :
             ActivesSubscriptionBaseImpl(StreamerServiceType::ACTIVES_OPTIONS,
-                                    to_string(venue), duration),
+                                        to_string(venue), duration),
             _venue(venue)
         {
         }
@@ -672,7 +675,6 @@ C_sub_ptr_to_impl(StreamingSubscription_C *psub)
 } /* tdma */
 
 
-
 using namespace tdma;
 
 namespace {
@@ -680,7 +682,7 @@ namespace {
 template<typename ImplTy>
 int
 subscription_is_creatable( typename ImplTy::ProxyType::CType *sub,
-                              int allow_exceptions )
+                           int allow_exceptions )
 {
     static_assert( ImplTy::TYPE_ID_LOW > 0 && ImplTy::TYPE_ID_HIGH > 0,
                    "invalid subscription type" );
@@ -692,11 +694,11 @@ subscription_is_creatable( typename ImplTy::ProxyType::CType *sub,
 template<typename ImplTy>
 int
 create_symbol_field_subscription( const char **symbols,
-                                     size_t nsymbols,
-                                     int *fields,
-                                     size_t nfields,
-                                     typename ImplTy::ProxyType::CType *psub,
-                                     int allow_exceptions )
+                                  size_t nsymbols,
+                                  int *fields,
+                                  size_t nfields,
+                                  typename ImplTy::ProxyType::CType *psub,
+                                  int allow_exceptions )
 {
     int err = subscription_is_creatable<ImplTy>(psub, allow_exceptions);
     if( err )
@@ -706,15 +708,15 @@ create_symbol_field_subscription( const char **symbols,
     CHECK_PTR_KILL_PROXY(fields, "fields", allow_exceptions, psub);
 
     if( nsymbols > SUBSCRIPTION_MAX_SYMBOLS ){
-        return HANDLE_ERROR_EX(ValueException,
-            "nsymbols > SUBSCRIPTION_MAX_SYMBOLS", allow_exceptions, psub
-            );
+        return HANDLE_ERROR_EX( ValueException,
+                                "nsymbols > SUBSCRIPTION_MAX_SYMBOLS",
+                                allow_exceptions, psub );
     }
 
     if( nfields > SUBSCRIPTION_MAX_FIELDS ){
-        return HANDLE_ERROR_EX(ValueException,
-            "nfields > SUBSCRIPTION_MAX_FIELDS", allow_exceptions, psub
-            );
+        return HANDLE_ERROR_EX( ValueException,
+                                "nfields > SUBSCRIPTION_MAX_FIELDS",
+                                allow_exceptions, psub );
     }
     
     auto s_symbols = util::buffers_to_set<string>(symbols, nsymbols);
@@ -722,9 +724,8 @@ create_symbol_field_subscription( const char **symbols,
     //TODO combine with buffers_to_set
     for(size_t i = 0; i < nfields; ++i){
         if( !ImplTy::is_valid_field(fields[i]) ){
-            return HANDLE_ERROR_EX(ValueException,
-                "invalid FieldType value", allow_exceptions, psub
-                );
+            return HANDLE_ERROR_EX( ValueException, "invalid FieldType value",
+                                    allow_exceptions, psub );
         }
     }
 
@@ -738,7 +739,7 @@ create_symbol_field_subscription( const char **symbols,
     };
 
     ImplTy *obj;
-    tie(obj, err) = CallImplFromABI( allow_exceptions, meth, s_symbols, s_fields);
+    tie(obj, err) = CallImplFromABI(allow_exceptions, meth, s_symbols, s_fields);
     if( err ){
         kill_proxy(psub);
         return err;
@@ -754,17 +755,16 @@ create_symbol_field_subscription( const char **symbols,
 template<typename ImplTy>
 int
 create_duration_subscription( int duration,
-                                 typename ImplTy::ProxyType::CType *psub,
-                                 int allow_exceptions )
+                              typename ImplTy::ProxyType::CType *psub,
+                              int allow_exceptions )
 {
     int err = subscription_is_creatable<ImplTy>(psub, allow_exceptions);
     if( err )
         return err;
 
     if( !ImplTy::is_valid_duration(duration) ){
-        return HANDLE_ERROR_EX(ValueException,
-            "invalid DurationType value", allow_exceptions, psub
-            );
+        return HANDLE_ERROR_EX( ValueException, "invalid DurationType value",
+                                allow_exceptions, psub );
     }
 
     static auto meth = +[]( int d ){
@@ -787,8 +787,10 @@ create_duration_subscription( int duration,
 
 template<typename ImplTy>
 int
-get_fields(typename ImplTy::ProxyType::CType *psub, int** fields, size_t *n,
-            int allow_exceptions)
+get_fields( typename ImplTy::ProxyType::CType *psub,
+            int** fields,
+            size_t *n,
+            int allow_exceptions )
 {
     int err = proxy_is_callable<ImplTy>(psub, allow_exceptions);
     if( err )
@@ -844,8 +846,8 @@ DEFINE_CSUB_DESTROY_FUNC(OptionActivesSubscription);
 
 /* Generic Destroy */
 int
-StreamingSubscription_Destroy_ABI(StreamingSubscription_C *psub,
-                                      int allow_exceptions)
+StreamingSubscription_Destroy_ABI( StreamingSubscription_C *psub,
+                                   int allow_exceptions )
 {
     int err = proxy_is_callable<StreamingSubscriptionImpl>(
         psub, allow_exceptions
@@ -866,8 +868,8 @@ StreamingSubscription_Destroy_ABI(StreamingSubscription_C *psub,
 
 int
 StreamingSubscription_GetService_ABI( StreamingSubscription_C *psub,
-                                          int *service,
-                                          int allow_exceptions )
+                                      int *service,
+                                      int allow_exceptions )
 {
     int err = proxy_is_callable<StreamingSubscriptionImpl>(
         psub, allow_exceptions
@@ -889,9 +891,9 @@ StreamingSubscription_GetService_ABI( StreamingSubscription_C *psub,
 
 int
 StreamingSubscription_GetCommand_ABI( StreamingSubscription_C *psub,
-                                          char **buf,
-                                          size_t *n,
-                                          int allow_exceptions )
+                                      char **buf,
+                                      size_t *n,
+                                      int allow_exceptions )
 {
     int err = proxy_is_callable<StreamingSubscriptionImpl>(
         psub, allow_exceptions
@@ -903,7 +905,8 @@ StreamingSubscription_GetCommand_ABI( StreamingSubscription_C *psub,
     CHECK_PTR(n, "n", allow_exceptions);
 
     static auto meth = +[]( void *obj ){
-        return reinterpret_cast<StreamingSubscriptionImpl*>(obj)->get_command();
+        return reinterpret_cast<StreamingSubscriptionImpl*>(obj)
+            ->get_command();
     };
 
     string r;
@@ -916,9 +919,9 @@ StreamingSubscription_GetCommand_ABI( StreamingSubscription_C *psub,
 
 int
 SubscriptionBySymbolBase_GetSymbols_ABI( StreamingSubscription_C *psub,
-                                              char ***buffers,
-                                              size_t *n,
-                                              int allow_exceptions)
+                                         char ***buffers,
+                                         size_t *n,
+                                         int allow_exceptions )
 {
     int err = proxy_is_callable<SubscriptionBySymbolBaseImpl>(
         psub, allow_exceptions
@@ -930,7 +933,8 @@ SubscriptionBySymbolBase_GetSymbols_ABI( StreamingSubscription_C *psub,
     CHECK_PTR(n, "n", allow_exceptions);
 
     static auto meth = +[]( void *obj ){
-        return reinterpret_cast<SubscriptionBySymbolBaseImpl*>(obj)->get_symbols();
+        return reinterpret_cast<SubscriptionBySymbolBaseImpl*>(obj)
+            ->get_symbols();
     };
 
     set<string> strs;
@@ -966,9 +970,9 @@ DEFINE_CSUB_GET_FIELDS_BASE_FUNC(ChartSubscriptionBase)
 DEFINE_CSUB_GET_FIELDS_BASE_FUNC(TimesaleSubscriptionBase)
 
 int
-ActivesSubscriptionBase_GetDuration_ABI(StreamingSubscription_C *psub,
-                                             int *duration,
-                                             int allow_exceptions)
+ActivesSubscriptionBase_GetDuration_ABI( StreamingSubscription_C *psub,
+                                         int *duration,
+                                         int allow_exceptions )
 {
     int err = proxy_is_callable<ActivesSubscriptionBaseImpl>(
         psub, allow_exceptions
@@ -980,7 +984,8 @@ ActivesSubscriptionBase_GetDuration_ABI(StreamingSubscription_C *psub,
 
     static auto meth = +[]( void *obj ){
         return static_cast<int>(
-            reinterpret_cast<ActivesSubscriptionBaseImpl*>(obj)->get_duration()
+            reinterpret_cast<ActivesSubscriptionBaseImpl*>(obj)
+                ->get_duration()
             );
     };
 
@@ -989,9 +994,9 @@ ActivesSubscriptionBase_GetDuration_ABI(StreamingSubscription_C *psub,
 }
 
 int
-OptionActivesSubscription_GetVenue_ABI(OptionActivesSubscription_C *psub,
-                                            int *venue,
-                                            int allow_exceptions)
+OptionActivesSubscription_GetVenue_ABI( OptionActivesSubscription_C *psub,
+                                        int *venue,
+                                        int allow_exceptions )
 {
     int err = proxy_is_callable<OptionActivesSubscriptionImpl>(
         psub, allow_exceptions
@@ -1003,7 +1008,8 @@ OptionActivesSubscription_GetVenue_ABI(OptionActivesSubscription_C *psub,
 
     static auto meth = +[]( void *obj ){
         return static_cast<int>(
-            reinterpret_cast<OptionActivesSubscriptionImpl*>(obj)->get_venue()
+            reinterpret_cast<OptionActivesSubscriptionImpl*>(obj)
+                ->get_venue()
             );
     };
 
@@ -1013,11 +1019,11 @@ OptionActivesSubscription_GetVenue_ABI(OptionActivesSubscription_C *psub,
 
 int
 QuotesSubscription_Create_ABI( const char **symbols,
-                                   size_t nsymbols,
-                                   int *fields,
-                                   size_t nfields,
-                                   QuotesSubscription_C *psub,
-                                   int allow_exceptions )
+                               size_t nsymbols,
+                               int *fields,
+                               size_t nfields,
+                               QuotesSubscription_C *psub,
+                               int allow_exceptions )
 {
     return create_symbol_field_subscription<QuotesSubscriptionImpl>(
         symbols, nsymbols, fields, nfields,  psub, allow_exceptions
@@ -1027,11 +1033,11 @@ QuotesSubscription_Create_ABI( const char **symbols,
 
 int
 OptionsSubscription_Create_ABI( const char **symbols,
-                                    size_t nsymbols,
-                                    int *fields,
-                                    size_t nfields,
-                                    OptionsSubscription_C *psub,
-                                    int allow_exceptions )
+                                size_t nsymbols,
+                                int *fields,
+                                size_t nfields,
+                                OptionsSubscription_C *psub,
+                                int allow_exceptions )
 {
     return create_symbol_field_subscription<OptionsSubscriptionImpl>(
         symbols, nsymbols, fields, nfields, psub, allow_exceptions
@@ -1057,11 +1063,11 @@ LevelOneFuturesSubscription_Create_ABI(
 
 int
 LevelOneForexSubscription_Create_ABI( const char **symbols,
-                                           size_t nsymbols,
-                                           int *fields,
-                                           size_t nfields,
-                                           LevelOneForexSubscription_C *psub,
-                                           int allow_exceptions )
+                                      size_t nsymbols,
+                                      int *fields,
+                                      size_t nfields,
+                                      LevelOneForexSubscription_C *psub,
+                                      int allow_exceptions )
 {
     return create_symbol_field_subscription<LevelOneForexSubscriptionImpl>(
         symbols, nsymbols, fields, nfields, psub, allow_exceptions
@@ -1087,11 +1093,11 @@ LevelOneFuturesOptionsSubscription_Create_ABI(
 
 int
 NewsHeadlineSubscription_Create_ABI( const char **symbols,
-                                         size_t nsymbols,
-                                         int *fields,
-                                         size_t nfields,
-                                         NewsHeadlineSubscription_C *psub,
-                                         int allow_exceptions )
+                                     size_t nsymbols,
+                                     int *fields,
+                                     size_t nfields,
+                                     NewsHeadlineSubscription_C *psub,
+                                     int allow_exceptions )
 {
     return create_symbol_field_subscription<NewsHeadlineSubscriptionImpl>(
         symbols, nsymbols, fields, nfields, psub, allow_exceptions
@@ -1100,11 +1106,11 @@ NewsHeadlineSubscription_Create_ABI( const char **symbols,
 
 int
 ChartEquitySubscription_Create_ABI( const char **symbols,
-                                        size_t nsymbols,
-                                        int *fields,
-                                        size_t nfields,
-                                        ChartEquitySubscription_C *psub,
-                                        int allow_exceptions )
+                                    size_t nsymbols,
+                                    int *fields,
+                                    size_t nfields,
+                                    ChartEquitySubscription_C *psub,
+                                    int allow_exceptions )
 {
     return create_symbol_field_subscription<ChartEquitySubscriptionImpl>(
         symbols, nsymbols, fields, nfields, psub, allow_exceptions
@@ -1115,11 +1121,11 @@ ChartEquitySubscription_Create_ABI( const char **symbols,
 
 int
 ChartFuturesSubscription_Create_ABI( const char **symbols,
-                                         size_t nsymbols,
-                                         int *fields,
-                                         size_t nfields,
-                                         ChartFuturesSubscription_C *psub,
-                                         int allow_exceptions )
+                                     size_t nsymbols,
+                                     int *fields,
+                                     size_t nfields,
+                                     ChartFuturesSubscription_C *psub,
+                                     int allow_exceptions )
 {
     return create_symbol_field_subscription<ChartFuturesSubscriptionImpl>(
         symbols, nsymbols, fields, nfields, psub, allow_exceptions
@@ -1129,11 +1135,11 @@ ChartFuturesSubscription_Create_ABI( const char **symbols,
 
 int
 ChartOptionsSubscription_Create_ABI( const char **symbols,
-                                         size_t nsymbols,
-                                         int *fields,
-                                         size_t nfields,
-                                         ChartOptionsSubscription_C *psub,
-                                         int allow_exceptions )
+                                     size_t nsymbols,
+                                     int *fields,
+                                     size_t nfields,
+                                     ChartOptionsSubscription_C *psub,
+                                     int allow_exceptions )
 {
     return create_symbol_field_subscription<ChartOptionsSubscriptionImpl>(
         symbols, nsymbols, fields, nfields, psub, allow_exceptions
@@ -1142,11 +1148,11 @@ ChartOptionsSubscription_Create_ABI( const char **symbols,
 
 int
 TimesaleEquitySubscription_Create_ABI( const char **symbols,
-                                            size_t nsymbols,
-                                            int *fields,
-                                            size_t nfields,
-                                            TimesaleEquitySubscription_C *psub,
-                                            int allow_exceptions )
+                                       size_t nsymbols,
+                                       int *fields,
+                                       size_t nfields,
+                                       TimesaleEquitySubscription_C *psub,
+                                       int allow_exceptions )
 {
     return create_symbol_field_subscription<TimesaleEquitySubscriptionImpl>(
         symbols, nsymbols, fields, nfields, psub, allow_exceptions
@@ -1156,11 +1162,11 @@ TimesaleEquitySubscription_Create_ABI( const char **symbols,
 
 int
 TimesaleFuturesSubscription_Create_ABI( const char **symbols,
-                                             size_t nsymbols,
-                                             int *fields,
-                                             size_t nfields,
-                                             TimesaleFuturesSubscription_C *psub,
-                                             int allow_exceptions )
+                                        size_t nsymbols,
+                                        int *fields,
+                                        size_t nfields,
+                                        TimesaleFuturesSubscription_C *psub,
+                                        int allow_exceptions )
 {
     return create_symbol_field_subscription<TimesaleFuturesSubscriptionImpl>(
         symbols, nsymbols, fields, nfields, psub, allow_exceptions
@@ -1170,11 +1176,11 @@ TimesaleFuturesSubscription_Create_ABI( const char **symbols,
 
 int
 TimesaleOptionsSubscription_Create_ABI( const char **symbols,
-                                             size_t nsymbols,
-                                             int *fields,
-                                             size_t nfields,
-                                             TimesaleOptionsSubscription_C *psub,
-                                             int allow_exceptions )
+                                        size_t nsymbols,
+                                        int *fields,
+                                        size_t nfields,
+                                        TimesaleOptionsSubscription_C *psub,
+                                        int allow_exceptions )
 {
     return create_symbol_field_subscription<TimesaleOptionsSubscriptionImpl>(
         symbols, nsymbols, fields, nfields, psub, allow_exceptions
@@ -1184,8 +1190,8 @@ TimesaleOptionsSubscription_Create_ABI( const char **symbols,
 
 int
 NasdaqActivesSubscription_Create_ABI( int duration_type,
-                                           NasdaqActivesSubscription_C *psub,
-                                           int allow_exceptions )
+                                      NasdaqActivesSubscription_C *psub,
+                                      int allow_exceptions )
 
 {
     return create_duration_subscription<NasdaqActivesSubscriptionImpl>(
@@ -1196,8 +1202,8 @@ NasdaqActivesSubscription_Create_ABI( int duration_type,
 
 int
 NYSEActivesSubscription_Create_ABI( int duration_type,
-                                         NYSEActivesSubscription_C *psub,
-                                         int allow_exceptions )
+                                    NYSEActivesSubscription_C *psub,
+                                    int allow_exceptions )
 {
     return create_duration_subscription<NYSEActivesSubscriptionImpl>(
         duration_type, psub, allow_exceptions
@@ -1207,8 +1213,8 @@ NYSEActivesSubscription_Create_ABI( int duration_type,
 
 int
 OTCBBActivesSubscription_Create_ABI( int duration_type,
-                                          OTCBBActivesSubscription_C *psub,
-                                          int allow_exceptions )
+                                     OTCBBActivesSubscription_C *psub,
+                                     int allow_exceptions )
 {
     return create_duration_subscription<OTCBBActivesSubscriptionImpl>(
         duration_type, psub, allow_exceptions
@@ -1217,9 +1223,9 @@ OTCBBActivesSubscription_Create_ABI( int duration_type,
 
 int
 OptionActivesSubscription_Create_ABI( int venue,
-                                           int duration_type,
-                                           OptionActivesSubscription_C *psub,
-                                           int allow_exceptions )
+                                      int duration_type,
+                                      OptionActivesSubscription_C *psub,
+                                      int allow_exceptions )
 {
     int err = subscription_is_creatable<OptionActivesSubscriptionImpl>(
         psub, allow_exceptions
@@ -1228,24 +1234,22 @@ OptionActivesSubscription_Create_ABI( int venue,
         return err;
 
     if( !OptionActivesSubscriptionImpl::is_valid_venue(venue) ){
-        return HANDLE_ERROR_EX(ValueException,
-            "invalid VenueType value", allow_exceptions, psub
-            );
+        return HANDLE_ERROR_EX( ValueException, "invalid VenueType value",
+                                allow_exceptions, psub );
     }
 
     if( !OptionActivesSubscriptionImpl::is_valid_duration(duration_type) ){
-        return HANDLE_ERROR_EX(ValueException,
-            "invalid DurationType value", allow_exceptions, psub
-            );
+        return HANDLE_ERROR_EX( ValueException, "invalid DurationType value",
+                                allow_exceptions, psub );
     }
 
     static auto meth = +[]( int v, int d ){
-        return new OptionActivesSubscriptionImpl( static_cast<VenueType>(v),
-                                                  static_cast<DurationType>(d) );
+        return new OptionActivesSubscriptionImpl(static_cast<VenueType>(v),
+                                                 static_cast<DurationType>(d));
     };
 
     OptionActivesSubscriptionImpl *obj;
-    tie(obj, err) = CallImplFromABI( allow_exceptions, meth, venue, duration_type);
+    tie(obj, err) = CallImplFromABI(allow_exceptions, meth, venue, duration_type);
     if( err ){
         kill_proxy(psub);
         return err;

@@ -44,8 +44,8 @@ connect_auth( conn::HTTPSPostConnection& connection, std::string fname);
 
 std::pair<std::string, conn::clock_ty::time_point>
 connect_get( conn::HTTPSConnection& connection,
-              Credentials& creds,
-              api_on_error_cb_ty on_error_cb );
+             Credentials& creds,
+             api_on_error_cb_ty on_error_cb );
 
 std::pair<std::string, conn::clock_ty::time_point>
 connect_execute( conn::HTTPSConnection& connection,
@@ -66,21 +66,21 @@ query_api_on_error_callback(long code, const std::string& data);
 
 int
 to_new_char_buffer( const std::string& s,
-                            char** buf,
-                            size_t* n,
-                            bool allow_exceptions );
+                    char** buf,
+                    size_t* n,
+                    bool allow_exceptions );
 
 int
 to_new_char_buffers( const std::set<std::string>& strs,
-                       char*** bufs,
-                       size_t *n,
-                       bool allow_exceptions );
+                     char*** bufs,
+                     size_t *n,
+                     bool allow_exceptions );
 
 void
-set_error_state(int code,
-                  const std::string&  msg,
-                  int fileno,
-                  const std::string& filename);
+set_error_state( int code,
+                 const std::string&  msg,
+                 int fileno,
+                 const std::string& filename );
 
 std::tuple<int, std::string, int, std::string>
 get_error_state();
@@ -188,12 +188,12 @@ return_error(int r){ return r; }
 template<typename ProxyTy>
 void
 kill_proxy( ProxyTy *proxy,
-             typename std::enable_if<
-                 IsValidCProxy<ProxyTy, Getter_C>::value ||
-                 IsValidCProxy<ProxyTy, StreamingSubscription_C>::value ||
-                 IsValidCProxy<ProxyTy, OrderLeg_C>::value ||
-                 IsValidCProxy<ProxyTy, OrderTicket_C>::value
-                 >::type* _ = nullptr )
+            typename std::enable_if<
+                IsValidCProxy<ProxyTy, Getter_C>::value ||
+                IsValidCProxy<ProxyTy, StreamingSubscription_C>::value ||
+                IsValidCProxy<ProxyTy, OrderLeg_C>::value ||
+                IsValidCProxy<ProxyTy, OrderTicket_C>::value
+                >::type* _ = nullptr )
 {
     proxy->obj = nullptr;
     proxy->type_id = -1;
@@ -202,9 +202,9 @@ kill_proxy( ProxyTy *proxy,
 template<typename ProxyTy>
 void
 kill_proxy( ProxyTy *proxy,
-             typename std::enable_if<
-                 std::is_same<ProxyTy, StreamingSession_C>::value
-                 >::type* _ = nullptr )
+            typename std::enable_if<
+                std::is_same<ProxyTy, StreamingSession_C>::value
+                >::type* _ = nullptr )
 {
     proxy->obj = nullptr;
     proxy->type_id = -1;
@@ -214,9 +214,9 @@ kill_proxy( ProxyTy *proxy,
 template<typename ProxyTy>
 void
 kill_proxy( ProxyTy *proxy,
-             typename std::enable_if<
-                 std::is_same<ProxyTy, nullptr_t>::value
-                 >::type* _ = nullptr )
+            typename std::enable_if<
+                std::is_same<ProxyTy, nullptr_t>::value
+                >::type* _ = nullptr )
 {}
 
 
@@ -231,10 +231,10 @@ kill_proxy( ProxyTy *proxy,
 template<typename ExcTy, typename ProxyTy=nullptr_t>
 int
 handle_error( const std::string& msg,
-                bool exc,
-                int lineno,
-                const std::string& filename,
-                ProxyTy *proxy=nullptr)
+              bool exc,
+              int lineno,
+              const std::string& filename,
+              ProxyTy *proxy=nullptr)
 {
     if( proxy )
         kill_proxy(proxy);
@@ -329,7 +329,7 @@ base_proxy_is_callable( T *proxy, int allow_exceptions )
 template<typename ImplTy>
 int
 proxy_is_callable( typename ImplTy::ProxyType::CType *proxy,
-                      int allow_exceptions )
+                   int allow_exceptions )
 {
     int err = base_proxy_is_callable(proxy, allow_exceptions);
     if( err )
@@ -370,7 +370,7 @@ struct ImplAccessor{
     set( typename ImplTy::ProxyType::CType* pgetter,
          R(ImplTy::*method)(CastToTy),
          T val,
-         int allow_exceptions)
+         int allow_exceptions )
     {
         int err = proxy_is_callable<ImplTy>(pgetter, allow_exceptions);
         if( err )
@@ -395,7 +395,7 @@ struct ImplAccessor{
          R(ImplTy::*method)(CastToTy, CastToTy2),
          T val,
          T2 val2,
-         int allow_exceptions)
+         int allow_exceptions )
     {
         int err = proxy_is_callable<ImplTy>(pgetter, allow_exceptions);
         if( err )
@@ -457,7 +457,7 @@ struct ImplAccessor<char**>{
     set( typename ImplTy::ProxyType::CType* pgetter,
          R(ImplTy::*method)(const std::string&),
          const char* val,
-         int allow_exceptions)
+         int allow_exceptions )
     {
         int err = proxy_is_callable<ImplTy>(pgetter, allow_exceptions);
         if( err )
@@ -509,11 +509,14 @@ struct ImplAccessor<char**>{
          char **pval,
          size_t *n,
          int allow_exceptions )
-    { return get<ImplTy>(pgetter,
-        reinterpret_cast<std::string(ImplTy::*)(void) const>(method),
-        pval, n, allow_exceptions); }
+    {
+        return get<ImplTy>(
+            pgetter,
+            reinterpret_cast<std::string(ImplTy::*)(void) const>(method),
+            pval, n, allow_exceptions
+            );
+    }
 };
-
 
 
 template<> /* FOR ARRAY OF C STR TYPES */
@@ -524,7 +527,7 @@ struct ImplAccessor<char***>{
          R(ImplTy::*method)(const std::set<std::string>&),
          const char** val,
          size_t n,
-         int allow_exceptions)
+         int allow_exceptions )
     {
         int err = proxy_is_callable<ImplTy>(pgetter, allow_exceptions);
         if( err )
@@ -576,5 +579,11 @@ struct ImplAccessor<char***>{
 };
 
 } /* tdma */
+
+#define TDMA_API_TO_STRING_ABI_ARGS \
+    int v, \
+    char** buf, \
+    size_t* n, \
+    int allow_exceptions
 
 #endif // TDMA_API_H_

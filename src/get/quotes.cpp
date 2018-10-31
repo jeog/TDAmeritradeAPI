@@ -179,9 +179,9 @@ using namespace tdma;
 
 int
 QuoteGetter_Create_ABI( Credentials *pcreds,
-                           const char* symbol,
-                           QuoteGetter_C *pgetter,
-                           int allow_exceptions )
+                        const char* symbol,
+                        QuoteGetter_C *pgetter,
+                        int allow_exceptions )
 {
     using ImplTy = QuoteGetterImpl;
 
@@ -218,9 +218,9 @@ QuoteGetter_Destroy_ABI(QuoteGetter_C *pgetter, int allow_exceptions)
 
 int
 QuoteGetter_GetSymbol_ABI( QuoteGetter_C *pgetter,
-                              char **buf,
-                              size_t *n,
-                              int allow_exceptions)
+                           char **buf,
+                           size_t *n,
+                           int allow_exceptions )
 {
     return ImplAccessor<char**>::template get<QuoteGetterImpl>(
         pgetter, &QuoteGetterImpl::get_symbol, buf, n, allow_exceptions
@@ -230,8 +230,8 @@ QuoteGetter_GetSymbol_ABI( QuoteGetter_C *pgetter,
 
 int
 QuoteGetter_SetSymbol_ABI( QuoteGetter_C *pgetter,
-                              const char *symbol,
-                              int allow_exceptions )
+                           const char *symbol,
+                           int allow_exceptions )
 {
     return ImplAccessor<char**>::template set<QuoteGetterImpl>(
         pgetter, &QuoteGetterImpl::set_symbol, symbol, allow_exceptions
@@ -241,10 +241,10 @@ QuoteGetter_SetSymbol_ABI( QuoteGetter_C *pgetter,
 
 int
 QuotesGetter_Create_ABI( Credentials *pcreds,
-                            const char** symbols,
-                            size_t nsymbols,
-                            QuotesGetter_C *pgetter,
-                            int allow_exceptions )
+                         const char** symbols,
+                         size_t nsymbols,
+                         QuotesGetter_C *pgetter,
+                         int allow_exceptions )
 {
     using ImplTy = QuotesGetterImpl;
 
@@ -285,9 +285,9 @@ QuotesGetter_Destroy_ABI(QuotesGetter_C *pgetter, int allow_exceptions)
 
 int
 QuotesGetter_GetSymbols_ABI( QuotesGetter_C *pgetter,
-                                char ***buf,
-                                size_t *n,
-                                int allow_exceptions)
+                             char ***buf,
+                             size_t *n,
+                             int allow_exceptions )
 {
     return ImplAccessor<char***>::template get<QuotesGetterImpl>(
         pgetter, &QuotesGetterImpl::get_symbols, buf, n, allow_exceptions
@@ -297,9 +297,9 @@ QuotesGetter_GetSymbols_ABI( QuotesGetter_C *pgetter,
 
 int
 QuotesGetter_SetSymbols_ABI( QuotesGetter_C *pgetter,
-                                const char **symbols,
-                                size_t nsymbols,
-                                int allow_exceptions )
+                             const char **symbols,
+                             size_t nsymbols,
+                             int allow_exceptions )
 {
     return ImplAccessor<char***>::template set<QuotesGetterImpl>(
         pgetter, &QuotesGetterImpl::set_symbols, symbols, nsymbols,
@@ -310,8 +310,8 @@ QuotesGetter_SetSymbols_ABI( QuotesGetter_C *pgetter,
 
 int
 QuotesGetter_AddSymbol_ABI( QuotesGetter_C *pgetter,
-                              const char *symbol,
-                              int allow_exceptions )
+                            const char *symbol,
+                            int allow_exceptions )
 {
     return ImplAccessor<char**>::template set<QuotesGetterImpl>(
         pgetter, &QuotesGetterImpl::add_symbol, symbol, allow_exceptions
@@ -320,8 +320,8 @@ QuotesGetter_AddSymbol_ABI( QuotesGetter_C *pgetter,
 
 int
 QuotesGetter_RemoveSymbol_ABI( QuotesGetter_C *pgetter,
-                                   const char *symbol,
-                                   int allow_exceptions )
+                               const char *symbol,
+                               int allow_exceptions )
 {
     return ImplAccessor<char**>::template set<QuotesGetterImpl>(
         pgetter, &QuotesGetterImpl::remove_symbol, symbol, allow_exceptions
@@ -330,9 +330,9 @@ QuotesGetter_RemoveSymbol_ABI( QuotesGetter_C *pgetter,
 
 int
 QuotesGetter_AddSymbols_ABI( QuotesGetter_C *pgetter,
-                                const char **symbols,
-                                size_t nsymbols,
-                                int allow_exceptions )
+                             const char **symbols,
+                             size_t nsymbols,
+                             int allow_exceptions )
 {
     return ImplAccessor<char***>::template set<QuotesGetterImpl>(
         pgetter, &QuotesGetterImpl::add_symbols, symbols, nsymbols,
@@ -342,9 +342,9 @@ QuotesGetter_AddSymbols_ABI( QuotesGetter_C *pgetter,
 
 int
 QuotesGetter_RemoveSymbols_ABI( QuotesGetter_C *pgetter,
-                                   const char **symbols,
-                                   size_t nsymbols,
-                                  int allow_exceptions )
+                                const char **symbols,
+                                size_t nsymbols,
+                                int allow_exceptions )
 {
     return ImplAccessor<char***>::template set<QuotesGetterImpl>(
         pgetter, &QuotesGetterImpl::remove_symbols, symbols, nsymbols,

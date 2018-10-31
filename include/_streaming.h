@@ -45,12 +45,13 @@ const int TYPE_ID_SUB_ACTIVES_OPTION = 18;
 
 const int TYPE_ID_STREAMING_SESSION = 100;
 
+
 StreamerServiceType
 streamer_service_from_str(std::string service_name);
 
-
 StreamerInfo
 get_streamer_info(Credentials& creds);
+
 
 class StreamingSubscriptionImpl{
     StreamerServiceType _service;
@@ -61,7 +62,8 @@ protected:
     StreamingSubscriptionImpl(
             StreamerServiceType service,
             const std::string& command,
-            const std::map<std::string, std::string>& paramaters );
+            const std::map<std::string, std::string>& paramaters
+            );
 
 public:
     typedef StreamingSubscription ProxyType;
@@ -87,6 +89,7 @@ public:
     virtual
     ~StreamingSubscriptionImpl(){}
 };
+
 
 // THROWS
 StreamingSubscriptionImpl
