@@ -242,10 +242,6 @@ To make *libTDAmeritradeAPI.so* available to your program:
 Since all the dependencies are included(or built manually) you'll need to manage them AND *TDAmeritradeAPI.dll*.
 
 - move them to a systems folder
-    - e.g. if moving a 32bit(Win32) DLL to C:\Windows\SysWow64\, copy there and run:  
-    ```(Admin) C:Windows\SysWow64\regsvr32.exe <dll name>```
-    - e.g. if moving a 64bit(x64) DLL to C:\Windows\System32, copy there and run:  
-    ```(Admin) C:Windows\System32\regsvr32.exe <dll name>```
 - *-or-* link your code with the appropriate flags (use link settings in VisualStudio)   
 - *-or-* add their folder(s) to your PATH variable.
 - *-or-* move the files to the location of the binary that will link to it  
