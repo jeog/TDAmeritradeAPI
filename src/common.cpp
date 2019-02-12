@@ -156,6 +156,11 @@ to_new_char_buffers( const std::set<string>& strs,
     assert(n);
 
     *n = strs.size();
+    if( *n == 0 ){
+        *bufs = nullptr;
+        return 0;
+    }
+
     int err = alloc_to_buffer(bufs, *n, allow_exceptions);
     if( err )
         return err;

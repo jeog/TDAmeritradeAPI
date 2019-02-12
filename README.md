@@ -31,6 +31,7 @@ and then uses the library to request an access token, which is refreshed automat
 ### Index
 - - -
 - [Dependencies](#dependencies)
+- [New Features](#new-features)
 - [Status](#status)
 - [Structure](#structure)
 - [Getting Started](#getting-started)
@@ -68,6 +69,12 @@ This project would not be possible without some of the great open-source project
 - [libuv](https://libuv.org) - Cross-platform asynchronous I/O
 - [uWebSockets](https://github.com/uNetworking/uWebSockets) - A simple and efficient C++ WebSocket library. The source is included, compiled and archived with our library to limit dependency issues.
 - [nlohmann::json](https://github.com/nlohmann/json) : - An extensive C++ json library that only requires adding a single header file. ***You'll need to review their documentation for handling returned data from the C++ version of this library.***
+
+### New Features
+- - -
+
+- ADD, VIEW, UNSUBS commands for Streaming interface
+- Setters for Subscription objects, copy semantics for C++ versions
 
 ### Status
 - - -
@@ -211,7 +218,7 @@ Some precompiled versions of the library are provided for convenience. You'll st
 
 bin/[distro]-[kernel version]--[architecture]--[toolchain]
 
-- bin/debian-3.16--i386--gcc/  
+- ~~bin/debian-3.16--i386--gcc/~~
 - bin/debian-3.20--x86_64--gcc/  
 
 The Linux/ELF binaries in the directories above may or may not work on your particular system/distro BUT [building the library from source](#unix-like-1) is pretty straight forward. 

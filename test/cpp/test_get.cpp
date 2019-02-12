@@ -535,10 +535,10 @@ instrument_info_getter(Credentials& c)
 
     Get(o);
 
-    o.set_query(InstrumentSearchType::symbol_regex, "GOOGL?");
+    o.set_query(InstrumentSearchType::symbol_regex, "GOOGL*");
     cout<< o.get_query_string() << ' ' << o.get_search_type() << endl;
 
-    if( o.get_query_string() != "GOOGL?" )
+    if( o.get_query_string() != "GOOGL*" )
         throw runtime_error("invalid query string");
     if( o.get_search_type() != InstrumentSearchType::symbol_regex)
         throw runtime_error("invalid search type");

@@ -2623,6 +2623,8 @@ private:
                      const std::set<std::string>& symbols ) const
     {
         const char** tmp = set_to_new_cstrs(symbols);
+        if( tmp == nullptr )
+            THROW_VALUE_EXCEPTION("empty set is not valid");
         new_array_to_abi( abicall, tmp, cgetter<CType>(), tmp, symbols.size() );
     }
 
@@ -2632,6 +2634,8 @@ public:
             APIGetter( CType{}, QuotesGetter_Destroy_ABI )
         {
             const char** tmp = set_to_new_cstrs(symbols);
+            if( tmp == nullptr )
+                THROW_VALUE_EXCEPTION("empty set is not valid");
             new_array_to_abi( QuotesGetter_Create_ABI, tmp, &creds, tmp,
                               symbols.size(), cgetter<CType>() );
         }

@@ -968,7 +968,8 @@ inline const char**
 set_to_new_cstrs(const std::set<std::string>& symbols )
 {
     if( symbols.empty() )
-        throw ValueException("empty symbols set", __LINE__, __FILE__);
+        return nullptr;
+        //throw ValueException("empty symbols set", __LINE__, __FILE__);
     return set_to_new_array( symbols,
                              +[](const std::string& s){ return s.c_str(); } );
 }
@@ -978,7 +979,8 @@ int*
 set_to_new_int_array(const std::set<FTy>& fields)
 {
     if( fields.empty() )
-        throw ValueException("empty fields set", __LINE__, __FILE__);
+        return nullptr;
+        //throw ValueException("empty fields set", __LINE__, __FILE__);
     return set_to_new_array( fields,
                              +[](const FTy& f){ return static_cast<int>(f); } );
 }
@@ -1021,9 +1023,26 @@ set_of_strs_from_abi( int(*abicall)(CTy*, char***, size_t*, int), CTy *cty )
     return strs;
 }
 
+template<typename CTy>
+void
+set_of_strs_to_abi( int(*abicall)(CTy*, const char**, size_t,int),
+                    CTy *cty,
+                    const std::set<std::string>& strs )
+{
+    const char** s = nullptr;
+    try{
+        s = set_to_new_cstrs(strs);
+        call_abi( abicall, cty, s, strs.size());
+        if(s) delete[] s;
+    }catch(...){
+        if(s) delete[] s;
+        throw;
+    }
+}
+
 template<typename FTy, typename CTy>
 std::set<FTy>
-enums_from_abi( int(*abicall)(CTy*, int**, size_t*,int), CTy *cty )
+set_of_fields_from_abi( int(*abicall)(CTy*, int**, size_t*,int), CTy *cty )
 {
     int *f;
     size_t n;
@@ -1033,6 +1052,25 @@ enums_from_abi( int(*abicall)(CTy*, int**, size_t*,int), CTy *cty )
         ret.insert( static_cast<FTy>(f[n]) );
     call_abi( FreeFieldsBuffer_ABI, f );
     return ret;
+}
+
+
+
+template<typename CTy, typename FTy>
+void
+set_of_fields_to_abi( int(*abicall)(CTy*, int*, size_t, int),
+                      CTy *cty,
+                      const std::set<FTy>& fields )
+{
+    int *i = nullptr;
+    try{
+        i = set_to_new_int_array(fields);
+        call_abi( abicall, cty, i, fields.size());
+        if(i) delete[] i;
+    }catch(...){
+        if(i) delete[] i;
+        throw;
+    }
 }
 
 } /* tdma */

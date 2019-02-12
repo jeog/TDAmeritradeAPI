@@ -55,15 +55,22 @@ get_streamer_info(Credentials& creds);
 
 class StreamingSubscriptionImpl{
     StreamerServiceType _service;
-    std::string _command;
+    CommandType _command;
     std::map<std::string, std::string> _parameters;
 
 protected:
     StreamingSubscriptionImpl(
             StreamerServiceType service,
-            const std::string& command,
-            const std::map<std::string, std::string>& paramaters
+            CommandType command
             );
+
+    void
+    set_parameters(const std::map<std::string, std::string>& parameters)
+    { _parameters = parameters; }
+
+    virtual std::map<std::string, std::string>
+    build_parameters() const
+    { return {}; }
 
 public:
     typedef StreamingSubscription ProxyType;
@@ -78,13 +85,31 @@ public:
     get_service() const
     { return _service; }
 
-    std::string
+    CommandType
     get_command() const
     { return _command; }
+
+    void
+    set_command( CommandType command )
+    {
+        _command = command;
+        set_parameters( build_parameters() );
+    }
 
     std::map<std::string, std::string>
     get_parameters() const
     { return _parameters; }
+
+    virtual bool
+    operator==(const StreamingSubscriptionImpl& sub ) const
+    {
+        return sub._service == _service && sub._command == _command
+            && sub._parameters == _parameters;
+    }
+
+    virtual bool
+    operator!=(const StreamingSubscriptionImpl& sub ) const
+    { return !(*this == sub); }
 
     virtual
     ~StreamingSubscriptionImpl(){}

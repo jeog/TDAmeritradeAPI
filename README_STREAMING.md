@@ -13,6 +13,8 @@
 - [Subscriptions](#subscriptions)
     - [Symbol / Field ](#symbol--field)
     - [Duration / Venue ](#symbol--field)
+    - [Commands](#commands)
+    - [Copy](#copy)
     - [Destroy](#destroy-1)
 - [Example Usage](#example-usage)
     - [C++](#c)
@@ -296,10 +298,11 @@ StreamingCallbackType | StreamingService  | timestamp   | json
 
 #### Start
 
-Once a Session is created it needs to be started and different services need to be subscribed to.  Starting a session will automatically try to log the user in. In order to start, two conditions must be met:
+Once a Session is created it needs to be started and different services need to be subscribed to.  Starting a session will automatically try to log the user in. In order to start, three conditions must be met:
 
 1. No other Sessions with the same Primary Account ID can be active. An active session is one that's been started and not stopped. 
 2. It must have at least one subscription. (Subscription objects are explained in the [Subscriptions Section](#subscriptions).)
+3. ALL subscriptions must use 'CommandType' SUBS. (The default value, see the [Subscriptions Section](#subscriptions) ) 
 
 If not the start call will throw ```StreamingException``` (C++), ```clib.CLibException``` (Python) or return ```TDMA_API_STREAM_ERROR``` (C).
 
@@ -375,12 +378,13 @@ def stream.StreamingSession.add_subscriptions(self, *subscriptions):
 You can add multiple subscription instances but instances of the same type ***usually***
 override older/preceding ones.
 
+To update a subscription you can use ADD, VIEW, or UNSUBS commands. (see below)
+
 To replace a subscription you can override it by adding a new subscription of
 the same type(this appears to work but haven't tried every possible combination so
-there's no guarantee) or by stopping the session and then restarting 
-with new subscriptions. 
+there's no guarantee) or using the UNSUBS command followed by the SUBS command or by stopping the session and then restarting with new subscriptions. 
 
-It's best to avoid doing this frequently because the session object will go through 
+It's best to avoid doing the latter because the session object will go through 
 a somewhat costly life-cycle:
 ```
     STOP
@@ -509,6 +513,7 @@ Some objects share a Field enum. For instance, ```TimesaleEquitySubscription``` 
 ```TimesaleOptionsSubscription``` use fields from ```enum TimesaleSubscriptionField```. In Python these fields
 are defined in a shared base class. For instance, ```TimesaleEquitySubscription.FIELD_TRADE_TIME``` and ```TimesaleOptionSubscription.FIELD_TRADE_TIME``` are inherited from ```_TimesaleSubscriptionBase```.
 
+
 To create a subscription you'll pass symbol strings AND values from the appropriate
 enum, e.g:
 ```
@@ -518,7 +523,8 @@ class QuotesSubscription
     using FieldType = QuotesSubscriptionField;
     ...
     QuotesSubscription( const std::set<std::string>& symbols,
-                          const std::set<FieldType>& fields );
+                        const std::set<FieldType>& fields,
+                        CommandType command = CommandType::SUBS );
 }
 
 [C]
@@ -527,11 +533,12 @@ QuotesSubscription_Create(const char** symbols,
                           size_t nsymbols, 
                           QuotesSubscriptionField *fields,
                           size_t nfields,
+                          CommandType command,
                           QuotesSubscription_C *psub); // <-- to be populated on success
 
 [Python]
 class QuotesSubscription(_SubscriptionBySymbolBase):
-    def __init__(self, symbols, fields): 
+    def __init__(self, symbols, fields, command=COMMAND_TYPE_SUBS): 
 ```
 
 The C++ and Python objects derive from ```SubscriptionBySymbolBase``` and ```_SubscriptionBySymbolBase```, respectively, and expose:
@@ -540,11 +547,16 @@ The C++ and Python objects derive from ```SubscriptionBySymbolBase``` and ```_Su
 std::set<std::string>
 SubscriptionBySymbolBase::get_symbols() const
 
+void
+SubscriptionBySymbolBase::set_symbols(const std::set<std::string>& symbols);
+
 [Python]
 def stream._SubscriptionBySymbolBase.get_symbols():
+
+def stream._SubscriptionBySymbolBase.set_symbols( symbols ):
 ```
 
-In C you'll use the appropraitely named call, e.g:
+In C you'll use the appropraitely named calls, e.g:
 ```
 [C]
 int
@@ -553,13 +565,13 @@ QuotesSubscription_GetSymbols( QuotesSubscription_C *psub,
                                size_t *n );
 
 int
-OptionsSubscription_GetSymbols( OptionsSubscription_C *psub, 
-                                char ***buffers, 
-                                size_t *n );
+QuotesSubscription_SetSymbols( QuotesSubscription_C *psub, 
+                               const char **buffers, 
+                               size_t n );
 
 ...
 ```
-Remember, its the clients repsonsibility to free these buffers:
+Remember, its the client's repsonsibility to free the buffers populated by the 'Get' calls:
 ```
 [C]
 inline int
@@ -574,11 +586,16 @@ To access the fields, e.g:
 std::set<FieldType> 
 QuotesSubscription::get_fields() const
 
+void
+QuotesSubscription::set_fields(const std::set<FieldType>& fields);
+
 [Python]
 def stream._SubscriptionBySymbolBase.get_fields():
+
+def stream._SubscriptionBySymbolBase.set_fields( fields ):
 ```
 
-In C you'll use the appropriately named call, e.g:
+In C you'll use the appropriately named calls, e.g:
 ```
 [C]
 int
@@ -589,13 +606,13 @@ QuotesSubscription_GetFields( QuotesSubscription_C *psub,
 ...
 
 int
-TimesaleEquitySubscription_GetFields( TimesaleEquitySubscription_C *psub, 
-                                      TimesaleSubscription **fields, 
-                                      size_t *n);
+QuotesSubscription_SetFields( QuotesSubscription_C *psub, 
+                              QuotesSubscriptionField *fields, 
+                              size_t n);
 
 ...
 ```
-Remember, its the clients repsonsibility to free these buffers (cast field* to int*):
+Remember, its the client's repsonsibility to free the buffers returned from the 'Get' calls (cast to int*):
 ```
 [C]
 inline int
@@ -615,21 +632,100 @@ Duration/Venue objects are similar except they use DurationType and/or VenueType
 class OptionActivesSubscription
         : public ActivesSubscriptionBase {
 
-    OptionActivesSubscription( VenueType venue, DurationType duration );
+    OptionActivesSubscription( VenueType venue, 
+                               DurationType duration,
+                               CommandType command = CommandType::SUBS );
 }
 
 [C]
 int
 OptionActivesSubscription_Create( VenueType venue,
-                                  DurationType duration_type,                     
+                                  DurationType duration_type, 
+                                  CommandType command,                    
                                   OptionActivesSubscription_C *psub);
 
 [Python]
 class OptionActivesSubscription(_ActivesSubscriptionBase):
-    def __init__(self, venue, duration):
+    def __init__(self, venue, duration, command=COMMAND_TYPE_SUBS):
 ```
 
 See the [Subscription Classes Section](#subscription-classes) for more details.
+
+#### Commands 
+
+Each subscription has an associated ```CommandType``` enum that defaults to 'SUBS'.
+
+```
+[C++]
+enum class CommandType : int {
+    SUBS,
+    UNSUBS,
+    ADD,
+    VIEW,
+    LOGIN, /* don't use */
+    LOGOUT, /* don't use */
+    QOS /* don't use */
+};
+
+[C]
+
+enum CommandType{
+    CommandType_SUBS,
+    CommandType_UNSUBS,
+    CommandType_ADD,
+    CommandType_VIEW,
+    CommandType_LOGIN, /* don't use */
+    CommandType_LOGOUT, /* don't use */
+    CommandType_QOS /* don't use */
+};
+
+[Python]
+
+COMMAND_TYPE_SUBS = 0
+COMMAND_TYPE_UNSUBS = 1
+COMMAND_TYPE_ADD = 2
+COMMAND_TYPE_VIEW = 3
+```
+
+- **SUBS** : subscribe to a new type of Streamer Service. If you already have an active subscription(of the current subscription/service type) it will be overriden.
+
+- **UNSUBS**: unsubscribe to all, or part, of an active subscription.
+
+- **ADD** : add to an active subscription, e.g add a symbol to a QuotesSubscription
+
+- **VIEW** : update the fields returned by the an active subscription, e.g add QuotesSubscription::total_volume to a subscription that currently returns QuotesSubscription::last_price
+
+*(LOGIN, LOGOUT, and QOS are only used behind the scenese for implementing the related functionality and will return an error code(C) or throw(C++/Python) if passed to a Subscription object.)*
+
+Different commands allow for different combinations of symbols, fields, durations etc. and the accepted values are too complex to outline. Some general rules:
+
+- Symbol/Field subscriptions don't need to include fields in an UNSUBS command. The symbols passed will be unsubscribed to. Passing no symbols will result in unsubscribing to all symbols for the currently active Streamer Service.
+
+- Symbol/Field subscriptions don't need to include symbols in a VIEW command. Simply include the updated fields you want returned.
+
+If you want to update a subscription using an UNSUBS/ADD/VIEW command a safe technique is to take the original subscription object used to initiate the subscription, change the command type with ```set_command``` and update the other parameters, e.g if using ADD use ```set_symbols``` or VIEW use ```set_fields```.
+
+#### Copy
+
+C++ Subscription objects have copy semantics implemented:
+```
+QuotesSubscription( const QuotesSubscription& sub ) const;
+
+QuotesSubscription&
+operator=( const QuotesSubscription& sub ) const;
+```
+
+The C interface has copy constructor functions:
+```
+int QuotesSubscription_Copy( QuotesSubscription_C* from,
+                             QuotesSubscription_C* to )
+``` 
+**IMPORTANT - the 'to' arg should point at an UNITIALIZED proxy object(before 'Create...' is called on it). Copying into an already created/initialized object will cause a memory leak.**
+
+Python only copies a reference to class instances by default but a deep_copy method is available that will make a copy of the python instance and underlying C object:
+```
+def stream._StreamingSubscription.deep_copy(self);
+```
 
 #### Destroy
 
@@ -705,10 +801,25 @@ Using the proxy object after this point results in ***UNDEFINED BEHAVIOR***.
             //assert result
             this_thread::sleep_for( chrono::seconds(5) );
 
+            // add a symbol to subscription 1         
+            sub1.set_command( CommandType::ADDS );
+            sub1.set_symbols( {"IWM"} );
+            result = session->add_subscription( sub1 );          
+
+            // unsubscribe to subscription 2
+            sub2.set_command( CommandType::UNSUBS );
+            result = session->add_subscription( sub2 );
+
             session->stop(); // clears subscriptions as well
             this_thread::sleep_for( chrono::seconds(5) );
 
-            auto results = session->start( {sub1, sub2} ); // same thing we just did
+            /*
+             * Note to restart using the old subs we need to reset the command type 
+             * back to SUBS or the 'start' call will throw
+             */
+            sub1.set_command( CommandType::SUBS );        
+            sub2.set_command( CommandType::SUBS );    
+            auto results = session->start( {sub1, sub2} ); 
             // assert each result
             this_thread::sleep_for( chrono::seconds(5) );
 
@@ -816,6 +927,11 @@ Using the proxy object after this point results in ***UNDEFINED BEHAVIOR***.
             //
         }
 
+        // To update sub1 use:
+        //   TimesaleSubscription_SetCommand
+        //   TimesaleSubscription_SetSymbols
+        //   TimesaleSubscription_SetFields
+
         // we no longer need the subscriptions so lets destroy them
         for(int i = 0; i < (sizeof(subs)/sizeof(StreamingSubscription_C*)); ++i){
             err = StreamingSubscription_Destroy( subs[i] );
@@ -915,6 +1031,27 @@ Using the proxy object after this point results in ***UNDEFINED BEHAVIOR***.
             assert all( session.add_subscriptions(opsub, asub) )
             time.sleep(10)
 
+            # REMOVE 'IWM' FROM SUBSCRIPTION 1
+            qsub.set_symbols( ['IWM'] )
+            qsub.set_command( COMMAND_TYPE_UNSUBS )
+            assert session.add_subscription(qsub)
+
+            # UPDATE FIELDS IN SUBSCRIPTION 1
+            qsub.set_symbols( ('SPY', 'QQQ') )
+            qsub.set_fields( (QSUB.FIELD_SYMBOL, QSUB.FIELD_LAST_PRICE) )
+            qsub.set_command( COMMAND_TYPE_VIEW )
+            assert session.add_subscription(qsub)    
+
+            # ADD SYMBOL TO SUBSCRIPTION 1
+            qsub.set_symbols( ['TLT'] )
+            qsub.set_command( COMMAND_TYPE_ADD )
+            assert session.add_subscription(qsub)
+
+            # UNSUBSCRIBE TO ALL SYMBOLS IN SUBSCRIPTION 1
+            qsub.set_symbols( [] )
+            qsub.set_command( COMMAND_TYPE_UNSUBS )
+            assert session.add_subscription(qsub)
+
             # STOP THE SESSION
             session.stop()
             assert not session.is_active()
@@ -967,10 +1104,13 @@ Streaming market data that calls back when changed.
 
 **constructors**
 ```
-QuotesSubscription( const set<string>& symbols, const set<FieldType>& fields );
+QuotesSubscription( const set<string>& symbols, 
+                    const set<FieldType>& fields,
+                    CommandType command = CommandType::SUBS );
 
     symbols :: symbols to retrieve quote data for
     fields  :: fields of data to retrieve (bid_price, quote_time etc.)
+    command :: control the subscription type
 ```
 **types**
 ```
@@ -1038,16 +1178,28 @@ StreamerService::type
 StreamingSubscription::get_service() const;
 ```
 ```
-string
+CommandType
 StreamingSubscription::get_command() const;
+```
+```
+void
+StreamingSubscription::set_command(CommandType command);
 ```
 ```
 set<string>
 SubscriptionBySymbolBase::get_symbols() const;
 ```
 ```
+void
+SubscriptionBySymbolBase::set_symbols( const set<string>& symbols );
+```
+```
 set<FieldType>
 QuotesSubscription::get_fields() const;
+```
+```
+void
+QuotesSubscription::set_fields( const set<FieldType>& fields );
 ```
 <br>
 
@@ -1058,10 +1210,12 @@ Streaming option data that calls back when changed.
 **constructors**
 ```
 OptionsSubscription::OptionsSubscription( const set<string>& symbols, 
-                                          const set<FieldType>& fields );
+                                          const set<FieldType>& fields,
+                                          CommandType command = CommandType::SUBS );
 
     symbols :: symbols to retrieve quote data for
     fields  :: fields of data to retrieve (bid_price, quote_time etc.)
+    command :: control the subscription type
 ```
 **types**
 ```
@@ -1119,16 +1273,28 @@ StreamerService::type
 StreamingSubscription::get_service() const;
 ```
 ```
-string
+CommandType
 StreamingSubscription::get_command() const;
+```
+```
+void
+StreamingSubscription::set_command(CommandType command);
 ```
 ```
 set<string>
 SubscriptionBySymbolBase::get_symbols() const;
 ```
 ```
+void
+SubscriptionBySymbolBase::set_symbols( const set<string>& symbols );
+```
+```
 set<FieldType>
 OptionsSubscription::get_fields() const;
+```
+```
+void
+OptionsSubscription::set_fields( const set<FieldType>& fields );
 ```
 <br>
 
@@ -1141,11 +1307,13 @@ Streaming futures data that calls back when changed.
 ```
 LevelOneFuturesSubscription::LevelOneFuturesSubscription( 
         const set<string>& symbols, 
-        const set<FieldType>& fields 
+        const set<FieldType>& fields,
+        CommandType command = CommandType::SUBS
     );
 
     symbols :: symbols to retrieve level-one data for
     fields  :: fields of data to retrieve (bid_price, quote_time etc.)
+    command :: control the subscription type
 ```
 **types**
 ```
@@ -1196,16 +1364,28 @@ StreamerService::type
 StreamingSubscription::get_service() const;
 ```
 ```
-string
+CommandType
 StreamingSubscription::get_command() const;
+```
+```
+void
+StreamingSubscription::set_command(CommandType command);
 ```
 ```
 set<string>
 SubscriptionBySymbolBase::get_symbols() const;
 ```
 ```
+void
+SubscriptionBySymbolBase::set_symbols( const set<string>& symbols );
+```
+```
 set<FieldType>
 LevelOneFuturesSubscription::get_fields() const;
+```
+```
+void
+LevelOneFuturesSubscription::set_fields( const set<FieldType>& fields );
 ```
 <br>
 
@@ -1218,11 +1398,13 @@ Streaming forex data that calls back when changed.
 ```
 LevelOneForexSubscription::LevelOneForexSubscription( 
         const set<string>& symbols, 
-        const set<FieldType>& fields 
+        const set<FieldType>& fields,
+        CommandType command = CommandType::SUBS
     );
 
     symbols :: symbols to retrieve level-one data for
     fields  :: fields of data to retrieve (bid_price, quote_time etc.)
+    command :: control the subscription type
 ```
 **types**
 ```
@@ -1267,16 +1449,28 @@ StreamerService::type
 StreamingSubscription::get_service() const;
 ```
 ```
-string
+CommandType
 StreamingSubscription::get_command() const;
+```
+```
+void
+StreamingSubscription::set_command(CommandType command);
 ```
 ```
 set<string>
 SubscriptionBySymbolBase::get_symbols() const;
 ```
 ```
+void
+SubscriptionBySymbolBase::set_symbols( const set<string>& symbols );
+```
+```
 set<FieldType>
 LevelOneForexSubscription::get_fields() const;
+```
+```
+void
+LevelOneForexSubscription::set_fields( const set<FieldType>& fields );
 ```
 <br>
 
@@ -1289,11 +1483,13 @@ Streaming futures-options data calls back when changed.
 ```
 LevelOneFuturesOptionsSubscription::LevelOneFuturesOptionsSubscription( 
         const set<string>& symbols, 
-        const set<FieldType>& fields 
+        const set<FieldType>& fields,
+        CommandType command = CommandType::SUBS
     );
 
     symbols :: symbols to retrieve level-one data for
     fields  :: fields of data to retrieve (bid_price, quote_time etc.)
+    command :: control the subscription type
 ```
 **types**
 ```
@@ -1344,16 +1540,28 @@ StreamerService::type
 StreamingSubscription::get_service() const;
 ```
 ```
-string
+CommandType
 StreamingSubscription::get_command() const;
+```
+```
+void
+StreamingSubscription::set_command(CommandType command);
 ```
 ```
 set<string>
 SubscriptionBySymbolBase::get_symbols() const;
 ```
 ```
+void
+SubscriptionBySymbolBase::set_symbols( const set<string>& symbols );
+```
+```
 set<FieldType>
 LevelOneFuturesOptionsSubscription::get_fields() const;
+```
+```
+void
+LevelOneFuturesOptionsSubscription::set_fields( const set<FieldType>& fields );
 ```
 <br>
 
@@ -1365,11 +1573,13 @@ Streaming news headlines as a sequence.
 ```
 NewsHeadlineSubscription::NewsHeadlineSubscription( 
         const set<string>& symbols, 
-        const set<FieldType>& fields 
+        const set<FieldType>& fields,
+        CommandType command = CommandType::SUBS
     );
 
     symbols :: symbols to retrieve news headlines for
     fields  :: fields of each headline to return (headline, story_source etc.)
+    command :: control the subscription type
 ```
 
 **types**
@@ -1396,16 +1606,28 @@ StreamerService::type
 StreamingSubscription::get_service() const;
 ```
 ```
-string
+CommandType
 StreamingSubscription::get_command() const;
+```
+```
+void
+StreamingSubscription::set_command(CommandType command);
 ```
 ```
 set<string>
 SubscriptionBySymbolBase::get_symbols() const;
 ```
 ```
+void
+SubscriptionBySymbolBase::set_symbols( const set<string>& symbols );
+```
+```
 set<FieldType>
 NewsHeadlineSubscription::get_fields() const;
+```
+```
+void
+NewsHeadlineSubscription::set_fields( const set<FieldType>& fields );
 ```
 <br>
 
@@ -1417,11 +1639,13 @@ second and includes data between 0 and 59 seconds. (e.g 9:30 bar is 9:30:00 -> 9
 ```
 ChartEquitySubscription::ChartEquitySubscription( 
         const set<string>& symbols, 
-        const set<FieldType>& fields 
+        const set<FieldType>& fields,
+        CommandType command = CommandType::SUBS
     );
 
     symbols :: symbols to retrieve ohlcv values for
     fields  :: fields to retrieve 
+    command :: control the subscription type
 ```
 **types**
 ```
@@ -1439,22 +1663,34 @@ enum class ChartEquitySubscriptionField :int {
 
 using FieldType = ChartEquitySubscriptionField;
 ```
-**methods**
+***methods**
 ```
 StreamerService::type
 StreamingSubscription::get_service() const;
 ```
 ```
-string
+CommandType
 StreamingSubscription::get_command() const;
+```
+```
+void
+StreamingSubscription::set_command(CommandType command);
 ```
 ```
 set<string>
 SubscriptionBySymbolBase::get_symbols() const;
 ```
 ```
+void
+SubscriptionBySymbolBase::set_symbols( const set<string>& symbols );
+```
+```
 set<FieldType>
 ChartEquitySubscription::get_fields() const;
+```
+```
+void
+ChartEquitySubscription::set_fields( const set<FieldType>& fields );
 ```
 <br>
 
@@ -1466,11 +1702,13 @@ second and includes data between 0 and 59 seconds. (e.g 9:30 bar is 9:30:00 -> 9
 ```
 ChartFuturesSubscription::ChartFuturesSubscription( 
         const set<string>& symbols, 
-        const set<FieldType>& fields 
+        const set<FieldType>& fields,
+        CommandType command = CommandType::SUBS
     );
 
     symbols :: symbols to retrieve ohlcv values for
     fields  :: fields to retrieve 
+    command :: control the subscription type
 ```
 **types**
 ```
@@ -1494,16 +1732,28 @@ StreamerService::type
 StreamingSubscription::get_service() const;
 ```
 ```
-string
+CommandType
 StreamingSubscription::get_command() const;
+```
+```
+void
+StreamingSubscription::set_command(CommandType command);
 ```
 ```
 set<string>
 SubscriptionBySymbolBase::get_symbols() const;
 ```
 ```
+void
+SubscriptionBySymbolBase::set_symbols( const set<string>& symbols );
+```
+```
 set<FieldType>
-ChartSubscriptionBase::get_fields() const;
+ChartFuturesSubscription::get_fields() const;
+```
+```
+void
+ChartFuturesSubscription::set_fields( const set<FieldType>& fields );
 ```
 <br>
 
@@ -1515,11 +1765,13 @@ second and includes data between 0 and 59 seconds. (e.g 9:30 bar is 9:30:00 -> 9
 ```
 ChartOptionsSubscription::ChartOptionsSubscription( 
         const set<string>& symbols, 
-        const set<FieldType>& fields 
+        const set<FieldType>& fields,
+        CommandType command = CommandType::SUBS 
     );
 
     symbols :: symbols to retrieve ohlcv values for
     fields  :: fields to retrieve 
+    command :: control the subscription type
 ```
 **types**
 ```
@@ -1543,16 +1795,28 @@ StreamerService::type
 StreamingSubscription::get_service() const;
 ```
 ```
-string
+CommandType
 StreamingSubscription::get_command() const;
+```
+```
+void
+StreamingSubscription::set_command(CommandType command);
 ```
 ```
 set<string>
 SubscriptionBySymbolBase::get_symbols() const;
 ```
 ```
+void
+SubscriptionBySymbolBase::set_symbols( const set<string>& symbols );
+```
+```
 set<FieldType>
-ChartSubscriptionBase::get_fields() const;
+ChartOptionsSubscription::get_fields() const;
+```
+```
+void
+ChartOptionsSubscription::set_fields( const set<FieldType>& fields );
 ```
 <br>
 
@@ -1564,11 +1828,13 @@ Streaming time & sales equity trades as a sequence.
 ```
 TimesaleEquitySubscription::TimesaleEquitySubscription( 
         const set<string>& symbols, 
-        const set<FieldType>& fields 
+        const set<FieldType>& fields,
+        CommandType command = CommandType::SUBS
     );
 
     symbols :: symbols to retrieve time & sales data for
     fields  :: fields to retrieve 
+    command :: control the subscription type
 ```
 **types**
 ```
@@ -1588,16 +1854,28 @@ StreamerService::type
 StreamingSubscription::get_service() const;
 ```
 ```
-string
+CommandType
 StreamingSubscription::get_command() const;
+```
+```
+void
+StreamingSubscription::set_command(CommandType command);
 ```
 ```
 set<string>
 SubscriptionBySymbolBase::get_symbols() const;
 ```
 ```
+void
+SubscriptionBySymbolBase::set_symbols( const set<string>& symbols );
+```
+```
 set<FieldType>
-TimesalesSubscriptionBase::get_fields() const;
+TimesaleEquitySubscription::get_fields() const;
+```
+```
+void
+TimesaleEquitySubscription::set_fields( const set<FieldType>& fields );
 ```
 <br>
 
@@ -1608,11 +1886,13 @@ Streaming time & sales futures trades as a sequence.
 ```
 TimesaleFuturesSubscription::TimesaleFuturesSubscription( 
         const set<string>& symbols, 
-        const set<FieldType>& fields 
+        const set<FieldType>& fields,
+        CommandType command = CommandType::SUBS
     );
 
     symbols :: symbols to retrieve time & sales data for
     fields  :: fields to retrieve 
+    command :: control the subscription type
 ```
 **types**
 ```
@@ -1632,16 +1912,28 @@ StreamerService::type
 StreamingSubscription::get_service() const;
 ```
 ```
-string
+CommandType
 StreamingSubscription::get_command() const;
+```
+```
+void
+StreamingSubscription::set_command(CommandType command);
 ```
 ```
 set<string>
 SubscriptionBySymbolBase::get_symbols() const;
 ```
 ```
+void
+SubscriptionBySymbolBase::set_symbols( const set<string>& symbols );
+```
+```
 set<FieldType>
-TimesalesSubscriptionBase::get_fields() const;
+TimesaleFuturesSubscription::get_fields() const;
+```
+```
+void
+TimesaleFuturesSubscription::set_fields( const set<FieldType>& fields );
 ```
 <br>
 
@@ -1653,11 +1945,13 @@ Streaming time & sales option trades as a sequence.
 ```
 TimesaleOptionsSubscription::TimesaleOptionsSubscription( 
         const set<string>& symbols, 
-        const set<FieldType>& fields 
+        const set<FieldType>& fields,
+        CommandType command = CommandType::SUBS 
     );
 
     symbols :: symbols to retrieve time & sales data for
     fields  :: fields to retrieve 
+    command :: control the subscription type
 ```
 **types**
 ```
@@ -1677,16 +1971,28 @@ StreamerService::type
 StreamingSubscription::get_service() const;
 ```
 ```
-string
+CommandType
 StreamingSubscription::get_command() const;
+```
+```
+void
+StreamingSubscription::set_command(CommandType command);
 ```
 ```
 set<string>
 SubscriptionBySymbolBase::get_symbols() const;
 ```
 ```
+void
+SubscriptionBySymbolBase::set_symbols( const set<string>& symbols );
+```
+```
 set<FieldType>
-TimesalesSubscriptionBase::get_fields() const;
+TimesaleOptionsSubscription::get_fields() const;
+```
+```
+void
+TimesaleOptionsSubscription::set_fields( const set<FieldType>& fields );
 ```
 <br>
 
@@ -1698,9 +2004,13 @@ Most active NASDAQ traded securies for various durations.
 
 **constructors**
 ```
-NasdaqActivesSubscription::NasdaqActivesSubscription(DurationType duration);
+NasdaqActivesSubscription::NasdaqActivesSubscription(
+    DurationType duration,
+    CommandType command = CommandType::SUBS
+);
 
     duration :: period over which to return actives
+    command :: control the subscription type
 ```
 
 **types**
@@ -1725,8 +2035,16 @@ string
 StreamingSubscription::get_command() const;
 ```
 ```
+void
+StreamingSubscription::set_command(CommandType command);
+```
+```
 DurationType
 ActivesSubscriptionBase::get_duration() const;
+```
+```
+void
+ActivesSubscriptionBase::set_duration( DurationType duration );
 ```
 <br>
 
@@ -1736,9 +2054,13 @@ Most active NYSE traded securies for various durations.
 
 **constructors**
 ```
-NYSEActivesSubscription::NYSEActivesSubscription(DurationType duration);
+NYSEActivesSubscription::NYSEActivesSubscription(
+    DurationType duration,
+    CommandType command = CommandType::SUBS
+);
 
     duration :: period over which to return actives
+    command :: control the subscription type
 ```
 
 **types**
@@ -1763,8 +2085,16 @@ string
 StreamingSubscription::get_command() const;
 ```
 ```
+void
+StreamingSubscription::set_command(CommandType command);
+```
+```
 DurationType
 ActivesSubscriptionBase::get_duration() const;
+```
+```
+void
+ActivesSubscriptionBase::set_duration( DurationType duration );
 ```
 <br>
 
@@ -1774,9 +2104,13 @@ Most active OTCBB traded securies for various durations.
 
 **constructors**
 ```
-OTCBBActivesSubscription::OTCBBActivesSubscription(DurationType duration);
+OTCBBActivesSubscription::OTCBBActivesSubscription(
+    DurationType duration,
+    CommandType command = CommandType::SUBS
+);
 
     duration :: period over which to return actives
+    command :: control the subscription type
 ```
 
 **types**
@@ -1801,8 +2135,16 @@ string
 StreamingSubscription::get_command() const;
 ```
 ```
+void
+StreamingSubscription::set_command(CommandType command);
+```
+```
 DurationType
 ActivesSubscriptionBase::get_duration() const;
+```
+```
+void
+ActivesSubscriptionBase::set_duration( DurationType duration );
 ```
 <br>
 
@@ -1813,11 +2155,15 @@ Most active Options of various types and durations traded.
 
 **constructors**
 ```
-OptionActivesSubscription::OptionActivesSubscription( VenueType venue,
-                                                      DurationType duration );
+OptionActivesSubscription::OptionActivesSubscription( 
+    VenueType venue,
+    DurationType duration,
+    CommandType command = CommandType::SUBS 
+);
 
     venue    :: type of option (put, call-desc)
     duration :: period over which to return actives
+    command :: control the subscription type
 
 ```
 
@@ -1853,12 +2199,20 @@ string
 StreamingSubscription::get_command() const;
 ```
 ```
+void
+StreamingSubscription::set_command(CommandType command);
+```
+```
 DurationType
 ActivesSubscriptionBase::get_duration() const;
 ```
 ```
 VenueType
 OptionActivesSubscription::get_venue() const;
+```
+```
+void
+OptionActivesSubscription::set_venue( VenueType venue );
 ```
 <br>
 

@@ -73,7 +73,7 @@ test_sub_fields_symbols( S& sub,
         throw std::runtime_error(name + ": bad fields");
     if( sst != sub.get_service() )
         throw std::runtime_error(name + ": bad StreamerServiceType");
-    if( command != sub.get_command() )
+    if( command != to_string(sub.get_command()) )
         throw std::runtime_error(name + ": bad command");
 }
 
@@ -90,7 +90,7 @@ test_sub_duration( S& sub,
         throw std::runtime_error(name + ": bad duration");
     if( sst != sub.get_service() )
         throw std::runtime_error(name + ": bad StreamerServiceType");
-    if( command != sub.get_command() )
+    if( command != to_string(sub.get_command()) )
         throw std::runtime_error(name + ": bad command");
 }
 
@@ -124,27 +124,117 @@ test_streaming(const string& account_id, Credentials& c)
     using cft = ChartSubscriptionBase::FieldType;
     using tsft = TimesaleSubscriptionBase::FieldType;
 
-
-    set<string> symbols1 = {"spy"};
-    set<ft> fields1 = {ft::symbol, ft::last_price};
+    // test copy/assign/cmp
+    set<string> symbols1 = {"qqq"};
+    set<ft> fields1 = {ft::bid_tick, ft::bid_id};
+    {
+        QuotesSubscription q1_(symbols1, fields1);
+        display_sub(q1_);
+        test_sub_fields_symbols(q1_, "QuotesSubscription", {"QQQ"}, fields1,
+                                StreamerServiceType::QUOTE);
+        QuotesSubscription q1(q1_);
+        if( q1!= q1_ )
+            throw std::runtime_error("subscription q1 != q1_");
+        symbols1 = {"spy"};
+        fields1 = {ft::symbol, ft::last_price};
+        q1.set_symbols(symbols1);
+        q1.set_fields(fields1);
+        test_sub_fields_symbols(q1, "QuotesSubscription (COPY)", {"SPY"}, fields1,
+                                StreamerServiceType::QUOTE);
+        q1_ = q1;
+        test_sub_fields_symbols(q1_, "QuotesSubscription (ASSIGN)", {"SPY"}, fields1,
+                                StreamerServiceType::QUOTE);
+        if( q1 != q1_ )
+            throw std::runtime_error("subscription q1 != q1_");
+        QuotesSubscription qz(symbols1, fields1);
+        if( q1 != qz )
+            throw std::runtime_error("subscription q1 != qz");
+    }
+    symbols1 = {"spy"};
+    fields1 = {ft::symbol, ft::last_price};
     QuotesSubscription q1(symbols1, fields1);
-    display_sub(q1);
-    test_sub_fields_symbols(q1, "QuotesSubscription", {"SPY"}, fields1,
+    test_sub_fields_symbols(q1, "QuotesSubscription (2)", {"SPY"}, fields1,
                             StreamerServiceType::QUOTE);
 
-    set<string> symbols2 = {"SPY_081718C286", "SPY_081718P286"};
+    // ADD
+    set<string> symbols1b = {"qqq", "iwm"};
+    set<ft> fields1b = {ft::last_size};
+    QuotesSubscription q1b(symbols1b, fields1b);
+    display_sub(q1b);
+    test_sub_fields_symbols(q1b, "QuotesSubscription", {"QQQ", "IWM"}, fields1b,
+                            StreamerServiceType::QUOTE, "SUBS");
+
+    q1b.set_command(CommandType::ADD);
+    test_sub_fields_symbols(q1b, "QuotesSubscription", {"QQQ", "IWM"}, fields1b,
+                                StreamerServiceType::QUOTE, "ADD");
+
+    if( q1 == q1b )
+        throw std::runtime_error("subscription q1 == q1b");
+
+    // UNSUB
+    set<string> symbols1c = {"iwm"};
+    set<ft> fields1c = {ft::last_price};
+    QuotesSubscription q1c(symbols1c, fields1c, CommandType::UNSUBS);
+    display_sub(q1c);
+    test_sub_fields_symbols(q1c, "QuotesSubscription", {"IWM"}, fields1c,
+                            StreamerServiceType::QUOTE, "UNSUBS");
+    fields1c.clear();
+    q1c.set_fields({});
+    test_sub_fields_symbols(q1c, "QuotesSubscription", {"IWM"}, fields1c,
+                                StreamerServiceType::QUOTE, "UNSUBS");
+
+    // VIEW
+    set<string> symbols1d = {"iwm"};
+    set<ft> fields1d = {ft::symbol, ft::total_volume};
+    QuotesSubscription q1d(symbols1d, fields1d, CommandType::VIEW);
+    display_sub(q1d);
+    test_sub_fields_symbols(q1d, "QuotesSubscription", {"IWM"}, fields1d,
+                            StreamerServiceType::QUOTE, "VIEW");
+
+    set<string> symbols2 = {"SPY_011720C275", "SPY_011720P275"};
     set<oft> fields2 = {oft::symbol, oft::last_price, oft::delta};
     OptionsSubscription q2( symbols2, fields2 );
     display_sub(q2);
     test_sub_fields_symbols(q2, "OptionsSubscription", symbols2, fields2,
                             StreamerServiceType::OPTION);
 
+    if( q1 == q2 )
+        throw std::runtime_error("subscription q1 == q2");
+
     set<string> symbols3 = {"/ES", "/GC"};
     set<fft> fields3 = {fft::symbol, fft::last_price};
-    LevelOneFuturesSubscription q3( symbols3, fields3);
+    LevelOneFuturesSubscription q3( symbols3, fields3 );
     display_sub(q3);
     test_sub_fields_symbols(q3, "LevelOneFuturesSubscription", symbols3, fields3,
                             StreamerServiceType::LEVELONE_FUTURES);
+
+    //VIEW
+    set<string> symbols3b = {"/ES"};
+    set<fft> fields3b = {fft::symbol, fft::future_trading_hours};
+    LevelOneFuturesSubscription q3b_( symbols3b, fields3b );
+    display_sub(q3b_);
+    test_sub_fields_symbols(q3b_, "LevelOneFuturesSubscription", symbols3b, fields3b,
+                            StreamerServiceType::LEVELONE_FUTURES );
+    LevelOneFuturesSubscription q3b(q3b_);
+    symbols3b = {};
+    fields3b = {fft::symbol, fft::total_volume};
+    q3b.set_command( CommandType::VIEW );
+    q3b.set_symbols(symbols3b);
+    q3b.set_fields(fields3b);
+    test_sub_fields_symbols(q3b, "LevelOneFuturesSubscription (COPY)", symbols3b, fields3b,
+                                StreamerServiceType::LEVELONE_FUTURES, "VIEW");
+
+    //UNSUB ALL
+    set<string> symbols3c = {"/ES"};
+    set<fft> fields3c = {};
+    LevelOneFuturesSubscription q3c( symbols3c, fields3c, CommandType::UNSUBS );
+    display_sub(q3c);
+    test_sub_fields_symbols(q3c, "LevelOneFuturesSubscription", symbols3c, fields3c,
+                            StreamerServiceType::LEVELONE_FUTURES, "UNSUBS");
+    symbols3c.clear();
+    q3c.set_symbols(symbols3c);
+    test_sub_fields_symbols(q3c, "LevelOneFuturesSubscription", symbols3c, fields3c,
+                                StreamerServiceType::LEVELONE_FUTURES, "UNSUBS");
 
     set<string> symbols4 = {"EUR/USD"};
     set<fxft> fields4 = {fxft::symbol, fxft::quote_time};
@@ -181,7 +271,7 @@ test_streaming(const string& account_id, Credentials& c)
     test_sub_fields_symbols(q9, "ChartFuturesSubscription", symbols9, fields9,
                             StreamerServiceType::CHART_FUTURES);
 
-    set<string> symbols10 = {"SPY_081718C276"};
+    set<string> symbols10 = {"SPY_011720C280"};
     set<cft> fields10 = {cft::symbol, cft::volume};
     ChartOptionsSubscription q10(symbols10, fields10);
     display_sub(q10);
@@ -214,22 +304,42 @@ test_streaming(const string& account_id, Credentials& c)
     test_sub_duration(q15, "NasdaqActivesSubscription", DurationType::all_day,
                       StreamerServiceType::ACTIVES_NASDAQ);
 
-    NYSEActivesSubscription q16(DurationType::min_60);
+    NYSEActivesSubscription q16(DurationType::min_30);
+    q16.set_duration(DurationType::min_60);
     display_sub(q16);
     test_sub_duration(q16, "NYSEActivesSubscription", DurationType::min_60,
                       StreamerServiceType::ACTIVES_NYSE);
 
-    OTCBBActivesSubscription q17(DurationType::min_10);
-    display_sub(q17);
-    test_sub_duration(q17, "OTCBBActivesSubscription", DurationType::min_10,
+    if( q15 == q16 )
+        throw std::runtime_error("subscription q15 == q16");
+
+    OTCBBActivesSubscription q17_(DurationType::min_10);
+    display_sub(q17_);
+    test_sub_duration(q17_, "OTCBBActivesSubscription", DurationType::min_10,
+                      StreamerServiceType::ACTIVES_OTCBB);
+    OTCBBActivesSubscription q17(q17_);
+    test_sub_duration(q17, "OTCBBActivesSubscription (COPY)", DurationType::min_10,
                       StreamerServiceType::ACTIVES_OTCBB);
 
-    OptionActivesSubscription q18(VenueType::opts, DurationType::min_1);
-    display_sub(q18);
-    test_sub_duration_venue(q18, "OptionActivesSubscription",
-                            DurationType::min_1, VenueType::opts,
-                            StreamerServiceType::ACTIVES_OPTIONS);
+    if( q17 != q17_ )
+        throw std::runtime_error(" q17 != q17_" );
 
+    OptionActivesSubscription q18_(VenueType::calls, DurationType::min_5,
+                                   CommandType::ADD);
+    display_sub(q18_);
+    test_sub_duration_venue(q18_, "OptionActivesSubscription",
+                            DurationType::min_5, VenueType::calls,
+                            StreamerServiceType::ACTIVES_OPTIONS, "ADD");
+    OptionActivesSubscription q18(q18_);
+    q18.set_venue(VenueType::opts);
+    q18.set_duration(DurationType::min_1);
+    q18.set_command(CommandType::SUBS);
+    test_sub_duration_venue(q18, "OptionActivesSubscription (COPY)",
+                                DurationType::min_1, VenueType::opts,
+                                StreamerServiceType::ACTIVES_OPTIONS);
+
+    if( q18 == q18_ )
+        throw std::runtime_error(" q18 == q18_" );
 
     {
         auto ss = StreamingSession::Create(c, callback,
@@ -239,17 +349,39 @@ test_streaming(const string& account_id, Credentials& c)
         bool res;
         deque<bool> results;
 
-        results = ss->start( {q1,q2} );
-        for(auto r : results)
-            cout<< boolalpha << r << ' ';
-        cout<<endl;
+        res = ss->start( {q1} );
+        cout<< boolalpha << res << endl;
+
+        std::this_thread::sleep_for( seconds(3) );
+
+        res = ss->add_subscription( q1b );
+        cout<< boolalpha << res << endl;
+
+        std::this_thread::sleep_for( seconds(3) );
 
         res = ss->add_subscription( q3 );
         cout<< boolalpha << res << endl;
 
-        std::this_thread::sleep_for( seconds(5) );
+        std::this_thread::sleep_for( seconds(3) );
 
-        results = ss->add_subscriptions( {q4,q5,q6} );
+        results = ss->add_subscriptions( {q1c, q1d, q3b} );
+        for(auto r : results)
+            cout<< boolalpha << r << ' ';
+        cout<<endl;
+
+        std::this_thread::sleep_for( seconds(3) );
+
+        res = ss->add_subscription( q3c );
+        cout<< boolalpha << res << endl;
+
+        std::this_thread::sleep_for( seconds(3) );
+
+        std::vector<StreamingSubscription> ssubs{q2};
+        ssubs.push_back(q4);
+        std::vector<StreamingSubscription> tmpsubs{q5,q6};
+        ssubs.insert(ssubs.end(), tmpsubs.cbegin(), tmpsubs.cend());
+
+        results = ss->add_subscriptions( ssubs );
         for(auto r : results)
             cout<< boolalpha << r << ' ';
         cout<<endl;

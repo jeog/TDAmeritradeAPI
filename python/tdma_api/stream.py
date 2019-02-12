@@ -31,8 +31,11 @@ Each session is passed a Credentials object, callback function,
 and some optional timeout args.
 
 The session is started by passing a collection of Subscription objects for
-the particular streaming services desired. Subscriptions can also be added 
-later. THERE CAN BE ONLY ONE ACTIVE SESSION  FOR EACH PRIMARY ACCOUNT ID.
+the particular streaming services desired. Subscription objects can be added 
+later and can be used to update or remove the active subscriptions using the 
+ADD, VIEW, and UNSUBS command types. 
+
+THERE CAN BE ONLY ONE ACTIVE SESSION  FOR EACH PRIMARY ACCOUNT ID.
 
 Subscription types fall into two categories:
 
@@ -90,6 +93,11 @@ QOS_MODERATE = 3
 QOS_SLOW = 4
 QOS_DELAYED = 5
 
+COMMAND_TYPE_SUBS = 0
+COMMAND_TYPE_UNSUBS = 1
+COMMAND_TYPE_ADD = 2
+COMMAND_TYPE_VIEW = 3
+
 CALLBACK_TYPE_LISTENING_START = 0
 CALLBACK_TYPE_LISTENING_STOP = 1
 CALLBACK_TYPE_DATA = 2
@@ -107,6 +115,10 @@ def callback_type_to_str(cb_type):
     """Converts CALLBACK_TYPE_[] constant to str."""
     return clib.to_str("StreamingCallbackType_to_string_ABI", c_int, cb_type)
     
+def command_type_to_str(command):
+    """Convers COMMAND_TYPE_[] constatnt to str."""
+    return clib.to_str("CommandType_to_string_ABI", c_init, command)    
+
 
 class _StreamingSession_C(clib._CProxy3): 
     """C struct representing StreamingSession_C type."""
@@ -132,21 +144,26 @@ class StreamingSession( clib._ProxyBase ):
             arg3 :: int    :: timestamp
             arg4 :: object :: message/data as json(list, dict, or None)  
             
-        The callback is called from a different thread while the GIL(global
-        interpreter lock) is released so BE CAREFUL what you do inside
-        the function:
+        The callback is called from a different thread so BE CAREFUL what you 
+        do inside the function:
             - DO NOT call back into the session i.e use its methods 
             - DO NOT block the callback thread for extended periods
             - DO NOT assume exceptions raised will be handled
     
     In order to start the connection call .start() with a collection of
-    Subscription objects. THERE CAN BE ONLY ONE ACTIVE SESSION FOR EACH
-    PRIMARY ACCOUNT.
+    Subscription objects. Subscription objects passed to start can only use
+    command type SUBS(COMMAND_TYPE_SUBS). 
+    
+    THERE CAN BE ONLY ONE ACTIVE SESSION FOR EACH PRIMARY ACCOUNT.
     
     The SERVICE_TYPE_[] constant passed to the callback(arg2) corresponds with 
     the Subscription classes, e.g SERVICE_TYPE_QUOTE --> QuotesSubscription. 
     Use the SERVICE_TO_SUBSCRIPTION dict to return the corresponding 
     class object or None if there isn't one (e.g SERVICE_TYPE_ADMIN --> None)    
+    
+    To add, update or remove subscriptions use .add_subscription() or
+    .add_subscriptions(). See the section on Subscription objects for using
+    the ADD, VIEW, and UNSUBS command types.
     
     When done call .stop() to logout and close the connection.
     
@@ -261,7 +278,7 @@ class StreamingSession( clib._ProxyBase ):
         return clib.get_val(self._abi("GetQOS"), c_int, self._obj)            
 
 
-class _StreamingSubscription( clib._ProxyBase ):
+class _StreamingSubscription( clib._ProxyBaseCopyable ):
     """_StreamingSubscription - Base Subscription class. DO NOT INSTANTIATE!
     
     ALL METHODS THROW -> LibraryNotLoaded, CLibException
@@ -269,16 +286,25 @@ class _StreamingSubscription( clib._ProxyBase ):
 
     @classmethod               
     def _cproxy_type(cls):
-        return _StreamingSubscription_C
-                
+        return _StreamingSubscription_C            
+                         
+    def __eq__(self,other):
+        return self._is_same(other, "StreamingSubscription_IsSame_ABI")
+    
     def get_service(self):
         """Returns the service type as SERVICE_TYPE_[] constant."""
         return clib.get_val("StreamingSubscription_GetService_ABI", c_int,
-                             self._obj )
+                             self._obj )        
     
     def get_command(self):
-        """Returns the command string."""
-        return clib.get_str("StreamingSubscription_GetCommand_ABI", self._obj)
+        """Returns the command type as COMMAND_TYPE_[] constant."""
+        return clib.get_val("StreamingSubscription_GetCommand_ABI", c_int, 
+                            self._obj)
+        
+    def set_command(self, command):
+        """Sets the command type using COMMAND_TYPE_[] constant."""
+        clib.set_val("StreamingSubscription_SetCommand_ABI", c_int,
+                     command, self._obj)
         
     
 class _SubscriptionBySymbolBase(_StreamingSubscription):
@@ -286,21 +312,32 @@ class _SubscriptionBySymbolBase(_StreamingSubscription):
     
     ALL METHODS THROW -> LibraryNotLoaded, CLibException
     """
-    def __init__(self, symbols, fields):
+    def __init__(self, symbols, fields, command=COMMAND_TYPE_SUBS):
         sbuf = PCHAR_BUFFER(symbols)                                  
         fbuf = (c_int * len(fields))(*[c_int(f) for f in fields])    
-        super().__init__(sbuf, len(symbols), fbuf, len(fields))               
+        super().__init__(sbuf, len(symbols), fbuf, len(fields), command)                      
         
     def get_symbols(self):
         """Returns symbols in subscription."""
         return clib.get_strs("SubscriptionBySymbolBase_GetSymbols_ABI", 
                               self._obj)
-
+        
+    def set_symbols(self, symbols):
+        """Sets symbols in subscription."""
+        clib.set_strs("SubscriptionBySymbolBase_SetSymbols_ABI", symbols,
+                      self._obj)                     
+      
     def get_fields(self):
         """Returns fields in subscription as self.FIELD_[] constant."""        
         return clib.get_vals(self._abi("GetFields"), c_int, self._obj, 
                              clib.free_fields_buffer)   
     
+    def set_fields(self, fields):
+        """Sets fields in subscription using self.FIELD_[] constants."""
+        l = len(fields)
+        array = (c_int * l)(*fields)
+        clib.call(self._abi("SetFields"), _REF(self._obj), array, l)
+
 
 class QuotesSubscription(_SubscriptionBySymbolBase):
     """QuotesSubscription - streaming quotes. 
@@ -316,17 +353,18 @@ class QuotesSubscription(_SubscriptionBySymbolBase):
         - Indicies (trades only)
         - Indicators
         
-    def __init__(self, symbols, fields):
+    def __init__(self, symbols, fields, command=COMMAND_TYPE_SUBS):
     
         symbols :: [str, str...] :: symbols to get data for
         fields  :: [int, int...] :: self.FIELD_[] constant values indicating
                                     what type of data to return
+        command :: int           :: COMMAND_TYPE_[] constant representing
+                                    the intended action of the subscription
+                                    e.g COMMAND_TYPE_ADD to add a symbol                                    
         
         throws -> LibraryNotLoaded, CLibException
     """
-    def __init__(self, symbols, fields):  
-        super().__init__(symbols, fields)  
-    
+   
     FIELD_SYMBOL = 0
     FIELD_BID_PRICE = 1
     FIELD_ASK_PRICE = 2
@@ -387,11 +425,14 @@ _FIELDS_SUBSCRIPTION__doc__ = """\
 
     StreamingSession calls back when quote fields change.
     
-    def __init__(self, symbols, fields):
+    def __init__(self, symbols, fields, command=COMMAND_TYPE_SUBS):
     
         symbols :: [str, str...] :: symbols to get data for
         fields  :: [int, int...] :: self.FIELD_[] constant values indicating
                                     what type of data to return
+        command :: int           :: COMMAND_TYPE_[] constant representing
+                                    the intended action of the subscription
+                                    e.g COMMAND_TYPE_ADD to add a symbol    
         
         throws -> LibraryNotLoaded, CLibException
 """
@@ -399,9 +440,7 @@ _FIELDS_SUBSCRIPTION__doc__ = """\
 class OptionsSubscription(_SubscriptionBySymbolBase):
     __doc__ = _FIELDS_SUBSCRIPTION__doc__.format(name="Options", 
                                                  instr="Option")
-    
-    def __init__(self, symbols, fields):  
-        super().__init__(symbols, fields)  
+
     
     FIELD_SYMBOL = 0
     FIELD_DESCRIPTION = 1
@@ -450,8 +489,6 @@ class OptionsSubscription(_SubscriptionBySymbolBase):
 class LevelOneFuturesSubscription(_SubscriptionBySymbolBase):
     __doc__ = _FIELDS_SUBSCRIPTION__doc__.format(name="LevelOneFutures", 
                                                  instr="Futures")
-    def __init__(self, symbols, fields):  
-        super().__init__(symbols, fields)  
     
     FIELD_SYMBOL = 0
     FIELD_BID_PRICE = 1
@@ -494,10 +531,7 @@ class LevelOneFuturesSubscription(_SubscriptionBySymbolBase):
 class LevelOneForexSubscription(_SubscriptionBySymbolBase):
     __doc__ = _FIELDS_SUBSCRIPTION__doc__.format(name="LevelOneForex", 
                                                  instr="Forex")
-    
-    def __init__(self, symbols, fields):  
-        super().__init__(symbols, fields)  
-    
+
     FIELD_SYMBOL = 0 
     FIELD_BID_PRICE = 1 
     FIELD_ASK_PRICE = 2
@@ -532,9 +566,6 @@ class LevelOneForexSubscription(_SubscriptionBySymbolBase):
 class LevelOneFuturesOptionsSubscription(_SubscriptionBySymbolBase):
     __doc__ = _FIELDS_SUBSCRIPTION__doc__.format(name="LevelOneFuturesOptions", 
                                                  instr="Futures-Options")
-    
-    def __init__(self, symbols, fields):  
-        super().__init__(symbols, fields)  
     
     FIELD_SYMBOL = 0
     FIELD_BID_PRICE = 1
@@ -577,17 +608,18 @@ class LevelOneFuturesOptionsSubscription(_SubscriptionBySymbolBase):
 class NewsHeadlineSubscription(_SubscriptionBySymbolBase):
     """NewsHeadlineSubscription - news headlines as a sequence.
 
-    def __init__(self, symbols, fields):
+    def __init__(self, symbols, fields, command=COMMAND_TYPE_SUBS):
     
         symbols :: [str, str...] :: symbols to get data for
-        fields  :: [int, int...] :: self.FIELD_[] constant values 
-                                    indicating what type of data to return
+        fields  :: [int, int...] :: self.FIELD_[] constant values indicating
+                                    what type of data to return
+        command :: int           :: COMMAND_TYPE_[] constant representing
+                                    the intended action of the subscription
+                                    e.g COMMAND_TYPE_ADD to add a symbol    
         
         throws -> LibraryNotLoaded, CLibException
     """
-    def __init__(self, symbols, fields):  
-        super().__init__(symbols, fields)  
-    
+
     FIELD_SYMBOL = 0
     FIELD_ERROR_CODE = 1 
     FIELD_STORY_DATETIME = 2
@@ -607,11 +639,14 @@ Chart{instr}Subscription - 1-min OHLCV {instr} values as a sequence.
     The bar falls on the 0 second and includes data between 0 and 59 seconds. 
     (e.g 9:30 bar is 9:30:00 -> 9:30:59)
     
-    def __init__(self, symbols, fields):
+    def __init__(self, symbols, fields, command=COMMAND_TYPE_SUBS):
     
         symbols :: [str, str...] :: symbols to get data for
         fields  :: [int, int...] :: self.FIELD_[] constant values indicating
                                     what type of data to return
+        command :: int           :: COMMAND_TYPE_[] constant representing
+                                    the intended action of the subscription
+                                    e.g COMMAND_TYPE_ADD to add a symbol    
         
         throws -> LibraryNotLoaded, CLibException
 """
@@ -619,9 +654,6 @@ Chart{instr}Subscription - 1-min OHLCV {instr} values as a sequence.
 # note - doesn't inherit from _ChartSubscriptionBase    
 class ChartEquitySubscription(_SubscriptionBySymbolBase):
     __doc__ = _CHART_SUBSCRIPTION__doc__.format(instr="Equity")
-    
-    def __init__(self, symbols, fields):  
-        super().__init__(symbols, fields)  
     
     FIELD_SYMBOL = 0
     FIELD_OPEN_PRICE = 1 
@@ -639,13 +671,18 @@ class _ChartSubscriptionBase(_SubscriptionBySymbolBase):
     
     ALL METHODS THROW -> LibraryNotLoaded, CLibException
     """
-    def __init__(self, symbols, fields):  
-        super().__init__(symbols, fields)      
     
     def get_fields(self):
         """Returns fields in subscription."""
         return clib.get_vals("ChartSubscriptionBase_GetFields_ABI", c_int, 
-                             self._obj, clib.free_fields_buffer)       
+                             self._obj, clib.free_fields_buffer)    
+        
+    def set_fields(self, fields):
+        """Sets fields in subscription using FIELD_[] constants."""
+        l = len(fields)
+        array = (c_int * l)(*fields)
+        clib.call("ChartSubscriptionBase_SetFields_ABI", _REF(self._obj), array, l)
+        
     
     FIELD_SYMBOL = 0
     FIELD_CHART_TIME = 1
@@ -658,16 +695,10 @@ class _ChartSubscriptionBase(_SubscriptionBySymbolBase):
     
 class ChartFuturesSubscription(_ChartSubscriptionBase):
     __doc__ = _CHART_SUBSCRIPTION__doc__.format(instr="Futures")
-     
-    def __init__(self, symbols, fields):  
-        super().__init__(symbols, fields)  
             
     
 class ChartOptionsSubscription(_ChartSubscriptionBase):
     __doc__ = _CHART_SUBSCRIPTION__doc__.format(instr="Options")
-    
-    def __init__(self, symbols, fields):  
-        super().__init__(symbols, fields)  
 
 
 _TIMESALE_SUBSCRIPTION__doc__ = """\
@@ -675,13 +706,16 @@ Timesale{instr}Subscription - time & sales {instr} trades as a sequence.
 
     StreamingSession calls back with new trade(s).
     
-    def __init__(self, symbols, fields):
+    def __init__(self, symbols, fields, command=COMMAND_TYPE_SUBS):
     
         symbols :: [str, str...] :: symbols to get data for
         fields  :: [int, int...] :: self.FIELD_[] constant values indicating
                                     what type of data to return
+        command :: int           :: COMMAND_TYPE_[] constant representing
+                                    the intended action of the subscription
+                                    e.g COMMAND_TYPE_ADD to add a symbol    
         
-        throws -> LibraryNotLoaded, CLibException    
+        throws -> LibraryNotLoaded, CLibException 
 """
 
 class _TimesaleSubscriptionBase(_SubscriptionBySymbolBase):
@@ -689,14 +723,18 @@ class _TimesaleSubscriptionBase(_SubscriptionBySymbolBase):
     
     ALL METHODS THROW -> LibraryNotLoaded, CLibException
     """
-    def __init__(self, symbols, fields):  
-        super().__init__(symbols, fields)  
         
     def get_fields(self):
         """Returns fields in subscription."""
         return clib.get_vals("TimesaleSubscriptionBase_GetFields_ABI", c_int, 
                              self._obj, clib.free_fields_buffer)      
        
+    def set_fields(self, fields):       
+        """Sets fields in subscription using FIELD_[] constants."""
+        l = len(fields)
+        array = (c_int * l)(*fields)
+        clib.call("TimesaleSubscriptionBase_SetFields_ABI", _REF(self._obj), array, l)
+               
     FIELD_SYMBOL = 0
     FIELD_TRADE_TIME = 1
     FIELD_LAST_PRICE =2
@@ -705,24 +743,15 @@ class _TimesaleSubscriptionBase(_SubscriptionBySymbolBase):
     
     
 class TimesaleEquitySubscription(_TimesaleSubscriptionBase):
-    __doc__ = _TIMESALE_SUBSCRIPTION__doc__.format(instr="Equity")
-    
-    def __init__(self, symbols, fields):  
-        super().__init__(symbols, fields)                                 
+    __doc__ = _TIMESALE_SUBSCRIPTION__doc__.format(instr="Equity")                            
     
     
 class TimesaleFuturesSubscription(_TimesaleSubscriptionBase):
-    __doc__ = _TIMESALE_SUBSCRIPTION__doc__.format(instr="Futures")
-    
-    def __init__(self, symbols, fields):  
-        super().__init__(symbols, fields)  
+    __doc__ = _TIMESALE_SUBSCRIPTION__doc__.format(instr="Futures") 
     
     
 class TimesaleOptionsSubscription(_TimesaleSubscriptionBase):
     __doc__ = _TIMESALE_SUBSCRIPTION__doc__.format(instr="Options")
-    
-    def __init__(self, symbols, fields):  
-        super().__init__(symbols, fields)  
             
             
 class _ActivesSubscriptionBase(_StreamingSubscription):
@@ -735,9 +764,14 @@ class _ActivesSubscriptionBase(_StreamingSubscription):
         super().__init__(*cargs)                  
         
     def get_duration(self):
-        """Returns duration type of subscription."""
+        """Returns duration type of subscription as DURATION_[] constants."""
         return clib.get_val("ActivesSubscriptionBase_GetDuration_ABI", c_int,
                              self._obj)
+        
+    def set_duration(self, duration):
+        """Sets duration type of subscription using DURATION_[] constants."""
+        clib.set_val("ActivesSubscriptionBase_SetDuration_ABI", c_int, duration,
+                     self._obj)
 
     DURATION_TYPE_ALL_DAY = 0
     DURATION_TYPE_MIN_60 = 1
@@ -750,10 +784,13 @@ class _ActivesSubscriptionBase(_StreamingSubscription):
 _ACTIVES_DURATION_SUBSCRIPTION__doc__ = """\
 {market}ActivesSubscription - most active {market} securities.   
 
-    def __init__(self, duration):
+    def __init__(self, duration, command=COMMAND_TYPE_SUBS):
     
         duration :: int :: self.DURATION_TYPE_[] constant indicating the time
                            period over which to find most active
+        command  :: int :: COMMAND_TYPE_[] constant representing
+                           the intended action of the subscription
+                           e.g COMMAND_TYPE_UNSUBS to remove an active sub 
                  
         throws -> LibraryNotLoaded, CLibException    
 """
@@ -761,43 +798,51 @@ _ACTIVES_DURATION_SUBSCRIPTION__doc__ = """\
 class NasdaqActivesSubscription(_ActivesSubscriptionBase):
     __doc__ = _ACTIVES_DURATION_SUBSCRIPTION__doc__.format(market="NASDAQ")
     
-    def __init__(self, duration):
-        super().__init__(duration)
+    def __init__(self, duration, command=COMMAND_TYPE_SUBS):
+        super().__init__(duration, command)
         
         
 class NYSEActivesSubscription(_ActivesSubscriptionBase):
     __doc__ = _ACTIVES_DURATION_SUBSCRIPTION__doc__.format(market="NYSE")
     
-    def __init__(self, duration):
-        super().__init__(duration)
+    def __init__(self, duration, command=COMMAND_TYPE_SUBS):
+        super().__init__(duration, command)
         
         
 class OTCBBActivesSubscription(_ActivesSubscriptionBase):
     __doc__ = _ACTIVES_DURATION_SUBSCRIPTION__doc__.format(market="OTCBB")
     
-    def __init__(self, duration):
-        super().__init__(duration)       
+    def __init__(self, duration, command=COMMAND_TYPE_SUBS):
+        super().__init__(duration, command)       
 
 
 class OptionActivesSubscription(_ActivesSubscriptionBase):
     """OptionActivesSubscription - most active options.   
 
-    def __init__(self, venue, duration):
+    def __init__(self, venue, duration, command=COMMAND_TYPE_SUBS):
     
         venue    :: int :: self.VENUE_TYPE_[] constant indicating type and 
                            and sorting of active options
         duration :: int :: self.DURATION_TYPE_[] constant indicating the time
                            period over which to find most active
-                 
+        command  :: int :: COMMAND_TYPE_[] constant representing
+                           the intended action of the subscription
+                           e.g COMMAND_TYPE_UNSUBS to remove an active sub 
+                                            
         throws -> LibraryNotLoaded, CLibException    
     """
-    def __init__(self, venue, duration):
-        super().__init__(venue, duration) 
+    def __init__(self, venue, duration, command=COMMAND_TYPE_SUBS):
+        super().__init__(venue, duration, command) 
         
     def get_venue(self):
-        """Returns venue type of subscription."""
+        """Returns venue type of subscription as VENUE_[] constants."""
         return clib.get_val("OptionActivesSubscription_GetVenue_ABI", c_int,
                              self._obj)   
+        
+    def set_venue(self, venue):
+        """Sets venue type of subscription using VENUE_[] constants."""
+        clib.set_val("OptionActivesSubscription_SetVenue_ABI", c_int, venue,
+                     self._obj)
    
     VENUE_TYPE_OPTS = 0 
     VENUE_TYPE_CALLS = 1 

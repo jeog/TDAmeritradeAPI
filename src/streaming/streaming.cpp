@@ -176,22 +176,6 @@ streamer_service_from_str(string service_name)
 
 using namespace tdma;
 
-int
-AdminCommandType_to_string_ABI( TDMA_API_TO_STRING_ABI_ARGS )
-{
-    CHECK_ENUM(AdminCommandType, v, allow_exceptions);
-
-    switch(static_cast<AdminCommandType>(v)){
-    case AdminCommandType::LOGIN:
-        return to_new_char_buffer("LOGIN", buf, n, allow_exceptions);
-    case AdminCommandType::LOGOUT:
-        return to_new_char_buffer("LOGOUT", buf, n, allow_exceptions);
-    case AdminCommandType::QOS:
-        return to_new_char_buffer("QOS", buf, n, allow_exceptions);
-    default:
-        throw std::runtime_error("Invalid AdminCommandType");
-    }
-}
 
 int
 QOSType_to_string_ABI( TDMA_API_TO_STRING_ABI_ARGS )
@@ -213,6 +197,31 @@ QOSType_to_string_ABI( TDMA_API_TO_STRING_ABI_ARGS )
         return to_new_char_buffer("slow", buf, n, allow_exceptions);
     default:
         throw std::runtime_error("Invalid QOSType");
+    }
+}
+
+int
+CommandType_to_string_ABI( TDMA_API_TO_STRING_ABI_ARGS )
+{
+    // DONT CHECK_ENUM, need LOGIN, LOGOUT, QOS conversions even though private
+
+    switch(static_cast<CommandType>(v)){
+    case CommandType::SUBS:
+        return to_new_char_buffer("SUBS", buf, n, allow_exceptions);
+    case CommandType::UNSUBS:
+        return to_new_char_buffer("UNSUBS", buf, n, allow_exceptions);
+    case CommandType::ADD:
+        return to_new_char_buffer("ADD", buf, n, allow_exceptions);
+    case CommandType::VIEW:
+        return to_new_char_buffer("VIEW", buf, n, allow_exceptions);
+    case CommandType::LOGIN:
+        return to_new_char_buffer("LOGIN", buf, n, allow_exceptions);
+    case CommandType::LOGOUT:
+        return to_new_char_buffer("LOGOUT", buf, n, allow_exceptions);
+    case CommandType::QOS:
+        return to_new_char_buffer("QOS", buf, n, allow_exceptions);
+    default:
+        throw std::runtime_error("Invalid CommandType");
     }
 }
 

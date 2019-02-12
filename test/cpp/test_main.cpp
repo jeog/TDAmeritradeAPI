@@ -58,11 +58,11 @@ int main(int argc, char* argv[])
         test_execution_order_objects();
         cout<< "*** [END] TEST EXECUTION ORDER OBJECTS [END] ***" << endl << endl;
       
-        /* THIS SENDS LIVE ORDERS */
+        // THIS SENDS LIVE ORDERS
         //cout<< "*** [BEGIN] TEST EXECUTION TRANSACTIONS [BEGIN] ***" << endl;
         //test_execute_transactions(account_id, cmanager.credentials);
         //cout<< "*** [END] TEST EXECUTION TRANSACTIONS [END] ***" << endl << endl;
-        /* THIS SENDS LIVE ORDERS */
+        // THIS SENDS LIVE ORDERS
 
         cout<< "*** [BEGIN] TEST GETTERS [BEGIN] ***" << endl;
         test_getters(account_id, cmanager.credentials);

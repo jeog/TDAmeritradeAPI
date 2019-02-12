@@ -605,9 +605,9 @@ def test_user_principals_getters(creds):
 
 def test_instrument_info_getters(creds):
     g = get.InstrumentInfoGetter(creds, get.INSTRUMENT_SEARCH_TYPE_SYMBOL_REGEX,
-                                 "GOOGL?")
+                                 "GOOGL*")
     assert g.get_search_type() == get.INSTRUMENT_SEARCH_TYPE_SYMBOL_REGEX
-    assert g.get_query_string() == "GOOGL?"
+    assert g.get_query_string() == "GOOGL*"
     j = Get(g)
     jprint(j)
 
@@ -765,6 +765,7 @@ def test_order_getters(creds, account_id):
 def test_streaming(creds):
 
     QS = stream.QuotesSubscription
+    
     try:
         QS( [], (QS.FIELD_SYMBOL, QS.FIELD_BID_PRICE, QS.FIELD_ASK_PRICE))
         raise Exception("failed to catch exception(1)")
@@ -785,10 +786,35 @@ def test_streaming(creds):
     symbols = ('spy', 'QQQ')
     fields = (QS.FIELD_SYMBOL, QS.FIELD_BID_PRICE, QS.FIELD_ASK_PRICE)
     qs = QS(symbols, fields)
-    assert qs.get_command() == "SUBS"
+    assert qs.get_command() == stream.COMMAND_TYPE_SUBS
     assert qs.get_service() == stream.SERVICE_TYPE_QUOTE
     assert set(qs.get_symbols()) == {'SPY','QQQ'}
     assert set(qs.get_fields()) == set(fields)
+    
+    # ADD     
+    qs2 = QS(symbols, fields)
+    qs2.set_command(stream.COMMAND_TYPE_ADD)
+    symbols = ("IWM",)   
+    qs2.set_symbols(symbols)
+    assert qs2.get_command() == stream.COMMAND_TYPE_ADD
+    assert qs2.get_service() == stream.SERVICE_TYPE_QUOTE
+    assert set(qs2.get_symbols()) == {'IWM'}
+    assert set(qs2.get_fields()) == set(fields)
+    
+    # VIEW
+    qs3 = QS(symbols, fields)
+    fields = (QS.FIELD_LAST_PRICE,)
+    qs3.set_fields(fields)
+    qs3.set_command(stream.COMMAND_TYPE_VIEW)
+    assert qs3.get_command() == stream.COMMAND_TYPE_VIEW
+    assert qs3.get_service() == stream.SERVICE_TYPE_QUOTE
+    assert set(qs3.get_symbols()) == {'IWM'}
+    assert set(qs3.get_fields()) == set(fields) 
+    
+    # UNSUBS
+    qs4 = QS( ("SPY",), [], stream.COMMAND_TYPE_UNSUBS)    
+    assert qs4.get_command() == stream.COMMAND_TYPE_UNSUBS
+    assert qs4.get_service() == stream.SERVICE_TYPE_QUOTE   
 
     OS = stream.OptionsSubscription
     symbols = ["SpY_081718P286"]
@@ -853,6 +879,15 @@ def test_streaming(creds):
     assert cos.get_service() == stream.SERVICE_TYPE_CHART_OPTIONS
     assert set(cos.get_symbols()) == set(symbols)
     assert set(cos.get_fields()) == set(fields)
+    
+    #VIEW
+    cos2 = COS(symbols, fields, stream.COMMAND_TYPE_UNSUBS)
+    assert cos2.get_command() == stream.COMMAND_TYPE_UNSUBS
+    cos2.set_command(stream.COMMAND_TYPE_VIEW)
+    cos2.set_fields( (COS.FIELD_SYMBOL, COS.FIELD_VOLUME) )
+    assert cos2.get_service() == stream.SERVICE_TYPE_CHART_OPTIONS
+    assert set(cos2.get_symbols()) == set(symbols)
+    assert set(cos2.get_fields()) == {COS.FIELD_SYMBOL, COS.FIELD_VOLUME}
 
     TES = stream.TimesaleEquitySubscription
     symbols = ("EEM",)
@@ -861,6 +896,16 @@ def test_streaming(creds):
     assert tes.get_service() == stream.SERVICE_TYPE_TIMESALE_EQUITY
     assert set(tes.get_symbols()) == set(symbols)
     assert set(tes.get_fields()) == set(fields)
+    
+    #UNSUBS
+    tes2 = TES(symbols, fields, stream.COMMAND_TYPE_UNSUBS)
+    tes2.set_fields( [] )
+    assert tes2.get_command() == stream.COMMAND_TYPE_UNSUBS
+    assert set(tes2.get_symbols()) == set(symbols)
+    assert set(tes2.get_fields()) == set()
+    tes2.set_fields( fields )
+    assert set(tes2.get_fields()) == set(fields)
+    
 
     TFS = stream.TimesaleFuturesSubscription
     symbols = ("/ES", "/GC")
@@ -879,27 +924,44 @@ def test_streaming(creds):
     NAS = stream.NasdaqActivesSubscription
     nas = NAS(NAS.DURATION_TYPE_ALL_DAY)
     assert nas.get_service() == stream.SERVICE_TYPE_ACTIVES_NASDAQ
-    assert nas.get_command() == "SUBS"
+    assert nas.get_command() == stream.COMMAND_TYPE_SUBS
     assert nas.get_duration() == NAS.DURATION_TYPE_ALL_DAY
 
     NYAS = stream.NYSEActivesSubscription
     nyas = NYAS(NAS.DURATION_TYPE_MIN_1)
     assert nyas.get_service() == stream.SERVICE_TYPE_ACTIVES_NYSE
-    assert nyas.get_command() == "SUBS"
+    assert nyas.get_command() == stream.COMMAND_TYPE_SUBS
     assert nyas.get_duration() == NYAS.DURATION_TYPE_MIN_1
 
     OCAS = stream.OTCBBActivesSubscription
     ocas = OCAS(OCAS.DURATION_TYPE_MIN_60)
     assert ocas.get_service() == stream.SERVICE_TYPE_ACTIVES_OTCBB
-    assert ocas.get_command() == "SUBS"
+    assert ocas.get_command() == stream.COMMAND_TYPE_SUBS
     assert ocas.get_duration() == OCAS.DURATION_TYPE_MIN_60
-
+    
+    #ADD
+    ocas2 = OCAS(OCAS.DURATION_TYPE_ALL_DAY, stream.COMMAND_TYPE_ADD)
+    ocas2.set_command(stream.COMMAND_TYPE_ADD)
+    ocas2.set_duration(OCAS.DURATION_TYPE_MIN_1)
+    assert ocas2.get_service() == stream.SERVICE_TYPE_ACTIVES_OTCBB
+    assert ocas2.get_command() == stream.COMMAND_TYPE_ADD
+    assert ocas2.get_duration() == OCAS.DURATION_TYPE_MIN_1
+    
     OPAS = stream.OptionActivesSubscription
     opas = OPAS(OPAS.VENUE_TYPE_PUTS_DESC, OPAS.DURATION_TYPE_MIN_30)
     assert opas.get_service() == stream.SERVICE_TYPE_ACTIVES_OPTIONS
-    assert opas.get_command() == "SUBS"
+    assert opas.get_command() == stream.COMMAND_TYPE_SUBS
     assert opas.get_duration() == OPAS.DURATION_TYPE_MIN_30
-
+    
+    #UNSUBS
+    opas2 = OPAS(OPAS.VENUE_TYPE_PUTS_DESC, OPAS.DURATION_TYPE_MIN_30,
+                 stream.COMMAND_TYPE_UNSUBS)
+    opas2.set_venue(OPAS.VENUE_TYPE_CALLS)
+    opas2.set_duration(OPAS.DURATION_TYPE_MIN_60)
+    assert opas2.get_service() == stream.SERVICE_TYPE_ACTIVES_OPTIONS
+    assert opas2.get_command() == stream.COMMAND_TYPE_UNSUBS
+    assert opas2.get_duration() == OPAS.DURATION_TYPE_MIN_60
+    assert opas2.get_venue() == OPAS.VENUE_TYPE_CALLS   
 
     def callback( cb, ss, ts, msg):
         print("--CALLBACK" + "-" * 70)
@@ -936,6 +998,15 @@ def test_streaming(creds):
 
     assert all(session.start(qs))
     _pause(1)
+    
+    assert session.add_subscriptions(qs2)
+    _pause(10)
+    
+    assert session.add_subscriptions(qs3)
+    _pause(10)
+    
+    assert session.add_subscriptions(qs4)
+    _pause(10)
 
     try:
         session.start(os)
@@ -973,6 +1044,9 @@ def test_streaming(creds):
     assert all(session2.start(nhs, ces, cfs, cos))
     assert session2.is_active()
 
+    assert session2.add_subscriptions(cos2)
+    _pause(10)
+    
     try:
         session.add_subscriptions(tes, tfs)
         raise Exception("failed to catch exception(9)")
@@ -986,8 +1060,11 @@ def test_streaming(creds):
 
     _pause(3)
     assert all(session2.add_subscriptions(tes, tfs, tos, nas, nyas, ocas, opas))
-    _pause(10)
+    _pause(5)
 
+    assert all(session2.add_subscriptions(ocas2, opas2))
+    _pause(5)
+    
     session2.stop()
     assert not session2.is_active()
 
@@ -2654,6 +2731,7 @@ if __name__ == '__main__':
     with auth.CredentialsManager(args.credentials_path, \
                                   args.credentials_password, True) as cm:
         #test(test_execute_transactions,cm.credentials, args.account_id)
+        
         test(test_option_symbol_builder)
         test(test_execute_order_objects)
         test(test_execute_order_builders)
@@ -2676,6 +2754,7 @@ if __name__ == '__main__':
         test(test_user_principals_getters, cm.credentials)
         test(test_instrument_info_getters, cm.credentials)
         test(test_order_getters, cm.credentials, args.account_id)
+        
         if use_live_connection:
             test(test_streaming, cm.credentials)
         else:

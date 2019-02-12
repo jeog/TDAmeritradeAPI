@@ -2562,7 +2562,7 @@ Test_InstrumentInfoGetter(struct Credentials *creds)
    }
 
    if( (err = InstrumentInfoGetter_SetQuery(&iig, InstrumentSearchType_symbol_regex,
-                                               "GOOGL?")) )
+                                               "GOOGL*")) )
        CHECK_AND_RETURN_ON_ERROR(err, "InstrumentInfoGetter_Get");
 
    if( (err = InstrumentInfoGetter_GetSearchType(&iig, &ist)) )

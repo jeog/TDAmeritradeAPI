@@ -70,7 +70,7 @@ streaming_callback( int cb_type,
         break;
     }
 
-    if( (err = StreamerServiceType_to_string(cb_type, &buf, &n)) ){
+    if( (err = StreamerServiceType_to_string(ss_type, &buf, &n)) ){
         fprintf(stderr, "error(%i): StreamingServiceType_to_string\n", err);
         return;
     }
@@ -89,13 +89,43 @@ int
 test_quotes_subscription(QuotesSubscription_C* sub )
 {
     int err = 0;
+    QuotesSubscription_C sub_;
+    const char* symbols1a[] = {"SPY", "QQQ"};
+    QuotesSubscriptionField fields1a[] = {QuotesSubscriptionField_symbol};
+    if( (err = QuotesSubscription_Create( symbols1a, 2, fields1a, 1,
+                                          CommandType_UNSUBS, &sub_)) )
+        CHECK_AND_RETURN_ON_ERROR(err, "QuotesSubscription_Create");
+
+    if( (err = QuotesSubscription_Copy(&sub_, sub) ) )
+        CHECK_AND_RETURN_ON_ERROR(err, "QuotesSubscription_Copy");
+
+    if( (err = QuotesSubscription_Destroy(&sub_)) )
+        CHECK_AND_RETURN_ON_ERROR(err, "QuotesSubscription_Destroy (COPY");
+
+
+    const char* symbols1b[] = {};
+    if( (err = QuotesSubscription_SetSymbols(sub, symbols1b, 0)) )
+        CHECK_AND_RETURN_ON_ERROR(err, "QuotesSubscription_SetSymbols");
+
     const char* symbols1[] = {"SPY", "QQQ", "EEM", "XLF", "XLE"};
+    if( (err = QuotesSubscription_SetSymbols(sub, symbols1, 5)) )
+            CHECK_AND_RETURN_ON_ERROR(err, "QuotesSubscription_SetSymbols");
+
+
+    QuotesSubscriptionField fields1b[] = {};
+    if( (err = QuotesSubscription_SetFields(sub, fields1b, 0)) )
+        CHECK_AND_RETURN_ON_ERROR(err, "QuotesSubscription_SetFields");
+
     QuotesSubscriptionField fields1[] = {QuotesSubscriptionField_symbol,
                                          QuotesSubscriptionField_bid_price,
                                          QuotesSubscriptionField_ask_price,
                                           QuotesSubscriptionField_last_price};
-    if( (err = QuotesSubscription_Create(symbols1, 5, fields1, 4, sub)))
-        CHECK_AND_RETURN_ON_ERROR(err, "QuotesSubscription_Create");
+    if( (err = QuotesSubscription_SetFields(sub, fields1, 4)) )
+            CHECK_AND_RETURN_ON_ERROR(err, "QuotesSubscription_SetFields");
+
+
+    if( (err = QuotesSubscription_SetCommand(sub, CommandType_SUBS)) )
+        CHECK_AND_RETURN_ON_ERROR(err, "QuotesSubscription_SetCommand");
 
     StreamerServiceType sst;
     char* buf = NULL;
@@ -119,9 +149,12 @@ test_quotes_subscription(QuotesSubscription_C* sub )
         return -1;
     }
 
-
-    if( (err = QuotesSubscription_GetCommand(sub, &buf, &n)) )
+    CommandType cmnd;
+    if( (err = QuotesSubscription_GetCommand(sub, &cmnd)) )
         CHECK_AND_RETURN_ON_ERROR(err, "QuotesSubscription_GetCommand");
+
+    if( (err = CommandType_to_string(cmnd, &buf, &n)) )
+        CHECK_AND_RETURN_ON_ERROR(err, "CommandType_to_string" );
 
     printf("Command: %s \n", buf);
     if( buf ){
@@ -204,11 +237,32 @@ int
 test_timesale_futures_subscription(TimesaleFuturesSubscription_C* sub )
 {
     int err = 0;
+    TimesaleFuturesSubscription_C sub_;
+    const char* symbols1a[] = {"/ES", "/GC"};
+    TimesaleSubscriptionField fields1a[] = {TimesaleSubscriptionField_symbol};
+    if( (err = TimesaleFuturesSubscription_Create(symbols1a, 2, fields1a, 1,
+                                                  CommandType_ADD, &sub_)))
+        CHECK_AND_RETURN_ON_ERROR(err, "TimesaleFuturesSubscription_Create");
+
+    if( (err = TimesaleFuturesSubscription_Copy(&sub_, sub) ) )
+        CHECK_AND_RETURN_ON_ERROR(err, "TimesaleFuturesSubscription_Copy");
+
+    if( (err = TimesaleFuturesSubscription_Destroy(&sub_)) )
+        CHECK_AND_RETURN_ON_ERROR(err, "TimesaleFuturesSubscription_Destroy (COPY");
+
+
     const char* symbols1[] = {"/ES"};
+    if( (err = TimesaleFuturesSubscription_SetSymbols(sub, symbols1, 1)) )
+        CHECK_AND_RETURN_ON_ERROR(err, "TimesaleFuturesSubscription_SetSymbols");
+
     TimesaleSubscriptionField fields1[] = {TimesaleSubscriptionField_symbol,
                                           TimesaleSubscriptionField_last_price};
-    if( (err = TimesaleFuturesSubscription_Create(symbols1, 1, fields1, 2, sub)))
-        CHECK_AND_RETURN_ON_ERROR(err, "TimesaleFuturesSubscription_Create");
+    if( (err = TimesaleFuturesSubscription_SetFields(sub, fields1, 2)) )
+        CHECK_AND_RETURN_ON_ERROR(err, "TimesaleFuturesSubscription_SetFields");
+
+
+    if( (err = TimesaleFuturesSubscription_SetCommand(sub, CommandType_SUBS)) )
+        CHECK_AND_RETURN_ON_ERROR(err, "TimesaleFuturesSubscription_SetCommand");
 
     StreamerServiceType sst;
     char* buf = NULL;
@@ -233,8 +287,12 @@ test_timesale_futures_subscription(TimesaleFuturesSubscription_C* sub )
     }
 
 
-    if( (err = TimesaleFuturesSubscription_GetCommand(sub, &buf, &n)) )
+    CommandType cmnd;
+    if( (err = TimesaleFuturesSubscription_GetCommand(sub, &cmnd)) )
         CHECK_AND_RETURN_ON_ERROR(err, "TimesaleFuturesSubscription_GetCommand");
+
+    if( (err = CommandType_to_string(cmnd, &buf, &n)) )
+        CHECK_AND_RETURN_ON_ERROR(err, "CommandType_to_string" );
 
     printf("Command: %s \n", buf);
     if( buf ){
@@ -318,9 +376,21 @@ int
 test_nasdaq_actives_subscription(NasdaqActivesSubscription_C* sub )
 {
     int err = 0;
-    DurationType dt = DurationType_min_60;
-    if( (err = NasdaqActivesSubscription_Create(dt, sub)) )
+    NasdaqActivesSubscription_C sub_;
+    DurationType dt1 = DurationType_min_5;
+    if( (err = NasdaqActivesSubscription_Create(dt1, CommandType_VIEW, &sub_)) )
         CHECK_AND_RETURN_ON_ERROR(err, "NasdaqActivesSubscription_Create");
+
+    if( (err = NasdaqActivesSubscription_Copy(&sub_, sub) ) )
+        CHECK_AND_RETURN_ON_ERROR(err, "NasdaqActivesSubscription_Copy");
+
+    if( (err = NasdaqActivesSubscription_Destroy(&sub_)) )
+        CHECK_AND_RETURN_ON_ERROR(err, "NasdaqActivesSubscription_Destroy (COPY");
+
+
+    DurationType dt = DurationType_min_60;
+    if( (err = NasdaqActivesSubscription_SetDuration(sub, dt)) )
+        CHECK_AND_RETURN_ON_ERROR(err, "NasdaActivesSubscription_SetDuration");
 
     StreamerServiceType sst;
     char* buf = NULL;
@@ -344,8 +414,37 @@ test_nasdaq_actives_subscription(NasdaqActivesSubscription_C* sub )
         return -1;
     }
 
-    if( (err = NasdaqActivesSubscription_GetCommand(sub, &buf, &n)) )
+    CommandType cmnd;
+    if( (err = NasdaqActivesSubscription_GetCommand(sub, &cmnd)) )
         CHECK_AND_RETURN_ON_ERROR(err, "NasdaqActivesSubscription_GetCommand");
+
+    if( (err = CommandType_to_string(cmnd, &buf, &n)) )
+        CHECK_AND_RETURN_ON_ERROR(err, "CommandType_to_string" );
+
+    if( strcmp(buf, "VIEW") ){
+        fprintf(stderr, "NasdaqActivesSubscription: bad command (%s) \n", buf);
+        return -1;
+    }
+
+    printf("Command: %s \n", buf);
+    if( buf ){
+        FreeBuffer(buf);
+        buf = NULL;
+    }
+
+    if( (err = NasdaqActivesSubscription_SetCommand(sub, CommandType_SUBS)) )
+        CHECK_AND_RETURN_ON_ERROR(err, "NasdaqActivesSubscription_SetCommand");
+
+    if( (err = NasdaqActivesSubscription_GetCommand(sub, &cmnd)) )
+        CHECK_AND_RETURN_ON_ERROR(err, "NasdaqActivesSubscription_GetCommand");
+
+    if( (err = CommandType_to_string(cmnd, &buf, &n)) )
+        CHECK_AND_RETURN_ON_ERROR(err, "CommandType_to_string" );
+
+    if( strcmp(buf, "SUBS") ){
+        fprintf(stderr, "NasdaqActivesSubscription: bad command (%s) \n ", buf);
+        return -1;
+    }
 
     printf("Command: %s \n", buf);
     if( buf ){
@@ -373,6 +472,117 @@ test_nasdaq_actives_subscription(NasdaqActivesSubscription_C* sub )
 
     return 0;
 }
+
+
+int
+test_option_actives_subscription(OptionActivesSubscription_C* sub)
+{
+    int err = 0;
+    OptionActivesSubscription_C sub_;
+    DurationType dt1 = DurationType_min_5;
+    VenueType vt1 = VenueType_calls;
+
+    if( (err = OptionActivesSubscription_Create(dt1, vt1, CommandType_UNSUBS, &sub_)) )
+        CHECK_AND_RETURN_ON_ERROR(err, "OptionActivesSubscription_Create");
+
+    if( (err = OptionActivesSubscription_Copy(&sub_, sub) ) )
+        CHECK_AND_RETURN_ON_ERROR(err, "OptionActivesSubscription_Copy");
+
+    if( (err = OptionActivesSubscription_Destroy(&sub_)) )
+        CHECK_AND_RETURN_ON_ERROR(err, "OptionActivesSubscription_Destroy (COPY");
+
+
+    DurationType dt = DurationType_min_60;
+    if( (err = OptionActivesSubscription_SetDuration(sub, dt)) )
+        CHECK_AND_RETURN_ON_ERROR(err, "OptionActivesSubscription_SetDuration");
+
+    VenueType vt = VenueType_opts;
+    if( (err = OptionActivesSubscription_SetVenue(sub, vt)) )
+        CHECK_AND_RETURN_ON_ERROR(err, "OptionActivesSubscription_SetVenue");
+
+    if( (err = OptionActivesSubscription_SetCommand(sub, CommandType_SUBS)) )
+        CHECK_AND_RETURN_ON_ERROR(err, "OptionActivesSubscription_SetCommand");
+
+    StreamerServiceType sst;
+    char* buf = NULL;
+    size_t n;
+
+    if( (err = OptionActivesSubscription_GetService(sub, &sst)) )
+        CHECK_AND_RETURN_ON_ERROR(err, "OptionActivesSubscription_GetService");
+
+    if( (err = StreamerServiceType_to_string(sst, &buf, &n)) )
+        CHECK_AND_RETURN_ON_ERROR(err, "StreamerServiceType_to_string");
+
+    printf("Service: %s \n", buf);
+    if( buf ){
+        FreeBuffer(buf);
+        buf = NULL;
+    }
+
+    if( sst != StreamerServiceType_ACTIVES_OPTIONS ){
+        fprintf(stderr, "OptionActivesSubscription: bad StreamerServiceType (%i) \n",
+                (int)sst);
+        return -1;
+    }
+
+    CommandType cmnd;
+    if( (err = OptionActivesSubscription_GetCommand(sub, &cmnd)) )
+        CHECK_AND_RETURN_ON_ERROR(err, "OptionActivesSubscription_GetCommand");
+
+    if( (err = CommandType_to_string(cmnd, &buf, &n)) )
+        CHECK_AND_RETURN_ON_ERROR(err, "CommandType_to_string" );
+
+    if( strcmp(buf, "SUBS") ){
+        fprintf(stderr, "OptionActivesSubscription: bad command (%s) \n ", buf);
+        return -1;
+    }
+
+    printf("Command: %s \n", buf);
+    if( buf ){
+        FreeBuffer(buf);
+        buf = NULL;
+    }
+
+    DurationType dt2;
+    if( (err = OptionActivesSubscription_GetDuration(sub, &dt2)) )
+        CHECK_AND_RETURN_ON_ERROR(err, "OptionActivesSubscription_GetDuration");
+
+    if( dt2 != dt ){
+        fprintf(stderr, "OptionActivesSubscription: bad duration (%i) \n",
+                (int)dt);
+        return -1;
+    }
+    if( (err = DurationType_to_string(dt2, &buf, &n)) )
+        CHECK_AND_RETURN_ON_ERROR(err, "DurationType_to_string");
+
+    printf("Duration: %s \n", buf);
+    if( buf ){
+        FreeBuffer(buf);
+        buf = NULL;
+    }
+
+    VenueType vt2;
+    if( (err = OptionActivesSubscription_GetVenue(sub, &vt2)) )
+        CHECK_AND_RETURN_ON_ERROR(err, "OptionActivesSubscription_GetVenue");
+
+    if( vt2 != vt ){
+        fprintf(stderr, "OptionActivesSubscription: bad venue (%i) \n",
+                (int)vt);
+        return -1;
+    }
+    if( (err = VenueType_to_string(vt2, &buf, &n)) )
+        CHECK_AND_RETURN_ON_ERROR(err, "VenueType_to_string");
+
+    printf("Duration: %s \n", buf);
+    if( buf ){
+        FreeBuffer(buf);
+        buf = NULL;
+    }
+
+    return 0;
+}
+
+
 int
 Test_Streaming(struct Credentials* c, const char* account_id)
 {
@@ -437,6 +647,26 @@ Test_Streaming(struct Credentials* c, const char* account_id)
     if( q3.type_id != TYPE_ID_SUB_ACTIVES_NASDAQ ){
         fprintf(stderr, "invalid type id (%i,%i) \n", q3.type_id,
                  TYPE_ID_SUB_ACTIVES_NASDAQ);
+        return -1;
+    }
+
+    OptionActivesSubscription_C q4;
+    err = test_option_actives_subscription(&q4);
+    if( err ){
+        LastErrorMsg(&buf, &n);
+        LastErrorCode(&code);
+        fprintf(stderr, "OptionActivesSubscription error(%i): %s", code, buf);
+        if( buf ){
+              FreeBuffer(buf);
+              n = 0;
+              code = 0;
+          }
+        return -1;
+    }
+
+    if( q4.type_id != TYPE_ID_SUB_ACTIVES_OPTION ){
+        fprintf(stderr, "invalid type id (%i,%i) \n", q4.type_id,
+                 TYPE_ID_SUB_ACTIVES_OPTION);
         return -1;
     }
 
@@ -552,6 +782,18 @@ Test_Streaming(struct Credentials* c, const char* account_id)
     }
 
     err = StreamingSubscription_Destroy((StreamingSubscription_C*)(&q2)); // generic
+    if( err ){
+        LastErrorMsg(&buf, &n);
+        LastErrorCode(&code);
+        fprintf(stderr, "StreamingSubscription_Destroy error(%i): %s", code, buf);
+        if( buf ){
+              FreeBuffer(buf);
+              n = 0;
+              code = 0;
+          }
+    }
+
+    err = StreamingSubscription_Destroy((StreamingSubscription_C*)(&q4)); // generic
     if( err ){
         LastErrorMsg(&buf, &n);
         LastErrorCode(&code);

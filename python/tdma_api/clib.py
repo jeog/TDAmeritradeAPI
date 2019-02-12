@@ -67,6 +67,26 @@ class _ProxyBase(metaclass=ABCMeta):
         pass                 
     
     
+class _ProxyBaseCopyable( _ProxyBase ):
+    """_ProxyBaseCopyable - base class for proxy objects that can be copied."""  
+                              
+    def deep_copy(self):
+        """Return new instance containing a (deep)copy of underlying C object"""     
+        copy = self.__new__(self.__class__)
+        copy._obj = self._cproxy_type()()
+        call(self._abi("Copy"), REF(self._obj), REF(copy._obj))
+        copy._alive = True
+        return copy
+    
+    def _is_same(self, other, abicall_name=None):
+        """ Returns if underlying C objects are logically equal. """
+        if type(self) != type(other):
+            return False
+        i = c_int()
+        name = self._abi('IsSame') if abicall_name is None else abicall_name
+        call( name, REF(self._obj), REF(other._obj), REF(i) )
+        return bool(i)
+    
 _lib = None
 
 ERRORS = {

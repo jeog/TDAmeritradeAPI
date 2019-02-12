@@ -73,12 +73,14 @@ set<string> active_accounts;
 class AdminSubscriptionImpl
         : public StreamingSubscriptionImpl {
 public:
-    AdminSubscriptionImpl( AdminCommandType command,
-                           const map<string, string>& params = {} )
+    AdminSubscriptionImpl( CommandType command,
+                           const map<string, string>& parameters = {} )
         :
-            StreamingSubscriptionImpl( StreamerServiceType::ADMIN,
-                                       to_string(command), params )
-    {}
+            StreamingSubscriptionImpl( StreamerServiceType::ADMIN, command)
+        {
+            set_parameters(parameters);
+        }
+
 };
 
 struct PendingResponse{
@@ -147,7 +149,7 @@ struct PendingResponseBundle{
 
 class StreamingRequest{
     StreamerServiceType _service;
-    string _command;
+    CommandType _command;
     string _account_id;
     string _source_id;
     int _request_id;
@@ -155,7 +157,7 @@ class StreamingRequest{
 
 public:
     StreamingRequest( StreamerServiceType service,
-                      const string& command,
+                      CommandType command,
                       const string& account_id,
                       const string& source_id,
                       int request_id,
@@ -175,12 +177,9 @@ public:
                       const string& source_id,
                       int request_id )
         :
-            _service( subscription.get_service() ),
-            _command( subscription.get_command() ),
-            _account_id( account_id ),
-            _source_id( source_id ),
-            _request_id( request_id ),
-            _parameters( subscription.get_parameters() )
+            StreamingRequest( subscription.get_service(),
+                subscription.get_command(), account_id, source_id,
+                request_id, subscription.get_parameters() )
         {
         }
 
@@ -190,7 +189,7 @@ public:
         return {
            {"service", to_string(_service)},
            {"requestid", to_string(_request_id)},
-           {"command", _command},
+           {"command", to_string(_command)},
            {"account", _account_id},
            {"source", _source_id},
            {"parameters", _parameters}
@@ -320,8 +319,8 @@ class StreamingSessionImpl{
     _reset();
 
     void
-    _subscribe( const vector<StreamingSubscriptionImpl>& subscriptions,
-                PendingResponse::response_cb_ty callback = nullptr );
+    _send_requests( const vector<StreamingSubscriptionImpl>& subscriptions,
+                    PendingResponse::response_cb_ty callback = nullptr );
 
     void
     _exec_callback( StreamingCallbackType cb_type,
@@ -651,7 +650,7 @@ StreamingSessionImpl::_login()
 
     int req_id = _next_request_id++;
     StreamingRequests requests(
-        { AdminSubscriptionImpl(AdminCommandType::LOGIN, params) },
+        { AdminSubscriptionImpl(CommandType::LOGIN, params) },
         _account_id, 
         _streamer_info.credentials.app_id, 
         {req_id}
@@ -682,7 +681,7 @@ StreamingSessionImpl::_login()
     string response_req_id = info["requestid"];
 
     if( service != to_string(StreamerServiceType::ADMIN) ||
-        command != to_string(AdminCommandType::LOGIN ) ||
+        command != to_string(CommandType::LOGIN ) ||
         response_req_id != to_string(req_id) )
     {
         /*
@@ -739,7 +738,7 @@ StreamingSessionImpl::_logout()
 
     int req_id = _next_request_id++;
     StreamingRequests requests(
-            { AdminSubscriptionImpl(AdminCommandType::LOGOUT) },
+            { AdminSubscriptionImpl(CommandType::LOGOUT) },
             _account_id, 
             _streamer_info.credentials.app_id, 
             { req_id }
@@ -773,7 +772,7 @@ StreamingSessionImpl::_logout()
             string response_req_id = info["requestid"];
 
             if( service == to_string(StreamerServiceType::ADMIN) &&
-                command == to_string(AdminCommandType::LOGOUT ) &&
+                command == to_string(CommandType::LOGOUT ) &&
                 response_req_id == to_string(req_id) )
             {
                 auto content = info["content"];
@@ -846,10 +845,10 @@ StreamingSessionImpl::set_qos(const QOSType& qos)
         };
 
     AdminSubscriptionImpl sub(
-        AdminCommandType::QOS,
+        CommandType::QOS,
         {{"qoslevel", to_string(static_cast<int>(qos))}}
     );
-    _subscribe( {sub}, cb );
+    _send_requests( {sub}, cb );
 
     std::unique_lock<mutex> l(bndl->mtx);
     if( !bndl->cond.wait_for(l, _subscribe_timeout,
@@ -868,7 +867,7 @@ StreamingSessionImpl::set_qos(const QOSType& qos)
 
 
 void
-StreamingSessionImpl::_subscribe(
+StreamingSessionImpl::_send_requests(
     const vector<StreamingSubscriptionImpl>& subscriptions,
     PendingResponse::response_cb_ty callback
     )
@@ -901,7 +900,7 @@ StreamingSessionImpl::_subscribe(
             req_ids[i],
             PendingResponse(req_ids[i],
                             to_string(subscriptions[i].get_service()),
-                            subscriptions[i].get_command(),
+                            to_string(subscriptions[i].get_command()),
                             callback)
             );
     }
@@ -949,7 +948,7 @@ StreamingSessionImpl::add_subscriptions(
                                  streamer_service_from_str(serv), ts, j);
         };
 
-    _subscribe(subscriptions, cb);
+    _send_requests(subscriptions, cb);
 
     std::unique_lock<mutex> l(bndl->mtx);
     if( !bndl->cond.wait_for( l, _subscribe_timeout,
@@ -974,6 +973,12 @@ StreamingSessionImpl::start(
 
     if( subscriptions.empty() )
         TDMA_API_THROW(StreamingException,"subscriptions is empty");
+
+    for( auto& sub : subscriptions ){
+        if( sub.get_command() != CommandType::SUBS )
+            TDMA_API_THROW(StreamingException, "can only start() session "
+                "using Subscriptions with command 'SUBS'");
+    }
 
     D("check unique session", this);
     string acct = get_primary_account_id();

@@ -74,11 +74,6 @@ DECL_C_CPP_TDMA_ENUM(StreamerServiceType, 1, 19,
     );
 #undef BUILD_ENUM_NAME
 
-DECL_C_CPP_TDMA_ENUM(AdminCommandType, 0, 2,
-    BUILD_C_CPP_TDMA_ENUM_NAME(AdminCommandType, LOGIN),
-    BUILD_C_CPP_TDMA_ENUM_NAME(AdminCommandType, LOGOUT),
-    BUILD_C_CPP_TDMA_ENUM_NAME(AdminCommandType, QOS)
-    );
 
 DECL_C_CPP_TDMA_ENUM(QOSType, 0, 5,
     BUILD_C_CPP_TDMA_ENUM_NAME(QOSType, express),   /* 500 ms */
@@ -88,6 +83,17 @@ DECL_C_CPP_TDMA_ENUM(QOSType, 0, 5,
     BUILD_C_CPP_TDMA_ENUM_NAME(QOSType, slow),      /* 3000 ms */
     BUILD_C_CPP_TDMA_ENUM_NAME(QOSType, delayed)    /* 5000 ms */
     );
+
+DECL_C_CPP_TDMA_ENUM(CommandType, 0, 3,
+    BUILD_C_CPP_TDMA_ENUM_NAME(CommandType, SUBS),
+    BUILD_C_CPP_TDMA_ENUM_NAME(CommandType, UNSUBS),
+    BUILD_C_CPP_TDMA_ENUM_NAME(CommandType, ADD),
+    BUILD_C_CPP_TDMA_ENUM_NAME(CommandType, VIEW),
+    BUILD_C_CPP_TDMA_ENUM_NAME(CommandType, LOGIN),
+    BUILD_C_CPP_TDMA_ENUM_NAME(CommandType, LOGOUT),
+    BUILD_C_CPP_TDMA_ENUM_NAME(CommandType, QOS)
+);
+
 
 #define BUILD_ENUM_NAME(n) \
     BUILD_C_CPP_TDMA_ENUM_NAME(QuotesSubscriptionField, n)
@@ -402,6 +408,7 @@ DECL_C_CPP_TDMA_ENUM(StreamingCallbackType, 0, 6,
     );
 
 
+
 static const int SUBSCRIPTION_MAX_FIELDS = 100;
 static const int SUBSCRIPTION_MAX_SYMBOLS = 5000;
 
@@ -432,11 +439,13 @@ DECL_CSUB_STRUCT(OptionActivesSubscription_C);
 #define DECL_CSUB_FIELD_SYM_CREATE_FUNC(name) \
 EXTERN_C_SPEC_ DLL_SPEC_ int \
 name##_Create_ABI( const char **symbols, size_t nsymbols, int *fields, \
-                   size_t nfields, name##_C *psub, int allow_exceptions )
+                   size_t nfields, int command, name##_C *psub, \
+                   int allow_exceptions )
 
 #define DECL_CSUB_DURATION_CREATE_FUNC(name) \
 EXTERN_C_SPEC_ DLL_SPEC_ int \
-name##_Create_ABI( int duration_type, name##_C *psub, int allow_exceptions )
+name##_Create_ABI( int duration_type, int command, name##_C *psub, \
+                   int allow_exceptions )
 
 /* Create methods for subs that takes symbols and fields */
 DECL_CSUB_FIELD_SYM_CREATE_FUNC(QuotesSubscription);
@@ -462,9 +471,47 @@ DECL_CSUB_DURATION_CREATE_FUNC(OTCBBActivesSubscription);
 EXTERN_C_SPEC_ DLL_SPEC_ int
 OptionActivesSubscription_Create_ABI( int venue,
                                       int duration_type,
+                                      int command,
                                       OptionActivesSubscription_C *psub,
                                       int allow_exceptions );
 
+
+/* SUBSCRIPTION COPY (CONSTRUCT) METHODS */
+#define DECL_CSUB_COPY_FUNC(name) \
+EXTERN_C_SPEC_ DLL_SPEC_ int \
+name##_Copy_ABI(name##_C *from, name##_C *to, int allow_exceptions )
+
+DECL_CSUB_COPY_FUNC(QuotesSubscription);
+DECL_CSUB_COPY_FUNC(OptionsSubscription);
+DECL_CSUB_COPY_FUNC(LevelOneFuturesSubscription);
+DECL_CSUB_COPY_FUNC(LevelOneForexSubscription);
+DECL_CSUB_COPY_FUNC(LevelOneFuturesOptionsSubscription);
+DECL_CSUB_COPY_FUNC(NewsHeadlineSubscription);
+DECL_CSUB_COPY_FUNC(ChartEquitySubscription);
+DECL_CSUB_COPY_FUNC(ChartFuturesSubscription);
+DECL_CSUB_COPY_FUNC(ChartOptionsSubscription);
+DECL_CSUB_COPY_FUNC(TimesaleEquitySubscription);
+DECL_CSUB_COPY_FUNC(TimesaleFuturesSubscription);
+DECL_CSUB_COPY_FUNC(TimesaleOptionsSubscription);
+DECL_CSUB_COPY_FUNC(NasdaqActivesSubscription);
+DECL_CSUB_COPY_FUNC(NYSEActivesSubscription);
+DECL_CSUB_COPY_FUNC(OTCBBActivesSubscription);
+DECL_CSUB_COPY_FUNC(OptionActivesSubscription);
+#undef DECL_CSUB_COPY_FUNC
+
+/* generic copy */
+
+EXTERN_C_SPEC_ DLL_SPEC_ int
+StreamingSubscription_Copy_ABI( StreamingSubscription_C *from,
+                                StreamingSubscription_C * to,
+                                int allow_exceptions );
+
+/* SUBSCRIPTION COMPARE METHOD */
+EXTERN_C_SPEC_ DLL_SPEC_ int
+StreamingSubscription_IsSame_ABI( StreamingSubscription_C *l,
+                                  StreamingSubscription_C *r,
+                                  int *is_same,
+                                  int allow_exceptions );
 
 /* SUBSCRIPTION DESTROY METHODS */
 
@@ -507,8 +554,7 @@ StreamingSubscription_GetService_ABI( StreamingSubscription_C *psub,
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 StreamingSubscription_GetCommand_ABI( StreamingSubscription_C *psub,
-                                      char **buf,
-                                      size_t *n,
+                                      int *command,
                                       int allow_exceptions );
 
 /* SubscriptionBySymbolBase Base Methods */
@@ -553,6 +599,58 @@ OptionActivesSubscription_GetVenue_ABI( OptionActivesSubscription_C *psub,
                                         int *venue,
                                         int allow_exceptions );
 
+
+/* SUBSCRIPTION SET METHODS */
+
+/* StreamingSubscription Base Methods */
+EXTERN_C_SPEC_ DLL_SPEC_ int
+StreamingSubscription_SetCommand_ABI( StreamingSubscription_C *psub,
+                                      int command,
+                                      int allow_exceptions );
+
+/* SubscriptionBySymbolBase Base Methods */
+EXTERN_C_SPEC_ DLL_SPEC_ int
+SubscriptionBySymbolBase_SetSymbols_ABI( StreamingSubscription_C *psub,
+                                         const char **buffers,
+                                         size_t n,
+                                         int allow_exceptions );
+
+#define DECL_CSUB_SET_FIELDS_FUNC(name) \
+EXTERN_C_SPEC_ DLL_SPEC_ int \
+name##_SetFields_ABI(name##_C *psub, int *fields, size_t n, int allow_exceptions);
+
+#define DECL_CSUB_SET_FIELDS_BASE_FUNC(name) \
+EXTERN_C_SPEC_ DLL_SPEC_ int \
+name##_SetFields_ABI(StreamingSubscription_C *psub, int *fields, size_t n, \
+                     int allow_exceptions);
+
+/* Set fields methods in derived */
+DECL_CSUB_SET_FIELDS_FUNC(QuotesSubscription);
+DECL_CSUB_SET_FIELDS_FUNC(OptionsSubscription);
+DECL_CSUB_SET_FIELDS_FUNC(LevelOneFuturesSubscription);
+DECL_CSUB_SET_FIELDS_FUNC(LevelOneForexSubscription);
+DECL_CSUB_SET_FIELDS_FUNC(LevelOneFuturesOptionsSubscription);
+DECL_CSUB_SET_FIELDS_FUNC(NewsHeadlineSubscription);
+DECL_CSUB_SET_FIELDS_FUNC(ChartEquitySubscription);
+#undef DECL_CSUB_SET_FIELDS_FUNC
+
+/* Set fields methods in base */
+DECL_CSUB_SET_FIELDS_BASE_FUNC(ChartSubscriptionBase);
+DECL_CSUB_SET_FIELDS_BASE_FUNC(TimesaleSubscriptionBase);
+#undef DECL_CSUB_SET_FIELDS_BASE_FUNC
+
+/* Set duration in base */
+EXTERN_C_SPEC_ DLL_SPEC_ int
+ActivesSubscriptionBase_SetDuration_ABI( StreamingSubscription_C *psub,
+                                         int duration,
+                                         int allow_exceptions );
+
+EXTERN_C_SPEC_ DLL_SPEC_ int
+OptionActivesSubscription_SetVenue_ABI( OptionActivesSubscription_C *psub,
+                                        int venue,
+                                        int allow_exceptions );
+
+
 #ifndef __cplusplus
 
 /* C Interface */
@@ -562,13 +660,15 @@ OptionActivesSubscription_GetVenue_ABI( OptionActivesSubscription_C *psub,
 #define DECL_CSUB_FIELD_SYM_CREATE_FUNC(name, fname) \
 static inline int \
 name##_Create( const char **symbols, size_t nsymbols, fname *fields, \
-               size_t nfields, name##_C *psub ) \
-{ return name##_Create_ABI(symbols, nsymbols, (int*)fields, nfields, psub, 0); }
+               size_t nfields, CommandType command, name##_C *psub ) \
+{ return name##_Create_ABI(symbols, nsymbols, (int*)fields, nfields, \
+                           (int)command, psub, 0); }
 
 #define DECL_CSUB_DURATION_CREATE_FUNC(name) \
 static inline int \
-name##_Create( DurationType duration_type, name##_C *psub) \
-{ return name##_Create_ABI((int)duration_type, psub, 0); }
+name##_Create( DurationType duration_type, CommandType command, \
+               name##_C *psub ) \
+{ return name##_Create_ABI((int)duration_type, (int)command, psub, 0); }
 
 /* Create methods for subs that takes symbols and fields */
 DECL_CSUB_FIELD_SYM_CREATE_FUNC(QuotesSubscription,
@@ -606,10 +706,44 @@ DECL_CSUB_DURATION_CREATE_FUNC(OTCBBActivesSubscription);
 static inline int
 OptionActivesSubscription_Create( VenueType venue,
                                   DurationType duration_type,
+                                  CommandType command,
                                   OptionActivesSubscription_C *psub)
 { return OptionActivesSubscription_Create_ABI((int)venue, (int)duration_type,
-                                               psub, 0); }
+                                               (int)command, psub, 0); }
 
+/* SUBSCRIPTION COPY (CONSTRUCTOR) METHODS */
+
+#define DECL_CSUB_COPY_FUNC(name) \
+static inline int \
+name##_Copy(name##_C *from, name##_C *to) \
+{ return name##_Copy_ABI(from, to, 0); }
+
+/* Destroy for each subscription type */
+DECL_CSUB_COPY_FUNC(QuotesSubscription);
+DECL_CSUB_COPY_FUNC(OptionsSubscription);
+DECL_CSUB_COPY_FUNC(LevelOneFuturesSubscription);
+DECL_CSUB_COPY_FUNC(LevelOneForexSubscription);
+DECL_CSUB_COPY_FUNC(LevelOneFuturesOptionsSubscription);
+DECL_CSUB_COPY_FUNC(NewsHeadlineSubscription);
+DECL_CSUB_COPY_FUNC(ChartEquitySubscription);
+DECL_CSUB_COPY_FUNC(ChartFuturesSubscription);
+DECL_CSUB_COPY_FUNC(ChartOptionsSubscription);
+DECL_CSUB_COPY_FUNC(TimesaleFuturesSubscription);
+DECL_CSUB_COPY_FUNC(TimesaleEquitySubscription);
+DECL_CSUB_COPY_FUNC(TimesaleOptionsSubscription);
+DECL_CSUB_COPY_FUNC(NasdaqActivesSubscription);
+DECL_CSUB_COPY_FUNC(NYSEActivesSubscription);
+DECL_CSUB_COPY_FUNC(OTCBBActivesSubscription);
+DECL_CSUB_COPY_FUNC(OptionActivesSubscription);
+#undef DECL_CSUB_DESTROY_FUNC
+
+/* SUBSCRIPTION COMPARE METHOD */
+static inline int
+StreamingSubscription_IsSame( StreamingSubscription_C *l,
+                              StreamingSubscription_C *r,
+                              int *is_same )
+
+{ return StreamingSubscription_IsSame_ABI(l, r, is_same, 0); }
 
 /* SUBSCRIPTION DESTROY METHODS */
 
@@ -675,9 +809,9 @@ DECL_CSUB_GET_SERVICE_FUNC(StreamingSubscription);
 
 #define DECL_CSUB_GET_COMMAND_FUNC(name) \
 static inline int \
-name##_GetCommand( name##_C *psub, char **buf, size_t *n ) \
+name##_GetCommand( name##_C *psub, CommandType *command ) \
 { return StreamingSubscription_GetCommand_ABI( (StreamingSubscription_C*)psub, \
-                                               buf, n, 0); }
+                                               (int*)command, 0); }
 
 /* GetCommand methods for each sub type */
 DECL_CSUB_GET_COMMAND_FUNC(QuotesSubscription);
@@ -772,6 +906,106 @@ OptionActivesSubscription_GetVenue( OptionActivesSubscription_C *psub,
 { return OptionActivesSubscription_GetVenue_ABI(psub, (int*)venue, 0); }
 
 
+/* SUBSCRIPTION SET METHODS */
+
+#define DECL_CSUB_SET_COMMAND_FUNC(name) \
+static inline int \
+name##_SetCommand( name##_C *psub, CommandType command ) \
+{ return StreamingSubscription_SetCommand_ABI( (StreamingSubscription_C*)psub, \
+                                               (int)command, 0); }
+
+/* GetCommand methods for each sub type */
+DECL_CSUB_SET_COMMAND_FUNC(QuotesSubscription);
+DECL_CSUB_SET_COMMAND_FUNC(OptionsSubscription);
+DECL_CSUB_SET_COMMAND_FUNC(LevelOneFuturesSubscription);
+DECL_CSUB_SET_COMMAND_FUNC(LevelOneForexSubscription);
+DECL_CSUB_SET_COMMAND_FUNC(LevelOneFuturesOptionsSubscription);
+DECL_CSUB_SET_COMMAND_FUNC(NewsHeadlineSubscription);
+DECL_CSUB_SET_COMMAND_FUNC(ChartEquitySubscription);
+DECL_CSUB_SET_COMMAND_FUNC(ChartFuturesSubscription);
+DECL_CSUB_SET_COMMAND_FUNC(ChartOptionsSubscription);
+DECL_CSUB_SET_COMMAND_FUNC(TimesaleFuturesSubscription);
+DECL_CSUB_SET_COMMAND_FUNC(TimesaleEquitySubscription);
+DECL_CSUB_SET_COMMAND_FUNC(TimesaleOptionsSubscription);
+DECL_CSUB_SET_COMMAND_FUNC(NasdaqActivesSubscription);
+DECL_CSUB_SET_COMMAND_FUNC(NYSEActivesSubscription);
+DECL_CSUB_SET_COMMAND_FUNC(OTCBBActivesSubscription);
+DECL_CSUB_SET_COMMAND_FUNC(OptionActivesSubscription);
+/* GetCommand generic method (cast to StreamerSubscription_C*) */
+DECL_CSUB_SET_COMMAND_FUNC(StreamingSubscription);
+#undef DECL_CSUB_SET_COMMAND_FUNC
+
+
+#define DECL_CSUB_SET_SYMBOLS_FUNC(name) \
+static inline int \
+name##_SetSymbols( name##_C *psub, const char** buffers, size_t n) \
+{ return SubscriptionBySymbolBase_SetSymbols_ABI( \
+    (StreamingSubscription_C*)psub, buffers, n, 0 ); }
+
+/* SetSymbols methods for each SubscriptionBySymbolBase descendant*/
+DECL_CSUB_SET_SYMBOLS_FUNC(QuotesSubscription);
+DECL_CSUB_SET_SYMBOLS_FUNC(OptionsSubscription);
+DECL_CSUB_SET_SYMBOLS_FUNC(LevelOneFuturesSubscription);
+DECL_CSUB_SET_SYMBOLS_FUNC(LevelOneForexSubscription);
+DECL_CSUB_SET_SYMBOLS_FUNC(LevelOneFuturesOptionsSubscription);
+DECL_CSUB_SET_SYMBOLS_FUNC(NewsHeadlineSubscription);
+DECL_CSUB_SET_SYMBOLS_FUNC(ChartEquitySubscription);
+DECL_CSUB_SET_SYMBOLS_FUNC(ChartFuturesSubscription);
+DECL_CSUB_SET_SYMBOLS_FUNC(ChartOptionsSubscription);
+DECL_CSUB_SET_SYMBOLS_FUNC(TimesaleFuturesSubscription);
+DECL_CSUB_SET_SYMBOLS_FUNC(TimesaleEquitySubscription);
+DECL_CSUB_SET_SYMBOLS_FUNC(TimesaleOptionsSubscription);
+
+
+#define DECL_CSUB_SET_FIELDS_FUNC(name) \
+static inline int \
+name##_SetFields(name##_C *psub, name##Field *fields, size_t n) \
+{ return name##_SetFields_ABI(psub, (int*)fields, n, 0); }
+
+#define DECL_CSUB_SET_FIELDS_BASE_FUNC(name, base) \
+static inline int \
+name##_SetFields(name##_C *psub, base##Field *fields, size_t n) \
+{ return base##Base_SetFields_ABI((StreamingSubscription_C*)psub, \
+                                   (int*)fields, n, 0); }
+
+/* SetFields methods in derived */
+DECL_CSUB_SET_FIELDS_FUNC(QuotesSubscription);
+DECL_CSUB_SET_FIELDS_FUNC(OptionsSubscription);
+DECL_CSUB_SET_FIELDS_FUNC(LevelOneFuturesSubscription);
+DECL_CSUB_SET_FIELDS_FUNC(LevelOneForexSubscription);
+DECL_CSUB_SET_FIELDS_FUNC(LevelOneFuturesOptionsSubscription);
+DECL_CSUB_SET_FIELDS_FUNC(NewsHeadlineSubscription);
+DECL_CSUB_SET_FIELDS_FUNC(ChartEquitySubscription);
+#undef DECL_CSUB_SET_FIELDS_FUNC
+
+/* SetFields methods in base */
+DECL_CSUB_SET_FIELDS_BASE_FUNC(ChartFuturesSubscription, ChartSubscription);
+DECL_CSUB_SET_FIELDS_BASE_FUNC(ChartOptionsSubscription, ChartSubscription);
+DECL_CSUB_SET_FIELDS_BASE_FUNC(TimesaleFuturesSubscription, TimesaleSubscription);
+DECL_CSUB_SET_FIELDS_BASE_FUNC(TimesaleEquitySubscription, TimesaleSubscription);
+DECL_CSUB_SET_FIELDS_BASE_FUNC(TimesaleOptionsSubscription, TimesaleSubscription);
+#undef DECL_CSUB_SET_FIELDS_BASE_FUNC
+
+#define DECL_CSUB_SET_DURATION(name, base) \
+static inline int \
+name##_SetDuration(name##_C *psub, DurationType duration) \
+{ return base##Base_SetDuration_ABI( \
+    (StreamingSubscription_C*)psub, (int)duration, 0); }
+
+/* GetDuration in base */
+DECL_CSUB_SET_DURATION(NasdaqActivesSubscription, ActivesSubscription)
+DECL_CSUB_SET_DURATION(NYSEActivesSubscription, ActivesSubscription)
+DECL_CSUB_SET_DURATION(OTCBBActivesSubscription, ActivesSubscription)
+DECL_CSUB_SET_DURATION(OptionActivesSubscription, ActivesSubscription)
+#undef DECL_CSUB_SET_DURATION
+
+/* GetVenue */
+static inline int
+OptionActivesSubscription_SetVenue( OptionActivesSubscription_C *psub,
+                                    VenueType venue )
+{ return OptionActivesSubscription_SetVenue_ABI(psub, (int)venue, 0); }
+
+
 #else
 /* C++ Interface */
 
@@ -804,11 +1038,11 @@ struct StreamerInfo{
 
 class StreamingSubscription{
 public:
+    friend class StreamingSession;
     typedef StreamingSubscription_C CType;
 
 private:
-    std::shared_ptr<CType> _csub;
-    friend class StreamingSession;
+    std::unique_ptr<CType, CProxyDestroyer<CType>> _csub;
 
 protected:
     template<typename CTy=CType>
@@ -831,7 +1065,7 @@ protected:
                 call_abi( create_func, args..., csub<CTy>() );
         }
 
-
+     // lazy constructor - just create the proxy
     template<typename CTy >
     StreamingSubscription(
             CTy _,
@@ -843,8 +1077,37 @@ protected:
         {
         }
 
-
 public:
+    StreamingSubscription( const StreamingSubscription& sub )
+        :
+            _csub( new StreamingSubscription_C{0,0},
+                    CProxyDestroyer<CType>(StreamingSubscription_Destroy_ABI) )
+        {
+            call_abi( StreamingSubscription_Copy_ABI, sub.csub(), csub());
+        }
+
+    StreamingSubscription&
+    operator=( const StreamingSubscription& sub )
+    {
+        if( *this != sub ){
+            _csub.reset( new CType{0,0} );
+            call_abi( StreamingSubscription_Copy_ABI, sub._csub.get(), _csub.get() );
+        }
+        return *this;
+    }
+
+    bool
+    operator==( const StreamingSubscription& sub ) const
+    {
+        int b;
+        call_abi( StreamingSubscription_IsSame_ABI, sub._csub.get(), _csub.get(), &b );
+        return b;
+    }
+
+    bool
+    operator!=( const StreamingSubscription& sub ) const
+    { return !(*this == sub); }
+
     StreamerServiceType
     get_service() const
     {
@@ -853,9 +1116,20 @@ public:
         return static_cast<StreamerServiceType>(ss);
     }
 
-    std::string
+    CommandType
     get_command() const
-    { return str_from_abi(StreamingSubscription_GetCommand_ABI, _csub.get()); }
+    {
+        int c;
+        call_abi( StreamingSubscription_GetCommand_ABI, _csub.get(), &c );
+        return static_cast<CommandType>(c);
+    }
+
+    void
+    set_command( CommandType command )
+    {
+        call_abi( StreamingSubscription_SetCommand_ABI, _csub.get(),
+                  static_cast<int>(command) );
+    }
 };
 
 
@@ -865,13 +1139,20 @@ protected:
     template<typename FieldTy, typename CTy>
     std::set<FieldTy>
     fields_from_abi( int(*abicall)(CTy*, int**, size_t*,int) ) const
-    { return enums_from_abi<FieldTy>(abicall, csub<CTy>()); }
+    { return set_of_fields_from_abi<FieldTy>(abicall, csub<CTy>()); }
+
+    template<typename FieldTy, typename CTy>
+    void
+    fields_to_abi( int(*abicall)(CTy*, int*, size_t,int),
+                   const std::set<FieldTy>& fields )
+    { set_of_fields_to_abi(abicall, csub<CTy>(), fields); }
 
     template<typename CTy, typename F, typename FTy>
     SubscriptionBySymbolBase( CTy _,
                               F create_func,
                               const std::set<std::string>& symbols,
-                              const std::set<FTy>& fields )
+                              const std::set<FTy>& fields,
+                              CommandType command )
         :
             StreamingSubscription(_)
         {
@@ -881,9 +1162,9 @@ protected:
                 s = set_to_new_cstrs(symbols);
                 i = set_to_new_int_array(fields);
                 call_abi( create_func, s, symbols.size(), i, fields.size(),
-                          csub<CTy>() );
-                delete[] s;
-                delete[] i;
+                          static_cast<int>(command), csub<CTy>() );
+                if( s ) delete[] s;
+                if( i ) delete[] i;
             }catch(...){
                 if( s ) delete[] s;
                 if( i ) delete[] i;
@@ -891,12 +1172,20 @@ protected:
             }
         }
 
+
 public:
     std::set<std::string>
     get_symbols() const
     {
         return set_of_strs_from_abi( SubscriptionBySymbolBase_GetSymbols_ABI,
                                      csub() );
+    }
+
+    void
+    set_symbols( const std::set<std::string>& symbols )
+    {
+        set_of_strs_to_abi( SubscriptionBySymbolBase_SetSymbols_ABI, csub(),
+                            symbols );
     }
 };
 
@@ -911,12 +1200,14 @@ public:
         StreamerServiceType::QUOTE;
 
     QuotesSubscription( const std::set<std::string>& symbols,
-                        const std::set<FieldType>& fields )
+                        const std::set<FieldType>& fields,
+                        CommandType command = CommandType::SUBS )
         :
             SubscriptionBySymbolBase( QuotesSubscription_C{},
                                       QuotesSubscription_Create_ABI,
                                       symbols,
-                                      fields )
+                                      fields,
+                                      command )
         {
         }
 
@@ -924,6 +1215,9 @@ public:
     get_fields() const
     { return fields_from_abi<FieldType>(QuotesSubscription_GetFields_ABI); }
 
+    void
+    set_fields(const std::set<FieldType>& fields)
+    { fields_to_abi(QuotesSubscription_SetFields_ABI, fields); }
 };
 
 
@@ -937,18 +1231,25 @@ public:
         StreamerServiceType::OPTION;
 
     OptionsSubscription( const std::set<std::string>& symbols,
-                         const std::set<FieldType>& fields )
+                         const std::set<FieldType>& fields,
+                         CommandType command = CommandType::SUBS )
         :
             SubscriptionBySymbolBase( OptionsSubscription_C{},
                                       OptionsSubscription_Create_ABI,
                                       symbols,
-                                      fields )
+                                      fields,
+                                      command )
         {
         }
+
 
     std::set<FieldType>
     get_fields() const
     { return fields_from_abi<FieldType>(OptionsSubscription_GetFields_ABI); }
+
+    void
+    set_fields(const std::set<FieldType>& fields)
+    { fields_to_abi(OptionsSubscription_SetFields_ABI, fields); }
 };
 
 
@@ -962,12 +1263,14 @@ public:
         StreamerServiceType::LEVELONE_FUTURES;
 
     LevelOneFuturesSubscription( const std::set<std::string>& symbols,
-                                 const std::set<FieldType>& fields )
+                                 const std::set<FieldType>& fields,
+                                 CommandType command = CommandType::SUBS )
         :
             SubscriptionBySymbolBase( LevelOneFuturesSubscription_C{},
                                       LevelOneFuturesSubscription_Create_ABI,
                                       symbols,
-                                      fields )
+                                      fields,
+                                      command )
         {
         }
 
@@ -978,6 +1281,10 @@ public:
             LevelOneFuturesSubscription_GetFields_ABI
             );
     }
+
+    void
+    set_fields(const std::set<FieldType>& fields)
+    { fields_to_abi(LevelOneFuturesSubscription_SetFields_ABI, fields); }
 };
 
 
@@ -991,12 +1298,14 @@ public:
         StreamerServiceType::LEVELONE_FOREX;
 
     LevelOneForexSubscription( const std::set<std::string>& symbols,
-                               const std::set<FieldType>& fields )
+                               const std::set<FieldType>& fields,
+                               CommandType command = CommandType::SUBS )
         :
             SubscriptionBySymbolBase( LevelOneForexSubscription_C{},
                                       LevelOneForexSubscription_Create_ABI,
                                       symbols,
-                                      fields )
+                                      fields,
+                                      command )
         {
         }
 
@@ -1007,6 +1316,10 @@ public:
             LevelOneForexSubscription_GetFields_ABI
             );
     }
+
+    void
+    set_fields(const std::set<FieldType>& fields)
+    { fields_to_abi(LevelOneForexSubscription_SetFields_ABI, fields); }
 };
 
 
@@ -1020,13 +1333,15 @@ public:
         StreamerServiceType::LEVELONE_FUTURES_OPTIONS;
 
     LevelOneFuturesOptionsSubscription( const std::set<std::string>& symbols,
-                                        const std::set<FieldType>& fields )
+                                        const std::set<FieldType>& fields,
+                                        CommandType command = CommandType::SUBS )
         :
             SubscriptionBySymbolBase(
                 LevelOneFuturesOptionsSubscription_C{},
                 LevelOneFuturesOptionsSubscription_Create_ABI,
                 symbols,
-                fields
+                fields,
+                command
                 )
         {
         }
@@ -1038,6 +1353,10 @@ public:
             LevelOneFuturesOptionsSubscription_GetFields_ABI
             );
     }
+
+    void
+    set_fields(const std::set<FieldType>& fields)
+    { fields_to_abi(LevelOneFuturesOptionsSubscription_SetFields_ABI, fields); }
 };
 
 
@@ -1051,12 +1370,14 @@ public:
         StreamerServiceType::NEWS_HEADLINE;
 
     NewsHeadlineSubscription( const std::set<std::string>& symbols,
-                              const std::set<FieldType>& fields )
+                              const std::set<FieldType>& fields,
+                              CommandType command = CommandType::SUBS )
         :
             SubscriptionBySymbolBase( NewsHeadlineSubscription_C{},
                                       NewsHeadlineSubscription_Create_ABI,
                                       symbols,
-                                      fields )
+                                      fields,
+                                      command )
         {
         }
 
@@ -1067,6 +1388,10 @@ public:
             NewsHeadlineSubscription_GetFields_ABI
             );
     }
+
+    void
+    set_fields(const std::set<FieldType>& fields)
+    { fields_to_abi(NewsHeadlineSubscription_SetFields_ABI, fields); }
 };
 
 
@@ -1081,12 +1406,14 @@ public:
         StreamerServiceType::CHART_EQUITY;
 
     ChartEquitySubscription( const std::set<std::string>& symbols,
-                             const std::set<FieldType>& fields )
+                             const std::set<FieldType>& fields,
+                             CommandType command = CommandType::SUBS )
         :
             SubscriptionBySymbolBase( ChartEquitySubscription_C{},
                                       ChartEquitySubscription_Create_ABI,
                                       symbols,
-                                      fields )
+                                      fields,
+                                      command )
         {
         }
 
@@ -1097,6 +1424,10 @@ public:
             ChartEquitySubscription_GetFields_ABI
             );
     }
+
+    void
+    set_fields(const std::set<FieldType>& fields)
+    { fields_to_abi(ChartEquitySubscription_SetFields_ABI, fields); }
 };
 
 
@@ -1110,9 +1441,10 @@ protected:
     ChartSubscriptionBase( CTy _,
                            F func,
                            const std::set<std::string>& symbols,
-                           const std::set<FieldType>& fields )
+                           const std::set<FieldType>& fields,
+                           CommandType command  )
         :
-            SubscriptionBySymbolBase( _, func, symbols, fields )
+            SubscriptionBySymbolBase( _, func, symbols, fields, command )
         {
         }
 
@@ -1120,6 +1452,10 @@ public:
     std::set<FieldType>
     get_fields() const
     { return fields_from_abi<FieldType>(ChartSubscriptionBase_GetFields_ABI); }
+
+    void
+    set_fields(const std::set<FieldType>& fields)
+    { fields_to_abi(ChartSubscriptionBase_SetFields_ABI, fields); }
 };
 
 
@@ -1149,13 +1485,17 @@ public:
         StreamerServiceType::CHART_FUTURES;
 
     ChartFuturesSubscription( const std::set<std::string>& symbols,
-                              const std::set<FieldType>& fields )
+                              const std::set<FieldType>& fields,
+                              CommandType command = CommandType::SUBS )
         :
             ChartSubscriptionBase( ChartFuturesSubscription_C{},
                                    ChartFuturesSubscription_Create_ABI,
-                                   symbols, fields )
+                                   symbols,
+                                   fields,
+                                   command )
         {
         }
+
 };
 
 
@@ -1168,13 +1508,17 @@ public:
         StreamerServiceType::CHART_OPTIONS;
 
     ChartOptionsSubscription( const std::set<std::string>& symbols,
-                              const std::set<FieldType>& fields )
+                              const std::set<FieldType>& fields,
+                              CommandType command = CommandType::SUBS )
         :
             ChartSubscriptionBase( ChartOptionsSubscription_C{},
                                    ChartOptionsSubscription_Create_ABI,
-                                   symbols, fields )
+                                   symbols,
+                                   fields,
+                                   command )
         {
         }
+
 };
 
 
@@ -1188,9 +1532,10 @@ protected:
     TimesaleSubscriptionBase( CTy _,
                               F func,
                               const std::set<std::string>& symbols,
-                              const std::set<FieldType>& fields )
+                              const std::set<FieldType>& fields,
+                              CommandType command )
         :
-            SubscriptionBySymbolBase( _, func, symbols, fields )
+            SubscriptionBySymbolBase( _, func, symbols, fields, command )
         {
         }
 
@@ -1202,6 +1547,10 @@ public:
             TimesaleSubscriptionBase_GetFields_ABI
             );
     }
+
+    void
+    set_fields(const std::set<FieldType>& fields)
+    { fields_to_abi(TimesaleSubscriptionBase_SetFields_ABI, fields); }
 };
 
 
@@ -1214,13 +1563,17 @@ public:
         StreamerServiceType::TIMESALE_EQUITY;
 
     TimesaleEquitySubscription( const std::set<std::string>& symbols,
-                                const std::set<FieldType>& fields )
+                                const std::set<FieldType>& fields,
+                                CommandType command = CommandType::SUBS )
         :
             TimesaleSubscriptionBase( TimesaleEquitySubscription_C{},
                                       TimesaleEquitySubscription_Create_ABI,
-                                     symbols, fields)
+                                      symbols,
+                                      fields,
+                                      command )
         {
         }
+
 };
 
 /*
@@ -1247,13 +1600,17 @@ public:
         StreamerServiceType::TIMESALE_FUTURES;
 
     TimesaleFuturesSubscription( const std::set<std::string>& symbols,
-                                 const std::set<FieldType>& fields )
+                                 const std::set<FieldType>& fields,
+                                 CommandType command = CommandType::SUBS )
         :
             TimesaleSubscriptionBase( TimesaleFuturesSubscription_C{},
                                       TimesaleFuturesSubscription_Create_ABI,
-                                      symbols, fields)
+                                      symbols,
+                                      fields,
+                                      command )
         {
         }
+
 };
 
 class TimesaleOptionsSubscription
@@ -1265,13 +1622,17 @@ public:
         StreamerServiceType::TIMESALE_OPTIONS;
 
     TimesaleOptionsSubscription( const std::set<std::string>& symbols,
-                                 const std::set<FieldType>& fields )
+                                 const std::set<FieldType>& fields,
+                                 CommandType command = CommandType::SUBS )
         :
             TimesaleSubscriptionBase( TimesaleOptionsSubscription_C{},
                                       TimesaleOptionsSubscription_Create_ABI,
-                                      symbols, fields)
+                                      symbols,
+                                      fields,
+                                      command )
         {
         }
+
 };
 
 
@@ -1294,6 +1655,12 @@ public:
         return static_cast<DurationType>(d);
     }
 
+    void
+    set_duration( DurationType duration )
+    {
+        call_abi( ActivesSubscriptionBase_SetDuration_ABI, csub(),
+                  static_cast<int>(duration) );
+    }
 };
 
 
@@ -1305,13 +1672,16 @@ public:
     static const StreamerServiceType STREAMER_SERVICE_TYPE =
         StreamerServiceType::ACTIVES_NASDAQ;
 
-    NasdaqActivesSubscription(DurationType duration)
+    NasdaqActivesSubscription( DurationType duration,
+                               CommandType command = CommandType::SUBS )
         :
             ActivesSubscriptionBase( NasdaqActivesSubscription_C{},
                                      NasdaqActivesSubscription_Create_ABI,
-                                     static_cast<int>(duration) )
+                                     static_cast<int>(duration),
+                                     static_cast<int>(command) )
         {
         }
+
 };
 
 class NYSEActivesSubscription
@@ -1322,13 +1692,16 @@ public:
     static const StreamerServiceType STREAMER_SERVICE_TYPE =
         StreamerServiceType::ACTIVES_NYSE;
 
-    NYSEActivesSubscription(DurationType duration)
+    NYSEActivesSubscription( DurationType duration,
+                             CommandType command = CommandType::SUBS )
         :
             ActivesSubscriptionBase( NYSEActivesSubscription_C{},
                                      NYSEActivesSubscription_Create_ABI,
-                                     static_cast<int>(duration) )
+                                     static_cast<int>(duration),
+                                     static_cast<int>(command) )
         {
         }
+
 };
 
 class OTCBBActivesSubscription
@@ -1339,13 +1712,16 @@ public:
     static const StreamerServiceType STREAMER_SERVICE_TYPE =
         StreamerServiceType::ACTIVES_OTCBB;
 
-    OTCBBActivesSubscription(DurationType duration)
+    OTCBBActivesSubscription( DurationType duration,
+                              CommandType command = CommandType::SUBS )
         :
             ActivesSubscriptionBase( OTCBBActivesSubscription_C{},
                                      OTCBBActivesSubscription_Create_ABI,
-                                     static_cast<int>(duration) )
+                                     static_cast<int>(duration),
+                                     static_cast<int>(command) )
         {
         }
+
 };
 
 class OptionActivesSubscription
@@ -1356,14 +1732,18 @@ public:
     static const StreamerServiceType STREAMER_SERVICE_TYPE =
         StreamerServiceType::ACTIVES_OPTIONS;
 
-    OptionActivesSubscription(VenueType venue, DurationType duration)
+    OptionActivesSubscription( VenueType venue,
+                               DurationType duration,
+                               CommandType command = CommandType::SUBS )
         :
             ActivesSubscriptionBase( OptionActivesSubscription_C{},
                                      OptionActivesSubscription_Create_ABI,
                                      static_cast<int>(venue),
-                                     static_cast<int>(duration) )
+                                     static_cast<int>(duration),
+                                     static_cast<int>(command))
         {
         }
+
 
     VenueType
     get_venue() const
@@ -1371,6 +1751,13 @@ public:
         int v;
         call_abi( OptionActivesSubscription_GetVenue_ABI, csub<CType>(), &v );
         return static_cast<VenueType>(v);
+    }
+
+    void
+    set_venue( VenueType venue )
+    {
+        call_abi( OptionActivesSubscription_SetVenue_ABI, csub<CType>(),
+                  static_cast<int>(venue) );
     }
 
 };
@@ -1645,6 +2032,7 @@ public:
 };
 
 } /* tdma */
+
 
 #endif /* __cplusplus */
 

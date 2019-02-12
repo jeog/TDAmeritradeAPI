@@ -177,7 +177,7 @@ def cancel_order(creds, account_id, order_id):
 #
 # Careful - this is a shared base, unlike our C++ 'OrderObjectProxy'
 #
-class _OrderObjectBase(clib._ProxyBase):
+class _OrderObjectBase( clib._ProxyBaseCopyable ):
     """_OrderObjectBase - (Abstract) base order object class.
 
     ALL METHODS THROW -> LibraryNotLoaded, CLibException
@@ -196,22 +196,6 @@ class _OrderObjectBase(clib._ProxyBase):
         """ Returns json representation of object as str. """
         j = self.as_json()
         return str(j) if j else "{}"
-    
-    def _is_same(self, other):
-        if type(self) != type(other):
-            return False
-        i = c_int()
-        clib.call( self._abi('IsSame'), _REF(self._obj), _REF(other._obj),
-                   _REF(i) )
-        return bool(i)
-
-    def deep_copy(self):
-        """ Returns a new instance with self's fields copied into it. """
-        copy = self.__new__(self.__class__)
-        copy._obj = self._cproxy_type()()
-        clib.call( self._abi('Copy'), _REF(self._obj), _REF(copy._obj))
-        copy._alive = True
-        return copy
 
     def as_json(self):
         """ Returns underlying json of object - as dict, list, or None. """
