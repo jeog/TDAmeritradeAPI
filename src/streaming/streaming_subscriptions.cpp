@@ -200,12 +200,6 @@ public:
     }
 
     std::map<std::string, std::string>
-    get_parameters() const
-    {
-        return get_parameters();
-    }
-
-    std::map<std::string, std::string>
     build_parameters() const
     {
         return SubscriptionBySymbolBaseImpl::build_parameters(_fields);
@@ -255,12 +249,6 @@ public:
         check_fields(fields);
         _fields = fields;
         set_parameters( build_parameters() );
-    }
-
-    std::map<std::string, std::string>
-    get_parameters() const
-    {
-        return get_parameters();
     }
 
     std::map<std::string, std::string>
@@ -315,12 +303,6 @@ public:
     }
 
     std::map<std::string, std::string>
-    get_parameters() const
-    {
-        return get_parameters();
-    }
-
-    std::map<std::string, std::string>
     build_parameters() const
     {
         return SubscriptionBySymbolBaseImpl::build_parameters(_fields);
@@ -369,12 +351,6 @@ public:
         check_fields(fields);
         _fields = fields;
         set_parameters( build_parameters() );
-    }
-
-    std::map<std::string, std::string>
-    get_parameters() const
-    {
-        return get_parameters();
     }
 
     std::map<std::string, std::string>
@@ -429,12 +405,6 @@ public:
     }
 
     std::map<std::string, std::string>
-    get_parameters() const
-    {
-        return get_parameters();
-    }
-
-    std::map<std::string, std::string>
     build_parameters() const
     {
         return SubscriptionBySymbolBaseImpl::build_parameters(_fields);
@@ -484,12 +454,6 @@ public:
         check_fields(fields);
         _fields = fields;
         set_parameters( build_parameters() );
-    }
-
-    std::map<std::string, std::string>
-    get_parameters() const
-    {
-        return get_parameters();
     }
 
     std::map<std::string, std::string>
@@ -546,12 +510,6 @@ public:
     }
 
     std::map<std::string, std::string>
-    get_parameters() const
-    {
-        return get_parameters();
-    }
-
-    std::map<std::string, std::string>
     build_parameters() const
     {
         return SubscriptionBySymbolBaseImpl::build_parameters(_fields);
@@ -599,12 +557,6 @@ public:
         check_fields(fields);
         _fields = fields;
         set_parameters( build_parameters() );
-    }
-
-    std::map<std::string, std::string>
-    get_parameters() const
-    {
-        return get_parameters();
     }
 
     std::map<std::string, std::string>
@@ -706,12 +658,6 @@ public:
         check_fields(fields);
         _fields = fields;
         set_parameters( build_parameters() );
-    }
-
-    std::map<std::string, std::string>
-    get_parameters() const
-    {
-        return get_parameters();
     }
 
     std::map<std::string, std::string>
