@@ -31,11 +31,11 @@ using std::tie;
 namespace tdma {
 
 StreamingSubscriptionImpl::StreamingSubscriptionImpl(
-        StreamerServiceType service,
-        CommandType command)
+        std::string service_str,
+        std::string command_str )
     :
-        _service(service),
-        _command(command)
+        _service_str(service_str),
+        _command_str(command_str)
     {
     }
 
@@ -66,8 +66,94 @@ StreamingSubscriptionImpl::encode_symbol(string symbol)
     return symbol;
 }
 
-class SubscriptionBySymbolBaseImpl
+
+class RawSubscriptionImpl
         : public StreamingSubscriptionImpl {
+public:
+    typedef RawSubscription ProxyType;
+    static const int TYPE_ID_LOW = TYPE_ID_SUB_RAW;
+    static const int TYPE_ID_HIGH = TYPE_ID_SUB_RAW;
+
+    RawSubscriptionImpl(
+        const std::string& service,
+        const std::string& command,
+        const std::map<std::string, std::string>&  parameters
+        )
+            :
+                StreamingSubscriptionImpl( service, command )
+        {
+            set_parameters(parameters);
+        }
+
+    using StreamingSubscriptionImpl::set_service_str;
+    using StreamingSubscriptionImpl::set_command_str;
+    using StreamingSubscriptionImpl::set_parameters;
+
+};
+
+
+class ManagedSubscriptionImpl
+        : public StreamingSubscriptionImpl {
+    StreamerServiceType _service;
+    CommandType _command;
+
+protected:
+    ManagedSubscriptionImpl( StreamerServiceType service,
+                                      CommandType command )
+        :
+            StreamingSubscriptionImpl( to_string(service), to_string(command) ),
+            _service( service ),
+            _command( command )
+        {}
+
+    virtual std::map<std::string, std::string>
+    build_parameters() const
+    { return {}; }
+
+public:
+    typedef StreamingSubscription ProxyType;
+    static const int TYPE_ID_LOW = TYPE_ID_SUB_QUOTES;
+    static const int TYPE_ID_HIGH = TYPE_ID_SUB_ACTIVES_OPTION;
+
+    StreamerServiceType
+    get_service() const
+    {
+        assert( get_service_str() == to_string(_service) );
+        return _service;
+    }
+
+    CommandType
+    get_command() const
+    {
+        assert( get_command_str() == to_string(_command) );
+        return _command;
+    }
+
+    void
+    set_command( CommandType command )
+    {
+        _command = command;
+        set_command_str( to_string(command) );
+        set_parameters( build_parameters() );
+    }
+
+    virtual bool
+    operator==(const ManagedSubscriptionImpl& sub ) const
+    {
+        return StreamingSubscriptionImpl::operator==(sub) &&
+            sub._service == _service && sub._command == _command;
+    }
+
+    virtual bool
+    operator!=(const ManagedSubscriptionImpl&  sub ) const
+    { return !(*this == sub); }
+
+    ~ManagedSubscriptionImpl(){}
+};
+
+
+class SubscriptionBySymbolBaseImpl
+        : public ManagedSubscriptionImpl {
     set<string> _symbols;
 
     void
@@ -131,10 +217,7 @@ protected:
                  {"keys", build_symbols_value(_symbols)} };
     }
 
-    virtual std::map<std::string, std::string>
-    build_parameters() const
-    { return {}; }
-
+    using ManagedSubscriptionImpl::build_parameters;
 
 public:
     typedef SubscriptionBySymbolBase ProxyType;
@@ -156,7 +239,7 @@ public:
     bool
     operator==( const SubscriptionBySymbolBaseImpl& sub ) const
     {
-        return StreamingSubscriptionImpl::operator==(sub)
+        return ManagedSubscriptionImpl::operator==(sub)
             && sub._symbols == _symbols;
     }
 
@@ -166,7 +249,7 @@ protected:
                                   CommandType command,
                                   const set<string>& symbols )
         :
-            StreamingSubscriptionImpl(service, command)
+            ManagedSubscriptionImpl(service, command)
         {
             set_symbols( symbols );
         }
@@ -749,7 +832,7 @@ public:
 
 
 class ActivesSubscriptionBaseImpl
-        : public StreamingSubscriptionImpl {
+        : public ManagedSubscriptionImpl {
     string _venue;
     DurationType _duration;
 
@@ -770,7 +853,7 @@ protected:
                                  string venue,
                                  DurationType duration )
         :
-            StreamingSubscriptionImpl( service, command ),
+            ManagedSubscriptionImpl( service, command ),
             _venue(venue),
             _duration(duration)
         {
@@ -797,7 +880,7 @@ public:
     bool
     operator==( const ActivesSubscriptionBaseImpl& sub ) const
     {
-        return StreamingSubscriptionImpl ::operator==(sub)
+        return ManagedSubscriptionImpl::operator==(sub)
             && sub._venue == _venue && sub._duration == _duration;
     }
 
@@ -961,6 +1044,8 @@ C_sub_ptr_to_impl_ptr(StreamingSubscription_C *psub)
         return reinterpret_cast<OTCBBActivesSubscriptionImpl*>(psub->obj);
     case TYPE_ID_SUB_ACTIVES_OPTION:
         return reinterpret_cast<OptionActivesSubscriptionImpl*>(psub->obj);
+    case TYPE_ID_SUB_RAW:
+        return reinterpret_cast<RawSubscriptionImpl*>(psub->obj);
     default:
         TDMA_API_THROW(TypeException,"invalid C subscription type_id");
     }
@@ -987,7 +1072,7 @@ subscription_is_creatable( typename ImplTy::ProxyType::CType *sub,
     static_assert( ImplTy::TYPE_ID_LOW > 0 && ImplTy::TYPE_ID_HIGH > 0,
                    "invalid subscription type" );
 
-    CHECK_PTR(sub, "subscription", allow_exceptions);
+    CHECK_PTR_KILL_PROXY(sub, "subscription", allow_exceptions, sub);
     return 0;
 }
 
@@ -1217,6 +1302,22 @@ copy_construct_impl( OptionActivesSubscriptionImpl *from, int allow_exceptions )
                             from->get_duration(), from->get_command() );
 }
 
+template<typename ImplTy>
+std::pair<void*, int>
+copy_construct_impl( RawSubscriptionImpl *from, int allow_exceptions )
+{
+    static auto meth = +[]( const std::string& service,
+                            const std::string& command,
+                            const std::map<std::string, std::string>& params){
+        return reinterpret_cast<void*>(
+            new RawSubscriptionImpl( service, command, params )
+        );
+    };
+
+    return CallImplFromABI( allow_exceptions, meth, from->get_service_str(),
+                            from->get_command_str(), from->get_parameters() );
+}
+
 
 template<typename ImplTy>
 int
@@ -1246,55 +1347,58 @@ copy_construct( typename ImplTy::ProxyType::CType *from,
 }
 
 
-#define CAST_TO_COPY_CONSTRUCT(name,from,to, exc) \
-copy_construct<name##Impl>( reinterpret_cast<name##_C*>(from), \
-                            reinterpret_cast<name##_C*>(to), exc )
-
 int
 copy_construct_generic( StreamingSubscription_C *from,
                         StreamingSubscription_C *to,
                         int allow_exceptions )
 {
+#define CAST_TO_COPY_CONSTRUCT( name ) \
+copy_construct<name##Impl>( reinterpret_cast<name##_C*>(from), \
+                            reinterpret_cast<name##_C*>(to), allow_exceptions )
     switch( from->type_id ){
     case TYPE_ID_SUB_QUOTES:
-        return CAST_TO_COPY_CONSTRUCT(QuotesSubscription, from, to, allow_exceptions);
+        return CAST_TO_COPY_CONSTRUCT(QuotesSubscription);
     case TYPE_ID_SUB_OPTIONS:
-        return CAST_TO_COPY_CONSTRUCT(OptionsSubscription, from, to, allow_exceptions);
+        return CAST_TO_COPY_CONSTRUCT(OptionsSubscription);
     case TYPE_ID_SUB_LEVEL_ONE_FUTURES:
-        return CAST_TO_COPY_CONSTRUCT(LevelOneFuturesSubscription, from, to, allow_exceptions);
+        return CAST_TO_COPY_CONSTRUCT(LevelOneFuturesSubscription);
     case TYPE_ID_SUB_LEVEL_ONE_FOREX:
-        return CAST_TO_COPY_CONSTRUCT(LevelOneForexSubscription, from, to, allow_exceptions);
+        return CAST_TO_COPY_CONSTRUCT(LevelOneForexSubscription);
     case TYPE_ID_SUB_LEVEL_ONE_FUTURES_OPTIONS:
-        return CAST_TO_COPY_CONSTRUCT(LevelOneFuturesOptionsSubscription, from, to, allow_exceptions);
+        return CAST_TO_COPY_CONSTRUCT(LevelOneFuturesOptionsSubscription);
     case TYPE_ID_SUB_NEWS_HEADLINE:
-        return CAST_TO_COPY_CONSTRUCT(NewsHeadlineSubscription, from, to, allow_exceptions);
+        return CAST_TO_COPY_CONSTRUCT(NewsHeadlineSubscription);
     case TYPE_ID_SUB_CHART_EQUITY:
-        return CAST_TO_COPY_CONSTRUCT(ChartEquitySubscription, from, to, allow_exceptions);
+        return CAST_TO_COPY_CONSTRUCT(ChartEquitySubscription);
     //case TYPE_ID_SUB_CHART_FOREX: NOT WORKING
     case TYPE_ID_SUB_CHART_FUTURES:
-        return CAST_TO_COPY_CONSTRUCT(ChartFuturesSubscription, from, to, allow_exceptions);
+        return CAST_TO_COPY_CONSTRUCT(ChartFuturesSubscription);
     case TYPE_ID_SUB_CHART_OPTIONS:
-        return CAST_TO_COPY_CONSTRUCT(ChartOptionsSubscription, from, to, allow_exceptions);
+        return CAST_TO_COPY_CONSTRUCT(ChartOptionsSubscription);
     case TYPE_ID_SUB_TIMESALE_EQUITY:
-        return CAST_TO_COPY_CONSTRUCT(TimesaleEquitySubscription, from, to, allow_exceptions);
+        return CAST_TO_COPY_CONSTRUCT(TimesaleEquitySubscription);
     //case TYPE_ID_SUB_TIMESALE_FOREX: NOT WORKING
     case TYPE_ID_SUB_TIMESALE_FUTURES:
-        return CAST_TO_COPY_CONSTRUCT(TimesaleFuturesSubscription, from, to, allow_exceptions);
+        return CAST_TO_COPY_CONSTRUCT(TimesaleFuturesSubscription);
     case TYPE_ID_SUB_TIMESALE_OPTIONS:
-        return CAST_TO_COPY_CONSTRUCT(TimesaleOptionsSubscription, from, to, allow_exceptions);
+        return CAST_TO_COPY_CONSTRUCT(TimesaleOptionsSubscription);
     case TYPE_ID_SUB_ACTIVES_NASDAQ:
-        return CAST_TO_COPY_CONSTRUCT(NasdaqActivesSubscription, from, to, allow_exceptions);
+        return CAST_TO_COPY_CONSTRUCT(NasdaqActivesSubscription);
     case TYPE_ID_SUB_ACTIVES_NYSE:
-        return CAST_TO_COPY_CONSTRUCT(NYSEActivesSubscription, from, to, allow_exceptions);
+        return CAST_TO_COPY_CONSTRUCT(NYSEActivesSubscription);
     case TYPE_ID_SUB_ACTIVES_OTCBB:
-        return CAST_TO_COPY_CONSTRUCT(OTCBBActivesSubscription, from, to, allow_exceptions);
+        return CAST_TO_COPY_CONSTRUCT(OTCBBActivesSubscription);
     case TYPE_ID_SUB_ACTIVES_OPTION:
-        return CAST_TO_COPY_CONSTRUCT(OptionActivesSubscription, from, to, allow_exceptions);
+        return CAST_TO_COPY_CONSTRUCT(OptionActivesSubscription);
+    case TYPE_ID_SUB_RAW:
+        return CAST_TO_COPY_CONSTRUCT(RawSubscription);
     default:
         return HANDLE_ERROR_EX( TypeException, "invalid C subscription type_id",
                                 allow_exceptions, to);
     }
+#undef CAST_TO_COPY_CONSTRUCT
 }
+
 
 
 template<typename ImplTy>
@@ -1331,47 +1435,53 @@ is_same_impl_generic( StreamingSubscription_C *l,
     assert(l->type_id == r->type_id);
     // allows us to kill both on failure
 
+#define CALL_IS_SAME_IMPL(name) \
+    is_same_impl<name##Impl>(l, r, is_same, allow_exceptions);
+
     switch( l->type_id ){
     case TYPE_ID_SUB_QUOTES:
-        return is_same_impl<QuotesSubscriptionImpl>(l, r, is_same, allow_exceptions);
+        return CALL_IS_SAME_IMPL(QuotesSubscription);
     case TYPE_ID_SUB_OPTIONS:
-        return is_same_impl<OptionsSubscriptionImpl>(l, r, is_same, allow_exceptions);
+        return CALL_IS_SAME_IMPL(OptionsSubscription);
     case TYPE_ID_SUB_LEVEL_ONE_FUTURES:
-        return is_same_impl<LevelOneFuturesSubscriptionImpl>(l, r, is_same, allow_exceptions);
+        return CALL_IS_SAME_IMPL(LevelOneFuturesSubscription);
     case TYPE_ID_SUB_LEVEL_ONE_FOREX:
-        return is_same_impl<LevelOneForexSubscriptionImpl>(l, r, is_same, allow_exceptions);
+        return CALL_IS_SAME_IMPL(LevelOneForexSubscription);
     case TYPE_ID_SUB_LEVEL_ONE_FUTURES_OPTIONS:
-        return is_same_impl<LevelOneFuturesOptionsSubscriptionImpl>(l, r, is_same, allow_exceptions);
+        return CALL_IS_SAME_IMPL(LevelOneFuturesOptionsSubscription);
     case TYPE_ID_SUB_NEWS_HEADLINE:
-        return is_same_impl<NewsHeadlineSubscriptionImpl>(l, r, is_same, allow_exceptions);
+        return CALL_IS_SAME_IMPL(NewsHeadlineSubscription);
     case TYPE_ID_SUB_CHART_EQUITY:
-        return is_same_impl<ChartEquitySubscriptionImpl>(l, r, is_same, allow_exceptions);
+        return CALL_IS_SAME_IMPL(ChartEquitySubscription);
     //case TYPE_ID_SUB_CHART_FOREX: NOT WORKING
     case TYPE_ID_SUB_CHART_FUTURES:
-        return is_same_impl<ChartFuturesSubscriptionImpl>(l, r, is_same, allow_exceptions);
+        return CALL_IS_SAME_IMPL(ChartFuturesSubscription);
     case TYPE_ID_SUB_CHART_OPTIONS:
-        return is_same_impl<ChartOptionsSubscriptionImpl>(l, r, is_same, allow_exceptions);
+        return CALL_IS_SAME_IMPL(ChartOptionsSubscription);
     case TYPE_ID_SUB_TIMESALE_EQUITY:
-        return is_same_impl<TimesaleEquitySubscriptionImpl>(l, r, is_same, allow_exceptions);
+        return CALL_IS_SAME_IMPL(TimesaleEquitySubscription);
     //case TYPE_ID_SUB_TIMESALE_FOREX: NOT WORKING
     case TYPE_ID_SUB_TIMESALE_FUTURES:
-        return is_same_impl<TimesaleFuturesSubscriptionImpl>(l, r, is_same, allow_exceptions);
+        return CALL_IS_SAME_IMPL(TimesaleFuturesSubscription);
     case TYPE_ID_SUB_TIMESALE_OPTIONS:
-        return is_same_impl<TimesaleOptionsSubscriptionImpl>(l, r, is_same, allow_exceptions);
+        return CALL_IS_SAME_IMPL(TimesaleOptionsSubscription);
     case TYPE_ID_SUB_ACTIVES_NASDAQ:
-        return is_same_impl<NasdaqActivesSubscriptionImpl>(l, r, is_same, allow_exceptions);
+        return CALL_IS_SAME_IMPL(NasdaqActivesSubscription);
     case TYPE_ID_SUB_ACTIVES_NYSE:
-        return is_same_impl<NYSEActivesSubscriptionImpl>(l, r, is_same, allow_exceptions);
+        return CALL_IS_SAME_IMPL(NYSEActivesSubscription);
     case TYPE_ID_SUB_ACTIVES_OTCBB:
-        return is_same_impl<OTCBBActivesSubscriptionImpl>(l, r, is_same, allow_exceptions);
+        return CALL_IS_SAME_IMPL(OTCBBActivesSubscription);
     case TYPE_ID_SUB_ACTIVES_OPTION:
-        return is_same_impl<OptionActivesSubscriptionImpl>(l, r, is_same, allow_exceptions);
+        return CALL_IS_SAME_IMPL(OptionActivesSubscription);
+    case TYPE_ID_SUB_RAW:
+        return CALL_IS_SAME_IMPL(RawSubscription);
     default:
         kill_proxy(l);
         kill_proxy(r);
         return HANDLE_ERROR( TypeException, "invalid C subscription type_id",
                              allow_exceptions);
     }
+#undef CALL_IS_SAME_IMPL
 }
 
 } /* namespace */
@@ -1399,6 +1509,7 @@ DEFINE_CSUB_DESTROY_FUNC(NasdaqActivesSubscription);
 DEFINE_CSUB_DESTROY_FUNC(NYSEActivesSubscription);
 DEFINE_CSUB_DESTROY_FUNC(OTCBBActivesSubscription);
 DEFINE_CSUB_DESTROY_FUNC(OptionActivesSubscription);
+DEFINE_CSUB_DESTROY_FUNC(RawSubscription);
 #undef DEFINE_CSUB_DESTROY_FUNC
 
 /* Generic Destroy */
@@ -1443,6 +1554,7 @@ DEFINE_CSUB_COPY_FUNC(NasdaqActivesSubscription);
 DEFINE_CSUB_COPY_FUNC(NYSEActivesSubscription);
 DEFINE_CSUB_COPY_FUNC(OTCBBActivesSubscription);
 DEFINE_CSUB_COPY_FUNC(OptionActivesSubscription);
+DEFINE_CSUB_COPY_FUNC(RawSubscription);
 #undef DEFINE_CSUB_COPY_FUNC
 
 
@@ -1484,7 +1596,7 @@ StreamingSubscription_GetService_ABI( StreamingSubscription_C *psub,
                                       int *service,
                                       int allow_exceptions )
 {
-    int err = proxy_is_callable<StreamingSubscriptionImpl>(
+    int err = proxy_is_callable<ManagedSubscriptionImpl>(
         psub, allow_exceptions
         );
     if( err )
@@ -1494,7 +1606,8 @@ StreamingSubscription_GetService_ABI( StreamingSubscription_C *psub,
 
     static auto meth = +[]( void *obj ){
         return static_cast<int>(
-            reinterpret_cast<StreamingSubscriptionImpl*>(obj)->get_service()
+            reinterpret_cast<ManagedSubscriptionImpl*>(obj)
+                ->get_service()
             );
     };
 
@@ -1507,7 +1620,7 @@ StreamingSubscription_GetCommand_ABI( StreamingSubscription_C *psub,
                                       int *command,
                                       int allow_exceptions )
 {
-    int err = proxy_is_callable<StreamingSubscriptionImpl>(
+    int err = proxy_is_callable<ManagedSubscriptionImpl>(
         psub, allow_exceptions
         );
     if( err )
@@ -1517,7 +1630,8 @@ StreamingSubscription_GetCommand_ABI( StreamingSubscription_C *psub,
 
     static auto meth = +[]( void *obj ){
         return static_cast<int>(
-            reinterpret_cast<StreamingSubscriptionImpl*>(obj)->get_command()
+            reinterpret_cast<ManagedSubscriptionImpl*>(obj)
+                ->get_command()
             );
     };
 
@@ -1631,7 +1745,7 @@ StreamingSubscription_SetCommand_ABI( StreamingSubscription_C *psub,
                                       int command,
                                       int allow_exceptions )
 {
-    int err = proxy_is_callable<StreamingSubscriptionImpl>(
+    int err = proxy_is_callable<ManagedSubscriptionImpl>(
         psub, allow_exceptions
         );
     if( err )
@@ -1640,7 +1754,7 @@ StreamingSubscription_SetCommand_ABI( StreamingSubscription_C *psub,
     CHECK_ENUM(CommandType, command, allow_exceptions);
 
     static auto meth = +[]( void *obj, int c){
-        reinterpret_cast<StreamingSubscriptionImpl*>(obj)
+        reinterpret_cast<ManagedSubscriptionImpl*>(obj)
             ->set_command( static_cast<CommandType>(c) );
     };
 
@@ -2003,7 +2117,220 @@ OptionActivesSubscription_Create_ABI( int venue,
     return 0;
 }
 
+// TODO Max Parameters
+int
+RawSubscription_Create_ABI( const char* service,
+                            const char* command,
+                            const KeyValPair *keyvals,
+                            size_t n,
+                            RawSubscription_C *psub,
+                            int allow_exceptions )
+{
+    int err = subscription_is_creatable<RawSubscriptionImpl>(psub,
+                                                             allow_exceptions);
+    if( err )
+        return err;
+
+    CHECK_PTR_KILL_PROXY(service, "service", allow_exceptions, psub);
+    CHECK_PTR_KILL_PROXY(command, "command", allow_exceptions, psub);
+
+    if( n > 0 )
+        CHECK_PTR_KILL_PROXY(keyvals, "keyval pairs", allow_exceptions, psub);
+
+    std::map<std::string, std::string> parameters;
+    for( size_t i = 0; i < n; ++i ){
+        parameters[keyvals[i].key] = keyvals[i].val;
+    }
+
+    static auto meth = +[]( const char* s, const char*c,
+                            const std::map<std::string, std::string>& p){
+        return new RawSubscriptionImpl(s, c, p);
+    };
+
+    RawSubscriptionImpl *obj;
+    tie(obj, err) = CallImplFromABI( allow_exceptions, meth, service, command,
+                                     parameters );
+    if( err ){
+        kill_proxy(psub);
+        return err;
+    }
+
+    psub->obj = reinterpret_cast<void*>(obj);
+    assert(RawSubscriptionImpl::TYPE_ID_LOW == RawSubscriptionImpl::TYPE_ID_HIGH);
+    psub->type_id = RawSubscriptionImpl::TYPE_ID_LOW;
+    return 0;
+}
+
+// TODO Raw getters/setters
 
 
+int
+RawSubscription_GetServiceStr_ABI( RawSubscription_C *psub,
+                                   char **buf,
+                                   size_t *n,
+                                   int allow_exceptions )
+{
+    return ImplAccessor<char**>::template get<RawSubscriptionImpl>(
+        psub, &RawSubscriptionImpl::get_service_str, buf, n, allow_exceptions
+        );
+}
+
+int
+RawSubscription_SetServiceStr_ABI( RawSubscription_C *psub,
+                                   const char* service,
+                                   int allow_exceptions )
+{
+    return ImplAccessor<char**>::template set<RawSubscriptionImpl>(
+        psub,
+        reinterpret_cast<void(tdma::RawSubscriptionImpl::*)(const string&)>
+            (&RawSubscriptionImpl::set_service_str),
+        service, allow_exceptions
+        );
+}
+
+int
+RawSubscription_GetCommandStr_ABI( RawSubscription_C *psub,
+                                char **buf,
+                                size_t *n,
+                                int allow_exceptions )
+{
+    return ImplAccessor<char**>::template get<RawSubscriptionImpl>(
+        psub, &RawSubscriptionImpl::get_command_str, buf, n, allow_exceptions
+        );
+}
+
+int
+RawSubscription_SetCommandStr_ABI( RawSubscription_C *psub,
+                                   const char* command,
+                                   int allow_exceptions )
+{
+    return ImplAccessor<char**>::template set<RawSubscriptionImpl>(
+        psub,
+        reinterpret_cast<void(tdma::RawSubscriptionImpl::*)(const string&)>
+            (&RawSubscriptionImpl::set_command_str),
+        command, allow_exceptions
+        );
+}
+
+int
+RawSubscription_GetParameters_ABI( RawSubscription_C *psub,
+                                  KeyValPair **pkeyvals,
+                                  size_t *n,
+                                  int allow_exceptions )
+{
+    int err = proxy_is_callable<RawSubscriptionImpl>( psub, allow_exceptions );
+    if( err )
+        return err;
+
+    CHECK_PTR(pkeyvals, "keyval pairs", allow_exceptions);
+
+    static auto meth = +[]( void *obj ){
+        return reinterpret_cast<RawSubscriptionImpl*>(obj)->get_parameters();
+    };
+
+    *pkeyvals = nullptr;
+    *n = 0;
+
+    std::map<std::string, std::string> params;
+    std::tie(params, err) = CallImplFromABI(allow_exceptions, meth, psub->obj);
+    if( err )
+        return err;
+
+    *n = params.size();
+    if( *n == 0 )
+        return 0;
+
+    err = alloc_to_buffer(pkeyvals, *n, allow_exceptions);
+
+    /* AFTER THIS POINT set 'n' and '*pkeyvals' to 0 on error */
+
+    if( err ){
+        *pkeyvals = nullptr;
+        *n = 0;
+        return err;
+    }
+
+    /*
+     * the following needs to construct KeyValPair structs w/ heap allocated
+     * const char*'s (long story); basically a 'strdup' op using our back-end
+     * memory functions
+     */
+    char *tmp = nullptr;
+    auto b = params.cbegin();
+    for( size_t i = 0; i < *n; ++i, ++b ){
+        err = alloc_to_buffer( &tmp, b->first.size() + 1, allow_exceptions );
+        if( err ){
+            FreeKeyValBuffer_ABI(*pkeyvals, i, allow_exceptions);
+            *pkeyvals = nullptr;
+            *n = 0;
+            return err;
+        }
+        strcpy( tmp, b->first.c_str() );
+        (*pkeyvals)[i].key = tmp;
+        tmp = nullptr;
+
+        err = alloc_to_buffer( &tmp, b->second.size() + 1, allow_exceptions );
+        if( err ){
+            // be sure to free the key first
+            // rationale for this monstrosity in FreeKeyValBuffer_ABI
+            free( const_cast<char*>((*pkeyvals)[i].key) );
+            FreeKeyValBuffer_ABI(*pkeyvals, i, allow_exceptions);
+            *pkeyvals = nullptr;
+            *n = 0;
+            return err;
+        }
+        strcpy( tmp, b->second.c_str() );
+        (*pkeyvals)[i].val = tmp;
+    }
+
+    return 0;
+}
+
+
+int
+FreeKeyValBuffer_ABI( KeyValPair* pkeyvals, size_t n, int allow_exceptions )
+{
+    if( pkeyvals ){
+        for( size_t i = 0; i < n; ++i ){
+            const char* s = pkeyvals[i].key;
+            /*
+             * yes, we are freeing a const pointer, the value of what is
+             * pointed at is const, not the underlying memory...
+             */
+            if( s )
+                free( const_cast<char*>(s) );
+            s = pkeyvals[i].val;
+            if( s )
+                free( const_cast<char*>(s) );
+        }
+        free(pkeyvals);
+    }
+    return 0;
+}
+
+// TODO Max Parameters
+int
+RawSubscription_SetParameters_ABI( RawSubscription_C *psub,
+                                   const KeyValPair *keyvals,
+                                   size_t n,
+                                   int allow_exceptions )
+{
+    int err = proxy_is_callable<RawSubscriptionImpl>( psub, allow_exceptions );
+    if( err )
+        return err;
+
+    assert( (keyvals != nullptr) || (n == 0) );
+
+    std::map<std::string, std::string> parameters;
+    for( size_t i = 0; i < n; ++i )
+        parameters[keyvals[i].key] = keyvals[i].val;
+
+    static auto meth = +[]( void *obj,
+                            const std::map<std::string, std::string>& p ){
+        reinterpret_cast<RawSubscriptionImpl*>(obj)->set_parameters(p);
+    };
+
+    return CallImplFromABI(allow_exceptions, meth, psub->obj, parameters);
+}
 
 

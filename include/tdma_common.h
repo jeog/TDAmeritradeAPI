@@ -119,6 +119,10 @@ typedef struct{
     void *ctx; // reserved
 } StreamingSession_C;
 
+typedef struct{
+    const char* key;
+    const char* val;
+}KeyValPair;
 
 /* C ERROR CODES */
 #define TDMA_API_ERROR 1
@@ -215,6 +219,10 @@ FreeOrderLegBuffer_ABI( OrderLeg_C *legs, int allow_exceptions );
 // NOTE - DOES NOT DESTROY THE UNDERLYING OBJECTS
 EXTERN_C_SPEC_ DLL_SPEC_ int
 FreeOrderTicketBuffer_ABI( OrderTicket_C *orders, int allow_exceptions );
+
+// NOTE - FREE's THE BUFFER AND THE CHAR*s inside
+EXTERN_C_SPEC_ DLL_SPEC_ int
+FreeKeyValBuffer_ABI( KeyValPair *pkeyvals, size_t n, int allow_exceptions );
 
 /*
  * 'LastError' calls only return information for the last exc/error to occur
@@ -324,6 +332,10 @@ FreeOrderLegBuffer( OrderLeg_C *legs )
 static inline int
 FreeOrderTicketBuffer( OrderTicket_C *orders )
 { return FreeOrderTicketBuffer_ABI(orders, 0); }
+
+static inline int
+FreeKeyValBuffer( KeyValPair *pkeyvals, size_t n )
+{ return FreeKeyValBuffer_ABI(pkeyvals, n, 0); }
 
 /*
  * 'LastError' calls only return information for the last exc/error to occur

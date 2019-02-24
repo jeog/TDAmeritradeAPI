@@ -1,16 +1,19 @@
 #ifndef TEST_H_
 #define TEST_H_
 
-#include <stdio.h>
-#include <stdlib.h>
-
 #ifdef _WIN32
 #include <windows.h>
 #define SleepFor(msec) Sleep(msec)
 #else
+#define _BSD_SOURCE
 #include <unistd.h>
 #define SleepFor(msec) usleep(msec * 1000)
 #endif
+
+#include <stdio.h>
+#include <stdlib.h>
+
+#include "tdma_common.h"
 
 void print_error(int err, const char* name);
 

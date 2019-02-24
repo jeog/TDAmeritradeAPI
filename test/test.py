@@ -962,6 +962,36 @@ def test_streaming(creds):
     assert opas2.get_command() == stream.COMMAND_TYPE_UNSUBS
     assert opas2.get_duration() == OPAS.DURATION_TYPE_MIN_60
     assert opas2.get_venue() == OPAS.VENUE_TYPE_CALLS   
+    
+    #RAW
+    rparams = { "keys":"BAD", "fields":"BAD" }
+    nbookbad = stream.RawSubscription("BAD1", "BAD2", rparams)
+    nbookgood = nbookbad.deep_copy()
+    assert nbookbad == nbookgood
+    assert nbookbad is not nbookgood
+    assert nbookbad.get_service_str() == "BAD1"
+    assert nbookgood.get_service_str() == "BAD1"
+    assert nbookbad.get_command_str() == "BAD2"
+    assert nbookgood.get_command_str() == "BAD2"    
+    assert nbookbad.get_parameters()["keys"] == rparams["keys"]
+    assert nbookbad.get_parameters()["fields"] == rparams["fields"]
+    assert nbookgood.get_parameters()["keys"] == rparams["keys"]
+    assert nbookgood.get_parameters()["fields"] == rparams["fields"]
+    nbookgood.set_service_str("NASDAQ_BOOK")
+    nbookgood.set_command_str("SUBS")
+    rparams = { "keys":"GOOG,APPL", "fields":"0,1,2" }
+    nbookgood.set_parameters( rparams )
+    assert nbookbad != nbookgood   
+    del nbookbad
+    gc.collect()
+    assert nbookgood.get_service_str() == "NASDAQ_BOOK"
+    assert nbookgood.get_command_str() == "SUBS"   
+    assert nbookgood.get_parameters()["keys"] == rparams["keys"]
+    assert nbookgood.get_parameters()["fields"] == rparams["fields"]   
+
+    if not use_live_connection:
+        print("STREAMING SESSION test requires 'use_live_connection=True'")
+        return
 
     def callback( cb, ss, ts, msg):
         print("--CALLBACK" + "-" * 70)
@@ -1062,7 +1092,7 @@ def test_streaming(creds):
     assert all(session2.add_subscriptions(tes, tfs, tos, nas, nyas, ocas, opas))
     _pause(5)
 
-    assert all(session2.add_subscriptions(ocas2, opas2))
+    assert all(session2.add_subscriptions(ocas2, opas2, nbookgood))
     _pause(5)
     
     session2.stop()
@@ -2754,9 +2784,6 @@ if __name__ == '__main__':
         test(test_user_principals_getters, cm.credentials)
         test(test_instrument_info_getters, cm.credentials)
         test(test_order_getters, cm.credentials, args.account_id)
-        
-        if use_live_connection:
-            test(test_streaming, cm.credentials)
-        else:
-            print("STREAMING test requires 'use_live_connection=True'")
+        test(test_streaming, cm.credentials)
+                
 

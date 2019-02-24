@@ -87,6 +87,14 @@ class _ProxyBaseCopyable( _ProxyBase ):
         call( name, REF(self._obj), REF(other._obj), REF(i) )
         return bool(i)
     
+    
+class _KeyValPair(_Structure):
+    _fields_ = [
+        ("key", c_char_p),
+        ("val", c_char_p)
+        ]
+    
+        
 _lib = None
 
 ERRORS = {
@@ -155,18 +163,23 @@ def free_buffers(bufs, n):
 def free_fields_buffer(fields):  
     if _lib is None:
         raise LibraryNotLoaded()
-    _lib.FreeFieldsBuffer_ABI(fields)       
+    _lib.FreeFieldsBuffer_ABI(fields, 0)       
     
 def free_order_leg_buffer(buf):
     if _lib is None:
         raise LibraryNotLoaded()
-    _lib.FreeOrderLegBuffer_ABI(buf)       
+    _lib.FreeOrderLegBuffer_ABI(buf, 0)       
  
 def free_order_ticket_buffer(buf):
     if _lib is None:
         raise LibraryNotLoaded()
-    _lib.FreeOrderTicketBuffer_ABI(buf)   
+    _lib.FreeOrderTicketBuffer_ABI(buf, 0)   
            
+def free_keyval_buffer(buf, n):
+    if _lib is None:
+        raise LibraryNotLoaded
+    _lib.FreeKeyValBuffer_ABI(buf, n, 0);
+               
            
 def get_str(fname, obj=None):
     c = c_char_p()
@@ -222,7 +235,7 @@ def set_val(fname, ty, val, obj=None):
         call(fname, ty(val))
         
         
-def get_vals(fname, ty, obj=None, free=None):    
+def get_vals(fname, ty, obj=None, free=None, free_needs_sz=False):    
     ptr = POINTER(ty)()
     n = c_size_t()
     if obj:
@@ -231,7 +244,7 @@ def get_vals(fname, ty, obj=None, free=None):
         call(fname, REF(ptr), REF(n))
     vals = [ptr[i] for i in range(n.value)]
     if free:
-        free(ptr)
+        free(ptr,n) if free_needs_sz else free(ptr)
     return vals
     
 def to_str(fname, ty, v):

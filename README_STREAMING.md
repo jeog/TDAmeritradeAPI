@@ -11,32 +11,36 @@
     - [QOS](#qos)
     - [Destroy](#destroy)
 - [Subscriptions](#subscriptions)
-    - [Symbol / Field ](#symbol--field)
-    - [Duration / Venue ](#symbol--field)
-    - [Commands](#commands)
+    - [Managed Subscriptions](#managed-subscriptions)
+        - [Symbol / Field ](#symbol--field)
+        - [Duration / Venue ](#symbol--field)
+        - [Commands](#commands)
+    - [Raw Subscription](#raw-subscription)
     - [Copy](#copy)
     - [Destroy](#destroy-1)
 - [Example Usage](#example-usage)
     - [C++](#c)
     - [C](#c-1)
     - [Python](#python)
-- [Subscription Classes](#subscription-classes)
-    - [QuotesSubscription](#quotessubscription)  
-    - [OptionsSubscription](#optionssubscription)  
-    - [LevelOneFuturesSubscription](#levelonefuturessubscription)  
-    - [LevelOneForexSubscription](#leveloneforexsubscription)  
-    - [LevelOneFuturesOptionsSubscription](#levelonefuturesoptionssubscription)  
-    - [NewsHeadlineSubscription](#newsheadlinesubscription)  
-    - [ChartEquitySubscription](#chartequitysubscription)  
-    - [ChartFuturesSubscription](#chartfuturessubscription)  
-    - [ChartOptionsSubscription](#chartoptionssubscription)  
-    - [TimesaleEquitySubscription](#timesaleequitysubscription)  
-    - [TimesaleFuturesSubscription](#timesalefuturessubscription)  
-    - [TimesaleOptionsSubscription](#timesaleoptionssubscription)  
-    - [NasdaqActivesSubscription](#nasdaqactivessubscription)  
-    - [NYSEActivesSubscription](#nyseactivessubscription)  
-    - [OTCBBActivesSubscription](#otcbbactivessubscription)  
-    - [OptionActivesSubscription](#optionactivessubscription)  
+- [Subscription Classes](#subscription-classes)  
+    - [Managed Subscription Classes](#managed-subscription-classes)  
+        - [QuotesSubscription](#quotessubscription)  
+        - [OptionsSubscription](#optionssubscription)  
+        - [LevelOneFuturesSubscription](#levelonefuturessubscription)  
+        - [LevelOneForexSubscription](#leveloneforexsubscription)  
+        - [LevelOneFuturesOptionsSubscription](#levelonefuturesoptionssubscription)  
+        - [NewsHeadlineSubscription](#newsheadlinesubscription)  
+        - [ChartEquitySubscription](#chartequitysubscription)  
+        - [ChartFuturesSubscription](#chartfuturessubscription)  
+        - [ChartOptionsSubscription](#chartoptionssubscription)  
+        - [TimesaleEquitySubscription](#timesaleequitysubscription)  
+        - [TimesaleFuturesSubscription](#timesalefuturessubscription)  
+        - [TimesaleOptionsSubscription](#timesaleoptionssubscription)  
+        - [NasdaqActivesSubscription](#nasdaqactivessubscription)  
+        - [NYSEActivesSubscription](#nyseactivessubscription)  
+        - [OTCBBActivesSubscription](#otcbbactivessubscription)  
+        - [OptionActivesSubscription](#optionactivessubscription)  
+    - [RawSubscription](#rawsubscription)  
 - - -
 
 ### Overview
@@ -197,42 +201,45 @@ certain values to native types.
 2. The second argument will contain the ```StreamerServiceType``` of the data or server response, as an int:
 
     ```
-	DECL_C_CPP_TDMA_ENUM(StreamerServiceType, 1, 19,
-	    BUILD_ENUM_NAME( NONE ),
-	    BUILD_ENUM_NAME( QUOTE ),
-	    BUILD_ENUM_NAME( OPTION ),
-	    BUILD_ENUM_NAME( LEVELONE_FUTURES ),
-	    BUILD_ENUM_NAME( LEVELONE_FOREX ),
-	    BUILD_ENUM_NAME( LEVELONE_FUTURES_OPTIONS ),
-	    BUILD_ENUM_NAME( NEWS_HEADLINE ),
-	    BUILD_ENUM_NAME( CHART_EQUITY ),
-	    BUILD_ENUM_NAME( CHART_FOREX ), /* NOT WORKING */
-	    BUILD_ENUM_NAME( CHART_FUTURES ),
-	    BUILD_ENUM_NAME( CHART_OPTIONS ),
-	    BUILD_ENUM_NAME( TIMESALE_EQUITY ),
-	    BUILD_ENUM_NAME( TIMESALE_FOREX ), /* NOT WORKING */
-	    BUILD_ENUM_NAME( TIMESALE_FUTURES ),
-	    BUILD_ENUM_NAME( TIMESALE_OPTIONS ),
-	    BUILD_ENUM_NAME( ACTIVES_NASDAQ ),
-	    BUILD_ENUM_NAME( ACTIVES_NYSE ),
-	    BUILD_ENUM_NAME( ACTIVES_OTCBB ),
-	    BUILD_ENUM_NAME( ACTIVES_OPTIONS ),
-	    BUILD_ENUM_NAME( ADMIN ) // 
-	    /* NOT IMPLEMENTED YET */
-	    //BUILD_ENUM_NAME( CHART_HISTORY_FUTURES),
-	    //BUILD_ENUM_NAME( ACCT_ACTIVITY),
-	    /* NOT DOCUMENTED BY TDMA */
-	    //BUILD_ENUM_NAME( FOREX_BOOK,
-	    //BUILD_ENUM_NAME( FUTURES_BOOK),
-	    //BUILD_ENUM_NAME( LISTED_BOOK),
-	    //BUILD_ENUM_NAME( NASDAQ_BOOK),
-	    //BUILD_ENUM_NAME( OPTIONS_BOOK),
-	    //BUILD_ENUM_NAME( FUTURES_OPTION_BOOK),
-	    //BUILD_ENUM_NAME( NEWS_STORY),
-	    //BUILD_ENUM_NAME( NEWS_HEADLINE_LIST),
-	    /* OLD API ? */
-	    //BUILD_ENUM_NAME( STREAMER_SERVER)
-	    );
+    DECL_C_CPP_TDMA_ENUM(StreamerServiceType, 1, 29,
+        BUILD_ENUM_NAME( NONE ),
+        BUILD_ENUM_NAME( QUOTE ),
+        BUILD_ENUM_NAME( OPTION ),
+        BUILD_ENUM_NAME( LEVELONE_FUTURES ),
+        BUILD_ENUM_NAME( LEVELONE_FOREX ),
+        BUILD_ENUM_NAME( LEVELONE_FUTURES_OPTIONS ),
+        BUILD_ENUM_NAME( NEWS_HEADLINE ),
+        BUILD_ENUM_NAME( CHART_EQUITY ),
+        BUILD_ENUM_NAME( CHART_FOREX ), /* NOT WORKING */
+        BUILD_ENUM_NAME( CHART_FUTURES ),
+        BUILD_ENUM_NAME( CHART_OPTIONS ),
+        BUILD_ENUM_NAME( TIMESALE_EQUITY ),
+        BUILD_ENUM_NAME( TIMESALE_FOREX ), /* NOT WORKING */
+        BUILD_ENUM_NAME( TIMESALE_FUTURES ),
+        BUILD_ENUM_NAME( TIMESALE_OPTIONS ),
+        BUILD_ENUM_NAME( ACTIVES_NASDAQ ),
+        BUILD_ENUM_NAME( ACTIVES_NYSE ),
+        BUILD_ENUM_NAME( ACTIVES_OTCBB ),
+        BUILD_ENUM_NAME( ACTIVES_OPTIONS ),
+        BUILD_ENUM_NAME( ADMIN ), 
+        /*
+         * EVERYTHING BELOW HERE DOES NOT HAVE A CORRESPONDING
+         * MANAGED SUBSCRIPTION - TRY USING 'RawSubscription'
+         */
+        BUILD_ENUM_NAME( ACCT_ACTIVITY ),
+        BUILD_ENUM_NAME( CHART_HISTORY_FUTURES ),
+        BUILD_ENUM_NAME( FOREX_BOOK ), /* NOT DOCUMENTED BY TDMA */
+        BUILD_ENUM_NAME( FUTURES_BOOK ), /* NOT DOCUMENTED BY TDMA */
+        BUILD_ENUM_NAME( LISTED_BOOK ), /* NOT DOCUMENTED BY TDMA */
+        BUILD_ENUM_NAME( NASDAQ_BOOK ), /* NOT DOCUMENTED BY TDMA */
+        BUILD_ENUM_NAME( OPTIONS_BOOK ), /* NOT DOCUMENTED BY TDMA */
+        BUILD_ENUM_NAME( FUTURES_OPTIONS_BOOK ), /* NOT DOCUMENTED BY TDMA */
+        BUILD_ENUM_NAME( NEWS_STORY ), /* NOT DOCUMENTED BY TDMA */
+        BUILD_ENUM_NAME( NEWS_HEADLINE_LIST ), /* NOT DOCUMENTED BY TDMA */
+
+        /* in case something gets returned we're not aware of - DON'T USE */
+        BUILD_ENUM_NAME( UNKNOWN )
+    );
     ```
 
     These macros expand like so:
@@ -266,18 +273,29 @@ certain values to native types.
     SERVICE_TYPE_LEVELONE_FUTURES_OPTIONS = 5
     SERVICE_TYPE_NEWS_HEADLINE = 6
     SERVICE_TYPE_CHART_EQUITY = 7
-    #SERVICE_TYPE_CHART_FOREX = 8
+    SERVICE_TYPE_CHART_FOREX = 8 # NOT WORKING (SERVER SIDE)
     SERVICE_TYPE_CHART_FUTURES = 9
-    SERVICE_TYPE_CHART_OPTIONS = 10
+    SERVICE_TYPE_CHART_OPTIONS = 10 
     SERVICE_TYPE_TIMESALE_EQUITY = 11
-    #SERVICE_TYPE_TIMESALE_FOREX = 12
+    SERVICE_TYPE_TIMESALE_FOREX = 12 # NOT WORKING (SERVER SIDE)
     SERVICE_TYPE_TIMESALE_FUTURES = 13
     SERVICE_TYPE_TIMESALE_OPTIONS = 14
     SERVICE_TYPE_ACTIVES_NASDAQ = 15
     SERVICE_TYPE_ACTIVES_NYSE = 16
     SERVICE_TYPE_ACTIVES_OTCBB = 17
-    SERVICE_TYPE_ACTIVES_OPTIONS = 18
-    SERVICE_TYPE_ADMIN = 19
+    SERVICE_TYPE_ACTIVES_OPTIONS = 18 
+    SERVICE_TYPE_ADMIN = 19 # NOT MANAGED
+    SERVICE_TYPE_ACCT_ACTIVITY = 20 # NOT MANAGED
+    SERVICE_TYPE_CHART_HISTORY_FUTURES = 21 # NOT MANAGED
+    SERVICE_TYPE_FOREX_BOOK = 22 # NOT MANAGED
+    SERVICE_TYPE_FUTURES_BOOK = 23 # NOT MANAGED
+    SERVICE_TYPE_LISTED_BOOK = 24 # NOT MANAGED
+    SERVICE_TYPE_NASDAQ_BOOK = 25 # NOT MANAGED
+    SERVICE_TYPE_OPTIONS_BOOK = 26 # NOT MANAGED
+    SERVICE_TYPE_FUTURES_OPTION_BOOK = 27 # NOT MANAGED
+    SERVICE_TYPE_NEWS_STORY = 28 # NOT MANAGED
+    SERVICE_TYPE_NEWS_HEADLINE_LIST = 29 # NOT MANAGED
+    SERVICE_TYPE_UNKNOWN = 30 # **DON'T PASS TO INTERFACE**
     ```
 
 3. The third argument is a timestamp from the server in milliseconds since the epoch that
@@ -476,9 +494,16 @@ Subscriptions in C++ and Python are managed using classes that derive from ```St
 
 Subscriptions in C are managed using proxies(simple C structs) that contain a generic pointer to the underlying C++ subscription object and can be passed to calls that mimic the methods of the underlying C++ object.
 
-Currently there are two basic types of subscription objects:
+Currently there  are 'managed' subscriptions which handle most of the details for you and a 'raw' subscription
+which allows for any combination of strings for the service type, command type, and parameters. 
+There are no managed subscriptions for services not documented by TDMA so you can use a raw
+subscription to attempt to access/experiment with them.
 
-#### Symbol / Field 
+#### Managed Subscriptions
+
+There are two basic types of managed subscription objects:
+
+##### Symbol / Field 
 
 - ```QuotesSubscription```
 - ```OptionsSubscription```
@@ -619,7 +644,7 @@ inline int
 FreeFieldsBuffer( int* buffer );
 ```
 
-#### Duration / Venue 
+##### Duration / Venue 
 
 - NasdaqActivesSubscription
 - NYSEActivesSubscription
@@ -668,7 +693,6 @@ enum class CommandType : int {
 };
 
 [C]
-
 enum CommandType{
     CommandType_SUBS,
     CommandType_UNSUBS,
@@ -704,6 +728,57 @@ Different commands allow for different combinations of symbols, fields, duration
 - Symbol/Field subscriptions don't need to include symbols in a VIEW command. Simply include the updated fields you want returned.
 
 If you want to update a subscription using an UNSUBS/ADD/VIEW command a safe technique is to take the original subscription object used to initiate the subscription, change the command type with ```set_command``` and update the other parameters, e.g if using ADD use ```set_symbols``` or VIEW use ```set_fields```.
+
+#### Raw Subscription
+
+A raw subscription allows you to pass your own service type, command type and parameters. Some of the service types enumerated in ```StreamerServiceType``` are not documented by TDMA and are, for the time being, not part of the managed subscription interface. As they are undocumented you may have to email TDMA or use the old API docs, and experiment, to find the acceptable parameters to use.
+
+If you manage to successfully access a service that is not included in the service type enum
+the ```request_response``` callback will return the 'int' value of ```StreamerServiceType::UNKNOWN```.
+
+You can replicate a managed subcription with a raw one, but trying to compare them will return false.
+
+An example for subscribing to the 'NASDAQ_BOOK' service :
+
+```
+[C++]
+std::string service("NASDAQ_BOOK");
+std::string command("SUBS");
+std::map<std::string, std::string> parameters{
+    {"keys","GOOG,APPL"}, 
+    {"fields", "0,1,2"}
+};
+
+RawSubscription sub(service, command, parameters); 
+
+[C]
+RawSubscription_C sub = {0,0};
+
+const char* service = "NASDAQ_BOOK";
+const char* command = "SUBS";
+KeyValPair parameters[] = {
+    {"keys","GOOG,APPL"}, 
+    {"fields", "0,1,2"}
+};
+
+if( (err = RawSubscription_Create(service, command, parameters, 2, &sub) ){
+    // ERROR
+}
+ 
+[Python]
+sub = stream.RawSubscription( "NASDAQ_BOOK", "SUBS",  
+                              { "keys":"GOOG,APPL", "fields":"0,1,2" } )
+
+```
+
+Remember, for the C interface it's the client's repsonsibility to free the buffers populated by the 'Get' calls:
+```
+inline int
+FreeBuffers( char** buffers, size_t n );
+
+inline int
+FreeKeyValBuffer( KeyValPair* pkeyvals, size_t n );
+```
 
 #### Copy
 
@@ -1068,6 +1143,8 @@ Using the proxy object after this point results in ***UNDEFINED BEHAVIOR***.
 
 *Only the C++ Subscriptions are shown. The Python and C interfaces match these closely. The C interface uses appropriately named functions to mimic the methods of the C++ classes and requires explicit use of the ```Create``` functions for construction and ```Destroy``` functions for destruction. See tdma_api_streaming.h for function prototypes.*
 
+#### Managed Subscription Classes
+
 *The C++ enum types are shown below; The C versions prepend the enum type name and an underscore to the value name, e.g*
 ```
 [C++]
@@ -1091,7 +1168,7 @@ class stream.QuotesSubscription(_SubscriptionBySymbolBase):
     ...
 ```
 
-### QuotesSubscription
+#### QuotesSubscription
 
 Streaming market data that calls back when changed.
 - Listed (NYSE, AMEX, Pacific quotes and trades)
@@ -1174,16 +1251,16 @@ using FieldType = QuotesSubscriptionField;
 ```
 **methods**
 ```
-StreamerService::type
-StreamingSubscription::get_service() const;
+StreamerServiceType
+ManagedSubscription::get_service() const;
 ```
 ```
 CommandType
-StreamingSubscription::get_command() const;
+ManagedSubscription::get_command() const;
 ```
 ```
 void
-StreamingSubscription::set_command(CommandType command);
+ManagedSubscription::set_command(CommandType command);
 ```
 ```
 set<string>
@@ -1203,7 +1280,7 @@ QuotesSubscription::set_fields( const set<FieldType>& fields );
 ```
 <br>
 
-### OptionsSubscription
+#### OptionsSubscription
 
 Streaming option data that calls back when changed.
 
@@ -1269,16 +1346,16 @@ using FieldType = OptionsSubscriptionField;
 ```
 **methods**
 ```
-StreamerService::type
-StreamingSubscription::get_service() const;
+StreamerServiceType
+ManagedSubscription::get_service() const;
 ```
 ```
 CommandType
-StreamingSubscription::get_command() const;
+ManagedSubscription::get_command() const;
 ```
 ```
 void
-StreamingSubscription::set_command(CommandType command);
+ManagedSubscription::set_command(CommandType command);
 ```
 ```
 set<string>
@@ -1299,7 +1376,7 @@ OptionsSubscription::set_fields( const set<FieldType>& fields );
 <br>
 
 
-### LevelOneFuturesSubscription
+#### LevelOneFuturesSubscription
 
 Streaming futures data that calls back when changed.
 
@@ -1360,16 +1437,16 @@ using FieldType = LevelOneFuturesSubscriptionField;
 ```
 **methods**
 ```
-StreamerService::type
-StreamingSubscription::get_service() const;
+StreamerServiceType
+ManagedSubscription::get_service() const;
 ```
 ```
 CommandType
-StreamingSubscription::get_command() const;
+ManagedSubscription::get_command() const;
 ```
 ```
 void
-StreamingSubscription::set_command(CommandType command);
+ManagedSubscription::set_command(CommandType command);
 ```
 ```
 set<string>
@@ -1390,7 +1467,7 @@ LevelOneFuturesSubscription::set_fields( const set<FieldType>& fields );
 <br>
 
 
-### LevelOneForexSubscription
+#### LevelOneForexSubscription
 
 Streaming forex data that calls back when changed.
 
@@ -1445,16 +1522,16 @@ using FieldType = LevelOneForexSubscriptionField;
 ```
 **methods**
 ```
-StreamerService::type
-StreamingSubscription::get_service() const;
+StreamerServiceType
+ManagedSubscription::get_service() const;
 ```
 ```
 CommandType
-StreamingSubscription::get_command() const;
+ManagedSubscription::get_command() const;
 ```
 ```
 void
-StreamingSubscription::set_command(CommandType command);
+ManagedSubscription::set_command(CommandType command);
 ```
 ```
 set<string>
@@ -1475,7 +1552,7 @@ LevelOneForexSubscription::set_fields( const set<FieldType>& fields );
 <br>
 
 
-### LevelOneFuturesOptionsSubscription
+#### LevelOneFuturesOptionsSubscription
 
 Streaming futures-options data calls back when changed.
 
@@ -1536,16 +1613,16 @@ using FieldType = LevelOneFuturesOptionsSubscriptionField;
 ```
 **methods**
 ```
-StreamerService::type
-StreamingSubscription::get_service() const;
+StreamerServiceType
+ManagedSubscription::get_service() const;
 ```
 ```
 CommandType
-StreamingSubscription::get_command() const;
+ManagedSubscription::get_command() const;
 ```
 ```
 void
-StreamingSubscription::set_command(CommandType command);
+ManagedSubscription::set_command(CommandType command);
 ```
 ```
 set<string>
@@ -1565,7 +1642,7 @@ LevelOneFuturesOptionsSubscription::set_fields( const set<FieldType>& fields );
 ```
 <br>
 
-### NewsHeadlineSubscription
+#### NewsHeadlineSubscription
 
 Streaming news headlines as a sequence.
 
@@ -1602,16 +1679,16 @@ using FieldType = NewsHeadlineSubscriptionField;
 ```
 **methods**
 ```
-StreamerService::type
-StreamingSubscription::get_service() const;
+StreamerServiceType
+ManagedSubscription::get_service() const;
 ```
 ```
 CommandType
-StreamingSubscription::get_command() const;
+ManagedSubscription::get_command() const;
 ```
 ```
 void
-StreamingSubscription::set_command(CommandType command);
+ManagedSubscription::set_command(CommandType command);
 ```
 ```
 set<string>
@@ -1631,7 +1708,7 @@ NewsHeadlineSubscription::set_fields( const set<FieldType>& fields );
 ```
 <br>
 
-### ChartEquitySubscription
+#### ChartEquitySubscription
 Streaming 1-minute OHLCV equity values as a sequence. The bar falls on the 0 
 second and includes data between 0 and 59 seconds. (e.g 9:30 bar is 9:30:00 -> 9:30:59)
 
@@ -1665,16 +1742,16 @@ using FieldType = ChartEquitySubscriptionField;
 ```
 ***methods**
 ```
-StreamerService::type
-StreamingSubscription::get_service() const;
+StreamerServiceType
+ManagedSubscription::get_service() const;
 ```
 ```
 CommandType
-StreamingSubscription::get_command() const;
+ManagedSubscription::get_command() const;
 ```
 ```
 void
-StreamingSubscription::set_command(CommandType command);
+ManagedSubscription::set_command(CommandType command);
 ```
 ```
 set<string>
@@ -1694,7 +1771,7 @@ ChartEquitySubscription::set_fields( const set<FieldType>& fields );
 ```
 <br>
 
-### ChartFuturesSubscription
+#### ChartFuturesSubscription
 Streaming 1-minute OHLCV futures values as a sequence. The bar falls on the 0 
 second and includes data between 0 and 59 seconds. (e.g 9:30 bar is 9:30:00 -> 9:30:59)
 
@@ -1728,16 +1805,16 @@ using FieldType = ChartSubscriptionField;
 ```
 **methods**
 ```
-StreamerService::type
-StreamingSubscription::get_service() const;
+StreamerServiceType
+ManagedSubscription::get_service() const;
 ```
 ```
 CommandType
-StreamingSubscription::get_command() const;
+ManagedSubscription::get_command() const;
 ```
 ```
 void
-StreamingSubscription::set_command(CommandType command);
+ManagedSubscription::set_command(CommandType command);
 ```
 ```
 set<string>
@@ -1757,7 +1834,7 @@ ChartFuturesSubscription::set_fields( const set<FieldType>& fields );
 ```
 <br>
 
-### ChartOptionsSubscription
+#### ChartOptionsSubscription
 Streaming 1-minute OHLCV option values as a sequence. The bar falls on the 0 
 second and includes data between 0 and 59 seconds. (e.g 9:30 bar is 9:30:00 -> 9:30:59)
 
@@ -1791,16 +1868,16 @@ using FieldType = ChartSubscriptionField;
 ```
 **methods**
 ```
-StreamerService::type
-StreamingSubscription::get_service() const;
+StreamerServiceType
+ManagedSubscription::get_service() const;
 ```
 ```
 CommandType
-StreamingSubscription::get_command() const;
+ManagedSubscription::get_command() const;
 ```
 ```
 void
-StreamingSubscription::set_command(CommandType command);
+ManagedSubscription::set_command(CommandType command);
 ```
 ```
 set<string>
@@ -1821,7 +1898,7 @@ ChartOptionsSubscription::set_fields( const set<FieldType>& fields );
 <br>
 
 
-### TimesaleEquitySubscription
+#### TimesaleEquitySubscription
 Streaming time & sales equity trades as a sequence.
 
 **constructors**
@@ -1850,16 +1927,16 @@ using FieldType = TimesaleSubscriptionField
 ```
 **methods**
 ```
-StreamerService::type
-StreamingSubscription::get_service() const;
+StreamerServiceType
+ManagedSubscription::get_service() const;
 ```
 ```
 CommandType
-StreamingSubscription::get_command() const;
+ManagedSubscription::get_command() const;
 ```
 ```
 void
-StreamingSubscription::set_command(CommandType command);
+ManagedSubscription::set_command(CommandType command);
 ```
 ```
 set<string>
@@ -1879,7 +1956,7 @@ TimesaleEquitySubscription::set_fields( const set<FieldType>& fields );
 ```
 <br>
 
-### TimesaleFuturesSubscription
+#### TimesaleFuturesSubscription
 Streaming time & sales futures trades as a sequence.
 
 **constructors**
@@ -1908,16 +1985,16 @@ using FieldType = TimesaleSubscriptionField
 ```
 **methods**
 ```
-StreamerService::type
-StreamingSubscription::get_service() const;
+StreamerServiceType
+ManagedSubscription::get_service() const;
 ```
 ```
 CommandType
-StreamingSubscription::get_command() const;
+ManagedSubscription::get_command() const;
 ```
 ```
 void
-StreamingSubscription::set_command(CommandType command);
+ManagedSubscription::set_command(CommandType command);
 ```
 ```
 set<string>
@@ -1938,7 +2015,7 @@ TimesaleFuturesSubscription::set_fields( const set<FieldType>& fields );
 <br>
 
 
-### TimesaleOptionsSubscription
+#### TimesaleOptionsSubscription
 Streaming time & sales option trades as a sequence.
 
 **constructors**
@@ -1967,16 +2044,16 @@ using FieldType = TimesaleSubscriptionField
 ```
 **methods**
 ```
-StreamerService::type
-StreamingSubscription::get_service() const;
+StreamerServiceType
+ManagedSubscription::get_service() const;
 ```
 ```
 CommandType
-StreamingSubscription::get_command() const;
+ManagedSubscription::get_command() const;
 ```
 ```
 void
-StreamingSubscription::set_command(CommandType command);
+ManagedSubscription::set_command(CommandType command);
 ```
 ```
 set<string>
@@ -1998,7 +2075,7 @@ TimesaleOptionsSubscription::set_fields( const set<FieldType>& fields );
 
 
 
-### NasdaqActivesSubscription
+#### NasdaqActivesSubscription
 
 Most active NASDAQ traded securies for various durations.
 
@@ -2027,16 +2104,16 @@ enum class DurationType : int {
 
 **methods**
 ```
-StreamerService::type
-StreamingSubscription::get_service() const;
+StreamerServiceType
+ManagedSubscription::get_service() const;
 ```
 ```
 string
-StreamingSubscription::get_command() const;
+ManagedSubscription::get_command() const;
 ```
 ```
 void
-StreamingSubscription::set_command(CommandType command);
+ManagedSubscription::set_command(CommandType command);
 ```
 ```
 DurationType
@@ -2048,7 +2125,7 @@ ActivesSubscriptionBase::set_duration( DurationType duration );
 ```
 <br>
 
-### NYSEActivesSubscription
+#### NYSEActivesSubscription
 
 Most active NYSE traded securies for various durations.
 
@@ -2077,16 +2154,16 @@ enum class DurationType : int {
 
 **methods**
 ```
-StreamerService::type
-StreamingSubscription::get_service() const;
+StreamerServiceType
+ManagedSubscription::get_service() const;
 ```
 ```
 string
-StreamingSubscription::get_command() const;
+ManagedSubscription::get_command() const;
 ```
 ```
 void
-StreamingSubscription::set_command(CommandType command);
+ManagedSubscription::set_command(CommandType command);
 ```
 ```
 DurationType
@@ -2098,7 +2175,7 @@ ActivesSubscriptionBase::set_duration( DurationType duration );
 ```
 <br>
 
-### OTCBBActivesSubscription
+#### OTCBBActivesSubscription
 
 Most active OTCBB traded securies for various durations.
 
@@ -2127,16 +2204,16 @@ enum class DurationType : int {
 
 **methods**
 ```
-StreamerService::type
-StreamingSubscription::get_service() const;
+StreamerServiceType
+ManagedSubscription::get_service() const;
 ```
 ```
 string
-StreamingSubscription::get_command() const;
+ManagedSubscription::get_command() const;
 ```
 ```
 void
-StreamingSubscription::set_command(CommandType command);
+ManagedSubscription::set_command(CommandType command);
 ```
 ```
 DurationType
@@ -2149,7 +2226,7 @@ ActivesSubscriptionBase::set_duration( DurationType duration );
 <br>
 
 
-### OptionActivesSubscription
+#### OptionActivesSubscription
 
 Most active Options of various types and durations traded.
 
@@ -2191,16 +2268,16 @@ enum class VenueType : int {
 
 **methods**
 ```
-StreamerService::type
-StreamingSubscription::get_service() const;
+StreamerServiceType
+ManagedSubscription::get_service() const;
 ```
 ```
 string
-StreamingSubscription::get_command() const;
+ManagedSubscription::get_command() const;
 ```
 ```
 void
-StreamingSubscription::set_command(CommandType command);
+ManagedSubscription::set_command(CommandType command);
 ```
 ```
 DurationType
@@ -2216,4 +2293,46 @@ OptionActivesSubscription::set_venue( VenueType venue );
 ```
 <br>
 
+#### RawSubscription
 
+Custom subscription objects.
+
+**constructors**
+```
+RawSubscription::RawSubscription( 
+    const std::string& service,
+    const std::string& command,
+    const std::map<std::string, std::string>& parameters
+);
+
+    service    :: service type to access
+    command    :: control the subscription type
+    parameters :: control the type of data returned
+```
+
+**methods**
+```
+std::string
+RawSubscription::get_service_str() const;
+```
+```
+void
+RawSubscription::set_service_str(const std::string& service);
+```
+```
+std::string
+RawSubscription::get_command_str() const;
+```
+```
+void
+RawSubscription::set_command_str(const std::string& command);
+```
+```
+std::map<std::string, std::string>
+RawSubscription::get_parameters() const;
+```
+```
+void
+RawSubscription::set_parameters( std::map<std::string, std::string>& parameters );
+```
+<br>

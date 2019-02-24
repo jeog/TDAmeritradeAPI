@@ -109,6 +109,21 @@ test_sub_duration_venue( S& sub,
 }
 
 void
+test_raw_subscription( RawSubscription& sub,
+                       const std::string& name,
+                       const std::string& service,
+                       const std::string& command,
+                       const std::map< std::string, std::string>& params )
+{
+    if( sub.get_service_str() != service )
+        throw std::runtime_error(name + ": bad service str");
+    if( sub.get_command_str() != command )
+        throw std::runtime_error(name + ": bad command str");
+    if( sub.get_parameters() != params )
+        throw std::runtime_error(name + ": bad parameters");
+}
+
+void
 test_streaming(const string& account_id, Credentials& c)
 {
     using namespace chrono;
@@ -341,6 +356,33 @@ test_streaming(const string& account_id, Credentials& c)
     if( q18 == q18_ )
         throw std::runtime_error(" q18 == q18_" );
 
+    // Raw Subs
+    {
+        RawSubscription q19_( "NASDAQ_BOOK", "SUBS",
+                              {{"keys","GOOG,APPL"}, {"fields", "0,1,2"}} );
+        test_raw_subscription( q19_, "RawSubscription", "NASDAQ_BOOK", "SUBS",
+                                {{"keys","GOOG,APPL"}, {"fields", "0,1,2"}} );
+        RawSubscription q19(q19_);
+        if( q19 != q19_ )
+            throw std::runtime_error( "q19 != q19_" );
+        if( q19 == q18 )
+            throw std::runtime_error( "q19 == q18" );
+        q19.set_service_str("BAD_SERVICE");
+        q19.set_command_str("BAD_COMMAND");
+        q19.set_parameters({});
+        test_raw_subscription( q19, "RawSubscription", "BAD_SERVICE",
+                               "BAD_COMMAND", {});
+        if( q19 == q19_ )
+            throw std::runtime_error( "q19 == q19_" );
+    }
+    RawSubscription q20( "NASDAQ_BOOK", "SUBS",
+                          {{"keys","GOOG,APPL"}, {"fields", "0,1,2"}} );
+
+    if( !use_live_connection ){
+          cout<< "CAN NOT TEST STREAMING SESSION W/O LIVE CONNECTION" << endl;
+          return;
+     }
+
     {
         auto ss = StreamingSession::Create(c, callback,
                                            milliseconds(3000),
@@ -432,7 +474,7 @@ test_streaming(const string& account_id, Credentials& c)
 
         std::shared_ptr<StreamingSession> ss3(ss2);
 
-        results = ss3->add_subscriptions( {q15, q16, q17, q18} );
+        results = ss3->add_subscriptions( {q15, q16, q17, q18, q20} );
         for(auto r : results)
             cout<< boolalpha << r << ' ';
         cout<<endl;

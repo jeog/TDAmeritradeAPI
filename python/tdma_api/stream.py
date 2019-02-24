@@ -37,7 +37,7 @@ ADD, VIEW, and UNSUBS command types.
 
 THERE CAN BE ONLY ONE ACTIVE SESSION  FOR EACH PRIMARY ACCOUNT ID.
 
-Subscription types fall into two categories:
+Managed Subscription types fall into two categories:
 
 Field/Symbol - these are created with symbol strings and data fields defined
 in the appropriately named module constants. (e.g QuotesSubscription)
@@ -45,11 +45,14 @@ in the appropriately named module constants. (e.g QuotesSubscription)
 Venue/Duration - these are created with Venue and/or Duration types defined
 in the appropriately named module constants. (e.g NasdaqActivesSubscription)
 
+The Raw Subscription accepts strings for service type, command type, and
+parameters - allowing for complete control over the subscription.
+
 See README_STREAMING.md for a more thorough explanation.
 """
 
 from ctypes import byref as _REF, c_int, c_void_p, c_ulonglong, CFUNCTYPE, \
-                    c_char_p, c_ulong, pointer, POINTER
+                    c_char_p, c_ulong, c_size_t, pointer, POINTER
 from inspect import signature
                     
 import json
@@ -73,18 +76,29 @@ SERVICE_TYPE_LEVELONE_FOREX = 4
 SERVICE_TYPE_LEVELONE_FUTURES_OPTIONS = 5
 SERVICE_TYPE_NEWS_HEADLINE = 6
 SERVICE_TYPE_CHART_EQUITY = 7
-#SERVICE_TYPE_CHART_FOREX = 8
+SERVICE_TYPE_CHART_FOREX = 8 # NOT WORKING (SERVER SIDE)
 SERVICE_TYPE_CHART_FUTURES = 9
-SERVICE_TYPE_CHART_OPTIONS = 10
+SERVICE_TYPE_CHART_OPTIONS = 10 
 SERVICE_TYPE_TIMESALE_EQUITY = 11
-#SERVICE_TYPE_TIMESALE_FOREX = 12
+SERVICE_TYPE_TIMESALE_FOREX = 12 # NOT WORKING (SERVER SIDE)
 SERVICE_TYPE_TIMESALE_FUTURES = 13
 SERVICE_TYPE_TIMESALE_OPTIONS = 14
 SERVICE_TYPE_ACTIVES_NASDAQ = 15
 SERVICE_TYPE_ACTIVES_NYSE = 16
 SERVICE_TYPE_ACTIVES_OTCBB = 17
-SERVICE_TYPE_ACTIVES_OPTIONS = 18
-SERVICE_TYPE_ADMIN = 19
+SERVICE_TYPE_ACTIVES_OPTIONS = 18 
+SERVICE_TYPE_ADMIN = 19 # NOT MANAGED
+SERVICE_TYPE_ACCT_ACTIVITY = 20 # NOT MANAGED
+SERVICE_TYPE_CHART_HISTORY_FUTURES = 21 # NOT MANAGED
+SERVICE_TYPE_FOREX_BOOK = 22 # NOT MANAGED
+SERVICE_TYPE_FUTURES_BOOK = 23 # NOT MANAGED
+SERVICE_TYPE_LISTED_BOOK = 24 # NOT MANAGED
+SERVICE_TYPE_NASDAQ_BOOK = 25 # NOT MANAGED
+SERVICE_TYPE_OPTIONS_BOOK = 26 # NOT MANAGED
+SERVICE_TYPE_FUTURES_OPTION_BOOK = 27 # NOT MANAGED
+SERVICE_TYPE_NEWS_STORY = 28 # NOT MANAGED
+SERVICE_TYPE_NEWS_HEADLINE_LIST = 29 # NOT MANAGED
+SERVICE_TYPE_UNKNOWN = 30 # **DON'T PASS TO INTERFACE**
 
 QOS_EXPRESS = 0 
 QOS_REAL_TIME = 1
@@ -291,6 +305,71 @@ class _StreamingSubscription( clib._ProxyBaseCopyable ):
     def __eq__(self,other):
         return self._is_same(other, "StreamingSubscription_IsSame_ABI")
     
+
+class RawSubscription(_StreamingSubscription):
+    """RawSubscription - Subscription for any service/command/parameters.
+    
+    A raw subscription allows for any combination of service type
+    (str), command type (str), and set of parameters (dict of str:str). 
+    They can be used for accessing/experimenting with services that 
+    are poorly documented by TDMA or may not work via Managed Subscriptions.
+    
+    e.g RawSubscription( "NASDAQ_BOOK", "SUBS", 
+                         { "keys":"GOOG,AAPL", "fields":"0,1,2" } ) 
+    
+    ALL METHODS THROW -> LibraryNotLoaded, CLibException
+    """
+    def __init__(self, service_str, command_str, parameters):
+        KV = clib._KeyValPair
+        kv = [ KV(PCHAR(k), PCHAR(v)) for k,v in parameters.items()]
+        kvpairs = (KV * len(kv))( *kv )                 
+        super().__init__( PCHAR(service_str), PCHAR(command_str), 
+                          kvpairs, len(kv) )       
+        
+    def get_service_str(self):
+        """Returns the current service type as str."""
+        return clib.get_str(self._abi("GetServiceStr"), self._obj)
+    
+    def set_service_str(self, service_str):
+        """Sets a new service type from str."""
+        clib.set_str(self._abi("SetServiceStr"), service_str, self._obj)
+        
+    def get_command_str(self):
+        """Returns the current command type as str."""
+        return clib.get_str(self._abi("GetCommandStr"), self._obj)
+    
+    def set_command_str(self, command_str):
+        """Sets a new command type from str."""
+        clib.set_str(self._abi("SetCommandStr"), command_str, self._obj)  
+        
+    def get_parameters(self):
+        """Returns the current parameters as dict of str."""
+        p = POINTER(clib._KeyValPair)()            
+        n = c_size_t()    
+        clib.call(self._abi("GetParameters"), _REF(self._obj), _REF(p), _REF(n))  
+        kv  = {p[i].key.decode():p[i].val.decode() for i in range(n.value)}
+        clib.free_keyval_buffer(p, n)   
+        return kv
+
+        return { kv.key:kv.val for kv in kvpairs }
+        
+    def set_parameters(self, parameters):
+        """Sets new parameters from a dict of str:str.
+        
+        e.g .set_parameters( {"keys":"GOOG,AAPL", "fields":"0,1,2"} )
+        """
+        KV = clib._KeyValPair
+        kv = [ KV(PCHAR(k), PCHAR(v)) for k,v in parameters.items()]
+        kvpairs = (KV * len(kv))( *kv )  
+        clib.call( self._abi("SetParameters"), _REF(self._obj), 
+                   kvpairs, len(kv) )
+               
+        
+class _ManagedSubscriptionBase(_StreamingSubscription):
+    """_ManagedSUbscriptionBase - Base Subscritpion class. DO NOT INSTANTIATE!
+    
+    ALL METHODS THROW -> LibraryNotLoaded, CLibException
+    """
     def get_service(self):
         """Returns the service type as SERVICE_TYPE_[] constant."""
         return clib.get_val("StreamingSubscription_GetService_ABI", c_int,
@@ -304,10 +383,10 @@ class _StreamingSubscription( clib._ProxyBaseCopyable ):
     def set_command(self, command):
         """Sets the command type using COMMAND_TYPE_[] constant."""
         clib.set_val("StreamingSubscription_SetCommand_ABI", c_int,
-                     command, self._obj)
-        
+                     command, self._obj)      
     
-class _SubscriptionBySymbolBase(_StreamingSubscription):
+    
+class _SubscriptionBySymbolBase(_ManagedSubscriptionBase):
     """_SubscriptionBySymbolBase - Base Subscription class. DO NOT INSTANTIATE!
     
     ALL METHODS THROW -> LibraryNotLoaded, CLibException
@@ -754,7 +833,7 @@ class TimesaleOptionsSubscription(_TimesaleSubscriptionBase):
     __doc__ = _TIMESALE_SUBSCRIPTION__doc__.format(instr="Options")
             
             
-class _ActivesSubscriptionBase(_StreamingSubscription):
+class _ActivesSubscriptionBase(_ManagedSubscriptionBase):
     """_ActivesSubscriptionBase - Base Subscription class. DO NOT INSTANTIATE!
     
     ALL METHODS THROW -> LibraryNotLoaded, CLibException
@@ -870,6 +949,17 @@ SERVICE_TO_SUBSCRIPTION = {
     SERVICE_TYPE_ACTIVES_NYSE : NYSEActivesSubscription,
     SERVICE_TYPE_ACTIVES_OTCBB : OTCBBActivesSubscription,
     SERVICE_TYPE_ACTIVES_OPTIONS : OptionActivesSubscription,
-    SERVICE_TYPE_ADMIN : None
+    SERVICE_TYPE_ADMIN : None,
+    SERVICE_TYPE_ACCT_ACTIVITY : None,
+    SERVICE_TYPE_CHART_HISTORY_FUTURES : None,
+    SERVICE_TYPE_FOREX_BOOK : None,
+    SERVICE_TYPE_FUTURES_BOOK : None,
+    SERVICE_TYPE_LISTED_BOOK : None,
+    SERVICE_TYPE_NASDAQ_BOOK : None,
+    SERVICE_TYPE_OPTIONS_BOOK : None,
+    SERVICE_TYPE_FUTURES_OPTION_BOOK : None,
+    SERVICE_TYPE_NEWS_STORY : None,
+    SERVICE_TYPE_NEWS_HEADLINE_LIST : None,
+    SERVICE_TYPE_UNKNOWN : None,
     }  
     

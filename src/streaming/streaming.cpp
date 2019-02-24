@@ -29,6 +29,42 @@ namespace {
 #define timegm _mkgmtime
 #endif
 
+using namespace tdma;
+
+std::unordered_map<std::string, StreamerServiceType> service_str_to_enum{
+    {"NONE", StreamerServiceType::NONE},
+    {"ADMIN", StreamerServiceType::ADMIN},
+    {"ACTIVES_NASDAQ", StreamerServiceType::ACTIVES_NASDAQ},
+    {"ACTIVES_NYSE", StreamerServiceType::ACTIVES_NYSE},
+    {"ACTIVES_OTCBB", StreamerServiceType::ACTIVES_OTCBB},
+    {"ACTIVES_OPTIONS", StreamerServiceType::ACTIVES_OPTIONS},
+    {"CHART_EQUITY", StreamerServiceType::CHART_EQUITY},
+    {"CHART_FOREX", StreamerServiceType::CHART_FOREX},
+    {"CHART_FUTURES", StreamerServiceType::CHART_FUTURES},
+    {"CHART_OPTIONS", StreamerServiceType::CHART_OPTIONS},
+    {"QUOTE", StreamerServiceType::QUOTE},
+    {"LEVELONE_FUTURES", StreamerServiceType::LEVELONE_FUTURES},
+    {"LEVELONE_FOREX", StreamerServiceType::LEVELONE_FOREX},
+    {"LEVELONE_FUTURES_OPTIONS", StreamerServiceType::LEVELONE_FUTURES_OPTIONS},
+    {"OPTION", StreamerServiceType::OPTION},
+    {"NEWS_HEADLINE", StreamerServiceType::NEWS_HEADLINE},
+    {"TIMESALE_EQUITY", StreamerServiceType::TIMESALE_EQUITY},
+    {"TIMESALE_FUTURES", StreamerServiceType::TIMESALE_FUTURES},
+    {"TIMESALE_FOREX", StreamerServiceType::TIMESALE_FOREX},
+    {"TIMESALE_OPTIONS", StreamerServiceType::TIMESALE_OPTIONS},
+    {"ACCT_ACTIVITY", StreamerServiceType::ACCT_ACTIVITY},
+    {"CHART_HISTORY_FUTURES", StreamerServiceType::CHART_HISTORY_FUTURES},
+    {"FOREX_BOOK", StreamerServiceType::FOREX_BOOK},
+    {"FUTURES_BOOK", StreamerServiceType::FUTURES_BOOK},
+    {"LISTED_BOOK", StreamerServiceType::LISTED_BOOK},
+    {"NASDAQ_BOOK", StreamerServiceType::NASDAQ_BOOK},
+    {"OPTIONS_BOOK", StreamerServiceType::OPTIONS_BOOK},
+    {"FUTURES_OPTIONS_BOOK", StreamerServiceType::FUTURES_OPTIONS_BOOK},
+    {"NEWS_STORY", StreamerServiceType::NEWS_STORY},
+    {"NEWS_HEADLINE_LIST", StreamerServiceType::NEWS_HEADLINE_LIST},
+    {"UNKNOWN", StreamerServiceType::UNKNOWN}
+};
+
 long long
 timestamp_to_ms(string ts)
 {
@@ -124,51 +160,14 @@ StreamerInfo::encode_credentials()
     credentials_encoded = util::url_encode(ss.str());
 }
 
+
 StreamerServiceType
 streamer_service_from_str(string service_name)
 {
-    if( service_name == "NONE" )
-        return StreamerServiceType::NONE;
-    else if( service_name == "ADMIN" )
-        return StreamerServiceType::ADMIN;
-    else if( service_name == "ACTIVES_NASDAQ" )
-        return StreamerServiceType::ACTIVES_NASDAQ;
-    else if( service_name == "ACTIVES_NYSE" )
-        return StreamerServiceType::ACTIVES_NYSE;
-    else if( service_name == "ACTIVES_OTCBB" )
-        return StreamerServiceType::ACTIVES_OTCBB;
-    else if( service_name == "ACTIVES_OPTIONS" )
-        return StreamerServiceType::ACTIVES_OPTIONS;
-    else if( service_name == "CHART_EQUITY" )
-        return StreamerServiceType::CHART_EQUITY;
-    else if( service_name == "CHART_FOREX" )
-        return StreamerServiceType::CHART_FOREX;
-    else if( service_name == "CHART_FUTURES" )
-        return StreamerServiceType::CHART_FUTURES;
-    else if( service_name == "CHART_OPTIONS" )
-        return StreamerServiceType::CHART_OPTIONS;
-    else if( service_name == "QUOTE" )
-        return StreamerServiceType::QUOTE;
-    else if( service_name == "LEVELONE_FUTURES" )
-        return StreamerServiceType::LEVELONE_FUTURES;
-    else if( service_name == "LEVELONE_FOREX" )
-        return StreamerServiceType::LEVELONE_FOREX;
-    else if( service_name == "LEVELONE_FUTURES_OPTIONS" )
-        return StreamerServiceType::LEVELONE_FUTURES_OPTIONS;
-    else if( service_name == "OPTION" )
-        return StreamerServiceType::OPTION;
-    else if( service_name == "NEWS_HEADLINE" )
-        return StreamerServiceType::NEWS_HEADLINE;
-    else if( service_name == "TIMESALE_EQUITY" )
-        return StreamerServiceType::TIMESALE_EQUITY;
-    else if( service_name == "TIMESALE_FUTURES" )
-        return StreamerServiceType::TIMESALE_FUTURES;
-    else if( service_name == "TIMESALE_FOREX" )
-        return StreamerServiceType::TIMESALE_FOREX;
-    else if( service_name == "TIMESALE_OPTIONS" )
-        return StreamerServiceType::TIMESALE_OPTIONS;
-    else
-        TDMA_API_THROW(ValueException,"invalid service name: " + service_name);
+    auto f = service_str_to_enum.find(service_name);
+    if( f == service_str_to_enum.cend() )
+        return StreamerServiceType::UNKNOWN;
+    return f->second;
 }
 
 } /* tdma */
@@ -298,9 +297,7 @@ StreamingCallbackType_to_string_ABI( TDMA_API_TO_STRING_ABI_ARGS )
 int
 StreamerServiceType_to_string_ABI( TDMA_API_TO_STRING_ABI_ARGS )
 {
-    if( v ){ // ::NONE (0) can't be allowed to fail in this particular case
-        CHECK_ENUM(StreamerServiceType, v, allow_exceptions);
-    }
+    // just allow all enums in here
 
     switch( static_cast<StreamerServiceType>(v) ){
     case StreamerServiceType::NONE:
@@ -343,6 +340,28 @@ StreamerServiceType_to_string_ABI( TDMA_API_TO_STRING_ABI_ARGS )
         return to_new_char_buffer("TIMESALE_FOREX", buf, n, allow_exceptions);
     case StreamerServiceType::TIMESALE_OPTIONS:
         return to_new_char_buffer("TIMESALE_OPTIONS", buf, n, allow_exceptions);
+    case StreamerServiceType::ACCT_ACTIVITY:
+        return to_new_char_buffer("ACCT_ACTIVITY",  buf, n, allow_exceptions);
+    case StreamerServiceType::CHART_HISTORY_FUTURES:
+        return to_new_char_buffer("CHART_HISTORY_FUTURES",  buf, n, allow_exceptions);
+    case StreamerServiceType::FOREX_BOOK:
+        return to_new_char_buffer("FOREX_BOOK",  buf, n, allow_exceptions);
+    case StreamerServiceType::FUTURES_BOOK:
+        return to_new_char_buffer("FUTURES_BOOK",  buf, n, allow_exceptions);
+    case StreamerServiceType::LISTED_BOOK:
+        return to_new_char_buffer("LISTED_BOOK",  buf, n, allow_exceptions);
+    case StreamerServiceType::NASDAQ_BOOK:
+        return to_new_char_buffer("NASDAQ_BOOK",  buf, n, allow_exceptions);
+    case StreamerServiceType::OPTIONS_BOOK:
+        return to_new_char_buffer("OPTIONS_BOOK",  buf, n, allow_exceptions);
+    case StreamerServiceType::FUTURES_OPTIONS_BOOK:
+        return to_new_char_buffer("FUTURES_OPTIONS_BOOK",  buf, n, allow_exceptions);
+    case StreamerServiceType::NEWS_STORY:
+        return to_new_char_buffer("NEWS_STORY",  buf, n, allow_exceptions);
+    case StreamerServiceType::NEWS_HEADLINE_LIST:
+        return to_new_char_buffer("NEWS_HEADLINE_LIST",  buf, n, allow_exceptions);
+    case StreamerServiceType::UNKNOWN:
+        return to_new_char_buffer("UNKNOWN",  buf, n, allow_exceptions);
     default:
         throw std::runtime_error("Invalid StreamerServiceType");
     }

@@ -69,14 +69,14 @@ D(string msg, StreamingSessionImpl *obj)
 
 set<string> active_accounts;
 
-
 class AdminSubscriptionImpl
         : public StreamingSubscriptionImpl {
 public:
     AdminSubscriptionImpl( CommandType command,
                            const map<string, string>& parameters = {} )
         :
-            StreamingSubscriptionImpl( StreamerServiceType::ADMIN, command)
+            StreamingSubscriptionImpl( to_string(StreamerServiceType::ADMIN),
+                                       to_string(command) )
         {
             set_parameters(parameters);
         }
@@ -148,16 +148,16 @@ struct PendingResponseBundle{
 
 
 class StreamingRequest{
-    StreamerServiceType _service;
-    CommandType _command;
+    string _service;
+    string _command;
     string _account_id;
     string _source_id;
     int _request_id;
     map<string, string> _parameters;
 
 public:
-    StreamingRequest( StreamerServiceType service,
-                      CommandType command,
+    StreamingRequest( const std::string& service,
+                      const std::string& command,
                       const string& account_id,
                       const string& source_id,
                       int request_id,
@@ -177,8 +177,8 @@ public:
                       const string& source_id,
                       int request_id )
         :
-            StreamingRequest( subscription.get_service(),
-                subscription.get_command(), account_id, source_id,
+            StreamingRequest( subscription.get_service_str(),
+                subscription.get_command_str(), account_id, source_id,
                 request_id, subscription.get_parameters() )
         {
         }
@@ -187,9 +187,9 @@ public:
     to_json() const
     {
         return {
-           {"service", to_string(_service)},
+           {"service", _service},
            {"requestid", to_string(_request_id)},
-           {"command", to_string(_command)},
+           {"command", _command},
            {"account", _account_id},
            {"source", _source_id},
            {"parameters", _parameters}
@@ -898,10 +898,10 @@ StreamingSessionImpl::_send_requests(
     for( size_t i = 0; i < subscriptions.size(); ++i ){
         _responses_pending.insert(
             req_ids[i],
-            PendingResponse(req_ids[i],
-                            to_string(subscriptions[i].get_service()),
-                            to_string(subscriptions[i].get_command()),
-                            callback)
+            PendingResponse( req_ids[i],
+                             subscriptions[i].get_service_str(),
+                             subscriptions[i].get_command_str(),
+                             callback )
             );
     }
 }
@@ -925,11 +925,23 @@ StreamingSessionImpl::add_subscriptions(
     std::shared_ptr<PendingResponseBundle> bndl(
         new PendingResponseBundle(subscriptions.size())
     );
-    PendingResponse::response_cb_ty cb =
-        [=](int id, string serv, string cmd, unsigned long long ts,
-            int code, string msg)
+
+    PendingResponse::response_cb_ty cb = [=]( int id,
+                                              string serv,
+                                              string cmd,
+                                              unsigned long long ts,
+                                              int code,
+                                              string msg )
         {
             bndl->successes[bndl->n] = ( code == 0 );
+            json j = {
+                  {"request_id", id},
+                  {"command ", cmd},
+                  {"code", code},
+                  {"message", msg}
+              };
+            this->_exec_callback( StreamingCallbackType::request_response,
+                                  streamer_service_from_str(serv), ts, j );
             {
                 std::lock_guard<mutex> _(bndl->mtx);
                 ++(bndl->n);
@@ -937,24 +949,19 @@ StreamingSessionImpl::add_subscriptions(
                     return;
             }
             bndl->cond.notify_all();
-
-            json j = {
-                  {"request_id", id},
-                  {"command ", cmd},
-                  {"code", code},
-                  {"message", msg}
-              };
-            this->_exec_callback(StreamingCallbackType::request_response,
-                                 streamer_service_from_str(serv), ts, j);
         };
 
     _send_requests(subscriptions, cb);
 
-    std::unique_lock<mutex> l(bndl->mtx);
-    if( !bndl->cond.wait_for( l, _subscribe_timeout,
-                              [&](){return bndl->is_ready();} ) )
+    std::unique_lock<mutex> lock(bndl->mtx);
+    if( !bndl->cond.wait_for( lock, _subscribe_timeout,
+                              [&](){ return bndl->is_ready(); } ) )
     {
-        cerr<< "timed out setting subscriptions" << endl;
+        /*
+         * TODO - should we clear _pending_responses ??
+         *                        signal bndl to ignore response/callback ??
+         */
+        cerr<< "timed out waiting for subscription response" << endl;
     }
 
     return bndl->successes;
@@ -975,7 +982,7 @@ StreamingSessionImpl::start(
         TDMA_API_THROW(StreamingException,"subscriptions is empty");
 
     for( auto& sub : subscriptions ){
-        if( sub.get_command() != CommandType::SUBS )
+        if( sub.get_command_str() != to_string(CommandType::SUBS) )
             TDMA_API_THROW(StreamingException, "can only start() session "
                 "using Subscriptions with command 'SUBS'");
     }

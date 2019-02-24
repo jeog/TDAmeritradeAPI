@@ -1,8 +1,8 @@
-#include <math.h>
-
-#include "tdma_api_execute.h"
 
 #include "test.h"
+#include "tdma_api_execute.h"
+
+#include <math.h>
 
 struct TestLeg{
     const char* symbol;

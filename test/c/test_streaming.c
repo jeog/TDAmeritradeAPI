@@ -1,6 +1,5 @@
-#include "tdma_api_streaming.h"
-
 #include "test.h"
+#include "tdma_api_streaming.h"
 
 /* include/_streaming.h */
 const int TYPE_ID_SUB_QUOTES = 1;
@@ -21,6 +20,7 @@ const int TYPE_ID_SUB_ACTIVES_NASDAQ = 15;
 const int TYPE_ID_SUB_ACTIVES_NYSE = 16;
 const int TYPE_ID_SUB_ACTIVES_OTCBB = 17;
 const int TYPE_ID_SUB_ACTIVES_OPTION = 18;
+const int TYPE_ID_SUB_RAW = 99;
 
 const int TYPE_ID_STREAMING_SESSION = 100;
 
@@ -582,6 +582,169 @@ test_option_actives_subscription(OptionActivesSubscription_C* sub)
     return 0;
 }
 
+int
+test_raw_subscription( RawSubscription_C* sub )
+{
+    int err;
+    char *buf;
+    size_t n;
+    RawSubscription_C  sub_ = {0,0};
+    // keep sorted by key (order map underneath)
+    KeyValPair params[] = { {"a", "1,2,3"}, {"b", "11,22,33"} };
+    const char* service = "BAD_SERVICE";
+    const char* command = "BAD_COMMAND";
+
+    if( (err = RawSubscription_Create(service, command, params, 2, &sub_ )) ){
+        CHECK_AND_RETURN_ON_ERROR(err, "RawSubscription_Create");
+    }
+
+    // copy construct
+    if( (err = RawSubscription_Copy(&sub_, sub)) )
+        CHECK_AND_RETURN_ON_ERROR(err, "RawSubscription_Copy");
+
+    // cmp
+    int is_same;
+    if( (err = StreamingSubscription_IsSame( (StreamingSubscription_C*)&sub_,
+                                             (StreamingSubscription_C*)sub,
+                                             &is_same)) )
+        CHECK_AND_RETURN_ON_ERROR(err, "RawSubscription_IsSame");
+    if( !is_same ){
+        fprintf(stderr, "RawSubscription: sub != sub_ \n");
+        return -1;
+    }
+
+    // delete
+    if( (err = RawSubscription_Destroy(&sub_)) )
+        CHECK_AND_RETURN_ON_ERROR(err, "RawSubscription_Destroy");
+
+    // getters
+    if( (err = RawSubscription_GetServiceStr(sub, &buf, &n)) )
+        CHECK_AND_RETURN_ON_ERROR(err, "RawSubscription_GetServiceStr (1)");
+    printf("Service: %s \n", buf);
+    if( strcmp(buf, service) ){
+        fprintf(stderr, "RawSubscription: bad service (%s,%s) \n", buf, service);
+        return -1;
+    }
+    if( buf ){
+        FreeBuffer(buf);
+        buf = NULL;
+    }
+
+    if( (err = RawSubscription_GetCommandStr(sub, &buf, &n)) )
+        CHECK_AND_RETURN_ON_ERROR(err, "RawSubscription_GetCommandStr (1)");
+    printf("Command: %s \n", buf);
+    if( strcmp(buf, command) ){
+        fprintf(stderr, "RawSubscription: bad command (%s,%s) \n", buf, command);
+        return -1;
+    }
+    if( buf ){
+        FreeBuffer(buf);
+        buf = NULL;
+    }
+
+    KeyValPair *kvpairs;
+    if( (err = RawSubscription_GetParameters(sub, &kvpairs, &n)) )
+        CHECK_AND_RETURN_ON_ERROR(err, "RawSubscription_GetParameters (1)");
+    if( n != 2 ){
+        fprintf(stderr, "RawSubscription: parameter size != 2 (1) \n");
+        return -1;
+    }
+    for(int i = 0; i < n; ++i){
+        if( strcmp( kvpairs[i].key, params[i].key) ){
+            fprintf(stderr, "RawSubscription: parameter %i bad key (%s, %s) \n",
+                    i, kvpairs[i].key, params[i].key );
+            return -1;
+        }
+        if( strcmp( kvpairs[i].val, params[i].val) ){
+            fprintf(stderr, "RawSubscription: parameter %i bad val (%s, %s) \n",
+                    i, kvpairs[i].val, params[i].val );
+            return -1;
+        }
+        printf("Parameter %i: %s=%s \n", i, kvpairs[i].key, kvpairs[i].val);
+    }
+    if( (err = FreeKeyValBuffer(kvpairs, n)) )
+        CHECK_AND_RETURN_ON_ERROR(err, "FreeKeyValBuffer (1)");
+
+    // setters
+    const char* service2 = "NASDAQ_BOOK";
+    const char* command2 = "SUBS";
+
+    if( (err = RawSubscription_SetServiceStr(sub, service2)) )
+        CHECK_AND_RETURN_ON_ERROR(err, "RawSubscription_SetServiceSt");
+
+    if( (err = RawSubscription_SetCommandStr(sub, command2)) )
+        CHECK_AND_RETURN_ON_ERROR(err, "RawSubscription_SetCommandStr");
+
+    if( (err = RawSubscription_SetParameters(sub, NULL, 0)) )
+        CHECK_AND_RETURN_ON_ERROR(err, "RawSubscription_SetParameters");
+
+
+    // getters (2)
+    if( (err = RawSubscription_GetServiceStr(sub, &buf, &n)) )
+        CHECK_AND_RETURN_ON_ERROR(err, "RawSubscription_GetServiceStr (2)");
+    printf("Service: %s \n", buf);
+    if( strcmp(buf, service2) ){
+        fprintf(stderr, "RawSubscription: bad service (%s,%s) \n", buf,
+                service2);
+        return -1;
+    }
+    if( buf ){
+        FreeBuffer(buf);
+        buf = NULL;
+    }
+
+    if( (err = RawSubscription_GetCommandStr(sub, &buf, &n)) )
+        CHECK_AND_RETURN_ON_ERROR(err, "RawSubscription_GetCommandStr (2)");
+    printf("Command: %s \n", buf);
+    if( strcmp(buf, command2) ){
+        fprintf(stderr, "RawSubscription: bad command (%s,%s) \n",
+                buf, command2 );
+        return -1;
+    }
+    if( buf ){
+        FreeBuffer(buf);
+        buf = NULL;
+    }
+
+    if( (err = RawSubscription_GetParameters(sub, &kvpairs, &n)) )
+        CHECK_AND_RETURN_ON_ERROR(err, "RawSubscription_GetParameters (2)");
+    if( n != 0 || kvpairs != NULL ){
+        fprintf(stderr, "RawSubscription: parameters not empty \n");
+        return -1;
+    }
+
+
+    // keep sorted by key (order map underneath)
+    KeyValPair params2[] = { {"fields", "0,1,2"}, {"keys","GOOG,AAPL"} };
+
+    if( (err = RawSubscription_SetParameters(sub, params2, 2)) )
+        CHECK_AND_RETURN_ON_ERROR(err, "RawSubscription_SetParameters (2)");
+
+    if( (err = RawSubscription_GetParameters(sub, &kvpairs, &n)) )
+        CHECK_AND_RETURN_ON_ERROR(err, "RawSubscription_GetParameters (3)");
+    if( n != 2 ){
+        fprintf(stderr, "RawSubscription: parameter size != 2 (3) \n");
+        return -1;
+    }
+    for(int i = 0; i < n; ++i){
+        if( strcmp( kvpairs[i].key, params2[i].key) ){
+            fprintf(stderr, "RawSubscription: parameter %i bad key (%s, %s) \n",
+                    i, kvpairs[i].key, params2[i].key );
+            return -1;
+        }
+        if( strcmp( kvpairs[i].val, params2[i].val) ){
+            fprintf(stderr, "RawSubscription: parameter %i bad val (%s, %s) \n",
+                    i, kvpairs[i].val, params2[i].val );
+            return -1;
+        }
+        printf("Parameter %i: %s=%s \n", i, kvpairs[i].key, kvpairs[i].val);
+    }
+    if( (err = FreeKeyValBuffer(kvpairs, n)) )
+        CHECK_AND_RETURN_ON_ERROR(err, "FreeKeyValBuffer (2)");
+
+    return 0;
+}
+
 
 int
 Test_Streaming(struct Credentials* c, const char* account_id)
@@ -670,6 +833,26 @@ Test_Streaming(struct Credentials* c, const char* account_id)
         return -1;
     }
 
+    RawSubscription_C q5;
+    err = test_raw_subscription(&q5);
+    if( err ){
+        LastErrorMsg(&buf, &n);
+        LastErrorCode(&code);
+        fprintf(stderr, "RawSubscription error(%i): %s", code, buf);
+        if( buf ){
+            FreeBuffer(buf);
+            n = 0;
+            code = 0;
+        }
+        return -1;
+    }
+
+    if( q5.type_id != TYPE_ID_SUB_RAW ){
+        fprintf(stderr, "invalid type id (%i,%i) \n", q5.type_id,
+                TYPE_ID_SUB_RAW);
+        return -1;
+    }
+
     // CREATE SESSION 1
     StreamingSession_C ss;
     if( (err = StreamingSession_Create(c, streaming_callback, &ss)) )
@@ -685,14 +868,15 @@ Test_Streaming(struct Credentials* c, const char* account_id)
     printf("Results: %i\n", results[0]);
 
     StreamingSubscription_C* subs2[] = {(StreamingSubscription_C*)&q2,
-                                        (StreamingSubscription_C*)&q3};
-    int results2[] = {-1,-1};
+                                        (StreamingSubscription_C*)&q3,
+                                        (StreamingSubscription_C*)&q5 };
+    int results2[] = {-1,-1,-1};
 
     // ADD TO SESSION 1
-    if( (err = StreamingSession_AddSubscriptions(&ss, subs2, 2, results2)) )
+    if( (err = StreamingSession_AddSubscriptions(&ss, subs2, 3, results2)) )
         CHECK_AND_RETURN_ON_ERROR(err, "StreamingSession_AddSubscriptions");
 
-    printf("Results: %i, %i, \n", results2[0], results2[1]);
+    printf("Results: %i, %i, %i \n", results2[0], results2[1], results2[2]);
 
     SleepFor(10000);
 
@@ -724,7 +908,7 @@ Test_Streaming(struct Credentials* c, const char* account_id)
 
     SleepFor(5000);
 
-    // RE-START SESSION 1
+    // RE-START SESSION 1 (first two subs)
     if( (err = StreamingSession_Start(&ss, subs2, 2, results2)) )
         CHECK_AND_RETURN_ON_ERROR(err, "StreamingSession_Start #2");
 
@@ -798,6 +982,18 @@ Test_Streaming(struct Credentials* c, const char* account_id)
         LastErrorMsg(&buf, &n);
         LastErrorCode(&code);
         fprintf(stderr, "StreamingSubscription_Destroy error(%i): %s", code, buf);
+        if( buf ){
+              FreeBuffer(buf);
+              n = 0;
+              code = 0;
+          }
+    }
+
+    err = RawSubscription_Destroy((RawSubscription_C*)(&q5));
+    if( err ){
+        LastErrorMsg(&buf, &n);
+        LastErrorCode(&code);
+        fprintf(stderr, "RawSubscription_Destroy error(%i): %s", code, buf);
         if( buf ){
               FreeBuffer(buf);
               n = 0;

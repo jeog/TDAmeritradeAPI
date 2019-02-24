@@ -36,7 +36,7 @@ along with this program.  If not, see http://www.gnu.org/licenses.
 
 #define BUILD_ENUM_NAME(n) \
     BUILD_C_CPP_TDMA_ENUM_NAME(StreamerServiceType, n)
-DECL_C_CPP_TDMA_ENUM(StreamerServiceType, 1, 19,
+DECL_C_CPP_TDMA_ENUM(StreamerServiceType, 1, 29,
     BUILD_ENUM_NAME( NONE ),
     BUILD_ENUM_NAME( QUOTE ),
     BUILD_ENUM_NAME( OPTION ),
@@ -56,21 +56,25 @@ DECL_C_CPP_TDMA_ENUM(StreamerServiceType, 1, 19,
     BUILD_ENUM_NAME( ACTIVES_NYSE ),
     BUILD_ENUM_NAME( ACTIVES_OTCBB ),
     BUILD_ENUM_NAME( ACTIVES_OPTIONS ),
-    BUILD_ENUM_NAME( ADMIN ) // <- NOTE THIS DOESNT MATCH TYPE_ID_SUB_[] consts
-    /* NOT IMPLEMENTED YET */
-    //BUILD_ENUM_NAME( CHART_HISTORY_FUTURES),
-    //BUILD_ENUM_NAME( ACCT_ACTIVITY),
-    /* NOT DOCUMENTED BY TDMA */
-    //BUILD_ENUM_NAME( FOREX_BOOK,
-    //BUILD_ENUM_NAME( FUTURES_BOOK),
-    //BUILD_ENUM_NAME( LISTED_BOOK),
-    //BUILD_ENUM_NAME( NASDAQ_BOOK),
-    //BUILD_ENUM_NAME( OPTIONS_BOOK),
-    //BUILD_ENUM_NAME( FUTURES_OPTION_BOOK),
-    //BUILD_ENUM_NAME( NEWS_STORY),
-    //BUILD_ENUM_NAME( NEWS_HEADLINE_LIST),
-    /* OLD API ? */
-    //BUILD_ENUM_NAME( STREAMER_SERVER)
+    BUILD_ENUM_NAME( ADMIN ), // <- THIS DOESNT MATCH TYPE_ID_SUB_[] consts
+
+    /*
+     * EVERYTHING BELOW HERE DOES NOT HAVE A CORRESPONDING
+     * MANAGED SUBSCRIPTION - TRY USING 'RawSubscription'
+     */
+    BUILD_ENUM_NAME( ACCT_ACTIVITY ),
+    BUILD_ENUM_NAME( CHART_HISTORY_FUTURES ),
+    BUILD_ENUM_NAME( FOREX_BOOK ), /* NOT DOCUMENTED BY TDMA */
+    BUILD_ENUM_NAME( FUTURES_BOOK ), /* NOT DOCUMENTED BY TDMA */
+    BUILD_ENUM_NAME( LISTED_BOOK ), /* NOT DOCUMENTED BY TDMA */
+    BUILD_ENUM_NAME( NASDAQ_BOOK ), /* NOT DOCUMENTED BY TDMA */
+    BUILD_ENUM_NAME( OPTIONS_BOOK ), /* NOT DOCUMENTED BY TDMA */
+    BUILD_ENUM_NAME( FUTURES_OPTIONS_BOOK ), /* NOT DOCUMENTED BY TDMA */
+    BUILD_ENUM_NAME( NEWS_STORY ), /* NOT DOCUMENTED BY TDMA */
+    BUILD_ENUM_NAME( NEWS_HEADLINE_LIST ), /* NOT DOCUMENTED BY TDMA */
+
+    /* in case something gets returned we're not aware of - DON'T USE */
+    BUILD_ENUM_NAME( UNKNOWN )
     );
 #undef BUILD_ENUM_NAME
 
@@ -89,9 +93,9 @@ DECL_C_CPP_TDMA_ENUM(CommandType, 0, 3,
     BUILD_C_CPP_TDMA_ENUM_NAME(CommandType, UNSUBS),
     BUILD_C_CPP_TDMA_ENUM_NAME(CommandType, ADD),
     BUILD_C_CPP_TDMA_ENUM_NAME(CommandType, VIEW),
-    BUILD_C_CPP_TDMA_ENUM_NAME(CommandType, LOGIN),
-    BUILD_C_CPP_TDMA_ENUM_NAME(CommandType, LOGOUT),
-    BUILD_C_CPP_TDMA_ENUM_NAME(CommandType, QOS)
+    BUILD_C_CPP_TDMA_ENUM_NAME(CommandType, LOGIN),  // private
+    BUILD_C_CPP_TDMA_ENUM_NAME(CommandType, LOGOUT), // private
+    BUILD_C_CPP_TDMA_ENUM_NAME(CommandType, QOS) // private
 );
 
 
@@ -432,6 +436,10 @@ DECL_CSUB_STRUCT(NasdaqActivesSubscription_C);
 DECL_CSUB_STRUCT(NYSEActivesSubscription_C);
 DECL_CSUB_STRUCT(OTCBBActivesSubscription_C);
 DECL_CSUB_STRUCT(OptionActivesSubscription_C);
+
+// Raw Subscription *NEW*
+DECL_CSUB_STRUCT(RawSubscription_C);
+
 #undef DECL_CSUB_STRUCT
 
 /* SUBSCRIPTION CREATE METHODS */
@@ -476,6 +484,16 @@ OptionActivesSubscription_Create_ABI( int venue,
                                       int allow_exceptions );
 
 
+/* Create method of Raw Subscription */
+EXTERN_C_SPEC_ DLL_SPEC_ int
+RawSubscription_Create_ABI( const char* service,
+                            const char* command,
+                            const KeyValPair *keyvals,
+                            size_t n,
+                            RawSubscription_C *psub,
+                            int allow_exceptions );
+
+
 /* SUBSCRIPTION COPY (CONSTRUCT) METHODS */
 #define DECL_CSUB_COPY_FUNC(name) \
 EXTERN_C_SPEC_ DLL_SPEC_ int \
@@ -497,13 +515,14 @@ DECL_CSUB_COPY_FUNC(NasdaqActivesSubscription);
 DECL_CSUB_COPY_FUNC(NYSEActivesSubscription);
 DECL_CSUB_COPY_FUNC(OTCBBActivesSubscription);
 DECL_CSUB_COPY_FUNC(OptionActivesSubscription);
+DECL_CSUB_COPY_FUNC(RawSubscription);
 #undef DECL_CSUB_COPY_FUNC
 
 /* generic copy */
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 StreamingSubscription_Copy_ABI( StreamingSubscription_C *from,
-                                StreamingSubscription_C * to,
+                                StreamingSubscription_C *to,
                                 int allow_exceptions );
 
 /* SUBSCRIPTION COMPARE METHOD */
@@ -536,11 +555,12 @@ DECL_CSUB_DESTROY_FUNC(NasdaqActivesSubscription);
 DECL_CSUB_DESTROY_FUNC(NYSEActivesSubscription);
 DECL_CSUB_DESTROY_FUNC(OTCBBActivesSubscription);
 DECL_CSUB_DESTROY_FUNC(OptionActivesSubscription);
+DECL_CSUB_DESTROY_FUNC(RawSubscription);
 #undef DECL_CSUB_DESTROY_FUNC
 
 /* Generic destroy (cast to StreamingSubscription_C*) */
 EXTERN_C_SPEC_ DLL_SPEC_ int
-StreamingSubscription_Destroy_ABI( StreamingSubscription_C* psub,
+StreamingSubscription_Destroy_ABI( StreamingSubscription_C *psub,
                                    int allow_exceptions );
 
 
@@ -650,6 +670,34 @@ OptionActivesSubscription_SetVenue_ABI( OptionActivesSubscription_C *psub,
                                         int venue,
                                         int allow_exceptions );
 
+/* RAW SUBSCRIPTION GET/SET METHODS */
+EXTERN_C_SPEC_ DLL_SPEC_ int
+RawSubscription_GetServiceStr_ABI( RawSubscription_C *psub, char **buf,
+                                   size_t *n, int allow_exceptions );
+
+EXTERN_C_SPEC_ DLL_SPEC_ int
+RawSubscription_SetServiceStr_ABI( RawSubscription_C *psub, const char* service,
+                                   int allow_exceptions );
+
+EXTERN_C_SPEC_ DLL_SPEC_ int
+RawSubscription_GetCommandStr_ABI( RawSubscription_C *psub, char **buf,
+                                   size_t *n, int allow_exceptions );
+
+EXTERN_C_SPEC_ DLL_SPEC_ int
+RawSubscription_SetCommandStr_ABI( RawSubscription_C *psub, const char* command,
+                                   int allow_exceptions );
+
+// Use FreeKeyValBuffer_ABI to free
+EXTERN_C_SPEC_ DLL_SPEC_ int
+RawSubscription_GetParameters_ABI( RawSubscription_C *psub,
+                                   KeyValPair **pkeyvals, size_t *n,
+                                   int allow_exceptions );
+
+EXTERN_C_SPEC_ DLL_SPEC_ int
+RawSubscription_SetParameters_ABI( RawSubscription_C *psub,
+                                   const KeyValPair *keyvals, size_t n,
+                                   int allow_exceptions );
+
 
 #ifndef __cplusplus
 
@@ -711,6 +759,15 @@ OptionActivesSubscription_Create( VenueType venue,
 { return OptionActivesSubscription_Create_ABI((int)venue, (int)duration_type,
                                                (int)command, psub, 0); }
 
+/* Create for Raw Subscription */
+static inline int
+RawSubscription_Create( const char* service,
+                        const char* command,
+                        const KeyValPair *kvpairs,
+                        int n,
+                        RawSubscription_C *psub )
+{ return RawSubscription_Create_ABI(service, command, kvpairs, n, psub, 0); }
+
 /* SUBSCRIPTION COPY (CONSTRUCTOR) METHODS */
 
 #define DECL_CSUB_COPY_FUNC(name) \
@@ -735,6 +792,7 @@ DECL_CSUB_COPY_FUNC(NasdaqActivesSubscription);
 DECL_CSUB_COPY_FUNC(NYSEActivesSubscription);
 DECL_CSUB_COPY_FUNC(OTCBBActivesSubscription);
 DECL_CSUB_COPY_FUNC(OptionActivesSubscription);
+DECL_CSUB_COPY_FUNC(RawSubscription);
 #undef DECL_CSUB_DESTROY_FUNC
 
 /* SUBSCRIPTION COMPARE METHOD */
@@ -769,6 +827,7 @@ DECL_CSUB_DESTROY_FUNC(NasdaqActivesSubscription);
 DECL_CSUB_DESTROY_FUNC(NYSEActivesSubscription);
 DECL_CSUB_DESTROY_FUNC(OTCBBActivesSubscription);
 DECL_CSUB_DESTROY_FUNC(OptionActivesSubscription);
+DECL_CSUB_DESTROY_FUNC(RawSubscription);
 #undef DECL_CSUB_DESTROY_FUNC
 
 /* Generic destroy (cast to StreamingSubscription_C*) */
@@ -1005,6 +1064,34 @@ OptionActivesSubscription_SetVenue( OptionActivesSubscription_C *psub,
                                     VenueType venue )
 { return OptionActivesSubscription_SetVenue_ABI(psub, (int)venue, 0); }
 
+/* RAW SUBSCRIPTION GET/SET METHODS */
+static inline int
+RawSubscription_GetServiceStr( RawSubscription_C *psub, char **buf, size_t *n )
+{ return RawSubscription_GetServiceStr_ABI( psub, buf, n, 0 ); }
+
+static inline int
+RawSubscription_SetServiceStr( RawSubscription_C *psub, const char* service )
+{ return RawSubscription_SetServiceStr_ABI( psub, service, 0 ); }
+
+static inline int
+RawSubscription_GetCommandStr( RawSubscription_C *psub, char **buf, size_t *n )
+{ return RawSubscription_GetCommandStr_ABI( psub, buf, n, 0 ); }
+
+static inline int
+RawSubscription_SetCommandStr( RawSubscription_C *psub, const char* command )
+{ return RawSubscription_SetCommandStr_ABI( psub, command, 0 ); }
+
+// Use FreeKeyValBuffer to free
+static inline int
+RawSubscription_GetParameters( RawSubscription_C *psub,
+                               KeyValPair **pkeyvals, size_t *n )
+{ return RawSubscription_GetParameters_ABI( psub, pkeyvals, n, 0 ); }
+
+static inline int
+RawSubscription_SetParameters( RawSubscription_C *psub,
+                               const KeyValPair *keyvals, size_t n )
+{ return RawSubscription_SetParameters_ABI( psub, keyvals, n, 0 ); }
+
 
 #else
 /* C++ Interface */
@@ -1108,11 +1195,120 @@ public:
     operator!=( const StreamingSubscription& sub ) const
     { return !(*this == sub); }
 
+};
+
+
+class RawSubscription
+        : public StreamingSubscription {
+
+    static KeyValPair*
+    params_to_new_kvpairs( const std::map<std::string, std::string>& parameters)
+    {
+        int n = static_cast<int>( parameters.size() );
+        if( n == 0 )
+            return nullptr;
+        KeyValPair *kv = new KeyValPair[n];
+        auto b = parameters.begin();
+        for( int i = 0; i < n; ++i, ++b ){
+            kv[i].key = b->first.c_str();
+            kv[i].val = b->second.c_str();
+        }
+        return kv;
+    }
+
+
+public:
+    typedef RawSubscription_C CType;
+
+    RawSubscription( const std::string& service,
+                     const std::string& command,
+                     const std::map<std::string,std::string>& parameters )
+        :
+            StreamingSubscription( RawSubscription_C{} )
+        {
+            KeyValPair *kv = nullptr;
+            try{
+                // copy so the internal ref stealing doesn't bite us later
+                std::map<std::string,std::string> cparams(parameters);
+                kv = params_to_new_kvpairs( cparams );
+                call_abi( RawSubscription_Create_ABI, service.c_str(),
+                          command.c_str(), kv, cparams.size(), csub<CType>() );
+                // DONT USE FreeKeyVals, we just took refs to the char*s
+                if(kv) delete[] kv;
+            }catch(...){
+                if(kv) delete[] kv;
+                throw;
+            }
+        }
+
+    std::string
+    get_service_str() const
+    { return str_from_abi( RawSubscription_GetServiceStr_ABI, csub<CType>()); }
+
+    void
+    set_service_str(const std::string& service)
+    {
+        call_abi( RawSubscription_SetServiceStr_ABI, csub<CType>(),
+                  service.c_str() );
+    }
+
+    std::string
+    get_command_str() const
+    { return str_from_abi( RawSubscription_GetCommandStr_ABI, csub<CType>()); }
+
+    void
+    set_command_str( const std::string& command )
+    {
+        call_abi( RawSubscription_SetCommandStr_ABI, csub<CType>(),
+                  command.c_str() );
+    }
+
+    std::map<std::string, std::string>
+    get_parameters() const
+    {
+        KeyValPair *kv;
+        size_t n;
+        std::map<std::string, std::string> params;
+        call_abi( RawSubscription_GetParameters_ABI, csub<CType>(), &kv, &n );
+        if( kv ){
+            for( size_t i = 0; i < n; ++i )
+                params[ kv[i].key ] = kv[i].val;
+        }
+        FreeKeyValBuffer_ABI(kv, n, 0); // no throw
+        return params;
+    }
+
+    void
+    set_parameters( const std::map<std::string, std::string>& parameters ) const
+    {
+        KeyValPair *kv = nullptr;
+        try{
+            // copy so the internal ref stealing doesn't bite us later
+            std::map<std::string,std::string> cparams(parameters);
+            call_abi( RawSubscription_SetParameters_ABI, csub<CType>(), kv,
+                      cparams.size() );
+            // DONT USE FreeKeyVals, we just took refs to the char*s
+            if(kv) delete[] kv;
+        }catch(...){
+            if(kv) delete[] kv;
+            throw;
+        }
+    }
+};
+
+
+class ManagedSubscriptionBase
+    : public StreamingSubscription {
+
+protected:
+    using StreamingSubscription::StreamingSubscription;
+
+public:
     StreamerServiceType
     get_service() const
     {
         int ss;
-        call_abi( StreamingSubscription_GetService_ABI, _csub.get(), &ss );
+        call_abi( StreamingSubscription_GetService_ABI, csub<>(), &ss );
         return static_cast<StreamerServiceType>(ss);
     }
 
@@ -1120,21 +1316,21 @@ public:
     get_command() const
     {
         int c;
-        call_abi( StreamingSubscription_GetCommand_ABI, _csub.get(), &c );
+        call_abi( StreamingSubscription_GetCommand_ABI, csub<>(), &c );
         return static_cast<CommandType>(c);
     }
 
     void
     set_command( CommandType command )
     {
-        call_abi( StreamingSubscription_SetCommand_ABI, _csub.get(),
+        call_abi( StreamingSubscription_SetCommand_ABI, csub<>(),
                   static_cast<int>(command) );
     }
 };
 
 
 class SubscriptionBySymbolBase
-        : public StreamingSubscription {
+        : public ManagedSubscriptionBase {
 protected:
     template<typename FieldTy, typename CTy>
     std::set<FieldTy>
@@ -1154,7 +1350,7 @@ protected:
                               const std::set<FTy>& fields,
                               CommandType command )
         :
-            StreamingSubscription(_)
+            ManagedSubscriptionBase(_)
         {
             const char** s = nullptr;
             int *i = nullptr;
@@ -1637,12 +1833,12 @@ public:
 
 
 class ActivesSubscriptionBase
-        : public StreamingSubscription {
+        : public ManagedSubscriptionBase {
 protected:
     template<typename CTy, typename F, typename... Args>
     ActivesSubscriptionBase( CTy _, F func, Args... args )
         :
-            StreamingSubscription(_, func, nullptr, args...)
+            ManagedSubscriptionBase(_, func, nullptr, args...)
         {
         }
 

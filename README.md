@@ -73,6 +73,7 @@ This project would not be possible without some of the great open-source project
 ### New Features
 - - -
 
+- Raw Subscriptions for complete control over accessing the Streaming interface
 - ADD, VIEW, UNSUBS commands for Streaming interface
 - Setters for Subscription objects, copy semantics for C++ versions
 

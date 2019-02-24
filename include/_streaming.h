@@ -43,6 +43,8 @@ const int TYPE_ID_SUB_ACTIVES_NYSE = 16;
 const int TYPE_ID_SUB_ACTIVES_OTCBB = 17;
 const int TYPE_ID_SUB_ACTIVES_OPTION = 18;
 
+const int TYPE_ID_SUB_RAW = 99;
+
 const int TYPE_ID_STREAMING_SESSION = 100;
 
 
@@ -53,48 +55,57 @@ StreamerInfo
 get_streamer_info(Credentials& creds);
 
 
+/* Subscription Impl Hierarchy
+ *
+ *                          StreamingSubscriptionImpl
+ *
+ *     ManagedStreamingSubscription            RawStreamingSubscription
+ *
+ *     BySymbolBase     ActivesBase
+ *         ...               ...
+ */
 class StreamingSubscriptionImpl{
-    StreamerServiceType _service;
-    CommandType _command;
+    std::string _service_str;
+    std::string _command_str;
     std::map<std::string, std::string> _parameters;
 
 protected:
-    StreamingSubscriptionImpl(
-            StreamerServiceType service,
-            CommandType command
-            );
+    StreamingSubscriptionImpl(std::string service, std::string command );
 
     void
     set_parameters(const std::map<std::string, std::string>& parameters)
     { _parameters = parameters; }
 
-    virtual std::map<std::string, std::string>
-    build_parameters() const
-    { return {}; }
+    // caller responsible for syncing w/ this
+    // TODO check for empty/malformed ?
+    void
+    set_command_str(const std::string& command_str)
+    { _command_str = command_str; }
+
+    // caller responsible for syncing w/ this
+    // TODO check for empty/malformed ?
+    void
+    set_service_str(const std::string& service_str)
+    { _service_str = service_str; }
 
 public:
     typedef StreamingSubscription ProxyType;
     static const int TYPE_ID_LOW = TYPE_ID_SUB_QUOTES;
-    static const int TYPE_ID_HIGH = TYPE_ID_SUB_ACTIVES_OPTION;
+
+    // not ideal, we end up accepting all IDs between last managed and here
+    static const int TYPE_ID_HIGH = TYPE_ID_SUB_RAW;
 
     static
     std::string
     encode_symbol(std::string symbol);
 
-    StreamerServiceType
-    get_service() const
-    { return _service; }
+    std::string
+    get_service_str() const
+    { return _service_str; }
 
-    CommandType
-    get_command() const
-    { return _command; }
-
-    void
-    set_command( CommandType command )
-    {
-        _command = command;
-        set_parameters( build_parameters() );
-    }
+    std::string
+    get_command_str() const
+    { return _command_str; }
 
     std::map<std::string, std::string>
     get_parameters() const
@@ -103,7 +114,8 @@ public:
     virtual bool
     operator==(const StreamingSubscriptionImpl& sub ) const
     {
-        return sub._service == _service && sub._command == _command
+        return sub._service_str == _service_str
+            && sub._command_str == _command_str
             && sub._parameters == _parameters;
     }
 
@@ -114,6 +126,7 @@ public:
     virtual
     ~StreamingSubscriptionImpl(){}
 };
+
 
 
 // THROWS

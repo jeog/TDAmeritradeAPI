@@ -1,9 +1,6 @@
-#include <stdio.h>
-
-#include "tdma_api_streaming.h"
 
 #include "test.h"
-
+#include "tdma_api_streaming.h"
 
 int
 Test_BuildOptionSymbol(void);

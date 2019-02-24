@@ -69,11 +69,8 @@ int main(int argc, char* argv[])
         cout<< "*** [END] TEST GETTERS [END] ***" << endl << endl;
 
         cout<< "*** [BEGIN] TEST STREAMING [BEGIN] ***" << endl;
-        if( use_live_connection ){
-            test_streaming(account_id, cmanager.credentials);
-        }else{
-            cout<< "CAN NOT TEST STREAMING WITHOUT USING LIVE CONNECTION" << endl;
-        }
+        test_streaming(account_id, cmanager.credentials);
+
         cout<< "*** [END] TEST STREAMING [END] ***" << endl << endl;       
     }
 
