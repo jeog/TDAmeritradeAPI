@@ -4,7 +4,7 @@ previous commit: 29fcd0 (built using source of commit *after* this one)
 
 sha256 checksums:
 
-a24ca25f31e1c1ea41ba9bbc29cc3e5fa7d30dc56488c7ab97977ad13a3498dd  debian-3.20--x86_64--gcc/libTDAmeritradeAPI.so
+21cf5470af2958042daa7f6d7a4d72fb6cd2703e5d9a4f5e7797e49ebb8a1fae  debian-3.20--x86_64--gcc/libTDAmeritradeAPI.so
 5a7a4a5aab20fec119b33d7b74372cfce7b4dd6ea17a2e7b5c6bd97c60026013  windows-msvc/Win32/TDAmeritradeAPI.dll
 56cdde22a5d2d50b6d62a9c429ab2f54c44e43c585714dfc5bcccdfa36c993ca  windows-msvc/Win32/TDAmeritradeAPI.exp
 a94a2f8314e0fbe898a2a74f7fb2ecdbaa51b2773b36156eb9d6d50e25488534  windows-msvc/Win32/TDAmeritradeAPI.lib
