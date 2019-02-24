@@ -153,11 +153,7 @@ Compiled dependencies - 32 and 64 bit release builds of openssl, curl, zlib, and
 
 #### Build Library
 
-The current build setup is a bit messy. Hopefully things will get a little simpler in the future.
-You can currently build on Unix-like systems and Windows. For Mac OS/X you'll have to download/install the necessary libraries and adjust the makefiles. (If you build sucessfully on Mac feel free to share and we can 
-include it in the docs.)
-
-- The library is implemented in C++ and needs to be built accordingly. It exports a C/ABI layer which is wrapped by header defined C calls and C++ calls/objects, allowing for access from pure C, C++ and Python via ctypes.py.
+The library is implemented in C++ and needs to be built accordingly. It exports a C/ABI layer which is wrapped by header defined C calls and C++ calls/objects, allowing for access from pure C, C++ and Python via ctypes.py.
 ```
   FunctionImpl(string)                [C++ implementation code defined in lib]
   Funtion_ABI(const char*)            [C ABI code defined in lib and exported]
@@ -228,7 +224,7 @@ Files you should have:
 
 Some precompiled versions of the library are provided for convenience. You'll still need to [build](#build-dependencies) and/or [install](#install) the dependencies. *For practical reasons these binaries will not be re-compiled with each commit so you may be using a stale library.*
 
-##### linux
+##### Linux
 
 bin/[distro]-[kernel version]--[architecture]--[toolchain]
 
@@ -237,7 +233,7 @@ bin/[distro]-[kernel version]--[architecture]--[toolchain]
 
 The Linux/ELF binaries in the directories above may or may not work on your particular system/distro BUT [building the library from source](#unix-like-1) is pretty straight forward. 
  
-##### windows
+##### Windows
 
 - bin/windows-msvc/Win32
 - bin/windows-msvc/x64
@@ -248,7 +244,7 @@ The Windows/PE binaries are built using VisualStudio2017 and statically linked a
 
 Once built, make sure the TDAmeritradeAPI library and dependencies are in a location the linker can find, or you'll need to tell the linker where to look.
 
-##### unix-like
+##### Unix/Linux
 
 If dependencies were built/installed using a package manager they should be in the correct location already.
 
@@ -258,7 +254,7 @@ To make *libTDAmeritradeAPI.so* available to your program:
 - *-or-* add its path to the LD_LIBRARY_PATH environment variable
 - *-or-* move the file to the location of the binary that will link to it  
 
-##### windows
+##### Windows
 
 Since all the dependencies are included(or built manually) you'll need to manage them AND *TDAmeritradeAPI.dll*.
 
