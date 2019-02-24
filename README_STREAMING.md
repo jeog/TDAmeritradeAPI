@@ -774,7 +774,7 @@ sub = stream.RawSubscription( "NASDAQ_BOOK", "SUBS",
 Remember, for the C interface it's the client's repsonsibility to free the buffers populated by the 'Get' calls:
 ```
 inline int
-FreeBuffers( char** buffers, size_t n );
+FreeBuffer( char* buffer );
 
 inline int
 FreeKeyValBuffer( KeyValPair* pkeyvals, size_t n );

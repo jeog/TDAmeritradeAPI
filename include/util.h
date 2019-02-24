@@ -84,8 +84,13 @@ struct signature< R(Args...) >
 class SignalBlocker {
     sigset_t _mask, _mask_old;
     bool _active;
+    std::set<int> _signums;
+
+    void
+    _grab_pending();
+
 public:
-    SignalBlocker( std::set<int> signums );
+    SignalBlocker( const std::set<int>& signums );
     SignalBlocker( SignalBlocker& sb ) = delete;
     SignalBlocker&
     operator=( SignalBlocker& sb ) = delete;

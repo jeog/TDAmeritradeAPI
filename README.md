@@ -73,6 +73,7 @@ This project would not be possible without some of the great open-source project
 ### New Features
 - - -
 
+- Mac build (see below)
 - Raw Subscriptions for complete control over accessing the Streaming interface
 - ADD, VIEW, UNSUBS commands for Streaming interface
 - Setters for Subscription objects, copy semantics for C++ versions
@@ -120,7 +121,7 @@ It's recommend you build from source. If you're not comfortable with this or jus
 
 #### Build Dependencies 
 
-##### unix-like
+##### Unix/Linux
 
 If using a package manager, like apt, install the libcurl and libssl dev packages (this should take care of the other dependencies): 
 
@@ -141,7 +142,11 @@ Then follow the build/install instructions in each project's README/INSTALL file
 
 *[libuv](https://github/com/libuv/libuv) is not necessary if epoll is available.*
 
-##### windows
+##### Mac
+
+You'll need the same libraries as the Unix/Linux build AND libuv.
+
+##### Windows
 
 Compiled dependencies - 32 and 64 bit release builds of openssl, curl, zlib, and uv - are included in the *vsbuild/deps/libs* directory. If you'd still like to download and build them yourselves visit the links from the section above.
 
@@ -184,14 +189,22 @@ include it in the docs.)
 
 - If you have a build issue file an issue or send an email.
 
-##### unix-like
+##### Unix/Linux
 
 The Eclipse/CDT generated makefiles are in the  'Debug' and 'Release' subdirectories. *(The makefiles may need some tweaks for non-linux systems.)*
 
     user@host:~/dev/TDAmeritradeAPI/Release$ make
 
 
-##### windows
+##### Mac
+
+Same as for Unix/Linux except you need to manually add '-luv' to objects.mk. It should read:
+```
+USER_OBJS := 
+LIBS := -lssl -lcrypto -lz -lcurl -lpthread -lutil -ldl -luv
+```
+
+##### WIndows
 
 The build solution provided was created in ***VisualStudio2017*** using toolset ***v141***. (*If it doesn't work in your version of VS you'll need to tweak the project settings and/or source.*)
 

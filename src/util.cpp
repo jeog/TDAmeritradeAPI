@@ -32,10 +32,20 @@ using std::stringstream;
 namespace util {
 
 #ifdef USE_SIGNAL_BLOCKER_
-SignalBlocker::SignalBlocker( std::set<int> signums )
+
+#define THROW_RUNTIME_WITH_ERRNO(msg) \
+do{ \
+    int e = errno; \
+    string s = string("SignalBlocker: ") + msg + string(", errno: ") \
+        + std::to_string(e); \
+    throw std::runtime_error(s); \
+}while(0)
+
+SignalBlocker::SignalBlocker( const std::set<int>& signums )
     :
         _mask(),
-        _active(false)
+        _active(false),
+        _signums( signums )
     {
         if( !signums.empty() ){
             sigemptyset(&_mask);
@@ -43,33 +53,67 @@ SignalBlocker::SignalBlocker( std::set<int> signums )
                 sigaddset(&_mask, sig);
             }
             if( pthread_sigmask(SIG_BLOCK, &_mask, &_mask_old) )
-                throw std::runtime_error("pthread_sigmask failed");
+                THROW_RUNTIME_WITH_ERRNO("pthread_sigmask failed");
             _active = true;
         }
     }
 
-SignalBlocker::~SignalBlocker()
+void
+SignalBlocker::_grab_pending()
 {
-    if( _active ){
-        timespec t{};
+    /*
+     * making two assumptions to be safe:
+     *   - can be multiple signals of same type (as per sigwait docs)
+     *   - there may be signal types pending that we don't know about,
+     *     in which case we only wait on ours
+     */
 
-        /* grab the pending signals */
-        while( sigtimedwait(&_mask, 0, &t) > 0 )
-        {}
-        if( errno != EAGAIN ){
-            throw std::runtime_error(
-                "sigtimedwait failed: " + std::to_string(errno)
-                );
+    int dummy, ret, n = 0;
+    sigset_t pending, waiton;
+
+    while( true ){
+        if( sigemptyset( &pending ) )
+            THROW_RUNTIME_WITH_ERRNO("sigemptyset(1) failed");
+
+        if( sigpending( &pending ) )
+            THROW_RUNTIME_WITH_ERRNO("sigpending failed");
+
+        if( sigemptyset( &waiton ) )
+            THROW_RUNTIME_WITH_ERRNO("sigemptyset(2) failed");
+
+        for( int sig : _signums ){
+            ret = sigismember(&pending, sig);
+            if( ret == -1 )
+                THROW_RUNTIME_WITH_ERRNO("sigismember failed");
+            else if( ret == 1 ){
+                if( sigaddset( &waiton, sig ) )
+                    THROW_RUNTIME_WITH_ERRNO("sigaddset failed");
+                ++n;
+            }
         }
 
-        /* reset to original state */
-        if( pthread_sigmask(SIG_SETMASK, &_mask_old, 0) == -1 ){
-            throw std::runtime_error(
-                "pthread_sigmask failed: " + std::to_string(errno)
-                );
+        if( n < 1 )
+            break;
+
+        while( n-- ){
+            if( sigwait(&waiton, &dummy) )
+                THROW_RUNTIME_WITH_ERRNO("sigwait failed");
         }
     }
 }
+
+SignalBlocker::~SignalBlocker()
+{
+    if( _active ){
+        _grab_pending();
+
+        /* reset to original state */
+        if( pthread_sigmask(SIG_SETMASK, &_mask_old, 0) == -1 )
+            THROW_RUNTIME_WITH_ERRNO("pthread_sigmask failed");
+    }
+}
+
+#undef THROW_RUNTIME_WITH_ERRNO
 #endif /* USE_SIGNAL_BLOCKER_ */
 
 void

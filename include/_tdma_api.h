@@ -215,7 +215,7 @@ template<typename ProxyTy>
 void
 kill_proxy( ProxyTy *proxy,
             typename std::enable_if<
-                std::is_same<ProxyTy, nullptr_t>::value
+                std::is_same<ProxyTy, std::nullptr_t>::value
                 >::type* _ = nullptr )
 {}
 
@@ -228,7 +228,7 @@ kill_proxy( ProxyTy *proxy,
  *                 that can be stored globally and passed to the reconstituted
  *                 exceptions on the client side of the lib (see error_to_exc).
  */
-template<typename ExcTy, typename ProxyTy=nullptr_t>
+template<typename ExcTy, typename ProxyTy=std::nullptr_t>
 int
 handle_error( const std::string& msg,
               bool exc,
