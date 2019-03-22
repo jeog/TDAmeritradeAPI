@@ -27,6 +27,7 @@ along with this program.  If not, see http://www.gnu.org/licenses.
 #include "../../include/_streaming.h"
 #include "../../include/util.h"
 #include "../../include/websocket_connect.h"
+#include "../../include/threadsafe_hashmap.h"
 
 using std::string;
 using std::vector;

@@ -27,9 +27,10 @@ along with this program.  If not, see http://www.gnu.org/licenses.
 #include <memory>
 #include <thread>
 #include <string>
+#include <deque>
 
-#include "websocket_connect.h"
-#include "threadsafe_hashmap.h"
+//#include "websocket_connect.h"
+//#include "threadsafe_hashmap.h"
 
 #endif /* __cplusplus */
 
