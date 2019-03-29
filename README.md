@@ -53,6 +53,7 @@ and then uses the library to request an access token, which is refreshed automat
     - [Streaming](#streaming)
     - [Execute](#execute)
 - [Utilities](#utilities)
+    - [DynamicDataStore](#dynamicdatastore)
     - [OptionSymbols](#optionsymbols)
 - [Licensing & Warranty](#licensing--warranty)
 
@@ -73,6 +74,7 @@ This project would not be possible without some of the great open-source project
 ### New Features
 - - -
 
+- [DynamicDataStore](DynamicDataStore) - module that abstracts away data retrieval, providing a simple bar-based interface
 - Mac build (see below)
 - Raw Subscriptions for complete control over accessing the Streaming interface
 - ADD, VIEW, UNSUBS commands for Streaming interface
@@ -601,6 +603,10 @@ CloseCredentials(struct Credentials* pcreds );
 
 ### Utilities
 - - -
+
+#### DynamicDataStore
+
+[A module for TDAmeritradeAPI](DynamicDataStore) that attempts to abstract away the details of retrieving historical and streaming data, providing an indexable interface while caching historical data to disk.
 
 #### Option Symbols
 
