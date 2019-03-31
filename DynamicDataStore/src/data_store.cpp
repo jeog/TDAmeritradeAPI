@@ -59,6 +59,8 @@ const int NUPDATE_ATTEMPTS = 4;
 const double UPDATE_EXPAND_FACTOR = 2.0;
 const unsigned long long UPDATE_MIN_BARS = 24 * 60; // 1 day
 
+const int NNOINITS_TO_WARN = 10;
+
 const int CREDS_EXP_THRESHOLD_SEC = 2 * 24 * 60 * 60; // 2 days
 
 const std::set<tdma::ChartEquitySubscription::FieldType>
@@ -525,20 +527,26 @@ bool
 is_valid_symbol( const std::string& symbol )
 {
     if( symbol.empty() ){
-        log_error("SYMBOL-CHECK", "empty signal");
+        log_error("SYMBOL-CHECK", "empty symbol");
         return false;
     }
 
     json j;
     try{
+        /*
+         * unlike w/ RangeGetter we build this anew each time since this
+         * function only needs to be called when a new symbol is added.
+         */
         tdma::InstrumentInfoGetter g( *credentials,
             tdma::InstrumentSearchType::symbol_search, symbol );
+
+        log_info("SYMBOL-CHECK", "HTTP/GET InstrumentInfo" , symbol );
         j = g.get();
 
     }catch( tdma::APIException& e ){
         log_error( "SYMBOL-CHECK", "instrument info getter failed "
                    + std::string(e.what()), symbol );
-        return {};
+        return false;
     }
 
     auto json_info = j.find(symbol);
@@ -751,16 +759,27 @@ get_historical_range( const std::string& symbol,
                    unsigned long long start_min,
                    unsigned long long end_min )
 {
+    static std::unique_ptr<tdma::HistoricalRangeGetter> pgetter;
+    std::stringstream ss;
+
     assert( end_min >= start_min );
 
     json j;
     try{
-        // TODO persist (at least on startup for new gap fills)
-        tdma::HistoricalRangeGetter g( *credentials, symbol,
-                                       tdma::FrequencyType::minute, 1,
-                                       start_min * MSEC_IN_MIN,
-                                       (end_min+1) * MSEC_IN_MIN, true );
-        j = g.get();
+        if( !pgetter ){
+            pgetter.reset(
+                new tdma::HistoricalRangeGetter( *credentials, symbol,
+                    tdma::FrequencyType::minute, 1, 0, 0, true )
+            );
+        }
+        pgetter->set_symbol(symbol);
+        pgetter->set_start_msec_since_epoch(start_min * MSEC_IN_MIN);
+        pgetter->set_end_msec_since_epoch((end_min+1) * MSEC_IN_MIN);
+
+        ss << "HTTP/GET between " << start_min << " and " << end_min;
+        log_info("GET-HIST-RANGE", ss.str(), symbol );
+
+        j = pgetter->get();
 
     }catch( tdma::APIException& e ){
         log_error("GET-HIST-RANGE", "historical getter failed", e.what());
@@ -793,7 +812,7 @@ get_historical_range( const std::string& symbol,
     unsigned long long dt = jcandles_iter->at(0)["datetime"];
     dt /= MSEC_IN_MIN;
     if( dt > start_min ){
-        std::ostringstream ss;
+        ss.str("");
         ss << "starts later than expected(" << dt << ',' << start_min << ')';
         log_info("GET-HIST-RANGE", ss.str(), symbol);
     }
@@ -801,7 +820,7 @@ get_historical_range( const std::string& symbol,
     dt = jcandles_iter->at(n-1)["datetime"];
     dt /= MSEC_IN_MIN;
     if( dt < end_min ){
-        std::ostringstream ss;
+        ss.str("");
         ss << "ends earlier than expected(" << dt << ',' << end_min << ')';
         log_info("GET-HIST-RANGE", ss.str(), symbol);
     }
@@ -861,7 +880,7 @@ update_front_from_historical( unsigned long long start_min,
             update_with_empty_bars<true>( last + 1, dt - 1, sdata );
 
             sdata.emplace_front( dt, elemj["open"], elemj["high"], elemj["low"],
-                              elemj["close"], elemj["volume"] );
+                                 elemj["close"], elemj["volume"] );
             last = dt;
         }
     }
@@ -917,16 +936,18 @@ update_back_from_historical( unsigned long long start_min,
 void
 handle_duplicate( SymbolData& sdata,
                   OHLCVData& d,
-                  bool is_active,
+                  bool is_active_bar,
                   long long gap )
 {
     auto& D = *(sdata.data);
     assert( gap <= 0 );
 
-    if( !is_active ){
-        std::stringstream ss;
-        ss << "replace TIMESALE bar " << D[-gap] << " with CHART bar " << d;
-        log_info("UPDATE", ss.str(), sdata.symbol);
+    if( !is_active_bar ){
+        if( D[-gap] != d ){ // only log if different
+            std::stringstream ss;
+            ss << "replace TIMESALE bar " << D[-gap] << " with CHART bar " << d;
+            log_info("UPDATE", ss.str(), sdata.symbol);
+        }
     }else if( d.volume <= D[-gap].volume  ){
         // if active bar w/ no new volume just ignore
         return;
@@ -991,7 +1012,7 @@ update_front_from_streaming( SymbolData& sdata,
             assert( !sdata.data->empty() );
             assert( sdata.min_start > 0 );
 
-            long long gap = d.min_since_epoch - sdata.min_end;
+            long long gap = d.min_since_epoch - sdata.min_end; // ???
             if( gap <= 0 ){  // REPLACE OR IGNORE
                 handle_duplicate(sdata, d, (sd.seq < 0), gap);
                 StreamingData::SetInitialized(sdata.symbol);
@@ -1501,6 +1522,22 @@ Update()
         actives.insert(p.first);
     for( auto& p : abar_copies )
         actives.insert(p.first);
+
+    auto nnoinit = actives.size()
+        - std::count_if( actives.cbegin(), actives.cend(),
+                         StreamingData::IsInitialized );
+    if( nnoinit > 0 ){
+        log_info("UPDATE", "initializing", std::to_string(nnoinit));
+        if( nnoinit > NNOINITS_TO_WARN ){
+            std::stringstream ss;
+            auto w= nnoinit * tdma::APIGetter::get_wait_msec().count() / 1000;
+            ss << "WARNING: " << nnoinit
+               << " symbols need to be initialized - may block for "
+               << w << "+ seconds";
+            std::cout<< ss.str() << std::endl;
+            log_info("UPDATE", ss.str());
+        }
+    }
 
     for( auto& s : actives ){
         auto iter_sd = SymbolData::all.find(s);

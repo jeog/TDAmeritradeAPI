@@ -4,7 +4,7 @@ A module for TDAmeritradeAPI that attempts to abstract away the details of retri
 
 It's currently in early devlopment and will undergoe significant changes. It only works with Equties and ETFs as those are the only instruments for which TDMA provides historical data. 
 
-#### Goals
+#### Features
 - Abstract away all data retrieval
 - Provide a simple interface for accessing OHLCV data
     - via relative indices: e.g data[0], data[100], .copy_between(100,0)
@@ -19,9 +19,24 @@ It's currently in early devlopment and will undergoe significant changes. It onl
 - Upon initialization, all the current stores will get updated using tdma::HistoricalRangeGetter. This mechanism has a built-in throttle allowing for no more than 1 call every 500msec. If, for instance, you have 30 symbols/stores this could take 15+ seconds of waiting, making 30 seperate HTTP/GET requests. **It's currently recommended to use no more than 10 symbols/stores.** 
 - Pay attention to how start/end times and indices are passed and the order data is returned. 'Start' times are passed first and <= are 'end' times which are passed second (inclusive range). 'Start' indices are passed first and are >= 'end' indices: index 0 is most recent bar. When data is returned as a vector or pair of const iterators the OPPOSITE is true: most recent data is first(front() or .first), oldes is last. The end iterator is 1 past the oldest.
 
+#### Looking Forward
+- Allow local-external time sync to insure a most recent bar(even if empty).
+- Improve GetHistoricalRange requests on startup to allow for more symbols
+- Streamline data access interface to only return iterators w/ static convenience copy methods
+- Save to disk in realtime(not just on Finalize()); 
+- Provide data accessor methods to return larger (synthetic) synthetic e.g 5, 15 minute bars
+
 #### Build
 
-Currently no build system. Simply compile the source files in '/src' and include 'tdma_data_store.h' with your code, being sure to indicate the location of '/include', and link with the TDAmeritradeAPI library. Has only been tested on linux/gcc.
+Currently no build system. Simply compile the source files in '/src' and include 'tdma_data_store.h' with your code, being sure to indicate the location of '/include', and link with the TDAmeritradeAPI library. 
+
+For example, using a source filed called my_code.cpp (w/ a 'main' function defined):
+```
+user@host:~/dev/TDAmeritradeAPI/DynamicDataStore$ g++ -std=c++11 my_code.cpp src/backing_store.cpp src/data_store.cpp src/logging.cpp -Iinclude -I../include -L../Release -Wl,-rpath,../Release -lTDAmeritradeAPI -o my_code.out
+
+```
+
+Has only been tested on linux/gcc.
 
 #### Structure
 
