@@ -1530,7 +1530,7 @@ Update()
         log_info("UPDATE", "initializing", std::to_string(nnoinit));
         if( nnoinit > NNOINITS_TO_WARN ){
             std::stringstream ss;
-            auto w= nnoinit * tdma::APIGetter::get_wait_msec().count() / 1000;
+            auto w = nnoinit * tdma::APIGetter::get_wait_msec().count() / 1000;
             ss << "WARNING: " << nnoinit
                << " symbols need to be initialized - may block for "
                << w << "+ seconds";
@@ -1652,7 +1652,7 @@ DataAccessor::start_index() const
 
 
 int
-DataAccessor::minutes_to_index( minutes min_since_epoch ) const
+DataAccessor::minute_to_index( minutes min_since_epoch ) const
 {
     INIT_CHECK_AND_THROW("MIN-TO-INDX");
     MINUTE_CHECK_AND_THROW(min_since_epoch, "MIN-TO-INDX", _symbol);
@@ -1668,7 +1668,7 @@ DataAccessor::minutes_to_index( minutes min_since_epoch ) const
 
 
 minutes
-DataAccessor::index_to_minutes( unsigned int index ) const
+DataAccessor::index_to_minute( unsigned int index ) const
 {
     INIT_CHECK_AND_THROW("INDX-TO-MIN");
 
@@ -1680,30 +1680,6 @@ DataAccessor::index_to_minutes( unsigned int index ) const
     return minutes( (*(D.data))[index].min_since_epoch );
 }
 
-
-std::vector<OHLCVData>
-DataAccessor::copy_all() const
-{
-    INIT_CHECK_AND_THROW("COPY-ALL");
-    return ToSequence( _all() );
-}
-
-
-OHLCVData
-DataAccessor::copy_at(minutes min_since_epoch) const
-{
-    INIT_CHECK_AND_THROW("COPY-AT-TIME");
-    MINUTE_CHECK_AND_THROW(min_since_epoch, "COPY-AT-TIME", _symbol);
-    return ToObject( _between(min_since_epoch, min_since_epoch) );
-}
-
-
-OHLCVData
-DataAccessor::copy_at( unsigned int indx ) const
-{
-    INIT_CHECK_AND_THROW("COPY-AT-INDX");
-    return ToObject( _between(indx,indx) );
-}
 
 OHLCVData
 DataAccessor::operator[](minutes min_since_epoch) const
@@ -1725,18 +1701,18 @@ std::vector<OHLCVData>
 DataAccessor::copy_between( minutes start_min_since_epoch,
                             minutes end_min_since_epoch ) const
 {
-    INIT_CHECK_AND_THROW("COPY-BETWEEN-TIME");
-    MINUTE_CHECK_AND_THROW(start_min_since_epoch, "COPY-BETWEEN-TIME", _symbol);
-    MINUTE_CHECK_AND_THROW(end_min_since_epoch, "COPY-BETWEEN-TIME", _symbol);
+    INIT_CHECK_AND_THROW("COPY-BETWEEN-TIME-2");
+    MINUTE_CHECK_AND_THROW(start_min_since_epoch, "COPY-BETWEEN-TIME-2", _symbol);
+    MINUTE_CHECK_AND_THROW(end_min_since_epoch, "COPY-BETWEEN-TIME-2", _symbol);
     return ToSequence( _between(start_min_since_epoch, end_min_since_epoch) );
 }
 
 
 std::vector<OHLCVData>
-DataAccessor::copy_from(minutes start_min_since_epoch) const
+DataAccessor::copy_between(minutes start_min_since_epoch) const
 {
-    INIT_CHECK_AND_THROW("COPY-FROM");
-    MINUTE_CHECK_AND_THROW(start_min_since_epoch, "COPY-FROM", _symbol);
+    INIT_CHECK_AND_THROW("COPY-BETWEEN-TIME-1");
+    MINUTE_CHECK_AND_THROW(start_min_since_epoch, "COPY-BETWEEN-TIME-1", _symbol);
     return ToSequence( _from(start_min_since_epoch) );
 }
 
@@ -1750,10 +1726,18 @@ DataAccessor::copy_between( unsigned int start_indx,
 }
 
 
+std::vector<OHLCVData>
+DataAccessor::copy_between() const
+{
+    INIT_CHECK_AND_THROW("COPY-BETWEEN-ALL");
+    return ToSequence( _all() );
+}
+
+
 DataAccessor::const_iterator
 DataAccessor::cbegin() const // newest
 {
-    INIT_CHECK_AND_THROW("ITER-CBEGIN");
+    INIT_CHECK_AND_THROW("CBEGIN");
     return _cbegin();
 }
 
@@ -1761,26 +1745,26 @@ DataAccessor::cbegin() const // newest
 DataAccessor::const_iterator
 DataAccessor::cend() const // oldest + 1
 {
-    INIT_CHECK_AND_THROW("ITER-CEND");
+    INIT_CHECK_AND_THROW("CEND");
     return _cend();
 }
 
 
 std::pair< DataAccessor::const_iterator, // newest
            DataAccessor::const_iterator> // oldest + 1
-DataAccessor::at(minutes min_since_epoch) const
+DataAccessor::find(minutes min_since_epoch) const
 {
-    INIT_CHECK_AND_THROW("ITER-AT-TIME");
-    MINUTE_CHECK_AND_THROW(min_since_epoch, "ITER-AT-TIME", _symbol);
+    INIT_CHECK_AND_THROW("FIND-TIME");
+    MINUTE_CHECK_AND_THROW(min_since_epoch, "FIND-TIME", _symbol);
     return _between(min_since_epoch, min_since_epoch);
 }
 
 
 std::pair< DataAccessor::const_iterator, // newest
            DataAccessor::const_iterator> // oldest + 1
-DataAccessor::at(unsigned int indx) const
+DataAccessor::find(unsigned int indx) const
 {
-    INIT_CHECK_AND_THROW("ITER-AT-INDX");
+    INIT_CHECK_AND_THROW("FIND-INDX");
     return _between(indx, indx);
 }
 
@@ -1790,10 +1774,20 @@ std::pair< DataAccessor::const_iterator, // newest
 DataAccessor::between(minutes start_min_since_epoch,
                       minutes end_min_since_epoch) const
 {
-    INIT_CHECK_AND_THROW("ITER-BETWEEN-TIME");
-    MINUTE_CHECK_AND_THROW(start_min_since_epoch, "ITER-BETWEEN_TIME", _symbol);
-    MINUTE_CHECK_AND_THROW(end_min_since_epoch, "ITER-BETWEEN-TIME", _symbol);
+    INIT_CHECK_AND_THROW("BETWEEN-TIME-2");
+    MINUTE_CHECK_AND_THROW(start_min_since_epoch, "BETWEEN_TIME-2", _symbol);
+    MINUTE_CHECK_AND_THROW(end_min_since_epoch, "BETWEEN-TIME-2", _symbol);
     return _between(start_min_since_epoch, end_min_since_epoch);
+}
+
+
+std::pair<DataAccessor::const_iterator, // newest
+          DataAccessor::const_iterator> // oldest + 1
+DataAccessor::between(minutes start_min_since_epoch) const
+{
+    INIT_CHECK_AND_THROW("BETWEEN-TIME-1");
+    MINUTE_CHECK_AND_THROW(start_min_since_epoch, "BETWEEN-TIME-1", _symbol);
+    return _from(start_min_since_epoch);
 }
 
 
@@ -1801,26 +1795,16 @@ std::pair<DataAccessor::const_iterator, // newest
           DataAccessor::const_iterator> // oldest + 1
 DataAccessor::between(unsigned int start_indx, unsigned int end_indx) const
 {
-    INIT_CHECK_AND_THROW("ITER-BETWEEN-INDX");
+    INIT_CHECK_AND_THROW("BETWEEN-INDX");
     return _between(start_indx, end_indx);
 }
 
 
 std::pair<DataAccessor::const_iterator, // newest
           DataAccessor::const_iterator> // oldest + 1
-DataAccessor::from(minutes start_min_since_epoch) const
+DataAccessor::between() const
 {
-    INIT_CHECK_AND_THROW("ITER-FROM");
-    MINUTE_CHECK_AND_THROW(start_min_since_epoch, "ITER-FROM", _symbol);
-    return _from(start_min_since_epoch);
-}
-
-
-std::pair<DataAccessor::const_iterator, // newest
-          DataAccessor::const_iterator> // oldest + 1
-DataAccessor::all() const
-{
-    INIT_CHECK_AND_THROW("ITER-ALL");
+    INIT_CHECK_AND_THROW("BETWEEN-ALL");
     return _all();
 }
 

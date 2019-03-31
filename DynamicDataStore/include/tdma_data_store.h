@@ -141,18 +141,12 @@ public:
     start_index() const;
 
     int
-    minutes_to_index( std::chrono::minutes min_since_epoch ) const;
+    minute_to_index( std::chrono::minutes min_since_epoch ) const;
 
     std::chrono::minutes
-    index_to_minutes( unsigned int indx ) const;
+    index_to_minute( unsigned int indx ) const;
 
     // COPY
-    OHLCVData
-    copy_at(std::chrono::minutes min_since_epoch) const;
-
-    OHLCVData
-    copy_at(unsigned int indx) const;
-
     OHLCVData
     operator[](unsigned int indx) const;
 
@@ -164,13 +158,13 @@ public:
                  std::chrono::minutes end_min_since_epoch) const;
 
     std::vector<OHLCVData>
+    copy_between(std::chrono::minutes start_min_since_epoch) const;
+
+    std::vector<OHLCVData>
     copy_between(unsigned int start_indx, unsigned int end_indx=0) const;
 
     std::vector<OHLCVData>
-    copy_from(std::chrono::minutes start_min_since_epoch) const;
-
-    std::vector<OHLCVData>
-    copy_all() const;
+    copy_between() const;
 
     // ITERS
     const_iterator // newest
@@ -181,11 +175,11 @@ public:
 
     std::pair< DataAccessor::const_iterator, // newest
                DataAccessor::const_iterator> // oldest + 1
-    at(std::chrono::minutes min_since_epoch) const;
+    find(std::chrono::minutes min_since_epoch) const;
 
     std::pair< DataAccessor::const_iterator, // newest
                DataAccessor::const_iterator> // oldest + 1
-    at(unsigned int indx) const;
+    find(unsigned int indx) const;
 
     typename std::pair< const_iterator, // newest
                         const_iterator > // oldest + 1
@@ -194,15 +188,15 @@ public:
 
     typename std::pair< const_iterator, // newest
                         const_iterator > // oldest + 1
+    between(std::chrono::minutes start_min_since_epoch) const;
+
+    typename std::pair< const_iterator, // newest
+                        const_iterator > // oldest + 1
     between(unsigned int start_indx, unsigned int end_indx=0) const;
 
     typename std::pair< const_iterator, // newest
                         const_iterator > // oldest + 1
-    from(std::chrono::minutes start_min_since_epoch) const;
-
-    typename std::pair< const_iterator, // newest
-                        const_iterator > // oldest + 1
-    all() const;
+    between() const;
 
     template< typename ContainerTy = std::vector<OHLCVData> >
     static ContainerTy

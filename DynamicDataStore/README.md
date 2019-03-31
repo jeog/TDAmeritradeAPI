@@ -1,50 +1,19 @@
 ### Dynamic Data Store
 
-A module for TDAmeritradeAPI that attempts to abstract away the details of retrieving historical and streaming data, providing an indexable interface while caching historical data to disk.
+A module for TDAmeritradeAPI that attempts to abstract away the details of retrieving, curating, and storing historical and streaming data. 
+
+For each symbol a time-contiguous array of OHLCV 1-min bars is loaded from disk and maintained in memory. As new streaming data is received it's automatically appended - any gaps are filled. A data accessor object is provided to allow access through relative indices or times, for single bars or sequences. When done the arrays are stored to disk so as to be availible for future sessions.
 
 It's currently in early devlopment and will undergoe significant changes. It only works with Equties and ETFs as those are the only instruments for which TDMA provides historical data. 
 
-#### Features
-- Abstract away all data retrieval
-- Provide a simple interface for accessing OHLCV data
-    - via relative indices: e.g data[0], data[100], .copy_between(100,0)
-    - via minutes-since-epoch: eg. data[25896415], data[25896400], .copy_between(25896400, 25896415)
-    - via const iterators: e.g .cbegin(), cend(), .between(100,0)
-- Fill missing bars w/ empties for contiguous data and O(C) lookups
-- Avoid any local-external time sync issues by only using timestamps from server
-- Cache data to user-readable text files
-
-#### Caveats
-- The most recent bar exists only if there is a trade in it (without local time sync there's no way to know the most current bar hasn't been received.)
-- Upon initialization, all the current stores will get updated using tdma::HistoricalRangeGetter. This mechanism has a built-in throttle allowing for no more than 1 call every 500msec. If, for instance, you have 30 symbols/stores this could take 15+ seconds of waiting, making 30 seperate HTTP/GET requests. **It's currently recommended to use no more than 10 symbols/stores.** 
-- Pay attention to how start/end times and indices are passed and the order data is returned. 'Start' times are passed first and <= are 'end' times which are passed second (inclusive range). 'Start' indices are passed first and are >= 'end' indices: index 0 is most recent bar. When data is returned as a vector or pair of const iterators the OPPOSITE is true: most recent data is first(front() or .first), oldes is last. The end iterator is 1 past the oldest.
-
-#### Looking Forward
-- Allow local-external time sync to insure a most recent bar(even if empty).
-- Improve GetHistoricalRange requests on startup to allow for more symbols
-- Streamline data access interface to only return iterators w/ static convenience copy methods
-- Save to disk in realtime(not just on Finalize()); 
-- Provide data accessor methods to return larger (synthetic) synthetic e.g 5, 15 minute bars
-
-#### Build
-
-Currently no build system. Simply compile the source files in '/src' and include 'tdma_data_store.h' with your code, being sure to indicate the location of '/include', and link with the TDAmeritradeAPI library. 
-
-For example, using a source filed called my_code.cpp (w/ a 'main' function defined):
-```
-user@host:~/dev/TDAmeritradeAPI/DynamicDataStore$ g++ -std=c++11 my_code.cpp src/backing_store.cpp src/data_store.cpp src/logging.cpp -Iinclude -I../include -L../Release -Wl,-rpath,../Release -lTDAmeritradeAPI -o my_code.out
-
-```
-
-Has only been tested on linux/gcc.
 
 #### Structure
 
 ```
 --------------|-----------------------------------------------------------------
-Interfaces    |              ADMIN              |      DATA ACCESSOR OBJECTS
-              |    Start() Add() Remove() etc.  | .at() .between() .cbegin() etc.
-              |     ||           ||             |                  /\
+Interfaces    |            ADMIN              |      DATA ACCESSOR OBJECTS
+              |  Start() Add() Remove() etc.  | .find() .between() .cbegin() etc.
+              |     ||           ||           |                  /\
 --------------|-----||-----------||--------------------------------||-----------
               |     ||           \/                                ||
 Data Layer    |     ||      Collect/Sync Data ========>  'Deque' for each symbol
@@ -59,6 +28,43 @@ Storage Layer |              'FRONT'files, 'BACK' files, index
 --------------|-----------------------------------------------------------------
 ```
 
+#### Features
+- Abstract away all data retrieval, curation, and storage
+- Provide a simple interface for accessing OHLCV data
+    - via relative indices: e.g data[0], data[100], .copy_between(100,0)
+    - via minutes-since-epoch: eg. data[25896415], data[25896400], .copy_between(25896400, 25896415)
+    - via const iterators: e.g .cbegin(), cend(), .find(25896415), .between(100,0)
+- Fill missing bars w/ empties for contiguous data and O(C) lookups
+- Avoid any local-external time sync issues by only using timestamps from server
+- Store/Load data to/from user-readable text files
+
+
+#### Caveats
+- The most recent bar exists only if there is a trade in it (without local time sync there's no way to know the most current bar hasn't been received.)
+- Upon initialization, all the active symbols will get updated using tdma::HistoricalRangeGetter. This mechanism allows for no more than 1 call every 500msec. If, for instance, you have 30 symbols/stores this could take 15+ seconds of waiting on the first 'Update'.
+- Pay attention to how start/end times and indices are passed and the order data is returned. 'Start' times are passed first and are <= 'end' times, which are passed second(inclusive range). 'Start' indices are passed first and are >= 'end' indices(index 0 is most recent bar). When data is returned as a vector or pair of const iterators the OPPOSITE is true: most-recent data is first(.front() or .first), oldest is last(.back() or .second). The end iterator is 1 past the oldest.
+
+
+#### Looking Forward
+- Allow local-external time sync to insure a most recent bar(even if empty).
+- Save to disk in realtime (not just on Finalize()); 
+- Provide data accessor methods to return larger (synthetic) bars, e.g 5, 15 minute bars
+
+
+#### Build
+
+Currently no build system. Simply compile the source files in '/src' and include 'tdma_data_store.h' with your code, being sure to indicate the location of '/include', and link with the TDAmeritradeAPI library. 
+
+For example, using a source filed called my_code.cpp (w/ a 'main' function defined):
+```
+user@host:~/dev/TDAmeritradeAPI/DynamicDataStore$ g++ -std=c++11 my_code.cpp src/backing_store.cpp src/data_store.cpp src/logging.cpp -Iinclude -I../include -L../Release -Wl,-rpath,../Release -lTDAmeritradeAPI -o my_code.out
+
+```
+
+Has only been tested on linux/gcc.
+
+
+
 
 #### Admin Interface
 ```
@@ -72,9 +78,25 @@ bool
 Initialize( const std::string& dir_path, Credentials& creds );
 ```
 
-This will load all stores that currently exist on disk(those 'added' and not 'removed').
+This will load all symbols that currently exist on disk (those previously 'added' and not 'removed').
+'dir_path' is a directory (that must already exist) where the index, log, and data files are (or will be) saved.
 
 ***Inititalize must be called and succeed before anything else can happen.***
+
+
+```
+bool
+Add( const std::string& symbol );
+```
+
+Add a symbol to the store, create the underlying file(s) if it doesn't exist.
+
+```
+bool
+Remove( const std::string& symbol, bool delete_file=false);
+```
+
+Remove a symbol from the store if it exists. Set 'delete_file' to true if you also want to remove/delete the underlying file(s).
 
 ```
 bool
@@ -82,29 +104,19 @@ Start( std::chrono::milliseconds listening_timeout
           = std::chrono::milliseconds(60000) );
 ```
 
-Begin the streaming connection. If successful and at least one store exists ```IsRunning() == true```.
+Begin the streaming connection. If successful and at least one symbol exists ```IsRunning() == true```.
 
-You don't need to be running to use ```Add()```, ```Remove()``` etc. but you do if you want to use the index-based ```DataAccessor``` methods (at all) or the time-based methods outside of the available range.
-
-```
-bool
-Add( const std::string& symbol );
-```
-
-Add a symbol to the store, create the underlying file if it doesn't exist.
-
-```
-bool
-Remove( const std::string& symbol, bool delete_file=false);
-```
-
-Remove a symbol from the store if it exists. Set 'delete_file' to true if you also want to remove/delete the underlying file.
+It doesn't need to be running to use ```Add()``` or ```Remove()``` but it does if you want to use the index-based ```DataAccessor``` methods (at all) or the time-based methods outside of the available range.
 
 ```
 void
 Update();
 ```
-**Important** Internally streaming data is stored in queues/caches and not released to the main data stores until 1) one of the data revieval methods of ```DataAccessor``` is used AND returns successfully (e.g .at(), copy_between(), operator[]; *EXCEPT FOR* .cbegin() and .cend()) or 2) ```Update()``` is called. This allows for consistency between the underlying data collection methods and the methods to query the current start and end times/indices of the stores. (see example below)
+**Important:** Internally streaming data is stored in queues/caches and not released to the main deques until:
+1. one of the data revieval methods of ```DataAccessor``` (e.g .between(), .operator[]) is used AND returns successfully - **EXCEPT FOR** .cbegin() and .cend(); or 
+2. ```Update()``` is called
+
+This allows for consistency between the underlying data collection methods and the methods to query the current start/end times/indices. (see example below)
 
 ```
 void
@@ -165,9 +177,9 @@ public:
 };
 ```
 
-Class used for querying and retrieving data from a store.
+Class used for querying and retrieving data from the store.
 
-```DataAccessor``` should be created using a symbol that has already been added to the store. (```Contains(symbol) == true```) If not it will throw a std::logic_error.
+```DataAccessor``` should be created using a symbol that has already been added. (```Contains(symbol) == true```) If not it will throw a std::logic_error.
 
 It will also throw a std::logic_error if:
 1. not initialized(```IsInitialized() == false```)
@@ -180,21 +192,26 @@ It will throw std::invalid_argument if passed invalid times or indices.
 ```
     std::chrono::minutes
     start_minute() const;
-
+```
+```
     std::chrono::minutes
     end_minute() const;
-
+```
+```
     std::pair<std::chrono::minutes, std::chrono::minutes>
     start_end_minutes() const;
-
+```
+```
     int
     start_index() const;
-
+```
+```
     int
-    minutes_to_index( std::chrono::minutes min_since_epoch ) const;
-
+    minute_to_index( std::chrono::minutes min_since_epoch ) const;
+```
+```
     std::chrono::minutes
-    index_to_minutes( unsigned int indx ) const;
+    index_to_minute( unsigned int indx ) const;
 ```
 
 - negative return values indicate unavailable time/index 
@@ -202,29 +219,30 @@ It will throw std::invalid_argument if passed invalid times or indices.
 ##### Copy
 ```
     OHLCVData
-    copy_at(std::chrono::minutes min_since_epoch) const;
-
-    OHLCVData
-    copy_at(unsigned int indx) const;
-
-    OHLCVData
     operator[](unsigned int indx) const;
-
+```
+```
     OHLCVData
     operator[](std::chrono::minutes min_since_epoch) const;
-
+```
+```
     std::vector<OHLCVData>
     copy_between(std::chrono::minutes start_min_since_epoch,
                  std::chrono::minutes end_min_since_epoch) const;
-
+```
+```
     std::vector<OHLCVData>
     copy_between(unsigned int start_indx, unsigned int end_indx=0) const;
-
-    std::vector<OHLCVData>
-    copy_from(std::chrono::minutes start_min_since_epoch) const;
-
-    std::vector<OHLCVData>
-    copy_all() const;
+```
+```
+    // return between 'start_min_since_epoch' and most recent bar
+    std::vector<OHLCVData> 
+    copy_between(std::chrono::minutes start_min_since_epoch) const;
+```
+```
+    // copy ALL
+    std::vector<OHLCVData> 
+    copy_between() const;
 ```
 
 - empty vectors or ```OHLCVData::null``` objects indicate unavailable time/index
@@ -234,34 +252,43 @@ It will throw std::invalid_argument if passed invalid times or indices.
 ```
     const_iterator // newest
     cbegin() const; // NO UPDATE CALLED
-
+```
+```
     const_iterator // oldest + 1
     cend() const; // NO UPDATE CALLED
-
+```
+```
     std::pair< DataAccessor::const_iterator, // newest
                DataAccessor::const_iterator> // oldest + 1
-    at(std::chrono::minutes min_since_epoch) const;
-
+    find(std::chrono::minutes min_since_epoch) const;
+```
+```
     std::pair< DataAccessor::const_iterator, // newest
                DataAccessor::const_iterator> // oldest + 1
-    at(unsigned int indx) const;
-
+    find(unsigned int indx) const;
+```
+```
     typename std::pair< const_iterator, // newest
                         const_iterator > // oldest + 1
     between(std::chrono::minutes start_min_since_epoch,
             std::chrono::minutes end_min_since_epoch) const;
-
+```
+```
     typename std::pair< const_iterator, // newest
                         const_iterator > // oldest + 1
     between(unsigned int start_indx, unsigned int end_indx=0) const;
-
+```
+```
+    // return {.cbegin(), '1 past start_min_since_epoch'}
     typename std::pair< const_iterator, // newest
                         const_iterator > // oldest + 1
-    from(std::chrono::minutes start_min_since_epoch) const;
-
+    between(std::chrono::minutes start_min_since_epoch) const; 
+```
+```
+    // return {.cbegin(), .cend()}
     typename std::pair< const_iterator, // newest
                         const_iterator > // oldest + 1
-    all() const;
+    between() const; 
 ```
 - pair.first == pair.second if unavailable time/index
 - cbegin() == cend() if no data available
@@ -309,13 +336,13 @@ OHLCVData d_old = spy[si]; // get oldest bar, Update() CALLED
  */
 
 // COPY all
-std::vector<OHLCVdata> d_all = spy.copy_all(); // Update() CALLED
+std::vector<OHLCVdata> d_all = spy.copy_between(); // Update() CALLED
 
 e = spy.end_minute(); // get a new end
 
 // COPY from 2 minutes before end to end (inclusive)
 // note - 'end' is most recent data
-std::vector<OHLCVData> d_from = spy.copy_from( e - minutes(2) ); // Update() CALLED
+std::vector<OHLCVData> d_from = spy.copy_between( e - minutes(2) ); // Update() CALLED
 /*
  *  d_from.front() <- most recent data 
  *  d_from.back() <- oldest data ( e - minutes(2) )
@@ -323,7 +350,7 @@ std::vector<OHLCVData> d_from = spy.copy_from( e - minutes(2) ); // Update() CAL
 
 // get iter of most recent data point, Update() CALLED
 std::pair< DataAccessor::const_iterator, 
-           DataAccessor::const_iterator> iters = spy.at(0); 
+           DataAccessor::const_iterator> iters = spy.find(0); 
 if( iters.first == iters.second ){
    // ERROR
 }
