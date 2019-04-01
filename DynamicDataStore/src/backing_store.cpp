@@ -20,12 +20,37 @@ along with this program.  If not, see http://www.gnu.org/licenses.
 #include <sys/stat.h>
 #include <iostream>
 #include <cstdio>
+#include <sstream>
 
 #include "common.h"
 #include "backing_store.h"
 
 using FFLAG = std::ios_base;
 using std::string;
+
+namespace {
+
+template<bool IsWrite, bool IsFront>
+void
+log_read_write( bool success,
+                unsigned long long nlines,
+                unsigned long long nelems,
+                const std::string& symbol )
+{
+    static const std::string TAG("BACKING-STORE");
+
+    std::stringstream ss;
+    ss << (success ? "SUCCESS" : "FAILURE")
+       << (IsWrite ? " writing" : " reading")
+       << (IsFront ? " front" : " back")
+       << "; lines=" << nlines << ", elements=" << nelems;
+
+    success ? log_info(TAG, ss.str(), symbol)
+            : log_error(TAG, ss.str() ,symbol);
+}
+
+} /* namespace */
+
 
 bool
 BackingStore::directory_exists( const string& dir_path )
@@ -159,7 +184,8 @@ BackingStore::delete_symbol_store( const string& symbol )
 }
 
 
-bool
+// {success, front elems pushed, back elems pushed}
+std::tuple<bool, unsigned long long, unsigned long long>
 BackingStore::read_from_symbol_store( const string& symbol,
                                       fileio_func_ty read_func_front,
                                       fileio_func_ty read_func_back )
@@ -167,34 +193,41 @@ BackingStore::read_from_symbol_store( const string& symbol,
     auto f = _stores.find(symbol);
     if( f == _stores.end() ){
         log_error("BACKING-STORE", "symbol store doesn't exist", symbol);
-        return false;
+        return std::make_tuple(false, 0, 0);
     }
 
-    int result = _read_store( f->second.back, read_func_back );
-    if( result ){
-        string err = "failed to read (back) data for " + symbol + ", line";
-        log_error( "BACKING-STORE", err, std::to_string(result) );
-        return false;
-    }
+    long long nlines, nelems_front, nelems_back;
+    bool result_front, result_back;
 
-    if( f->second.back.file->eof() )
-        f->second.back.file->clear();
-
-    result = _read_store( f->second.front, read_func_front );
-    if( result ){
-        string err = "failed to read (front) data for " + symbol + ", line";
-        log_error( "BACKING-STORE", err, std::to_string(result) );
-        return false;
-    }
+    // FRONT
+    std::tie(result_front, nlines, nelems_front) = 
+        _read_store( f->second.front, read_func_front );
 
     if( f->second.front.file->eof() )
         f->second.front.file->clear();
 
-    return true;
+    log_read_write<false, true>(result_front, nlines, nelems_front, symbol);
+
+    // BACK
+    std::tie(result_back, nlines, nelems_back) = 
+        _read_store( f->second.back, read_func_back );
+
+    if( f->second.back.file->eof() )
+        f->second.back.file->clear();
+
+    log_read_write<false, false>(result_back, nlines, nelems_back, symbol);
+
+    return std::make_tuple(
+        result_front && result_back,
+        static_cast<unsigned long long>(std::max(0LL, nelems_front)),
+        static_cast<unsigned long long>(std::max(0LL, nelems_back))
+        );
 }
 
 
-bool
+
+// {success, front elems pulled, back elems pulled}
+std::tuple<bool, unsigned long long, unsigned long long>
 BackingStore::write_to_symbol_store( const string& symbol,
                                      fileio_func_ty write_func_front,
                                      fileio_func_ty write_func_back )
@@ -202,22 +235,29 @@ BackingStore::write_to_symbol_store( const string& symbol,
     auto f = _stores.find(symbol);
     if( f == _stores.end() ){
         log_error("BACKING-STORE", "symbol store doesn't exist", symbol);
-        return false;
+        return std::make_tuple(false, 0, 0);
     }
 
-    int result1 = _write_store( f->second.back, write_func_back );
-    if( result1 ){
-        string err = "failed to write (back) data for " + symbol + ", line";
-        log_error( "BACKING-STORE", err, std::to_string(result1) );
-    }
+    long long nlines, nelems_front, nelems_back;
+    bool result_front, result_back;
 
-    int result2 = _write_store( f->second.front, write_func_front );
-    if( result2 ){
-        string err = "failed to write (front) data for " + symbol + ", line";
-                log_error( "BACKING-STORE", err, std::to_string(result2) );
-    }
+    // FRONT
+    std::tie(result_front, nlines, nelems_front) 
+        = _write_store(f->second.front, write_func_front);
 
-    return (result1 == 0 and result2 == 0);
+    log_read_write<true, true>(result_front, nlines, nelems_front, symbol);
+
+    // BACK
+    std::tie(result_back, nlines, nelems_back) 
+        = _write_store(f->second.back, write_func_back);
+
+    log_read_write<true, false>(result_back, nlines, nelems_back, symbol);
+
+    return std::make_tuple(
+        result_front && result_back,
+        static_cast<unsigned long long>(std::max(0LL, nelems_front)),
+        static_cast<unsigned long long>(std::max(0LL, nelems_back))
+        );
 }
 
 
@@ -286,49 +326,52 @@ BackingStore::_write_index( const string& symbol )
     return true;
 }
 
-int
+
+// {success, lines read, elems pushed}
+std::tuple<bool, long long, long long> 
 BackingStore::_read_store( SymbolStore::Side& side, fileio_func_ty read_func )
 {
     side.file->seekp(0, FFLAG::end);
     if( side.file->fail() ){
         log_error("FILE", "seekp to end of file failed", side.path);
-        return -1;
+        return std::make_tuple(false, -1, -1);
     }
 
     if( side.file->tellp() == std::fstream::pos_type(0) )
-        return 0;
+        return std::make_tuple(true, 0, 0);
 
     side.file->seekg(0, FFLAG::beg);
     if( side.file->fail() ){
         log_error("FILE", "seek to beginning of file failed", side.path);
-        return -1;
+        return std::make_tuple(false, -1, -1);
     }
 
-    int i = read_func( *(side.file) );
+    auto p = read_func( *(side.file) );
+    bool success = false;
 
-    if( side.file->bad() ){
-        log_error("FILE", "I/O error reading from .store file", side.path);
-        return i;
-    }else if( !side.file->eof() ){
-        log_error("FILE", "failed to reach EOF reading from .store file",
-                  side.path);
-        return i;
-    }
+    if( side.file->bad() )
+        log_error("FILE", "I/O error reading from .store file", side.path);      
+    else if( !side.file->eof() )
+        log_error("FILE", ".store file didn't reach EOF", side.path);
+    else
+        success = true;
 
-    return 0;
+    return std::make_tuple(success, p.first, p.second);
 }
 
-int
+
+// {success, lines written, elems pulled}
+std::tuple<bool, long long, long long> 
 BackingStore::_write_store( SymbolStore::Side& side, fileio_func_ty write_func )
 {
-    int i = write_func( *(side.file) );
+    auto p = write_func( *(side.file) );
     if( !(*side.file) ){
         log_error("FILE", "symbol store write failed", side.path);
-        return i;
+        return std::make_tuple(false, p.first, p.second);
     }
 
     log_info("FILE", "symbol store write succeeded", side.path);
-    return 0;
+    return std::make_tuple(true, p.first, p.second);
 }
 
 

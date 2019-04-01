@@ -28,7 +28,9 @@ along with this program.  If not, see http://www.gnu.org/licenses.
 
 class BackingStore {
 public:
-    typedef std::function<int(std::fstream&)> fileio_func_ty;
+    typedef std::function<std::pair<long long, long long>(std::fstream&)>
+        fileio_func_ty;
+
 
     BackingStore( const std::string& directory_path );
 
@@ -41,12 +43,14 @@ public:
     bool
     add_symbol_store( const std::string& symbol );
 
-    bool
+    // {success, front elems pushed, back elems pushed}
+    std::tuple<bool, unsigned long long, unsigned long long>
     read_from_symbol_store( const std::string& symbol,
                             fileio_func_ty read_func_front,
                             fileio_func_ty read_func_back );
 
-    bool
+    // {success, front elems pulled, back elems pulled}
+    std::tuple<bool, unsigned long long, unsigned long long>
     write_to_symbol_store( const std::string& symbol,
                            fileio_func_ty write_func_front,
                            fileio_func_ty write_func_back );
@@ -85,10 +89,10 @@ private:
     bool
     _add_store( const std::string& symbol );
 
-    int
+    std::tuple<bool, long long, long long>
     _read_store( SymbolStore::Side& side, fileio_func_ty read_func );
 
-    int
+    std::tuple<bool, long long, long long>
     _write_store( SymbolStore::Side& side, fileio_func_ty write_func );
 };
 

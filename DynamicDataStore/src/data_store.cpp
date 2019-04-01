@@ -125,9 +125,10 @@ private:
 
     struct FrontWriter : public WriteHelper {
         using WriteHelper::WriteHelper;
-        int operator()(std::fstream& f){
+        std::pair<long long, long long> operator()(std::fstream& f){
             auto start = b + sdata->write_pos_begin; //exclusive
             auto pos = start;
+            long long nlines = 0;
             while( pos > b && f ){
                 --pos;
                 if( pos->close == 0 ){
@@ -136,16 +137,18 @@ private:
                         continue; // skip empty bars, not first or last
                 }
                 f << *pos << std::endl;
+                ++nlines;
             }
-            return (start - pos);
+            return {nlines, (start - pos)};
         }
     };
 
     struct BackWriter : public WriteHelper {
         using WriteHelper::WriteHelper;
-        int operator()(std::fstream& f){
+        std::pair<long long, long long> operator()(std::fstream& f){
             auto start = b + sdata->write_pos_end; //inclusive
             auto pos = start;
+            long long nlines = 0;
             while( pos < e && f ){
                 if( pos->close == 0 ){
                     assert( pos->is_empty_bar() );
@@ -156,55 +159,62 @@ private:
                 }
                 f << *pos << std::endl;
                 ++pos;
+                ++nlines;
             }
-            return (pos - start);
+            return {nlines, (pos - start)};
         }
     };
 
     struct FrontReader : public IOHelper{
         using IOHelper::IOHelper;
-        int operator()(std::fstream& f){
+        std::pair<long long, long long> operator()(std::fstream& f){
             double open, high, low, close;
-            long long volume, ngaps, dt, dt_last = -1;
-            int i = 1;
+            long long volume, ngaps, dt, dt_last = -1, nlines = 0, nelems = 0;
             while( f >> dt >> open >> high >> low >> close >> volume )
             {
                 if( dt_last > -1 ){
                     ngaps = dt - dt_last;
                     assert( ngaps >= 0 ); // allow duplicates
-                    while( ngaps-- > 1 )
+                    while( ngaps-- > 1 ){
                         sdata->data->emplace_front( ++dt_last, 0,0,0,0,0 );
+                        ++nelems;
+                    }
                 }
-                if( dt_last == -1 || dt > dt_last ) // drop duplicates
+                if( dt_last == -1 || dt > dt_last ){ // drop duplicates
                     sdata->data->emplace_front(dt,open,high,low,close,volume);
+                    ++nelems;
+                }
                 dt_last = dt;
-                ++i;
+                ++nlines;
             };
-            return i;
+            return {nlines, nelems};
         }
     };
 
     // TODO error check for bad dt
     struct BackReader : public IOHelper{
         using IOHelper::IOHelper;
-        int operator()(std::fstream& f){
+        std::pair<long long, long long> operator()(std::fstream& f){
             double open, high, low, close;
-            long long volume, ngaps, dt, dt_last = -1;
-            int i = 1;
+            long long volume, ngaps, dt, dt_last = -1, nlines = 0, nelems = 0;
             while( f >> dt >> open >> high >> low >> close >> volume )
             {
                 if( dt_last > -1 ){
                      ngaps = dt_last - dt;
                      assert( ngaps >= 0 ); // allow duplicates
-                     while( ngaps-- > 1 )
+                     while( ngaps-- > 1 ){
                          sdata->data->emplace_back( --dt_last, 0,0,0,0,0 );
+                         ++nelems;
+                     }
                  }
-                if( dt_last == -1 || dt < dt_last ) // drop duplicates
+                if( dt_last == -1 || dt < dt_last ){ // drop duplicates
                     sdata->data->emplace_back(dt,open,high,low,close,volume);
+                    ++nelems;
+                }
                 dt_last = dt;
-                ++i;
+                ++nlines;
             };
-            return i;
+            return {nlines, nelems};
         }
     };
 
@@ -288,22 +298,32 @@ public:
         if( !backing_store || !backing_store->is_valid() )
             throw DataStoreError("null/invalid backing store");
 
+        write_pos_begin = write_pos_end = 0;
+        min_start = min_end = 0;
         data.reset( new std::deque<OHLCVData>  );
-        if( !backing_store->read_from_symbol_store(
-                symbol, FrontReader(this), BackReader(this) ) )
-        {
+
+        unsigned long long nfront, nback;
+        bool success;
+        std::tie(success, nfront, nback) = 
+            backing_store->read_from_symbol_store( 
+                symbol, FrontReader(this), BackReader(this) 
+            );
+
+        if( !success ){
+            // currently, either all or nothing
             data.reset();
             return false;
         }
 
-        if( !data->empty() ){
-            min_start = data->back().min_since_epoch;
-            min_end = data->front().min_since_epoch;
-            write_pos_end = data->size();
-            if( (data->size() - 1) != (min_end - min_start) )
-                throw DataStoreError("size of data doesn't match time range");
-        }
+        write_pos_end = data->size();
+        assert( write_pos_end == (nfront+nback) );
 
+        if( write_pos_end > 0 ){
+            min_start = data->back().min_since_epoch;
+            min_end = data->front().min_since_epoch;          
+            if( (data->size() - 1) != (min_end - min_start) )
+                throw DataStoreError("size of deque doesn't match time range");
+        }
         return true;
     }
 
@@ -319,12 +339,28 @@ public:
          *   - backup index file ?
          */
 
-        bool b = backing_store->write_to_symbol_store(
-                   symbol, FrontWriter(this), BackWriter(this) );
+        unsigned long long nfront, nback;
+        bool success;
+        std::tie(success, nfront, nback) = 
+            backing_store->write_to_symbol_store(
+                symbol, FrontWriter(this), BackWriter(this) 
+            );
 
-        write_pos_begin = 0;
-        write_pos_end = data->size();
-        return b;
+        if( success ){
+            assert( nfront == write_pos_begin );
+            assert( nback == (data->size() - write_pos_end) );
+            write_pos_begin = 0;            
+            write_pos_end = data->size();
+        }else{
+            assert( nfront <= write_pos_begin );
+            assert( nback <= (data->size() - write_pos_end) );
+            /*
+             * TODO handle the error and try to get everything back in sync
+             */
+            write_pos_begin -= nfront;
+            write_pos_end += nback;
+        }
+        return success;
     }
 
     long long
@@ -1012,7 +1048,7 @@ update_front_from_streaming( SymbolData& sdata,
             assert( !sdata.data->empty() );
             assert( sdata.min_start > 0 );
 
-            long long gap = d.min_since_epoch - sdata.min_end; // ???
+            long long gap = d.min_since_epoch - sdata.min_end;
             if( gap <= 0 ){  // REPLACE OR IGNORE
                 handle_duplicate(sdata, d, (sd.seq < 0), gap);
                 StreamingData::SetInitialized(sdata.symbol);
@@ -1172,9 +1208,8 @@ range_between(const std::deque<OHLCVData>& sdata, long long start, long long end
     };
 
     ullp_ty p{start, end};
-    /*
-     * TODO: take advantage of contiguity for O(C) search
-     *//*
+    // TODO: take advantage of contiguity for O(C) search
+
     return std::equal_range( sdata.begin(), sdata.end(), p, cmp() );
 }
 */
