@@ -135,11 +135,14 @@ def PCHAR_BUFFER(strs):
 
 PCHAR = lambda s: c_char_p(s.encode())
 
-def init(lib, reload=False):
+
+def init(lib_path, reload=False):
+    """Load shared library located at 'lib_path'."""
     global _lib
     if _lib is None or reload:
-        _lib = CDLL(lib)           
+        _lib = CDLL(lib_path)           
     return bool(_lib)
+
 
 def call(name, *args):  
     if _lib is None:

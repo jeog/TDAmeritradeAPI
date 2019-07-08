@@ -202,7 +202,7 @@ USER_OBJS :=
 LIBS := -lssl -lcrypto -lz -lcurl -lpthread -lutil -ldl -luv
 ```
 
-##### WIndows
+##### Windows
 
 The build solution provided was created in ***VisualStudio2017*** using toolset ***v141***. (*If it doesn't work in your version of VS you'll need to tweak the project settings and/or source.*)
 
@@ -224,7 +224,7 @@ Files you should have:
 
 #### Precompiled
 
-Some precompiled versions of the library are provided for convenience. You'll still need to [build](#build-dependencies) and/or [install](#install) the dependencies. *For practical reasons these binaries will not be re-compiled with each commit so you may be using a stale library.*
+Some precompiled versions of the library are provided for convenience. You'll still need to [build](#build-dependencies) and/or [install](#install) the dependencies. *For practical reasons these binaries will not be re-compiled with each commit so you may be using a stale library. **See bin/BUILD_NOTES.txt for which commit they are built from.***
 
 ##### Linux
 
@@ -516,7 +516,7 @@ securely store your credentials:
     [Python]
     def auth.store_credentials(path, password, creds):
         ...
-        creds :: the Credentials class return from 'request_access_token'
+        creds :: the Credentials instance returned from 'request_access_token'
         throws CLibException on error
 ```           
 
@@ -542,9 +542,36 @@ In the future construct a new Credentials struct from the saved credentials file
     [Python]
     def auth.load_credentials(path, password):
         ...
-        returns -> Credentials class
+        returns -> Credentials instance
         throws CLibException on error
 ```        
+
+Since the library allocates memory for the Credential fields **do not** assign to these fields directly. If, for some reason, you need to change them you should create a new instance (and destroy the old, if necessary):
+```
+    [C]
+    static inline int
+    CreateCredentials( const char* access_token
+                       const char* refresh_token,
+                       long long epoch_sec_token_expiration,
+                       const char *client_id,
+                       struct Credentials *pcreds);
+
+
+    [C++]
+    Credentials::Credentials( const char* access_token,
+                              const char* refresh_token,
+                              long long epoch_sec_token_expiration,
+                              const char *client_id );
+
+    [Python]
+    @classmethod
+    def auth.Credentials.Create(access_token, refresh_token, 
+                                epoch_sec_token_expiration, client_id):
+        ...
+        returns -> Credentials instance
+        throws CLibException on error
+
+```
     
 ***The format of the encrypted credentials file was changed in commit e529c2***
 

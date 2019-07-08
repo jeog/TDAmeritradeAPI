@@ -45,6 +45,52 @@ std::string certificate_bundle_path;
  * w/ SetCertificateBundlePath() ) we'll fail w/ CURLE_SSL_CACERT and throw 
  */
 
+namespace tdma {
+
+void
+CreateCredentialsImpl( const char* access_token,
+                       const char* refresh_token,
+                       long long epoch_sec_token_expiration,
+                       const char *client_id,
+                       Credentials* pcreds)
+{
+    static const int CRED_STR_FAIL_LEN = Credentials::CRED_FIELD_MAX_STR_LEN + 1;
+
+    assert( access_token );
+    assert( refresh_token );
+    assert( client_id );
+
+    /* already created creds will leak! */
+    memset(pcreds, 0, sizeof(Credentials));
+
+    size_t at_sz = strnlen(access_token, CRED_STR_FAIL_LEN);
+    size_t rt_sz = strnlen(refresh_token, CRED_STR_FAIL_LEN);
+    size_t cid_sz = strnlen(client_id, CRED_STR_FAIL_LEN);
+
+    if( at_sz >= CRED_STR_FAIL_LEN
+        || rt_sz >= CRED_STR_FAIL_LEN
+        || cid_sz >= CRED_STR_FAIL_LEN )
+    {
+        TDMA_API_THROW( LocalCredentialException,  "invalid string length" );
+    }
+
+    pcreds->access_token = new char[at_sz + 1];
+    strcpy(pcreds->access_token, access_token);
+    pcreds->access_token[at_sz] = 0;
+
+    pcreds->refresh_token = new char[rt_sz + 1];
+    strcpy(pcreds->refresh_token, refresh_token);
+    pcreds->refresh_token[rt_sz] = 0;
+
+    pcreds->epoch_sec_token_expiration = epoch_sec_token_expiration;
+
+    pcreds->client_id = new char[cid_sz + 1];
+    strcpy(pcreds->client_id, client_id);
+    pcreds->client_id[cid_sz] = 0;
+}
+
+} /* tdma */
+
 
 namespace{
 
@@ -95,7 +141,6 @@ const long TOKEN_EXPIRATION_MARGIN_SEC = 60 *60 * 24; // 1 day
 const long TOKEN_EARLIEST_EXPIRATION = 1528323136;
 const long long TOKEN_LATEST_EXPIRATION =
     TOKEN_EARLIEST_EXPIRATION + (60ULL * 60 * 24 * 365 * 100); // 100 yrs
-
 
 template<typename T>
 class SmartBuffer{
@@ -399,40 +444,6 @@ store_credentials( const string& path,
 
 
 Credentials
-create_credentials_struct( const string& access_token,
-                           const string& refresh_token,
-                           long long epoch_sec_token_expiration,
-                           const string& client_id )
-{
-    Credentials creds;
-    size_t at_sz = access_token.size();
-    size_t rt_sz = refresh_token.size();
-    size_t cid_sz = client_id.size();
-
-    if( at_sz > Credentials::CRED_FIELD_MAX_STR_LEN ||
-        rt_sz > Credentials::CRED_FIELD_MAX_STR_LEN ||
-        cid_sz > Credentials::CRED_FIELD_MAX_STR_LEN ){
-        TDMA_API_THROW(LocalCredentialException,"invalid string length");
-    }
-
-    creds.access_token = new char[at_sz + 1];
-    creds.refresh_token = new char[rt_sz + 1];
-    creds.client_id = new char[cid_sz + 1];
-
-    strcpy(creds.access_token, access_token.c_str());
-    strcpy(creds.refresh_token, refresh_token.c_str());
-    strcpy(creds.client_id, client_id.c_str());
-
-    creds.access_token[at_sz] = 0;
-    creds.refresh_token[rt_sz] = 0;
-    creds.client_id[cid_sz] = 0;
-
-    creds.epoch_sec_token_expiration = epoch_sec_token_expiration;
-    return creds;
-}
-
-
-Credentials
 load_credentials(fstream& file, const string& path, const string& password)
 {      
     string f_str;
@@ -485,7 +496,8 @@ load_credentials(fstream& file, const string& path, const string& password)
         getline(ss, tmp);
         getline(ss, cli_id);
 
-        creds = create_credentials_struct(atoken, rtoken, std::stoll(tmp), cli_id);
+        tdma::CreateCredentialsImpl(atoken.c_str(), rtoken.c_str(),
+                                    std::stoll(tmp), cli_id.c_str(), &creds);
 
         char bchecksum_str[CREDS_CHECKSUM_LENGTH];
         ss.read(bchecksum_str, CREDS_CHECKSUM_LENGTH);
@@ -671,12 +683,12 @@ RequestAccessTokenImpl( const string& code,
 
     auto r_json = connect_auth(connection, "RequestAccessTokenImpl");
 
-    *pcreds = create_credentials_struct(
-        r_json["access_token"],
-        r_json["refresh_token"],
+    std::string atoken = r_json["access_token"];
+    std::string rtoken = r_json["refresh_token"];
+
+    CreateCredentialsImpl( atoken.c_str(), rtoken.c_str(),
         generate_token_expiration_sec(r_json["refresh_token_expires_in"]),
-        client_id
-        );
+        client_id.c_str(), pcreds );
 
     if( pcreds->epoch_sec_token_expiration < TOKEN_EARLIEST_EXPIRATION ||
         pcreds->epoch_sec_token_expiration > TOKEN_LATEST_EXPIRATION )
@@ -761,6 +773,7 @@ GetCertificateBundlePathImpl()
 string
 GetDefaultCertificateBundlePathImpl()
 { return DEF_CERTIFICATE_BUNDLE_PATH; }
+
 
 void
 CloseCredentialsImpl(Credentials* pcreds)
@@ -912,6 +925,41 @@ GetDefaultCertificateBundlePath_ABI( char **path,
     return to_new_char_buffer(r, path, n, allow_exceptions);
 }
 
+int
+CreateCredentials_ABI( const char* access_token,
+                       const char* refresh_token,
+                       long long epoch_sec_token_expiration,
+                       const char *client_id,
+                       Credentials* pcreds,
+                       int allow_exceptions )
+{
+    CHECK_PTR(pcreds, "credentials", allow_exceptions);
+    CHECK_PTR(access_token, "access_token", allow_exceptions);
+    CHECK_PTR(refresh_token, "refresh_token", allow_exceptions);
+    CHECK_PTR(client_id, "client_id", allow_exceptions);
+
+    return CallImplFromABI( allow_exceptions, CreateCredentialsImpl,
+            access_token, refresh_token, epoch_sec_token_expiration, client_id,
+            pcreds );
+}
+
+int
+CopyCredentials_ABI( const struct Credentials* from,
+                     struct Credentials* to,
+                     int allow_exceptions )
+{
+    CHECK_PTR(from, "from credentials", allow_exceptions);
+    CHECK_PTR(to, "to credentials", allow_exceptions);
+    CHECK_PTR(from->access_token, "from access_token", allow_exceptions);
+    CHECK_PTR(from->refresh_token, "from refresh_token", allow_exceptions);
+    CHECK_PTR(from->client_id, "from client_id", allow_exceptions);
+
+    return CallImplFromABI( allow_exceptions, CreateCredentialsImpl,
+            from->access_token, from->refresh_token,
+            from->epoch_sec_token_expiration, from->client_id, to );
+
+    return 0;
+}
 
 int
 CloseCredentials_ABI(Credentials* pcreds, int allow_exceptions)
@@ -921,35 +969,4 @@ CloseCredentials_ABI(Credentials* pcreds, int allow_exceptions)
     return CallImplFromABI(allow_exceptions, CloseCredentialsImpl, pcreds);
 }
 
-int
-CopyCredentials_ABI( const struct Credentials* from,
-                     struct Credentials* to,
-                     int allow_exceptions )
-{
-    static const int FAIL_LEN = Credentials::CRED_FIELD_MAX_STR_LEN + 1;
-
-    CHECK_PTR(from, "from credentials", allow_exceptions);
-    CHECK_PTR(to, "to credentials", allow_exceptions);
-
-    size_t atl, rtl, cidl;
-
-    if( (atl = strnlen(from->access_token, FAIL_LEN)) == FAIL_LEN||
-        (rtl = strnlen(from->refresh_token, FAIL_LEN)) == FAIL_LEN ||
-        (cidl = strnlen(from->client_id, FAIL_LEN)) == FAIL_LEN ){
-        return HANDLE_ERROR(LocalCredentialException,
-            "invalid string length", allow_exceptions
-            );
-        }
-
-    to->access_token = new char[atl + 1];
-    to->refresh_token = new char[rtl + 1];
-    to->client_id = new char[cidl + 1];
-
-    strcpy(to->access_token, from->access_token);
-    strcpy(to->refresh_token, from->refresh_token);
-    strcpy(to->client_id, from->client_id);
-    to->epoch_sec_token_expiration = from->epoch_sec_token_expiration;
-
-    return 0;
-}
 

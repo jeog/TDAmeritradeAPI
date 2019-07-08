@@ -209,17 +209,17 @@ def test_quotes_getters(creds):
     assert not Get(g)
 
 
-
 def test_market_hours_getters(creds):
-    g = get.MarketHoursGetter(creds, get.MARKET_TYPE_BOND, "2019-07-04")
+    dstr = str(gmtime().tm_year + 1)
+    g = get.MarketHoursGetter(creds, get.MARKET_TYPE_BOND, dstr + "-07-04")
     assert g.get_market_type() == get.MARKET_TYPE_BOND
-    assert g.get_date() == "2019-07-04"
+    assert g.get_date() == (dstr + "-07-04")
     j = Get(g)
     jprint(j)
     g.set_market_type(get.MARKET_TYPE_EQUITY)
-    g.set_date("2019-07-05")
+    g.set_date(dstr + "-07-05")
     assert g.get_market_type() == get.MARKET_TYPE_EQUITY
-    assert g.get_date() == "2019-07-05"
+    assert g.get_date() == (dstr + "-07-05")
     j = Get(g)
     jprint(j)
 
@@ -351,7 +351,7 @@ def test_historical_range_getters(creds):
         #assert len(j["candles"]) == 2
 
 
-
+# TODO - dynamically build/get chain dates
 def test_option_chain_getters(creds):
     strikes = get.OptionStrikes.N_ATM(2)
     from_date = "2019-01-01"
@@ -539,29 +539,34 @@ def test_subscription_keys_getter(creds, account_id):
 
 
 def test_transaction_history_getters(creds, account_id):
+    y = gmtime().tm_year
+    start = str(y - 1) + "-01-01"
+    end = str(y) + "-01-01"
     g = get.TransactionHistoryGetter(creds, account_id,
                                      get.TRANSACTION_TYPE_TRADE,
-                                     "spy" ,"2018-01-01", "2019-01-01")
+                                     "spy" ,start, end)
     assert g.get_account_id() == account_id
     assert g.get_transaction_type() == get.TRANSACTION_TYPE_TRADE
     assert g.get_symbol() == "SPY"
-    assert g.get_start_date() == "2018-01-01"
-    assert g.get_end_date() == "2019-01-01"
+    assert g.get_start_date() == start
+    assert g.get_end_date() == end
     j = Get(g)
     jprint(j)
 
+    start = str(y - 1) + "-02-02"
+    end = str(y) + "-02-02"
     g.set_account_id("BAD_ACCOUNT_ID")
     assert g.get_account_id() == "BAD_ACCOUNT_ID"
     g.set_account_id(account_id)
     g.set_transaction_type(get.TRANSACTION_TYPE_ALL)
     g.set_symbol("")
-    g.set_start_date("2018-02-02")
-    g.set_end_date("2019-02-02")
+    g.set_start_date(start)
+    g.set_end_date(end)
     assert g.get_account_id() == account_id
     assert g.get_transaction_type() == get.TRANSACTION_TYPE_ALL
     assert g.get_symbol() == ""
-    assert g.get_start_date() == "2018-02-02"
-    assert g.get_end_date() == "2019-02-02"
+    assert g.get_start_date() == start
+    assert g.get_end_date() == end
     j = Get(g)
     jprint(j)
 

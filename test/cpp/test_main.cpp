@@ -10,9 +10,11 @@
 using namespace tdma;
 using namespace std;
 
+void test_credentials(const Credentials &);
 void test_option_symbol_builder();
 
 bool use_live_connection = true;
+
 
 int main(int argc, char* argv[])
 {
@@ -20,7 +22,8 @@ int main(int argc, char* argv[])
 
    if (argc < 4 ) {
         cerr << "invalid # of args" << endl;
-        cerr << "  args: [account id] [path to credentials filed] [password]" << endl;
+        cerr << "  args: [account id] [path to credentials filed] [password]"
+                " --no-live-connect" << endl;
         return 1;
     }
     
@@ -31,7 +34,8 @@ int main(int argc, char* argv[])
 
     if (account_id.empty() || creds_path.empty() || password.empty()) {        
         cerr << "invalid args" << endl;
-        cerr << "  args: [account id] [path to credentials filed] [password]" << endl;
+        cerr << "  args: [account id] [path to credentials filed] [password]"
+                " --no-live-connect" << endl;
         return 1;        
     }
 
@@ -43,12 +47,9 @@ int main(int argc, char* argv[])
     {
         CredentialsManager cmanager(creds_path, password);
 
-        Credentials ccc;
-        ccc = cmanager.credentials;
-        Credentials ccc2( ccc );
-
-        ccc2 = move(ccc);
-        Credentials ccc4( move(ccc2 ));
+        cout<< "*** [BEGIN] TEST CREDENTIALS [BEGIN] ***" << endl;
+        test_credentials(cmanager.credentials);
+        cout<< "*** [BEGIN] TEST CREDENTIALS [BEGIN] ***" << endl;
 
         cout<< "*** [BEGIN] TEST OPTION SYMBOL BUILDER [BEGIN] ***" << endl;
         test_option_symbol_builder();
@@ -76,6 +77,37 @@ int main(int argc, char* argv[])
 
     cout<< endl << "*** SUCCESS ***" << endl;
     return 0;
+}
+
+void test_credentials(const Credentials & creds)
+{
+    Credentials ccc;
+    ccc = creds;
+    Credentials ccc2( ccc );
+
+    ccc2 = move(ccc);
+    Credentials ccc4( move(ccc2 ));
+
+    Credentials ccc3( string(Credentials::CRED_FIELD_MAX_STR_LEN, 'A').c_str(),
+                      "refresh", 999, "id");
+    ccc3 = ccc4;
+    if( string(ccc3.access_token) != string(ccc4.access_token) )
+        throw std::runtime_error("failed to assign access token");
+    if( string(ccc3.refresh_token) != string(ccc4.refresh_token) )
+        throw std::runtime_error("failed to assign refres token");
+    if( ccc3.epoch_sec_token_expiration != ccc4.epoch_sec_token_expiration )
+        throw std::runtime_error("failed to assign epoch_sec_token_expiration");
+    if( string(ccc3.client_id) != string(ccc4.client_id) )
+        throw std::runtime_error("failed to assign client ID");
+
+    try{
+        Credentials ccc5(
+            string(Credentials::CRED_FIELD_MAX_STR_LEN + 1, 'B').c_str(),
+            "",0,""
+            );
+        throw std::runtime_error("failed to throw exception for bad credential field size");
+    }catch( LocalCredentialException& e ){
+    }
 }
 
 void test_option_symbol_builder()

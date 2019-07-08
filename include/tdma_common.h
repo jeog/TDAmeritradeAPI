@@ -196,12 +196,21 @@ GetDefaultCertificateBundlePath_ABI( char **path,
                                      int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
+CreateCredentials_ABI( const char* access_token,
+                       const char* refresh_token,
+                       long long epoch_sec_token_expiration,
+                       const char* client_id,
+                       struct Credentials* pcreds,
+                       int allow_exceptions );
+
+EXTERN_C_SPEC_ DLL_SPEC_ int
 CloseCredentials_ABI(struct Credentials* pcreds, int allow_exceptions );
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 CopyCredentials_ABI( const struct Credentials* from,
                      struct Credentials *to,
                      int allow_exceptions );
+
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
 FreeBuffer_ABI( char* buf, int allow_exceptions );
@@ -304,6 +313,15 @@ GetCertificateBundlePath(char **path, size_t *n)
 static inline int
 GetDefaultCertificateBundlePath(char **path, size_t *n )
 { return GetDefaultCertificateBundlePath_ABI(path, n, 0); }
+
+static inline int
+CreateCredentials( const char* access_token
+                   const char* refresh_token,
+                   long long epoch_sec_token_expiration,
+                   const char *client_id,
+                   struct Credentials *pcreds)
+{ return CreateCredentials_ABI(access_token, refresh_token,
+                           epoch_sec_token_expiration, client_id, pcreds, 0); }
 
 static inline int
 CloseCredentials(struct Credentials* pcreds )
@@ -435,11 +453,20 @@ public:
             client_id()
     {}
 
+    Credentials( const char* access_token,
+                 const char* refresh_token,
+                 long long epoch_sec_token_expiration,
+                 const char *client_id )
+    {
+        tdma::call_abi( CreateCredentials_ABI, access_token, refresh_token,
+                        epoch_sec_token_expiration, client_id, this );
+    }
+
     Credentials( const Credentials& sc )
     { tdma::call_abi( CopyCredentials_ABI, &sc, this ); }
 
     Credentials&
-    operator=( Credentials& sc )
+    operator=( const Credentials& sc )
     {
         // NOTE don't check for logical self, quicker to just overwrite
         tdma::call_abi( CloseCredentials_ABI, this );

@@ -37,13 +37,20 @@ TDAmeritrade API.
 
 """
 from ctypes import Structure as _Structure, c_char_p, c_longlong, \
-                    byref as _REF
+                    c_ulonglong, byref as _REF
 
 from . import clib
 from .common import *
 from .clib import PCHAR
 
 class Credentials(_Structure):
+    """Object that represents the underlying access Credentials.
+
+    An instance will be returned from 'load_credentials' and
+    'request_access_token'. DO NOT assign to these fields directly
+    as this will cause a memory leak! If you need to change fields
+    create a new instance with the 'Create' class method.
+    """
     _fields_ = [
         ("access_token", c_char_p),
         ("refresh_token", c_char_p),
@@ -59,6 +66,16 @@ class Credentials(_Structure):
                     print("CLibException in", self.__del__, ":", str(e))                                   
             except:
                 pass
+
+    @classmethod
+    def Create(cls, access_token, refresh_token, 
+               epoch_sec_token_expiration, client_id):
+        """Create a new Credential instance."""
+        creds = Credentials()
+        clib.call('CreateCredentials_ABI', PCHAR(access_token), 
+                  PCHAR(refresh_token), c_ulonglong(epoch_sec_token_expiration),
+                  PCHAR(client_id), _REF(creds))
+        return creds
 
     
 def load_credentials(path, password):
