@@ -125,9 +125,9 @@ It's recommend you build from source. If you're not comfortable with this or jus
 
 ##### Unix/Linux
 
-If using a package manager, like apt, install the libcurl and libssl dev packages (this should take care of the other dependencies): 
+If using a package manager, like apt, install the libcurl, libssl, and zlib dev packages: 
 
-    user@host:~$ sudo apt-get install libcurl4-openssl-dev libssl-dev
+    user@host:~$ sudo apt-get install libcurl4-openssl-dev libssl-dev zlib1g-dev
 
 Alternatively, you can download them manually via github:
 
