@@ -22,6 +22,7 @@
     - [C++](#c)
     - [C](#c-1)
     - [Python](#python)
+    - [Java](#java)
 - [Subscription Classes](#subscription-classes)  
     - [Managed Subscription Classes](#managed-subscription-classes)  
         - [QuotesSubscription](#quotessubscription)  
@@ -54,16 +55,19 @@ using namespace tdma;
 
 [Python]
 from tdma_api import stream
+
+[Java]
+// for illustrative purposes (import individual classes as needed)
+import io.github.jeog.tdameritradeapi.stream.*; 
 ```
 
-Streaming functionality in C++ is provided via ```StreamingSession``` which acts
-as a proxy object on the client side of the ABI. This proxy calls through the ABI to the implementation object ```StreamingSessionImpl```, which is built on top of ```WebSocketClient``` using the uWebSocket *(src/uWebSocket/)* library. 
+Streaming functionality in C++ is provided via ```StreamingSession``` which calls through the ABI to its corresponding implementation object. That object, ```StreamingSessionImpl```, is built on top of ```WebSocketClient``` using the uWebSocket *(src/uWebSocket/)* library. 
+
+C uses a similar object-oriented approach where methods are passed a pointer to proxy objects that are manually created and destroyed by the client. 
+
+The Python interface uses ```stream.StreamingSession```, and the Java interface uses ```io.github.jeog.tdameritrade.stream.StreamingSession```, both of which mirror C++ almost exactly. (see below)
 
 Once created, streaming objects are passed subscription objects for the particular streaming services desired.
-
-C uses a similar object-oriented approach where methods are passed a pointer to C proxy objects that are manually created and destroyed by the client.
-
-The Python interface(```tdma_api/stream.py```) uses ```stream.StreamingSession``` which mirrors C++ almost exactly. (see below)
 
 ### StreamingSession
 
@@ -132,14 +136,49 @@ class StreamingSession:
                   subscribe_timeout=DEF_SUBSCRIBE_TIMEOUT ):
 
 ```
+As does the java interface:
+```
+public class StreamingSession implements AutoCloseable {
+    ...
+    public StreamingSession( Credentials creds, Callback callback, long connectTimeout,
+            long listeningTimeout, long subscribeTimeout ) throws CLibException;
+    
+    public StreamingSession( Credentials creds, Callback callback) throws CLibException;
+    ...
+}
+```
 
+In Java you can use the session in a 'try-with-resources' block to insure proper shutdown of the connection:
+```
+try( StreamingSession session = new StreamingSession(credentials, callback) ){
+    //
+}catch( CLibException exc ){
+    //
+}
+```
 
 #### Callback 
 
-The primary means of signaling changes in session state AND returning data to the user is the callback function. As you'll see, the current design is a bit confusing and error prone so expect changes. 
+The primary means of signaling changes in session state AND returning data to the user is the callback function. 
 
 ```
+[C, C++]
 typedef void(*streaming_cb_ty)(int, int, unsigned long long, const char*);
+
+[Python]
+def my_callback(a,b,c,d):
+    ...
+
+[Java]
+public class StreamingSession implements AutoCloseable {
+    ...
+    public static interface Callback {
+        public void 
+        call(int serviceType, int callbackType, long timestamp, String data);
+    ...
+    }
+}
+
 ```
 
 - **DO NOT** call into StreamingSession(i.e use its methods) from inside the callback  
@@ -148,8 +187,8 @@ typedef void(*streaming_cb_ty)(int, int, unsigned long long, const char*);
 
 ##### Callback Args 
 
-In order for the callback to work across the ABI for C and C++ code it casts
-certain values to native types.
+In order for the callback to work across the ABI for C, C++, Python, and Java code it casts
+certain values to native types. It's the client's responsibility to parse responses.
 
 1. The first argument to the callback will be ```StreamingCallbackType``` as an int:
     ```
@@ -183,11 +222,27 @@ certain values to native types.
     CALLBACK_TYPE_NOTIFY = 4
     CALLBACK_TYPE_TIMEOUT = 5
     CALLBACK_TYPE_ERROR = 6
+
+    [Java]
+    public class StreamingSession implements AutoCloseable {
+        ...
+        public enum CallbackType implements CLib.ConvertibleEnum {
+            LISTENING_START(0),
+            LISTENING_STOP(1),
+            DATA(2),
+            REQUEST_RESPONSE(3),
+            NOTIFY(4),
+            TIMEOUT(5),
+            ERROR(6);   
+            ...
+        }
+        ...
+    }
     ```
 
     - ***```listening_start``` ```listening_stop```*** - are simple signals about the listening state of the session and *should* occur after you call ```start``` and ```stop```, respectively.
 
-    - ***```request_response```*** - indicates a response from the server for a particular request e.g LOGIN or set QOS. The 4th arg will contain a json string of relevant fields of the form ```{"request_id":<id>,"command":<command>, "code":<code> , "message":<message>}```
+    - ***```request_response```*** - indicates a response from the server for a particular request e.g LOGIN or set SUBS. The 4th arg will contain a json string of relevant fields of the form ```{"request_id":<id>,"command":<command>, "code":<code> , "message":<message>}```
 
     - ***```error```*** - indicates some type of error/exception state has propagated up from the listening thread and caused it to close. The 4th arg will be a json string of the form ```{"error": <error message>}```
 
@@ -298,10 +353,58 @@ certain values to native types.
     SERVICE_TYPE_UNKNOWN = 30 # **DON'T PASS TO INTERFACE**
     ```
 
+    Java provides an enum within the class:
+    ```
+    [Java]
+    public class StreamingSession implements AutoCloseable {
+        ...
+        public enum ServiceType implements CLib.ConvertibleEnum {
+            NONE(0), // *DONT PASS*
+            QUOTE(1),
+            OPTION(2),
+            LEVELONE_FUTURES(3),
+            LEVELONE_FOREX(4),
+            LEVELONE_FUTURES_OPTIONS(5),
+            NEWS_HEADLINE(6),
+            CHART_EQUITY(7),
+            CHART_FOREX(8), // NOT WORKING (SERVER SIDE)
+            CHART_FUTURES(9),
+            CHART_OPTIONS(10), 
+            TIMESALE_EQUITY(11),
+            TIMESALE_FOREX(12), // NOT WORKING (SERVER SIDE)
+            TIMESALE_FUTURES(13),
+            TIMESALE_OPTIONS(14),
+            ACTIVES_NASDAQ(15),
+            ACTIVES_NYSE(16),
+            ACTIVES_OTCBB(17),
+            ACTIVES_OPTIONS(18), 
+            ADMIN(19), // NOT MANAGED
+            ACCT_ACTIVITY(20), // NOT MANAGED
+            CHART_HISTORY_FUTURES(21), // NOT MANAGED
+            FOREX_BOOK(22), // NOT MANAGED
+            FUTURES_BOOK(23), // NOT MANAGED
+            LISTED_BOOK(24), // NOT MANAGED
+            NASDAQ_BOOK(25), // NOT MANAGED
+            OPTIONS_BOOK(26), // NOT MANAGED
+            FUTURES_OPTIONS_BOOK(27), // NOT MANAGED
+            NEWS_STORY(28), // NOT MANAGED
+            NEWS_HEADLINE_LIST(29), // NOT MANAGED
+            UNKNOWN(30); // *DONT PASS*
+            }
+            ...
+        }
+    }
+    ```
+
 3. The third argument is a timestamp from the server in milliseconds since the epoch that
 is (currently) only relevant for certain callbacks. 
 
-4. The fourth argument is a json string (C/C++) containing admin/error info OR the actual raw data returned from the server. C++ users can use ```json::parse(string(data))``` on it. **The python callback will automatically convert the string to a list, dict, or None via json.loads().** Its json structure will be dependent on the callback and service type. In order to understand how to parse the object you'll need to refer to the relevant section in [Ameritrade's Streaming documentation](https://developer.tdameritrade.com/content/streaming-data) and the [json library documentation](https://github.com/nlohmann/json).
+4. The fourth argument is a json string (C/C++/Java) containing admin/error info OR the actual raw data returned from the server. 
+    - C++ users can use ```json::parse(string(data))``` 
+    - Java users can use ```(new org.json.JSONTokener(data)).nextValue()``` and check if the returned Object is an ```org.json.JSONObject``` or ```org.json.JSONArray```. A data response returns a json array so, alternatively, the ```org.json.JSONArray``` constructor can be used directly. 
+    - The python callback will automatically convert the string to a list, dict, or None via json.loads().
+
+The json structure of the response will be dependent on the callback and service type. In order to understand how to parse the object you'll need to refer to the relevant section in [Ameritrade's Streaming documentation](https://developer.tdameritrade.com/content/streaming-data).
 
 ##### Summary
 StreamingCallbackType | StreamingService  | timestamp   | json 
@@ -322,7 +425,7 @@ Once a Session is created it needs to be started and different services need to 
 2. It must have at least one subscription. (Subscription objects are explained in the [Subscriptions Section](#subscriptions).)
 3. ALL subscriptions must use 'CommandType' SUBS. (The default value, see the [Subscriptions Section](#subscriptions) ) 
 
-If not the start call will throw ```StreamingException``` (C++), ```clib.CLibException``` (Python) or return ```TDMA_API_STREAM_ERROR``` (C).
+If not the start call will throw ```StreamingException``` (C++), ```TDAmeritradeAPI.CLibException``` (Java), ```clib.CLibException``` (Python), or return ```TDMA_API_STREAM_ERROR``` (C).
 
 ```
 [C++]
@@ -341,11 +444,25 @@ StreamingSession_Start( StreamingSession_C *psession,
                         int *results_buffer );
 
 [Python]
-def stream.StreamingSession.start(self, *subscriptions):   
+def stream.StreamingSession.start(self, *subscriptions):
+
+[Java]
+public class StreamingSession implements AutoCloseable {
+    ...
+    public List<Boolean>
+    start( List<StreamingSubscription> subscriptions ) throws CLibException;
+
+    public boolean
+    start( StreamingSubscription subscription ) throws CLibException;
+    ...
+}
+
 ```
 
 
-The C++ methods take a single subscription object or a vector of different ones and return the success/failure state of each subscription in the order they were passed. Other errors result in a ```StreamingException```.
+The C++ methods take a single subscription object or a vector of different ones. Both return the success/failure state of each subscription in the order they were passed. Errors result in a ```StreamingException```.
+
+The Java methods take a single subscription object or a list of different ones. Both return the success/failure state of each subscription in the order they were passed. Errors result in a ```TDAmeritradeAPI.CLibException```.
 
 The Python method takes one or more subscription objects, returning a list of bools to indicate success/failure of each. Other errors result in a ```clib.CLibException```.
 
@@ -367,11 +484,18 @@ StreamingSession_Stop( StreamingSession_C *psession );
 
 [Python]
 def stream.StreamingSession.stop(self):
+
+[Java]
+public class StreamingSession implements AutoCloseable {
+    ...
+    public void stop() throws CLibException
+    ...
+}
 ```
 
 #### Add 
 
-Subscriptions can only be added **to a started session**. If you try to add a subscription to a stopped session it will throw ```StreamingException``` (C++), ```clib.CLibException``` (Python), or return ```TDMA_API_STREAM_ERROR``` (C). The return value(s) or populated results buffer(C) indicate the success/failure of each subscription.
+Subscriptions can only be added **to a started session**. If you try to add a subscription to a stopped session it will throw ```StreamingException``` (C++), ```clib.CLibException``` (Python), ```TDAmeritradeAPI.CLibException``` (Java), or return ```TDMA_API_STREAM_ERROR``` (C). The return value(s) or populated results buffer(C) indicate the success/failure of each subscription.
 
 ```
 [C++]
@@ -391,18 +515,26 @@ StreamingSession_AddSubscriptions( StreamingSession_C *psession,
 
 [Python]
 def stream.StreamingSession.add_subscriptions(self, *subscriptions):
+
+[Java]
+public class StreamingSession implements AutoCloseable {
+    ...
+    public List<Boolean>
+    add( List<StreamingSubscription> subscriptions ) throws CLibException;
+    
+    public boolean
+    add( StreamingSubscription subscription ) throws CLibException;
+    ...
+}
 ```
 
-You can add multiple subscription instances but instances of the same type ***usually***
-override older/preceding ones.
+You can add multiple subscription instances but instances of the same type will override older/preceding ones.
 
 To update a subscription you can use ADD, VIEW, or UNSUBS commands. (see below)
 
 To replace a subscription you can override it by adding a new subscription of
 the same type(this appears to work but haven't tried every possible combination so
-there's no guarantee) or using the UNSUBS command followed by the SUBS command or by stopping the session and then restarting with new subscriptions. 
-
-It's best to avoid doing the latter because the session object will go through 
+there's no guarantee) or using the UNSUBS command followed by the SUBS command or by stopping the session and then restarting with new subscriptions. It's best to avoid doing the latter because the session object will go through 
 a somewhat costly life-cycle:
 ```
     STOP
@@ -432,6 +564,13 @@ StreamingSession_GetQOS( StreamingSession_C *psession, QOSType *qos);
 
 [Python]
 def stream.StreamingSession.get_qos(self):
+
+[Java]
+public class StreamingSession implements AutoCloseable {
+    ...
+    public QOSType getQOS() throws CLibException 
+    ...
+}
 ```
 ```
 [C++]
@@ -444,6 +583,13 @@ StreamingSession_SetQOS( StreamingSession_C *psession, QOSType qos, int *result)
 
 [Python]
 def stream.StreamingSession.set_qos(self, qos):
+
+[Java]
+public class StreamingSession implements AutoCloseable {
+    ...
+    public QOSType setQOS( QOSType qos ) throws CLibException 
+    ...
+}
 ```
 ```
 [C++]
@@ -473,11 +619,26 @@ QOS_FAST = 2
 QOS_MODERATE = 3
 QOS_SLOW = 4
 QOS_DELAYED = 5
+
+[Java]
+public class StreamingSession implements AutoCloseable {
+    ...
+    public enum QOSType implements CLib.ConvertibleEnum {
+        EXPRESS(0),
+        REAL_TIME(1),
+        FAST(2),
+        MODERATE(3),
+        SLOW(4),
+        DELAYED(5);  
+        ...
+    }
+    ...
+}
 ```
 
 #### Destroy
 
-When completely done, the session should be destroyed. The C++ shared_ptr and Python class will do this for you(assuming there aren't any other references to the object). 
+When completely done, the session should be destroyed. The C++ shared_ptr, Java, and Python class will do this for you(assuming there aren't any other references to the object). 
 
 In C you'll need to use:
 ```
@@ -490,7 +651,7 @@ Destruction will stop the session first, logging the user out. Using the proxy o
 
 ### Subscriptions
 
-Subscriptions in C++ and Python are managed using classes that derive from ```StreamingSubscription``` and ```stream._StreamingSubscription```, respectively. The [Subscription Classes section](README_STREAMING.md#subscription-classes) below describes the interfaces for each of the classes.
+Subscriptions in C++, Python, and Java are managed using classes that derive from ```StreamingSubscription```, ```stream._StreamingSubscription```, and ```io.github.jeog.tdameritradeapi.stream.StreamingSubscription```, respectively. The [Subscription Classes section](README_STREAMING.md#subscription-classes) below describes the interfaces for each of the classes.
 
 Subscriptions in C are managed using proxies(simple C structs) that contain a generic pointer to the underlying C++ subscription object and can be passed to calls that mimic the methods of the underlying C++ object.
 
@@ -534,10 +695,10 @@ See the [Subscription Classes Section](#subscription-classes) for the subscripti
 
 In Python these fields are defined in the subscription class (or its base class) and are all of the form FIELD_[].
 
-Some objects share a Field enum. For instance, ```TimesaleEquitySubscription``` and
-```TimesaleOptionsSubscription``` use fields from ```enum TimesaleSubscriptionField```. In Python these fields
-are defined in a shared base class. For instance, ```TimesaleEquitySubscription.FIELD_TRADE_TIME``` and ```TimesaleOptionSubscription.FIELD_TRADE_TIME``` are inherited from ```_TimesaleSubscriptionBase```.
+In Java these fields are defined as enums named 'FieldType', inside the relevant Subscription class.
 
+Some objects share a Field enum. For instance, ```TimesaleEquitySubscription``` and
+```TimesaleOptionsSubscription``` use fields from ```enum TimesaleSubscriptionField```. In Python and Java these fields are defined in a shared base class. 
 
 To create a subscription you'll pass symbol strings AND values from the appropriate
 enum, e.g:
@@ -564,10 +725,21 @@ QuotesSubscription_Create(const char** symbols,
 [Python]
 class QuotesSubscription(_SubscriptionBySymbolBase):
     def __init__(self, symbols, fields, command=COMMAND_TYPE_SUBS): 
+
+[Java]
+public class QuotesSubscription extends SubscriptionBySymbolBase {
+    ...
+    public QuotesSubscription( Set<String> symbols, Set<FieldType> fields, CommandType command) 
+            throws CLibException;
+    
+    public QuotesSubscription( Set<String> symbols, Set<FieldType> fields) throws CLibException;
+    ...
+}
 ```
 
-The C++ and Python objects derive from ```SubscriptionBySymbolBase``` and ```_SubscriptionBySymbolBase```, respectively, and expose:
+The respective base classes define:
 ```
+
 [C++]
 std::set<std::string>
 SubscriptionBySymbolBase::get_symbols() const
@@ -579,6 +751,17 @@ SubscriptionBySymbolBase::set_symbols(const std::set<std::string>& symbols);
 def stream._SubscriptionBySymbolBase.get_symbols():
 
 def stream._SubscriptionBySymbolBase.set_symbols( symbols ):
+
+[Java]
+public abstract class SubscriptionBySymbolBase extends ManagedSubscriptionBase {
+    ...
+    public void
+    setSymbols(Set<String> symbols) throws CLibException;
+    
+    public Set<String>
+    getSymbols() throws CLibException;
+    ...
+}
 ```
 
 In C you'll use the appropraitely named calls, e.g:
@@ -593,8 +776,8 @@ int
 QuotesSubscription_SetSymbols( QuotesSubscription_C *psub, 
                                const char **buffers, 
                                size_t n );
-
 ...
+
 ```
 Remember, its the client's repsonsibility to free the buffers populated by the 'Get' calls:
 ```
@@ -606,8 +789,6 @@ FreeBuffers( char** buffers, size_t n);
 To access the fields, e.g:
 ```
 [C++]
-// 'FieldType' depends on the type of subscription 
-// (QuoteSubscriptionField in this case)
 std::set<FieldType> 
 QuotesSubscription::get_fields() const
 
@@ -618,6 +799,15 @@ QuotesSubscription::set_fields(const std::set<FieldType>& fields);
 def stream._SubscriptionBySymbolBase.get_fields():
 
 def stream._SubscriptionBySymbolBase.set_fields( fields ):
+
+[Java]
+public class QuotesSubscription extends SubscriptionBySymbolBase {
+    public void
+    setFields( Set<FieldType> fields ) throws CLibException;
+    
+    public Set<FieldType>
+    getFields() throws CLibException;
+}
 ```
 
 In C you'll use the appropriately named calls, e.g:
@@ -672,6 +862,16 @@ OptionActivesSubscription_Create( VenueType venue,
 [Python]
 class OptionActivesSubscription(_ActivesSubscriptionBase):
     def __init__(self, venue, duration, command=COMMAND_TYPE_SUBS):
+
+[Java]
+public class OptionActivesSubscription extends ActivesSubscriptionBase {
+    ...
+    public OptionActivesSubscription( VenueType venue, DurationType duration, CommandType command)
+            throws CLibException;
+
+    public OptionActivesSubscription( VenueType venue, DurationType duration) throws CLibException;
+    ...
+}
 ```
 
 See the [Subscription Classes Section](#subscription-classes) for more details.
@@ -709,6 +909,19 @@ COMMAND_TYPE_SUBS = 0
 COMMAND_TYPE_UNSUBS = 1
 COMMAND_TYPE_ADD = 2
 COMMAND_TYPE_VIEW = 3
+
+[Java]
+public class StreamingSession implements AutoCloseable {
+    ...
+    public enum CommandType implements CLib.ConvertibleEnum {
+        SUBS(0),
+        UNSUBS(1),
+        ADD(2),
+        VIEW(3);
+        ...
+    }
+    ...
+}
 ```
 
 - **SUBS** : subscribe to a new type of Streamer Service. If you already have an active subscription(of the current subscription/service type) it will be overriden.
@@ -769,6 +982,12 @@ if( (err = RawSubscription_Create(service, command, parameters, 2, &sub) ){
 sub = stream.RawSubscription( "NASDAQ_BOOK", "SUBS",  
                               { "keys":"GOOG,APPL", "fields":"0,1,2" } )
 
+[Java]
+Map<String,String> parameters = new HashMap<String, String>();
+subParams.put("keys", "GOOG,APPL");
+subParams.put("fields", "0,1,2"); 
+RawSubscription sub = new RawSubscription("NASDAQ_BOOK", "SUBS", parameters);
+
 ```
 
 Remember, for the C interface it's the client's repsonsibility to free the buffers populated by the 'Get' calls:
@@ -802,10 +1021,12 @@ Python only copies a reference to class instances by default but a deep_copy met
 def stream._StreamingSubscription.deep_copy(self);
 ```
 
+Currently Java doesn't provide a method for deep copy.
+
 #### Destroy
 
 When done with a subscription it should be destroyed. This is done automatically
-in C++ and Python by the object's destructor.
+in C++ and Python by the object's destructor, and in Java by a 'finalize' method in the JNA struct's 'autoAllocate' method.
 
 In C either cast the proxy object to StreamingSubscription_C*  and use the generic 'Destroy' call:
 ```
@@ -1138,10 +1359,128 @@ Using the proxy object after this point results in ***UNDEFINED BEHAVIOR***.
     ...
 ```
 
+#### [Java]
+```
+    import io.github.jeog.tdameritradeapi.Auth; 
+    import io.github.jeog.tdameritradeapi.Auth.CredentialsManager;
+    import io.github.jeog.tdameritradeapi.TDAmeritradeAPI;
+    import io.github.jeog.tdameritradeapi.TDAmeritradeAPI.CLibException;
+    import io.github.jeog.tdameritradeapi.stream.StreamingSession;
+    import io.github.jeog.tdameritradeapi.stream.TimesaleEquitySubscription;
+
+    import org.json.JSONObject;
+
+    ... 
+
+        static class MyCallback implements StreamingSession.Callback{        
+            public void 
+            call(int callbackType, int serviceType, long timestamp, String data) {       
+         
+                String msg = String.format("[service=%d, callback=%d, timestamp=%d]", 
+                        serviceType, callbackType, timestamp);                        
+                System.out.println("CALLBACK " + msg);
+                
+                if( CallbackType.fromInt(callbackType).equals(CallbackType.DATA) ) 
+                {
+                    try {
+                        String d = data.trim();
+                        
+                        // probably can just use 'new JSONArray(d)' but for thoroughness...
+                        if( d.startsWith("[") ) {
+                            JSONArray j = new JSONArray(d);
+                            for( int i = 0; i < j.length(); ++i ) {
+                                System.out.println( j.getJSONObject(i).toString() );
+                            }
+                        }else if( d.startsWith("{") ) {
+                            JSONObject j = new JSONObject(d);
+                            System.out.println( j.toString(4) );
+                        }else {
+                            System.err.println("* unrecognizable json *");
+                        }
+                      
+                        System.out.println("* * *");
+                    }catch( JSONException exc ) {
+                        System.err.println("JSON exc: " + exc.getMessage());
+                        System.err.println("  " + data);
+                    }
+                }
+            }        
+            }
+
+    ...
+
+        TDAmeritradeAPI.init(libPath);
+
+        try( new CredentialsManager cm = new CredentialsManager(credsPath, credsPassword) ){
+
+            // (prepare to) use equity time & sales using ALL available fields
+            TimesaleEquitySubscription sub1 = new TimesaleEquitySubscription( 
+                new HashSet<String>(Arrays.asList("SPY","QQQ"))
+            );
+
+            // (prepare to) use level 1 futures bid,ask,last data for Gold and 10yr Note futures
+            Set<String> lofSymbols = new HashSet<String>(Arrays.asList("/GC","/ZN"));
+            Set<LevelOneFuturesSubscription.FieldType> lofFields = 
+                new HashSet<LevelOneFuturesSubscription.FieldType>();
+            lofFields.add( LevelOneFuturesSubscription.FieldType.BID_PRICE );
+            lofFields.add( LevelOneFuturesSubscription.FieldType.ASK_PRICE );
+            lofFields.add( LevelOneFuturesSubscription.FieldType.LAST_PRICE );
+            LevelOneFuturesSubscription sub2 = new LevelOneFuturesSubscription(lofSymbols, lofFields);
+            
+            // going to pass the two subscriptions when we start the session
+            List<StreamingSubscription> subcriptions = 
+                new ArrayList<StreamingSubscription>( Arrays.asList(sub1, sub2) );   
+
+            // create the session object    
+            try( StreamingSession session = new StreamingSession(cm.getCredentials(), new MyCallback()) ){
+
+                // start it with both subscriptions
+                List<Boolean> results = session.start( subscriptions );
+                for( Boolean result : results ){
+                    // check if succesful
+                }
+
+                // (prepare to) drop subscription 1
+                sub1.setCommand( StreamingSession.CommandType.UNSUBS );
+            
+                // (prepare to) change fields in subscription 2
+                lofFields.clear();
+                lofFields.add( LevelOneFuturesSubscription.FieldType.TRADE_TIME );
+                lofFields.add( LevelOneFuturesSubscription.FieldType.LAST_SIZE );            
+                sub2.setCommand( StreamingSession.CommandType.VIEW );
+                sub2.setFields( lofFields );
+
+                // execute the changes/updates
+                results = session.add( subscriptions ); // 'subscriptions' list has refs to sub1 and sub2
+                for( Boolean result : results ){
+                    // check if succesful
+                }
+
+                // (perpare to) add symbol to subscription 2
+                lofSymbols.add( "/CL" );
+                sub2.setSymbols(lofSymbols);
+                sub2.setCommand( StreamingSession.CommandType.ADD );
+        
+                // execute the change/update
+                boolean result = session.add( sub2 );
+                if( !result ){
+                    // check if succesful
+                }
+
+            } // .stop() called for us when exiting the try-with-resources block
+
+        }catch( CLibException exc ){
+            // ERROR
+        }
+
+```
+
 ### Subscription Classes
 - - -
 
-*Only the C++ Subscriptions are shown. The Python and C interfaces match these closely. The C interface uses appropriately named functions to mimic the methods of the C++ classes and requires explicit use of the ```Create``` functions for construction and ```Destroy``` functions for destruction. See tdma_api_streaming.h for function prototypes.*
+Only the C++ Subscriptions are detailed below. The Python, Java, and C interfaces match these almost exactly. 
+
+The C interface uses appropriately named functions to mimic the methods of the C++ classes and requires explicit use of the ```Create``` functions for construction and ```Destroy``` functions for destruction. See tdma_api_streaming.h for function prototypes.*
 
 #### Managed Subscription Classes
 
@@ -1156,7 +1495,7 @@ QuotesSubscriptionField field = QuotesSubscription::FieldType::last_price;
 QuotesSubscriptionField field = QuotesSubscriptionField_last_price;
 ```
 
-*The Python versions are defined as class variables of the particular subcription object in the form of FIELD_[], e.g*
+The Python versions are defined as class variables of the particular subcription object in the form of FIELD_[], e.g:
 ```
 [Python]
 class stream.QuotesSubscription(_SubscriptionBySymbolBase):
@@ -1166,6 +1505,21 @@ class stream.QuotesSubscription(_SubscriptionBySymbolBase):
     FIELD_ASK_PRICE = 2
     FIELD_LAST_PRICE = 3
     ...
+```
+
+The Java versions are defined as enums inside the subscription class, e.g:
+```
+[Java]
+public class QuotesSubscription extends SubscriptionBySymbolBase {
+
+    public enum FieldType implements CLib.ConvertibleEnum {
+        SYMBOL(0),
+        BID_PRICE(1),
+        ASK_PRICE(2),
+        ...
+    }
+    ...
+}
 ```
 
 #### QuotesSubscription

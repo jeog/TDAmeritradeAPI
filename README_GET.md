@@ -7,11 +7,13 @@
     - [C++](#c)
     - [C](#c-1)
     - [Python](#python)
+    - [Java](#java)
 - [Throttling](#throttling)
 - [Example Usage](#example-usage)
     - [C++](#c-2)
     - [C](#c-3)
     - [Python](#python-1)
+    - [Java](#java-1)
 - [Getter Classes](#getter-classes)
     - [QuoteGetter](#quotegetter)  
     - [QuotesGetter](#quotesgetter)  
@@ -48,19 +50,21 @@ using namespace tdma;
 
 [Python]
 from tdma_api import get
+
+[Java]
+// for illustrative purposes (import individual classes as needed)
+import io.github.jeog.tdameritradeapi.get.*; 
 ```
 
-The C++ Get Interface consists of 'Getter' objects that derive from ```APIGetter```.
+The C++ Get Interface consists of 'Getter' objects - all derived from ```APIGetter``` and defined inline - that call through the ABI to the corresponding implementation objects. The implementation objects are built on top of ```conn::CurlConnection```, an object-oriented wrapper to libcurl found in curl_connect.h/cpp.
 
-The C++ 'Getter' objects are simple 'proxies', all defined inline, that call through the ABI to the corresponding implementation objects. The implementation objects are built on top of ```conn::CurlConnection```: an object-oriented wrapper to libcurl found in curl_connect.h/cpp.
+C uses a similar object-oriented approach where functions are passed a pointer to proxy objects that are manually created and destroyed by the client.
 
-C uses a similar object-oriented approach where methods are passed a pointer to C proxy objects that are manually created and destroyed by the client.
-
-The Python interface mirrors C++ almost exactly. 
+The Python and Java interfaces mirror C++ almost exactly. 
 
 ### Certificates
 
-Certificates are required to validate the hosts. If libcurl is built against the native ssl lib(e.g openssl on linux) or you use the pre-built dependencies for Windows(we built libcurl with -ENABLE_WINSSL) the default certificate store ***should*** take care of this for you. If this doesn't happen an ```ConnectException```  will be thrown with code CURLE_SSL_CACERT(60) and you'll have to use your own certificates via:
+Certificates are required to validate the hosts. If libcurl is built against the native ssl lib(e.g openssl on linux) or you use the pre-built dependencies for Windows(we built libcurl with -ENABLE_WINSSL) the default certificate store ***should*** take care of this for you. If this doesn't happen a ```ConnectException```  will be thrown in C++ (CLibException in Python and Java; the related error code in C) with code CURLE_SSL_CACERT(60). If so you'll have to use your own certificates via:
 ```
 [C++]
 void
@@ -76,7 +80,14 @@ SetCertificateBundlePath(const char* path)
 
 [Python]
 def auth.set_certificate_bundle_path(path):
+
+[Java]
+public class Auth{
     ...
+    public static void
+    setCertificateBundlePath(String path) throws CLibException;
+    ...
+}
 ```
 
 There is a default 'cacert.pem' file in the base directory extracted from Firefox that you can use. 
@@ -85,126 +96,119 @@ path of this file, *hard-coded during compilation*, can be found in the DEF_CERT
 
 ### Using Getter Objects 
 
-Getter objects are fundamental to accessing the API. Before using you'll need to have obtained a [valid Credentials object](README.md#authentication). 
+Getter objects are fundamental to accessing the API and require a valid [Credentials object](README.md#authentication). 
 
-Each object sets up an underlying HTTPS/Get connection(via libcurl) using the credentials object and the relevant arguments for that particular request type. The connection sets the Keep-Alive header and will execute a request each time ```get / Get``` is called, until ```close / Close``` is called. C++ and Python getters will call ```close``` on destruction.
-
-- Symbol strings are automatically converted to upper-case, e.g 'spy' -> 'SPY'.
+Each object sets up an underlying HTTPS/Get connection on construction. The connection sets the Keep-Alive header and will execute a request each time ```get()/Get()``` is called, until ```close()/Close()``` is called. C++, Java, and Python getters will call ```close()``` on destruction. Symbol strings are automatically converted to upper-case.
 
 #### [C++]
 
-1. construct a Getter object 
-2. use the ```.get()``` method which returns a json object from the server OR throws an exception.
+1. Construct a Getter object 
+2. Use the ```.get()``` method which returns a json object from the server OR throws an exception.
+3. Use the objects's accessor methods for querying the fields passed to the constructor and/or updating those to be used in subsequent ```.get()``` calls. 
 
-Each object has accessor methods for querying the fields passed to the constructor and updating 
-those to be used in subsequent ```.get()``` call. 
+    To make this more concrete here is the Getter interface for individual price quotes:
 
-To make this more concrete here is the Getter interface for individual price quotes:
+    ```
+    class QuoteGetter
+            : public APIGetter {
+        ...
+    public:
+        QuoteGetter( Credentials& creds, const string& symbol );
 
-```
-class QuoteGetter
-        : public APIGetter {
-    ...
-public:
-    QuoteGetter( Credentials& creds, const string& symbol );
+        string
+        get_symbol() const;
 
-    string
-    get_symbol() const;
+        void
+        set_symbol(const string& symbol);
+        
+        json /* INHERITED FROM APIGetter */
+        get();
+        
+        void /* INHERITED FROM APIGetter */
+        close();
 
-    void
-    set_symbol(const string& symbol);
-    
-    json /* INHERITED FROM APIGetter */
-    get();
-    
-    void /* INHERITED FROM APIGetter */
-    close();
-
-    bool /* INHERITED FROM APIGetter */
-    is_closed();
-};
-```
+        bool /* INHERITED FROM APIGetter */
+        is_closed();
+    };
+    ```
 
 #### [C]
 
-1. define a a getter struct that will serve as the proxy instance, e.g:
-```
-QuoteGetter_C qg = {0,0};
-```
+1. Define a a getter struct that will serve as the proxy instance, e.g:
+    ```
+    QuoteGetter_C qg = {0,0};
+    ```
 
-2. initialize the getter object using the appropriately named ```Create``` function, e.g:
-```
-inline int
-QuoteGetter_Create( struct Credentials *pcreds, 
-                    const char* symbol,
-                    QuoteGetter_C *pgetter )
+2. Initialize the getter object using the appropriately named ```Create``` function, e.g:
+    ```
+    inline int
+    QuoteGetter_Create( struct Credentials *pcreds, 
+                        const char* symbol,
+                        QuoteGetter_C *pgetter )
 
-    pcreds  :: a pointer to your credentials struct
-    symbol  :: the symbol to get quotes for
-    pgetter :: a pointer to a QuoteGetter_C struct to be populated
-    returns -> 0 on success, error code on failure
-```
+        pcreds  :: a pointer to your credentials struct
+        symbol  :: the symbol to get quotes for
+        pgetter :: a pointer to a QuoteGetter_C struct to be populated
+        returns -> 0 on success, error code on failure
+    ```
 
-3. use a pointer to the proxy instance to return (un-parsed) json data, e.g:
-```
-inline int
-QuoteGetter_Get(QuoteGetter_C *pgetter, char **buf, size_t *n)
+3. Use a pointer to the proxy instance to return (un-parsed) json data, e.g:
+    ```
+    inline int
+    QuoteGetter_Get(QuoteGetter_C *pgetter, char **buf, size_t *n)
 
-    pgetter :: pointer to the getter object created by 'Create'
-    buf    :: address of a char* that will be populated by a char buffer
-              *HEAP ALLOCATED VIA MALLOC*
-    n      :: address of a size_t to be populated with the size of the
-              char buffer (size of data + 1 for the null term)
-```
-Note that a heap allocated char buffer is returned. It's the caller's responsibility
-to free the object with:
+        pgetter :: pointer to the getter object created by 'Create'
+        buf    :: address of a char* that will be populated by a char buffer
+                  *HEAP ALLOCATED VIA MALLOC*
+        n      :: address of a size_t to be populated with the size of the
+                  char buffer (size of data + 1 for the null term)
+    ```
+    Note that a heap allocated char buffer is returned. It's the caller's responsibility
+    to free the object with:
 
-```
-inline int
-FreeBuffer( char* buf )
+    ```
+    inline int
+    FreeBuffer( char* buf )
+    ```
 
-inline int
-FreeBuffers( char** bufs, size_t n)
-```
+    Basic use of the Get call looks like:
+    ```
+    char* raw;
+    size_t n;
+    int err = QuoteGetter_Get(&qg, &raw, &n);
+    if( err ){
+       //
+    }
+    // do something with 'raw' before you free it 
+    FreeBuffer( raw ); // notice we are using the char* version for a single buffer
+    ```
 
-Basic use of the Get call looks like:
-```
-char* raw;
-size_t n;
-int err = QuoteGetter_Get(&qg, &raw, &n);
-if( err ){
-   //
-}
-// do something with 'raw' before you free it 
-FreeBuffer( raw ); // notice we are using the char* version for a single buffer
-```
+4. To view or change the paramaters of the getter use the accessor methods, e.g:
+    ```
+    inline int
+    QuoteGetter_GetSymbol(QuoteGetter_C *pgetter, char **buf, size_t *n)
 
-To view or change the paramaters of the getter use the accessor methods, e.g:
-```
-inline int
-QuoteGetter_GetSymbol(QuoteGetter_C *pgetter, char **buf, size_t *n)
+    inline int
+    QuoteGetter_SetSymbol(QuoteGetter_C *pgetter, const char *symbol)
+    ```
+    Again, remember to free the char buffer returned by the 'GetSymbol' call.
 
-inline int
-QuoteGetter_SetSymbol(QuoteGetter_C *pgetter, const char *symbol)
-```
-Again, remember to free the char buffer returned by the 'GetSymbol' call.
+5. When done you can close the object to end the connection and/or destroy it
+    to release the underlying resources e.g:
+    ```
+    inline int
+    QuoteGetter_Close(QuoteGetter_C *pgetter)
 
-When done you can close the object to end the connection and/or destroy it
-to release the underlying resources e.g:
-```
-inline int
-QuoteGetter_Close(QuoteGetter_C *pgetter)
+    inline int
+    QuoteGetter_Destroy(QuoteGetter_C *pgetter)
+    ```
+    Once ```Destroy``` is called any use of the getter is UNDEFINED BEHAVIOR.
 
-inline int
-QuoteGetter_Destroy(QuoteGetter_C *pgetter)
-```
-- Once ```Destroy``` is called any use of the getter is UNDEFINED BEHAVIOR.
-
-To check the state(before ```Destroy``` is called), e.g:
-```
-inline int
-QuoteGetter_IsClosed(QuoteGetter_C *pgetter, int *b)
-```
+    To check the state(before ```Destroy``` is called), e.g:
+    ```
+    inline int
+    QuoteGetter_IsClosed(QuoteGetter_C *pgetter, int *b)
+    ```
 
 ##### Stateless Convenience Function
 
@@ -212,28 +216,61 @@ Each object has a similarly named stand-alone function for making a single get c
 
 #### [Python]
 
-1. construct a Getter object (tdma_api/get.py) 
-2. use the ```.get()``` method which returns a parsed json object(dict, list, or None via json.loads()) from the server OR throws clib.LibraryNotLoaded or clib.CLibException.
-
-Each object has accessor methods for querying the fields passed to the constructor and updating 
+1. Construct a Getter object (tdma_api/get.py) 
+2. Use the ```.get()``` method which returns a parsed json object(dict, list, or None via json.loads()) from the server OR throws clib.CLibException.
+3. Use the object's accessor methods for querying the fields passed to the constructor and updating 
 those to be used in subsequent ```.get()``` call. 
 
-To make this more concrete here is the Getter interface for individual price quotes:
+    To make this more concrete here is the Getter interface for individual price quotes:
 
-```
-class QuoteGetter(_APIGetter):        
-    def __init__(self, creds, symbol)    
-    
-    def get_symbol(self)
+    ```
+    class QuoteGetter(_APIGetter):        
+        def __init__(self, creds, symbol)    
         
-    def set_symbol(self, symbol)
+        def get_symbol(self)
+            
+        def set_symbol(self, symbol)
 
-    def get(self) /* INHERITED */
-    
-    def close(self) /* INHERITED */
+        def get(self) /* INHERITED */
+        
+        def close(self) /* INHERITED */
 
-    def is_closed(self) /* INHERITED */
-```
+        def is_closed(self) /* INHERITED */
+    ```
+
+#### [Java]
+
+1. Construct a Getter object (package ```io.github.jeog.tdameritradeapi.get```)
+    - you can use Getter objects in a 'try-with-resources' block to close the connection immediately when done
+2. Use the ```.get()``` method which returns an `Object` that is either of type ```JSONObject``` or ```JSONArray``` OR throws ```TDameritradeAPI.CLibException```
+3. Use the object's accessor methods for querying the fields passed to the constructor and updating 
+those to be used in subsequent ```.get()``` calls. 
+
+    To make this more concrete here is the Getter interface for individual price quotes:
+
+    ```
+    public class QuoteGetter extends APIGetter{
+
+        public QuoteGetter( Credentials creds, String symbol ) throws  CLibException;
+
+        public String
+        getSymbol() throws  CLibException;
+        
+        public void
+        setSymbol(String symbol) throws  CLibException;
+
+        public Object
+        get() throws  CLibException; /* INHERITED */
+        
+        @Override
+        public void
+        close() throws  CLibException /* INHERITED */
+        
+        public boolean
+        isClosed() throws  CLibException /* INHERITED */
+    }
+    ```
+
 
 ### Throttling
 
@@ -252,6 +289,13 @@ wait and make five ```.get()``` calls in immediate succession the group of calls
 
     [Python]
     def get.get_wait_msec()
+
+    [Java]
+    public class APIGetter {
+        ...
+        static public long getWaitMSec() throws  CLibException;
+        ...
+    }
 ```
 ```    
     [C++]
@@ -263,7 +307,14 @@ wait and make five ```.get()``` calls in immediate succession the group of calls
     APIGetter_SetWaitMSec(unsigned long long msec)
 
     [Python] 
-    def get.set_wait_msec(msec)    
+    def get.set_wait_msec(msec)
+
+    [Java]
+    public class APIGetter {
+        ...
+        static public void setWaitMSec( long msec ) throws  CLibException;
+        ...
+    }
 ```
 To check the number of milliseconds before the next ```.get()``` call can be executed(not block):
 ```
@@ -277,6 +328,13 @@ To check the number of milliseconds before the next ```.get()``` call can be exe
 
     [Python]
     def get.wait_remaining()
+
+    [Java]
+    public class APIGetter {
+        ...
+        static public long waitRemaining() throws  CLibException;
+        ...
+    }
 ```
 
 This interface should not be used for streaming data, i.e. repeatedly making getter calls -  
@@ -402,30 +460,63 @@ use [StreamingSession](README_STREAMING.md) for that.
     
     ...    
 
-    if not clib._lib:
-        clib.init("path/to/lib/libTDAmeritrade.so")
+        if not clib._lib:
+            clib.init("path/to/lib/libTDAmeritrade.so")
 
-    with auth.CredentialManager("path/to/creds/file", "password") as cm:
-        try:
-            g = get.QuoteGetter(cm.credentials, "SPY")
-            assert q.credentials
+        with auth.CredentialManager("path/to/creds/file", "password") as cm:
+            try:
+                g = get.QuoteGetter(cm.credentials, "SPY")
+                assert q.credentials
 
-            j = g.get()
-            s = g.get_symbol()
-            assert s == "SPY"
-            print(s, j[s])
+                j = g.get()
+                s = g.get_symbol()
+                assert s == "SPY"
+                print(s, j[s])
 
-            g.set_symbol("QQQ")
-            j = g.get()
-            s = g.get_symbol()
-            assert s == "QQQ"
-            print(s, j[s])
-        except clib.CLibException as e:
-            print( str(e) )
-            raise
+                g.set_symbol("QQQ")
+                j = g.get()
+                s = g.get_symbol()
+                assert s == "QQQ"
+                print(s, j[s])
+            except clib.CLibException as e:
+                print( str(e) )
+                raise
     
     ...
     
+```
+
+#### [Java]
+```
+    import io.github.jeog.tdameritradeapi.Auth; 
+    import io.github.jeog.tdameritradeapi.Auth.Credentials;
+    import io.github.jeog.tdameritradeapi.Auth.CredentialsManager;
+    import io.github.jeog.tdameritradeapi.TDAmeritradeAPI;
+    import io.github.jeog.tdameritradeapi.TDAmeritradeAPI.CLibException;
+    import io.github.jeog.tdameritradeapi.get.QuoteGetter;
+
+    import org.json.JSONObject;
+
+    ...
+
+        TDAmeritradeAPI.init(libPath);
+        
+        try( CredentialsManager cm = new CredentialsManager(credsPath, credsPassword) ){
+        
+            try( QuoteGetter qGetter = new QuoteGetter(cm.getCredentials(), "SPY") ){
+
+                JSONObject j = (JSONObject)qGetter.get(); // we know its JSONObject in this case
+                System.out.println( qGetter.getSymbol() + ": " + j.toString(4) )
+
+                qGetter.setSymbol("QQQ");
+                j = (JSONObject)qGetter.get(); 
+                System.out.println( qGetter.getSymbol() + ": " + j.toString(4) )  
+
+            }catch( CLibException exc ){
+                // ERROR
+            }
+        }
+
 ```
 
 ### Getter Classes
@@ -435,7 +526,7 @@ C++ Getter classes and the equivalent C interfaces are outlined below.
 
 The C interface uses appropriately named functions to mimic the methods of the C++ classes. It requires explicit use of the ```Create``` functions for construction and ```Destroy``` functions for destruction. 
 
-The Python interface matches C++ almost exactly. (See docstrings in tdma_api/get.py.)
+The Python and Java interfaces matches C++ almost exactly. *Currently only QuoteGetter, QuotesGetter, HistoricalPeriodGetter, and HistoricalRangeGetter are available in java.*
 
 #### QuoteGetter
 

@@ -2,7 +2,7 @@
 ### TDAmeritradeAPI
 - - -
 
-C++ front-end library, with C and Python bindings, for the recently expanded TDAmeritrade API. It provides object-oriented access to the simple HTTPS/JSON interface using *[libcurl](https://curl.haxx.se/libcurl)* and to the Streaming interface using *[uWebSockets](https://github.com/uNetworking/uWebSockets)*.
+C++ front-end library - with C, Python, and Java(in development) bindings- for the recently expanded TDAmeritrade API. It provides object-oriented access to the simple HTTPS/JSON interface using *[libcurl](https://curl.haxx.se/libcurl)* and to the Streaming interface using *[uWebSockets](https://github.com/uNetworking/uWebSockets)*.
 
 If you have an Ameritrade account you *should* be able to gain access to the API by following the instructions in the Authentication section below. 
 
@@ -18,6 +18,7 @@ and then uses the library to request an access token, which is refreshed automat
     - C++ interface returns [json](https://github.com/nlohmann/json) objects
     - C interface populates char buffers w/ un-parsed json strings
     - Python interface returns builtin objects(list, dict etc.) via json.loads().
+    - Java interface returns [org.json](https://stleary.github.io/JSON-java/) objects
 
 - This is a new library, built by a single developer, for an API that is still in flux. As such you should expect plenty of bumps along the way, with changes to both the interface and the implementation.       
 
@@ -37,10 +38,11 @@ and then uses the library to request an access token, which is refreshed automat
 - [Getting Started](#getting-started)
     - [Build Dependencies](#build-dependencies)
     - [Build Library](#build-library)
-    	- [Precompiled](#precompiled)
+        - [Precompiled](#precompiled)
     - [Install](#install)
     - [Use - C/C++](#use---cc)
     - [Use - Python3](#use---python3)
+    - [Use - Java](#use---java)
 - [Conventions](#conventions)
 - [Errors & Exceptions](#errors--exceptions)
 - [Authentication](#authentication)
@@ -70,10 +72,12 @@ This project would not be possible without some of the great open-source project
 - [libuv](https://libuv.org) - Cross-platform asynchronous I/O
 - [uWebSockets](https://github.com/uNetworking/uWebSockets) - A simple and efficient C++ WebSocket library. The source is included, compiled and archived with our library to limit dependency issues.
 - [nlohmann::json](https://github.com/nlohmann/json) : - An extensive C++ json library that only requires adding a single header file. ***You'll need to review their documentation for handling returned data from the C++ version of this library.***
+- [jna](https://github.com/java-native-access/jna) - Java Native Access
 
 ### New Features
 - - -
 
+- Java Bindings - streaming interface is complete; 'get' interface currently has Quote, Quotes, HistoricalPeriod, and HistoricalRange getters available
 - [DynamicDataStore](DynamicDataStore) - module that abstracts away data retrieval, providing a simple bar-based interface
 - Mac build (see below)
 - Raw Subscriptions for complete control over accessing the Streaming interface
@@ -87,6 +91,7 @@ This project would not be possible without some of the great open-source project
 **C**              | *Working*     | *Working*   | *OrderTicket, Builders, Send/Cancel*
 **C++**            | *Working*     | *Working*   | *OrderTicket, Builders, Send/Cancel*
 **Python**         | *Working*     | *Working*   | *OrderTicket, Builders, Send/Cancel*
+**Java**           | *In progress* | *Working*   | *Comming Soon*
 
 
 *Note: 'Working' does not necessarily mean 'Stable'*  
@@ -117,7 +122,8 @@ There are certain binary compatibility issues when exporting C++ code accross co
 3. install the dependencies and TDAmeritradeAPI library in a place the linker can find
 4. 
     - (**C/C++**) include the necessary headers in your code and link to the library
-    - (**Python**) install the tdma_api package
+    - (**Python**) install the tdma_api package and use ```clib.init`` to load the library
+    - (**Java**) import the necessary packages/classes and use ```TDAmeritradeAPI.init``` to load the library
 
 It's recommend you build from source. If you're not comfortable with this or just want to use the Python interface it may be easier to use a [precompiled linux/windows library](#precompiled). 
 
@@ -174,6 +180,7 @@ The library is implemented in C++ and needs to be built accordingly. It exports 
     ||              ----------------------------------------------------------
     ||   
     ||<===  ctypes.CDll.Function_ABI("foo")    [ctypes.py access to library] 
+    ||<===  jna.Library.Function_ABI("foo")    [JNA access to library]
            
 ```
 
@@ -279,11 +286,11 @@ Since all the dependencies are included(or built manually) you'll need to manage
 
 #### Use - Python3
 
-1. Be sure to have built/installed the dependencies and shared library(above)
-2. Be sure the library build(32 vs 64 bit) matches the python build
+1. be sure to have built/installed the dependencies and shared library(above)
+2. be sure the library build(32 vs 64 bit) matches the python build
 3. ```user@host:~/dev/TDAmeritradeAPI/python$ python setup.py install```
     - if your ```python``` links to ```python2``` run ```python3 setup.py install``` instead
-4. Import the package or module(s):
+4. import the package or module(s):
     ``` 
     import tdma_api # -or-
     from tdma_api import auth     # authorization methods and objects
@@ -298,6 +305,31 @@ Since all the dependencies are included(or built manually) you'll need to manage
             ```>>> tdma_api.clib.init("path/to/lib.so")```
     - if you get an error message concerning the dependencies you'll need to
       move them to a location the dynamic linker can find. (see [Install](#install))
+
+#### Use - Java
+
+1. be sure to have built/installed the dependencies and shared library(above)
+2. be sure you're working with Java 8 or higher (Major Version 52 or higher)
+3. be sure the library build(32 vs 64 bit) matches the JRE (```java -version``` will mention "64-Bit")
+4. add Library/API calls to your code
+    - high level objects/calls are in package ```io.github.jeog.tdameritradeapi```
+    - initialize library by passing the path of the shared C/C++ library to ```TDAmeritradeAPI.init(String path)``` 
+    - attempts to access the library before ```init``` is successful will throw ```TDAmeritradeAPI.LibraryNotLoaded```
+    - 'Getter' objects (still in development) are in package ```io.github.jeog.tdameritrade.get```
+    - the Streaming interface is in package ```io.github.jeog.tdameritrade.stream```
+    - the Execution interface (coming soon) will be in package ```io.github.jeog.tdameritrade.execute```
+5. add java/json.jar, java/jna.jar, and java/TDAmeritradeAPI.jar to your classpath and compile:
+    - Windows: ```javac -cp "java/TDAmeritradeAPI.jar;java/json.jar;java/jna.jar" YourCode.java```
+    - Unix: ```javac -cp "java/TDAmeritradeAPI.jar:java/json.jar:java/jna.jar" YourCode.java```
+6. run:
+    - Windows: ```java -cp ".:java/TDAmeritradeAPI.jar;java/json.jar;java/jna.jar" YourCode```
+    - Unix: ```java -cp ".:java/TDAmeritradeAPI.jar:java/json.jar:java/jna.jar" YourCode```
+ 
+    An example using test/java/Test.java on linux (uses wildcards and assumes a shared lib in Release/):
+
+    ```user@host:~/dev/TDAmeritradeAPI/test/java$ javac -cp "../../java/*" Test.java```  
+    ```user@host:~/dev/TDAmeritradeAPI/test/java$ java -cp ".:../../java/*" Test ../../Release/libTDAmeritradeAPI.so```
+
 
 ### Conventions
 - - -
@@ -346,6 +378,20 @@ Since all the dependencies are included(or built manually) you'll need to manage
     ADMIN_COMMAND_TYPE_LOGOUT = 1
     ADMIN_COMMAND_TYPE_QOS = 2
     ```
+    Java defines them inside the relevant classes, e.g:
+    ```
+    public class StreamingSession {
+        public enum CommandType implements CLib.ConvertibleEnum {
+            SUBS(0),
+            UNSUBS(1),
+            ADD(2),
+            VIEW(3);
+            
+            ...            
+        };
+        ...
+    }
+    ```
 
 - C++ methods return values/objects and throw exceptions
 - C functions populate pointers/buffers and return error codes
@@ -388,6 +434,7 @@ All exceptional/error states from the C++ interface will cause exceptions to be 
 - 3rd Party Exceptions:
     - ```json::exception``` : base class for exceptions from the json library (review the documentation
 for the derived classes). If ```ALLOW_EXCEPTIONS_ACROSS_ABI``` is not defined (default behavior) this will be rethrown as ```StdException```.
+    - ```org.json.JSONExcepetion``` : exceptions from the org.json Java library
 
 - The C interface has corresponding error codes:
     ```
@@ -410,7 +457,9 @@ for the derived classes). If ```ALLOW_EXCEPTIONS_ACROSS_ABI``` is not defined (d
 
     #define TDMA_API_UNKNOWN_EXCEPTION 1001
     ```
-- The Python interface throws ```tdma_api.clib.LibraryNotLoaded``` and ```tdma_api.clib.CLibException``` w/ the error code, name, and message returned from the library.         
+- The Python interface throws ```tdma_api.clib.LibraryNotLoaded``` and ```tdma_api.clib.CLibException``` w/ the error code, name, and message returned from the library.
+
+- The Java interface throws unchecked exception ```TDAmeritradeAPI.LibraryNotLoaded``` and checked exception ```TDAmeritradeAPI.CLibException``` w/ the error code, name, and message returned from the library.
 
 - ```LastErrorMsg```, ```LastErrorCode```, ```LastErrorLineNumber```, and ```LastErrorFilename``` can be used to get the last error message, code, line number and filename, respectively. This error state is only set by errors/exceptions from WITHIN the library, not errors/exceptions from code defined in the headers.
 
@@ -489,6 +538,33 @@ Once you have an access code use ```RequestAccessToken``` to get a ```Credential
             ("client_id", c_char_p)
         ]
 
+    [Java]
+    public class Auth {    
+        ...
+        public static Credentials
+        requestAccessToken(String code, String clientID, String redirectURI) throws  CLibException;
+
+        public static Credentials
+        requestAccessToken(String code, String clientID) throws  CLibException;
+        ...
+        public static class Credentials {    
+            ...
+            public String getAccessToken();    
+            public void setAccessToken(String accessToken) throws  CLibException;    
+
+            public String getRefreshToken();    
+            public void setRefreshToken(String refreshToken) throws  CLibException;    
+
+            public long    getEpochSecTokenExpiration();    
+            public void setEpochSecTokenExpiration( long epochSecTokenExpiration ) 
+                    throws  CLibException;    
+
+            public String getClientID();     
+            public void setClientID( String clientID ) throws  CLibException;
+            ...
+        }
+    }    
+
 ```
 
 The ```Credentials``` object is used throughout for accessing the API so keep it 
@@ -518,6 +594,14 @@ securely store your credentials:
         ...
         creds :: the Credentials instance returned from 'request_access_token'
         throws CLibException on error
+
+    [Java]
+    public class Auth{
+        ...
+        public static void
+        storeCredentials(String path, String password, Credentials creds) throws  CLibException;
+        ...
+    }
 ```           
 
 In the future construct a new Credentials struct from the saved credentials file:
@@ -544,6 +628,14 @@ In the future construct a new Credentials struct from the saved credentials file
         ...
         returns -> Credentials instance
         throws CLibException on error
+
+    [Java]
+    public class Auth{
+        ...
+        public static Credentials
+        loadCredentials(String path, String password) throws CLibException; 
+        ...
+    }
 ```        
 
 Since the library allocates memory for the Credential fields **do not** assign to these fields directly. If, for some reason, you need to change them you should create a new instance (and destroy the old, if necessary):
@@ -571,12 +663,22 @@ Since the library allocates memory for the Credential fields **do not** assign t
         returns -> Credentials instance
         throws CLibException on error
 
+    [Java]
+    public class Auth{
+        ...
+        public static class Credentials {
+            ...
+            public Credentials( String accessToken, String refreshToken, 
+                    long epochSecTokenExpiration, String clientID) throws  CLibException;
+            ...
+    }
+
 ```
     
 ***The format of the encrypted credentials file was changed in commit e529c2***
 
 To avoid having to manually load and save each time your code runs use ```CredentialsManager```
-to automatically load and store on construction and destruction.  
+to automatically load and store on construction and destruction(or exiting of try-with-resource block in java).  
 ```
     [C++]
     struct CredentialsManager{
@@ -602,9 +704,25 @@ to automatically load and store on construction and destruction.
             ...
         def __exit__(self, _1, _2, _3);
             ...
+
+    [Java]
+    public static class CredentialsManager implements AutoCloseable {
+        ...
+        public CredentialsManager(String path, String password) throws CLibException;
+        
+        @Override
+        public void close() throws CLibException;
+
+        public Credentials getCredentials() { return credentials; }
+        public String getPath() { return path; }
+        public void setPath(String path) { this.path = path; }
+        public String getPassword() { return password; }
+        public void setPassword(String password) { this.password = password; }                
+    }
+
 ```   
   
-You can, for instance, create a static or global ```CredentialsManager``` instance that will exist over the lifetime of the program, storing the credentials on exit. Just use the ```.credentials``` member as an argument for the API calls, where required. Keep in mind, with this approach the password will be stored in memory, in plain-text, for the life of the ```CredentialsManager``` object.
+Just use the ```.credentials``` member (or the ```.getCredentials()``` method in Java) as an argument for the API calls, where required. Keep in mind, with this approach the password will be stored in memory, in plain-text, for the life of the ```CredentialsManager``` object.
     
 **C code should explicitly close the Credentials object to deallocate the underlying resources.** (C++ and Python define destructors that do this for you.)
 ```
@@ -633,7 +751,7 @@ CloseCredentials(struct Credentials* pcreds );
 
 #### DynamicDataStore
 
-[A module for TDAmeritradeAPI](DynamicDataStore) that attempts to abstract away the details of retrieving historical and streaming data, providing an indexable interface while caching historical data to disk.
+[A C++ module for TDAmeritradeAPI](DynamicDataStore) that attempts to abstract away the details of retrieving historical and streaming data, providing an indexable interface while caching historical data to disk.
 
 #### Option Symbols
 
@@ -663,6 +781,15 @@ BuildOptionSymbol( const char* underlying,
 [Python]
 def common.build_option_symbol(underlying, month, day, year, is_call, strike):
     returns -> str
+
+[Java]
+public class TDAmeritradeAPI{
+    ...
+    public static String
+    buildOptionSymbol(String underlying, int month, int day, int year, boolean is_call, double strike) 
+        throws CLibException;
+    ...
+}
 ```
 
 This is not guaranteed to work on all underlying types but generally:
@@ -691,8 +818,16 @@ CheckOptionSymbol( const char* symbol )
 
 [Python]
 def common.check_option_symbol( symbol ):
+
+[Java]
+public class TDAmeritradeAPI{
+    ...
+    public static void
+    checkOptionSymbol(String symbol) throws CLibException
+    ...
+}
 ```
-Invalid symbols will throw ```ValueException```(C++,Python) or return ```TDMA_API_VALUE_ERROR```(C). C code can use ```LastErrorMsg``` to get a description of the issue.
+Invalid symbols will throw (C++,Python,Java) with a description of issue, or return ```TDMA_API_VALUE_ERROR```(C). C code can use ```LastErrorMsg``` to get a description of the issue.
 
 
 #### LICENSING & WARRANTY
