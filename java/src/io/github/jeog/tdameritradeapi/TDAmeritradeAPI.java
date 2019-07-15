@@ -58,8 +58,6 @@ public final class TDAmeritradeAPI {
         }
     }
     
-    private static CLib library = null;
-    
     /* NOTE - shouldn't be used directly by client code */
     public static final CLib
     getCLib() {
@@ -69,41 +67,72 @@ public final class TDAmeritradeAPI {
     }
     
     public static boolean
+    libraryIsLoaded() {
+        return library != null;
+    }
+    
+    
+    private static CLib library = null;    
+    static {
+        /* try to load the library immediately */
+        if( init() ) 
+            System.out.println(LIBRARY_NAME + " :: init :: SUCCESS");
+        else
+            System.out.println(LIBRARY_NAME + " :: init :: FAILURE "
+                    + "(use TDAmeritradeAPI.init(path) to laod manually)");
+    }
+    
+    
+    public static boolean
+    init() {
+        if( library != null )
+            return true;    
+        System.out.println(LIBRARY_NAME + " :: init :: default resource path"); 
+        return load(LIBRARY_NAME);
+    }
+    
+    public static boolean
     init(String path) {
         if( library != null )
             return true;
+       
+        File file = new File(path);
+        String name = file.getName();
+        int pPos = name.lastIndexOf(".");
+        if( pPos > 0 )
+            name = name.substring(0, pPos);
+        if( !Platform.isWindows() && name.startsWith("lib") )
+            name = name.substring(3);
         
+        if( !name.equals(LIBRARY_NAME) )
+            System.err.println("Unexcepted Library Name: " + name);
+        
+        String dir = file.getParentFile().getPath();
+        
+        System.out.println(LIBRARY_NAME + " :: init :: " + "directory: "+ dir);
+        System.setProperty("jna.library.path",  dir);
+        return load(name);
+    }
+
+    private static boolean
+    load(String name) {      
         try {
-            File file = new File(path);
-            String name = file.getName();
-            int pPos = name.lastIndexOf(".");
-            if( pPos > 0 )
-                name = name.substring(0, pPos);
-            if( !Platform.isWindows() && name.startsWith("lib") )
-                name = name.substring(3);
-            
-            String dir = file.getParentFile().getPath();
-            
-            System.out.println(LIBRARY_NAME+ " :: init :: "+ "directory: "+ dir + " name: " + name);
-            System.setProperty("jna.library.path",  dir);
-            
+            System.out.println(LIBRARY_NAME + " :: load :: " + "name: " + name);                    
             library = Native.load(name, CLib.class);            
         }catch( Throwable t ) {
-            System.err.println(LIBRARY_NAME+ " :: init :: failed: " + t.getMessage());
-            t.printStackTrace(System.err);
-            throw new LibraryNotLoaded(t.getMessage());
+            System.err.println(LIBRARY_NAME+ " :: load :: failed: " + t.getMessage());          
+            return false;
         }
         
         try {
             Error.lastErrorCode();
         }catch( CLibException exc ) {
-            System.err.println(LIBRARY_NAME+ " :: init :: failed test call: " + exc.getMessage());
+            System.err.println(LIBRARY_NAME+ " :: load :: failed test call: " + exc.getMessage());
             return false;
         }        
         
-        return true;
+        return true;      
     }
-
     
     public static String
     buildOptionSymbol(String underlying, int month, int day, int year, boolean is_call, double strike) 

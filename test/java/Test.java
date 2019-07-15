@@ -64,8 +64,10 @@ public class Test {
     public static void
     main(String[] args) {                    
         int nArgs = args.length;
-        if( nArgs != 1 && nArgs != 3 && nArgs != 4 ) {
+        if( nArgs != 0 && nArgs != 1 && nArgs != 3 && nArgs != 4 ) {
             System.err.println("Usage:");
+            System.err.println("  Test "); 
+            System.err.println("    - tests not involving Credentials or Live Connection; look for library on default path");
             System.err.println("  Test <library path>"); 
             System.err.println("    - tests not involving Credentials or Live Connection");
             System.err.println("  Test <library path> <credentials path> <credentials password>");
@@ -75,11 +77,14 @@ public class Test {
             return;
         }    
     
-        String libPath = args[0];
+        String libPath =  null;
         String accountID = null;
         String credsPath = null;
         String credsPassword = null;
         boolean liveConnect = false;
+        
+        if( nArgs > 0 )
+            libPath = args[0];
         
         if( nArgs > 1 ) {
             credsPath = args[1];
@@ -93,7 +98,7 @@ public class Test {
         System.out.println( "* START TEST"); 
         System.out.println( "*");
         System.out.println( "*  DateTime: " + new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date()) );
-        System.out.println( "*  Library Path: " + libPath);
+        System.out.println( "*  Library Path: " + (libPath == null ? "N/A" : libPath));
         System.out.println( "*  Credentials Path: " + (credsPath == null ? "N/A" : credsPath));
         System.out.println( "*  Credentials Password: " + (credsPassword == null ? "N/A" : secureString(credsPassword,2)));
         System.out.println( "*  Account ID: " + (accountID == null ? "N/A" : secureString(accountID,3)));
@@ -116,8 +121,13 @@ public class Test {
         
         try {            
             System.out.println( "*  INIT: " + libPath);
-            if ( !TDAmeritradeAPI.init(libPath) ) {
-                throw new Exception("TDAmeritrade.init failed");                                
+            if( libPath != null ) {
+                if ( !TDAmeritradeAPI.init(libPath) ) {
+                    throw new Exception("TDAmeritrade.init failed");                                
+                }
+            }else {
+                if( !TDAmeritradeAPI.libraryIsLoaded() )
+                    throw new Exception("Library was not loaded automatically(move to resource path, or pass in location)");
             }
             
             System.out.println( "*  TEST OPTION UTILITIES");

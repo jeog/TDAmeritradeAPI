@@ -313,8 +313,10 @@ Since all the dependencies are included(or built manually) you'll need to manage
 3. be sure the library build(32 vs 64 bit) matches the JRE (```java -version``` will mention "64-Bit")
 4. add Library/API calls to your code
     - high level objects/calls are in package ```io.github.jeog.tdameritradeapi```
-    - initialize library by passing the path of the shared C/C++ library to ```TDAmeritradeAPI.init(String path)``` 
-    - attempts to access the library before ```init``` is successful will throw ```TDAmeritradeAPI.LibraryNotLoaded```
+    - the package will try to load the library automatically by looking at the default resource path
+        - if you move the shared C/C++ library to the class path or the system lookup directories (e.g /usr/lib) it should work
+        - if not manually initialize by passing the path of the lib to ```TDAmeritradeAPI.init(String path)``` 
+        - attempts to access the library before ```init``` is successful will throw ```TDAmeritradeAPI.LibraryNotLoaded```
     - 'Getter' objects (still in development) are in package ```io.github.jeog.tdameritrade.get```
     - the Streaming interface is in package ```io.github.jeog.tdameritrade.stream```
     - the Execution interface (coming soon) will be in package ```io.github.jeog.tdameritrade.execute```
@@ -495,6 +497,9 @@ For more robust authentication e.g writing an app for 3rd party users. You'll ne
 #### Credentials
 
 Once you have an access code use ```RequestAccessToken``` to get a ```Credentials``` object that will retrieve and store the access and refresh tokens. **This only has to be done once, until the refresh token expires in 3 months.**
+
+Alternatively, you can use ```tools/creds_from_access_code.py``` to build an encrypted credentials file from the access code. It takes a number of relevant arguments (or prompts for them if not passed on command line) and calls ```request_access_token``` and ```store_credentials``` for you.
+ 
 ```
     [C++]
     Credentials 
