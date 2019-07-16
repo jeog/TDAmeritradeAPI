@@ -311,27 +311,29 @@ Since all the dependencies are included(or built manually) you'll need to manage
 1. be sure to have built/installed the dependencies and shared library(above)
 2. be sure you're working with Java 8 or higher (Major Version 52 or higher)
 3. be sure the library build(32 vs 64 bit) matches the JRE (```java -version``` will mention "64-Bit")
-4. add Library/API calls to your code
-    - high level objects/calls are in package ```io.github.jeog.tdameritradeapi```
-    - the package will try to load the library automatically by looking at the default resource path
-        - if you move the shared C/C++ library to the class path or the system lookup directories (e.g /usr/lib) it should work
-        - if not manually initialize by passing the path of the lib to ```TDAmeritradeAPI.init(String path)``` 
-        - attempts to access the library before ```init``` is successful will throw ```TDAmeritradeAPI.LibraryNotLoaded```
-    - 'Getter' objects (still in development) are in package ```io.github.jeog.tdameritrade.get```
-    - the Streaming interface is in package ```io.github.jeog.tdameritrade.stream```
-    - the Execution interface (coming soon) will be in package ```io.github.jeog.tdameritrade.execute```
-5. add java/json.jar, java/jna.jar, and java/TDAmeritradeAPI.jar to your classpath and compile:
-    - Windows: ```javac -cp "java/TDAmeritradeAPI.jar;java/json.jar;java/jna.jar" YourCode.java```
-    - Unix: ```javac -cp "java/TDAmeritradeAPI.jar:java/json.jar:java/jna.jar" YourCode.java```
-6. run:
-    - Windows: ```java -cp ".:java/TDAmeritradeAPI.jar;java/json.jar;java/jna.jar" YourCode```
-    - Unix: ```java -cp ".:java/TDAmeritradeAPI.jar:java/json.jar:java/jna.jar" YourCode```
- 
-    An example using test/java/Test.java on linux (uses wildcards and assumes a shared lib in Release/):
+4. (optional) setup TDAmeritradeAPI.jar to init/load the C/C++ shared lib (.dll or .so file) automatically by:  
+    - moving the shared lib  to the directory of the executable (your java program)  
+    - moving the shared lib to the system lookup directories (e.g C:/Windows, /usr/lib)  
+    - bundling the shared lib with TDAmeritradeAPI.jar in the appropriately named folder (e.g linux-x86-64/TDAmeritradeAPI.so) 
+5. add library/API calls to your code  
+    - (if not done automatically in step 4) pass the path of the C/C++ shared lib to ```tdameritradeapi.TDAmeritradeAPI.init(String path)```   
+    - **attempts to access the library before ```init(path)``` is successful will throw ```TDAmeritradeAPI.LibraryNotLoaded```**
+    - ```io.github.jeog.tdameritradeapi``` - high level package  
+    - ```io.github.jeog.tdameritrade.get``` - 'getter' objects and utilities package (still in development)  
+    - ```io.github.jeog.tdameritrade.stream``` - 'streaming' class and subscriptions package  
+    - ```io.github.jeog.tdameritrade.execute``` - execution interface package (coming soon)  
+6. add *java/json.jar*, *java/jna.jar*, and *java/TDAmeritradeAPI.jar* to your classpath and compile:  
+    - Windows: ```javac -cp "java/TDAmeritradeAPI.jar;java/json.jar;java/jna.jar" YourCode.java```  
+    - Unix: ```javac -cp "java/TDAmeritradeAPI.jar:java/json.jar:java/jna.jar" YourCode.java```  
+7. run:  
+    - Windows: ```java -cp ".:java/TDAmeritradeAPI.jar;java/json.jar;java/jna.jar" YourCode```  
+    - Unix: ```java -cp ".:java/TDAmeritradeAPI.jar:java/json.jar:java/jna.jar" YourCode```  
+``` 
+    An example using test/java/Test.java on linux (uses wildcards and assumes a shared lib in Release/):  
 
-    ```user@host:~/dev/TDAmeritradeAPI/test/java$ javac -cp "../../java/*" Test.java```  
-    ```user@host:~/dev/TDAmeritradeAPI/test/java$ java -cp ".:../../java/*" Test ../../Release/libTDAmeritradeAPI.so```
-
+        user@host:~/dev/TDAmeritradeAPI/test/java$ javac -cp "../../java/*" Test.java
+        user@host:~/dev/TDAmeritradeAPI/test/java$ java -cp ".:../../java/*" Test ../../Release/libTDAmeritradeAPI.so
+```
 
 ### Conventions
 - - -

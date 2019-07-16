@@ -4,6 +4,7 @@ import java.util
 import org.json.JSONObject
 
 import io.github.jeog.tdameritradeapi.TDAmeritradeAPI
+import io.github.jeog.tdameritradeapi.Error
 import io.github.jeog.tdameritradeapi.Auth
 import io.github.jeog.tdameritradeapi.stream.StreamingSession
 import io.github.jeog.tdameritradeapi.stream.TimesaleEquitySubscription
@@ -24,29 +25,45 @@ object Test {
     def main(args: Array[String]) : Unit = {
 
         val nArgs = args.length;
-        if( nArgs < 3 || nArgs > 4 ){
+        if( nArgs == 2 || nArgs > 4 ){
             println("Usage: ");
-            println("  TDAmeritradeAPIStreamTest <credentials path> <credentials password> <account id> ")
-            println("  TDAmeritradeAPIStreamTest <credentials path> <credentials password> <account id> <library path>")
+            println("  Test ")
+            println("  Test <library path>")
+            println("  Test <credentials path> <credentials password> <account id> ")
+            println("  Test <credentials path> <credentials password> <account id> <library path>")     
+            return;
         }
 
         if( !TDAmeritradeAPI.libraryIsLoaded() ){
-            if( args.length != 4 ){
-                System.err.println(" Library not loaded automatically; requires library path as 4th arg");
-                return;
+            if( nArgs != 1 && nArgs != 4 ){
+                System.err.println(" Library not loaded automatically; pass library path as 1st or 4th arg to load manually")
+                return
+            }else{
+                if( !TDAmeritradeAPI.init( args(nArgs-1) ) ){
+                    System.err.println(" Failed to load TDAmeritradeAPI from: " + args(nArgs-1));
+                    return;
+                }
+                System.out.println(" Successfully loaded TDAmeritradeAPI (manually) from : " + args(nArgs-1))
             }
+        }           
 
-            if( !TDAmeritradeAPI.init( args(3) ) ){
-                System.err.println(" Failed to load TDAmeritradeAPI from: " + args(3));
-                return;
-            }
-        }
         try {
+            if( Error.lastErrorCode() != 0 ){
+                System.err.println("lastErrorCode != 0; exiting...")
+                return
+            }
+            System.out.println("Successfully called into library!");
+
+            if( nArgs < 3 ){
+                System.out.println("no credential/account args; exiting...")
+                return
+            }  
+
             val cm: Auth.CredentialsManager = new Auth.CredentialsManager(args(0), args(1));
             testQuotesGetter(cm.getCredentials);
             testStreaming(cm.getCredentials);
         }catch{
-            case e : Throwable => System.err.println("Error: " + e.toString());
+            case e : Throwable => System.err.println("Error: " + e.toString())
         }
     }
 

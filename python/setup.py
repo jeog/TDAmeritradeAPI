@@ -19,7 +19,7 @@ from distutils.core import setup
 import sys, time, platform, json
 
 NAME = 'tdma_api'
-VERSION = '0.1'
+VERSION = '0.2'
 DESCRIPTION = 'Python interface to TDAmeritradeAPI'
 AUTHOR = 'Jonathon Ogden'
 AUTHOR_EMAIL = 'jeog.dev@gmail.com'

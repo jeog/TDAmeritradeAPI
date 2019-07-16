@@ -27,18 +27,18 @@ ARCH = architecture()[0]
 
 CONFIG_DIR = "Release/"
 #CONFIG_DIR = "Debug/"
-REL_LIB_PATH = os.path.join("../", CONFIG_DIR, "libTDAmeritradeAPI.so")
+REL_LIB_PATH = os.path.join("../../", CONFIG_DIR, "libTDAmeritradeAPI.so")
 if SYSTEM == 'Windows':
     if '64' in ARCH:
-        REL_LIB_PATH = os.path.join("../vsbuild/x64/", CONFIG_DIR,
+        REL_LIB_PATH = os.path.join("../../vsbuild/x64/", CONFIG_DIR,
                                     "TDAmeritradeAPI.dll")
     else:
-        REL_LIB_PATH = os.path.join("../vsbuild/Win32/", CONFIG_DIR,
+        REL_LIB_PATH = os.path.join("../../vsbuild/Win32/", CONFIG_DIR,
                                     "TDAmeritradeAPI.dll")
 
 TEST_DIR = os.path.dirname(os.path.realpath(__file__))
 LIBRARY_PATH = os.path.join(TEST_DIR, REL_LIB_PATH)
-PACKAGE_BUILD_INFO_PATH = os.path.join(TEST_DIR, '../python/tdma_api_build.info')
+PACKAGE_BUILD_INFO_PATH = os.path.join(TEST_DIR, '../../python/tdma_api_build.info')
 
 parser = argparse.ArgumentParser("test tdma_api")
 parser.add_argument("account_id", type=str, help="account id" )
