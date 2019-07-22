@@ -144,6 +144,10 @@ def init(lib_path, reload=False):
     return bool(_lib)
 
 
+def is_loaded():
+    return bool(_lib)
+
+
 def call(name, *args):  
     if _lib is None:
         raise LibraryNotLoaded()    

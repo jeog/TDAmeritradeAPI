@@ -43,12 +43,12 @@ and then uses the library to request an access token, which is refreshed automat
     - [Use - C/C++](#use---cc)
     - [Use - Python3](#use---python3)
     - [Use - Java](#use---java)
+    - [Use - Scala/SBT](#use---scalasbt)
 - [Conventions](#conventions)
 - [Errors & Exceptions](#errors--exceptions)
 - [Authentication](#authentication)
-    - [Access Code](#access-code)
-        - [Simple Approach for Personal Use](#simple-approach-for-personal-use)
-        - [Other Approaches](#other-approaches)
+    - [Streamlined Approach](#streamlined-approach)
+    - [Manual Approach](#manual-approache)
     - [Credentials](#credentials)
 - [Access](#access)
     - [Get](#get)
@@ -71,12 +71,15 @@ This project would not be possible without some of the great open-source project
 - [zlib](https://zlib.net) - Compression library
 - [libuv](https://libuv.org) - Cross-platform asynchronous I/O
 - [uWebSockets](https://github.com/uNetworking/uWebSockets) - A simple and efficient C++ WebSocket library. The source is included, compiled and archived with our library to limit dependency issues.
-- [nlohmann::json](https://github.com/nlohmann/json) : - An extensive C++ json library that only requires adding a single header file. ***You'll need to review their documentation for handling returned data from the C++ version of this library.***
+- [nlohmann::json](https://github.com/nlohmann/json) : - An extensive C++ json library that only requires adding a single header file.
 - [jna](https://github.com/java-native-access/jna) - Java Native Access
+- [org.json](https://github.com/stleary/JSON-java) - Reference implementation of a Java JSON package
+- [cefpython3](https://github.com/cztomczak/cefpython) - Python bindings for the Chromium Embedded Framework
 
 ### New Features
 - - -
 
+- credential_builder.py - streamlineed approach to authentication and credential building
 - Java Bindings - streaming interface is complete; 'get' interface currently has Quote, Quotes, HistoricalPeriod, and HistoricalRange getters available
 - [DynamicDataStore](DynamicDataStore) - module that abstracts away data retrieval, providing a simple bar-based interface
 - Mac build (see below)
@@ -122,8 +125,8 @@ There are certain binary compatibility issues when exporting C++ code accross co
 3. install the dependencies and TDAmeritradeAPI library in a place the linker can find
 4. 
     - (**C/C++**) include the necessary headers in your code and link to the library
-    - (**Python**) install the tdma_api package and use ```clib.init`` to load the library
-    - (**Java**) import the necessary packages/classes and use ```TDAmeritradeAPI.init``` to load the library
+    - (**Python**) install the tdma_api package
+    - (**Java**) add the .jar's to your classpath and import the necessary packages/classes 
 
 It's recommend you build from source. If you're not comfortable with this or just want to use the Python interface it may be easier to use a [precompiled linux/windows library](#precompiled). 
 
@@ -267,10 +270,12 @@ To make *libTDAmeritradeAPI.so* available to your program:
 
 Since all the dependencies are included(or built manually) you'll need to manage them AND *TDAmeritradeAPI.dll*.
 
-- move them to a systems folder
+- move them to the systems folder: ```C:/Windows/System32/```
 - *-or-* link your code with the appropriate flags (use link settings in VisualStudio)   
 - *-or-* add their folder(s) to your PATH variable.
 - *-or-* move the files to the location of the binary that will link to it  
+
+The simplest approach for supporting all language bindings, generally, is to put TDAmeritrade.dll and its dependencies (libcurl.dll etc.) in a single folder, then add that folder location to your PATH: ControlPanel -> System -> Advanced System Settings -> Advanced Tab -> Environmental Variables -> Select 'Path' -> Edit -> append ';C:/my/library/path' to string in 'Variable' -> Ok -> log out and in again.
 
 #### Use - C/C++
 
@@ -311,9 +316,10 @@ Since all the dependencies are included(or built manually) you'll need to manage
 1. be sure to have built/installed the dependencies and shared library(above)
 2. be sure you're working with Java 8 or higher (Major Version 52 or higher)
 3. be sure the library build(32 vs 64 bit) matches the JRE (```java -version``` will mention "64-Bit")
-4. (optional) setup TDAmeritradeAPI.jar to init/load the C/C++ shared lib (.dll or .so file) automatically by:  
-    - moving the shared lib  to the directory of the executable (your java program)  
-    - moving the shared lib to the system lookup directories (e.g C:/Windows, /usr/lib)  
+4. (optional) setup TDAmeritradeAPI.jar to init/load the C/C++ shared lib automatically by:
+    - moving the shared lib to the directory of the executable (your java program)  
+    - moving the shared lib to the system lookup directories (e.g C:/Windows/System32, /usr/lib)  
+    - moving the shared lib to a custom directory and setting PATH(Windows) or LD_LIBRARY_PATH(unix)
     - bundling the shared lib with TDAmeritradeAPI.jar in the appropriately named folder (e.g linux-x86-64/TDAmeritradeAPI.so) 
 5. add library/API calls to your code  
     - (if not done automatically in step 4) pass the path of the C/C++ shared lib to ```tdameritradeapi.TDAmeritradeAPI.init(String path)```   
@@ -335,6 +341,12 @@ Since all the dependencies are included(or built manually) you'll need to manage
         user@host:~/dev/TDAmeritradeAPI/test/java$ java -cp ".:../../java/*" Test ../../Release/libTDAmeritradeAPI.so
 ```
 
+#### Use - Scala/SBT
+
+1. see steps 1 - 5 in the [Use - Java section](#use---java)
+2. add *java/json.jar*, *java/jna.jar*, and *java/TDAmeritradeAPI.jar* to the ```lib/``` folder in the root directory 
+3. ```sbt run```
+ 
 ### Conventions
 - - -
 
@@ -469,51 +481,62 @@ for the derived classes). If ```ALLOW_EXCEPTIONS_ACROSS_ABI``` is not defined (d
 
 ### Authentication
 - - -
-Authentication is done through OAuth2 using your account login information. 
 
-1. Get an access code. (***once***)
-2. Use the access code to get a `Credentials` object containing access and refresh tokens. (***once***)
-3. Pass the `Credentials` object to the various library calls to get data, access your account etc. - the library will refresh the access token for you when it expires.
-4. Use the library to encrypt and store your `Credentials` object when done 
-5. Use the library to load and decrypt your `Credentials` object for future use
+Authentication is done through OAuth2. The user logs in to grant access to the app they created (when setting up the developer account), receives an access code, and uses that code to request access and refresh tokens. 
 
-#### Access Code
+The library uses a 'Credentials' object to store and manage tokens. When access tokens expire(every 30 minutes) the library automatically uses the refresh token and updates the Credentials object. When refresh tokens expire(every 90 days) the user has to build new Credentials. The library is built to throw when a Credentials object is used within 24 hours of expiration, but this behavior should NOT be relied upon.
 
-##### Simple Approach For Personal Use
+Credentials can be built in different ways:  
+   1. By using one of the python/html tools in /tools (easiest, see below)  
+   2. By getting an access code and passing it into the (poorly named) ```RequestAccessToken``` API call (see below)  
+   3. By getting tokens and manually constructing the object (not recommended)  
 
-1. [Set up a developer account.](https://developer.tdameritrade.com/user/register)
-    - Set the 'redirect_uri' field to the localhost: `https://127.0.0.1` (be sure to use https, not http)
-    - Set a 'client_id' e.g `MY_ID@AMER.OAUTHAP` 
-        - *UPDATE* - this appears to be auto-generated by TDMA now and is refered to as a CONSUMER KEY
-        - **IMPORTANT -** you still need to append @AMER.OAUTHAP to your consumer key when the library asks for the client id, e.g if you id/key is 'ABCDEF12345' you will pass ```ABCDEF12345@AMER.OAUTHAP``` to all tools/functions that call for a 'client id'
-2. Open the ```tools/get-access-code.html``` file with your web browser and follow instructions.
-    - Temporarily disable any browser add-ons that block pop-ups/redirects/JavaScript    
+A (typical) user will [set up a developer account.](https://developer.tdameritrade.com/user/register) with certain fields:
+   - 'redirect_uri' of the localhost(```https://127.0.0.1```). **IMPORTANT -** redirect uri fields passed to the API and related tools need to match EXACTLY what you set here, e.g 'http' and 'https' will conflict.
+   - 'client id' appears to have changed to 'consumer key' and is now auto-generated. **IMPORTANT -** you still need to append @AMER.OAUTHAP to your consumer key when the library asks for the client id, e.g if you id/key is 'ABCDEF12345' you will pass ```ABCDEF12345@AMER.OAUTHAP```.
 
-3. 
-    If you're able to retreive an access code from step #2 securely record that and do either 3a or 3b. 
+If looking for more robust means of authentication: 
+   - [Set up your own server](https://developer.tdameritrade.com/content/web-server-authentication-python-3)
+   - Use a 3rd party solution e.g [auth0](https://auth0.com)
 
-    3a. use that access code in the ```RequestAccessToken``` library call to get a Credentials object (see below)  
-    3b. use ```tools/creds_from_access_code.py``` to build an encrypted Credentials file directly from the access code
+The typical authentication/credentialization flow looks like:
 
-    IF NOT (e.g. your browser doesn't show the popup for parsing the redirect url to get the code and returns ```Access Code: undefined```) record the ENTIRE url returned from the grant access/login redirect error page(the long string of text in the browser address bar) and do 3c.
-
-    3c. use ```toos/creds_from_access_code.py --extract-code-from-url``` to build an ecrypt Credentials file directly from the (encoded) url returned from the grant access/login redirect error page.
+  LOGIN -> GRANT ACCESS -> receive access code -> REQUEST TOKENS -> build Credentials -> store Credentials
 
 
-*If this doesn't work [follow these instructions](https://developer.tdameritrade.com/content/simple-auth-local-apps).*
+##### Streamlined Approach
 
-##### Other Approaches
-  
-For more robust authentication e.g writing an app for 3rd party users. You'll need to [set up a developer account.](https://developer.tdameritrade.com/user/register) (The 'redirect_uri' field to use depends on what you want to do.)
-  
-- [Set up your own server](https://developer.tdameritrade.com/content/web-server-authentication-python-3)
-- Use a 3rd party solution e.g [auth0](https://auth0.com)
+After you've setup a developer account simply use:  
+
+    tools/> credential_builder.py <Client ID/Conumer Key> <Credentials Path> <Credentials Password>
+
+It will open up an embedded web browser to login and grant access. It will then handle all the background steps and store a password protected Credentials file to disk. Going forward - until the refresh token expires in 90 days - you'll simply use the API to load the Credentials file on demand.
+
+In order to use you'll need python and the python bindings for the Chromium Embedded Framework (pip install cefpython3) and a working ```tdma_api``` python package (python/> python setup.py install) that can load the underlying C library(see above).
+
+There are a number of custom switches, use ```/> python credential_builder.py --help``` to view.
+
+
+##### Manual Approach
+
+Use ```tools/get-access-code.html``` in your web browser to grant access and receive an access code.
+
+If you're able to retreive an access code, securely record it. IF NOT (e.g. your browser doesn't show the popup for parsing the redirect url and returns ```Access Code: undefined```) record the ENTIRE url returned from the grant access/login redirect error page(the long string in the browser address bar).
+
+If you have the access code you can do one of the following:
+- use ```tools/creds_from_access_code.py``` to build an encrypted Credentials file directly 
+- use ```RequestAccessToken``` library call to get a Credentials object, when done with it use ```StoreCredentials``` library call to save/encrypt the object. (see below)
+
+
+If you don't have the access code but have the redirect url you can do one of the following: 
+- use ```toos/creds_from_access_code.py --extract-code-from-url <redirect url>``` to build an ecrypted Credentials file directly.
+- use a url decoder on all the text after 'code=' and pass that string to the ```RequestAccessToken``` library call to get a Credentials object, when done with it use ```StoreCredentials``` library call to save/encrypt the object. (see below) 
 
 #### Credentials
 
-Once you have an access code use ```RequestAccessToken``` to get a ```Credentials``` object that will retrieve and store the access and refresh tokens. **This only has to be done once, until the refresh token expires in 3 months.**
+References/Pointers to a Credentials object are passed to various objects and functions throughout the API. 
 
-Alternatively, you can use ```tools/creds_from_access_code.py``` to build an encrypted credentials file from the access code or url-encoded redirect url(see above). It takes a number of relevant arguments (or prompts for them if not passed on command line) and calls ```request_access_token``` and ```store_credentials``` for you.
+If not using one of the python tools mentioned above you can build a Credentials object by passing an access code directly to the library.
  
 ```
     [C++]
@@ -587,9 +610,8 @@ Alternatively, you can use ```tools/creds_from_access_code.py``` to build an enc
 
 ```
 
-The ```Credentials``` object is used throughout for accessing the API so keep it 
-available. It will be updated internally as the access token is refreshed. When done, 
-securely store your credentials:
+When done accessing the API the Credential object should be stored to disk. The file will be encrypted with the password provided.
+
 ```
     [C++]
     void 
@@ -624,7 +646,8 @@ securely store your credentials:
     }
 ```           
 
-In the future construct a new Credentials struct from the saved credentials file:
+In the future a new Credential object can be loaded from the saved credentials file.
+
 ```
     [C++]
     Credentials
@@ -658,47 +681,7 @@ In the future construct a new Credentials struct from the saved credentials file
     }
 ```        
 
-Since the library allocates memory for the Credential fields **do not** assign to these fields directly. If, for some reason, you need to change them you should create a new instance (and destroy the old, if necessary):
-```
-    [C]
-    static inline int
-    CreateCredentials( const char* access_token
-                       const char* refresh_token,
-                       long long epoch_sec_token_expiration,
-                       const char *client_id,
-                       struct Credentials *pcreds);
-
-
-    [C++]
-    Credentials::Credentials( const char* access_token,
-                              const char* refresh_token,
-                              long long epoch_sec_token_expiration,
-                              const char *client_id );
-
-    [Python]
-    @classmethod
-    def auth.Credentials.Create(access_token, refresh_token, 
-                                epoch_sec_token_expiration, client_id):
-        ...
-        returns -> Credentials instance
-        throws CLibException on error
-
-    [Java]
-    public class Auth{
-        ...
-        public static class Credentials {
-            ...
-            public Credentials( String accessToken, String refreshToken, 
-                    long epochSecTokenExpiration, String clientID) throws  CLibException;
-            ...
-    }
-
-```
-    
-***The format of the encrypted credentials file was changed in commit e529c2***
-
-To avoid having to manually load and save each time your code runs use ```CredentialsManager```
-to automatically load and store on construction and destruction(or exiting of try-with-resource block in java).  
+To avoid having to manually load and save each time your code runs - and risking program termination without storing the (likely) updated Credentials - use a ```CredentialsManager``` to automatically load and store on construction and destruction(or the exiting of a try-with-resource block in java).  
 ```
     [C++]
     struct CredentialsManager{
@@ -743,8 +726,46 @@ to automatically load and store on construction and destruction(or exiting of tr
 ```   
   
 Just use the ```.credentials``` member (or the ```.getCredentials()``` method in Java) as an argument for the API calls, where required. Keep in mind, with this approach the password will be stored in memory, in plain-text, for the life of the ```CredentialsManager``` object.
+
+Since the library allocates memory for the Credential fields **do not** assign to these fields directly. If, for some reason, you need to change them you should create a new instance (and destroy the old, if necessary).
+
+```
+    [C]
+    static inline int
+    CreateCredentials( const char* access_token
+                       const char* refresh_token,
+                       long long epoch_sec_token_expiration,
+                       const char *client_id,
+                       struct Credentials *pcreds);
+
+
+    [C++]
+    Credentials::Credentials( const char* access_token,
+                              const char* refresh_token,
+                              long long epoch_sec_token_expiration,
+                              const char *client_id );
+
+    [Python]
+    @classmethod
+    def auth.Credentials.Create(access_token, refresh_token, 
+                                epoch_sec_token_expiration, client_id):
+        ...
+        returns -> Credentials instance
+        throws CLibException on error
+
+    [Java]
+    public class Auth{
+        ...
+        public static class Credentials {
+            ...
+            public Credentials( String accessToken, String refreshToken, 
+                    long epochSecTokenExpiration, String clientID) throws  CLibException;
+            ...
+    }
+
+```
     
-**C code should explicitly close the Credentials object to deallocate the underlying resources.** (C++ and Python define destructors that do this for you.)
+**C code should explicitly close the Credentials object to deallocate the underlying resources.** (C++, Python, and Java do this for you.)
 ```
 inline int
 CloseCredentials(struct Credentials* pcreds );
