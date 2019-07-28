@@ -14,28 +14,16 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see http://www.gnu.org/licenses.
 # 
-"""tdma_api/auth.py - authorization interface 
 
-The auth module provides basic authentication methods and objects for the
-TDAmeritrade API.
+"""tdma_api/auth.py - authentication and credential management interface 
 
-1) set up a TDAmeritrade Developer account and receive an access code
+The auth module provides basic authentication and credential management 
+methods and objects for the TDAmeritrade API.
 
-2) use 'request_access_token' to get a Credentials object that includes
-   access and refresh tokens (use once until refresh token expires in 3 
-   months)
-   
-3) store the Credentials object in an encrypted file for future use via 
-   'store_credentials'
-
-4) in the future load the Credentials object w/ 'load_credentials'
-   or use the CredentialManager context manager to handle load/store
-   automatically
-   
-5) use a reference to the Credentials object for the get, streaming,
-   and execute interfaces
+https://github.com/jeog/TDAmeritradeAPI#authentication
 
 """
+
 from ctypes import Structure as _Structure, c_char_p, c_longlong, \
                     c_ulonglong, byref as _REF
 
@@ -46,10 +34,13 @@ from .clib import PCHAR
 class Credentials(_Structure):
     """Object that represents the underlying access Credentials.
 
-    An instance will be returned from 'load_credentials' and
-    'request_access_token'. DO NOT assign to these fields directly
-    as this will cause a memory leak! If you need to change fields
-    create a new instance with the 'Create' class method.
+    An instance will be returned from 'load_credentials' or
+    'request_access_token'. It will be passed to various API methods
+    and objects, being (automatically) updated with new tokens.
+
+    DO NOT assign to these fields directly as this will cause a 
+    memory leak! In the(unlikely) event you need to change fields 
+    create a new instance  with the 'Create()' class method.
     """
     _fields_ = [
         ("access_token", c_char_p),
@@ -112,16 +103,14 @@ def store_credentials(path, password, creds):
 
 
 def request_access_token(code, client_id, redirect_uri="https://127.0.0.1"):
-    """Get a token to access the TDAmeritrade API.
+    """Returns 'Credentials' intance for accessing API.
     
-    After setting up a developer account(developer.tdameritrade.com/content/
-    getting-started) retrieve an access code by:
-        1) using your browser and a localhost redirect host uri (default)
-           (developer.tdameritrade.com/content/simple-auth-local-apps) -or-
-        2) using your own server (change redirect_uri)
-           (developer.tdameritrade.com/content/
-            web-server-authentication-python-3) -or-
-        3) using a 3rd party OAuth service (change redirect uri)
+    Uses an access code, and the fields set during developer/app registration, 
+    to request access and refresh tokens. The tokens are used to create a 
+    'Credentials' instance which allows access to the API until the refresh 
+    token expires in 90 days.
+
+    https://github.com/jeog/TDAmeritradeAPI#manual-approach
         
     def request_access_token(code, 
                              client_id, 
@@ -141,7 +130,7 @@ def request_access_token(code, client_id, redirect_uri="https://127.0.0.1"):
 
 
 def refresh_access_token(creds):
-    """Refresh an expired access token. THIS IS DONE AUTOMATICALLY BY THE LIB.
+    """Refresh an expired access token. THIS IS DONE AUTOMATICALLY.
     
     def refresh_access_token(creds):
     
@@ -189,7 +178,7 @@ class CredentialsManager:
     """Context Manager for handling load and store of Credentials Object.
     
     Use this object to automatically load and store your Credentials object
-    from the encrypted store. 
+    from the encrypted file. 
     
     def __init__(self, path, password, verbose=False):   
              

@@ -15,18 +15,17 @@
 # along with this program.  If not, see http://www.gnu.org/licenses.
 #
 
-"""tdma_api/get.py the http/get interface
+"""tdma_api/get.py - the http/get interface
 
 The get module provides 'getter' objects and utilities for getting quote,
 historical, market, and account information from the TDAmeritrade API.
 
 Each getter object mirrors the C++ version of the object from the
 TDAmeritradeAPI shared library, using the exported C/ABI methods through
-ctypes.py to replicate the functionality. (More details can be found in
-README_GET.md.)
+ctypes.py to replicate the functionality.
 
 Before using you'll need to have obtained a valid Credentials object. (See
-tdma_api.auth.__doc__ or README.md for details.)
+tdma_api.auth.py)
 
 Each object sets up an underlying HTTPS/GET connection(via libcurl) using
 the credentials object and the relevant arguments for that particular
@@ -36,20 +35,13 @@ the object is destroyed.
 
 .get() will pass the returned json to json.loads(), returning a built-in
 object or throwing a CLibException on failure. Each .get() call is
-throttled globally to limit excessive requests. Methods are provided
-to get/set this wait time.
+throttled globally to limit excessive requests.
 
-Each object provides accessor methods for getting and setting the relevant
-arguments passed to the constructor.
+CLibExceptions can be thrown from ANY operation(construction, access, 
+get et al.) and contain an error code, name and message.
 
-As certain getters require a complex set of possibly conflicting arguments,
-understanding and handling CLibExceptions is vital. These can be thrown
-from ANY operation(construction, access, get et al.) and contain an error
-code, name and message.
+https://github.com/jeog/TDAmeritradeAPI/blob/master/README_GET.md
 
-A number of constants and utility classes are provided for building specific
-argument types required by certain getters (i.e OptionStrikes and
-OptionStrategy static methods for the Option Getters).
 """
 
 from ctypes import byref as _REF, c_int, c_ulonglong, c_double, \

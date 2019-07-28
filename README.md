@@ -295,6 +295,9 @@ The simplest approach for supporting all language bindings, generally, is to put
 2. be sure the library build(32 vs 64 bit) matches the python build
 3. ```user@host:~/dev/TDAmeritradeAPI/python$ python setup.py install```
     - if your ```python``` links to ```python2``` run ```python3 setup.py install``` instead
+    - depending on how/where you've installed python you may need elevated privileges (e.g sudo, admin) to write to the python directory
+    - some packages may not include distutils; if you get a ```ModuleNotFoundError``` you'll need to install e.g ```apt-get install python3-distutils```
+
 4. import the package or module(s):
     ``` 
     import tdma_api # -or-

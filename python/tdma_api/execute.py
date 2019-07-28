@@ -15,6 +15,39 @@
 # along with this program.  If not, see http://www.gnu.org/licenses.
 #
 
+"""tdma_api/execute.py  - the execution interface
+
+*WARNING*
+
+This has undergone very limited live testing - we are waiting on a mechanism 
+from Ameritrade to test execution outside of live trading.
+
+BY USING THIS CODE/LIBRARY TO BUILD AND/OR SEND LIVE ORDERS YOU AGREE TO TAKE 
+FULL RESPONSIBILITY FOR ANY LOSSES INCURRED - INCLUDING, BUT NOT LIMITED TO, 
+LOSSES RESULTING FROM ERRORS IN THE CODE/LIBRARY AND/OR THE GROSS NEGLIGENCE 
+OF THE AUTHOR(S).
+
+*WARNING*
+
+The execute module provides OrderTicket and OrderLeg objects as well as a 
+number of order ticket builders and functions for executing these tickets 
+through the TDAmeritrade API.
+
+These objects mirror the C++ version from the TDAmeritradeAPI shared library, 
+using the exported C/ABI methods through ctypes.py to replicate the 
+functionality. 
+
+Before using you'll need to have obtained a valid Credentials object. (See
+tdma_api.auth.py)
+
+An OrderTicket is either created manually or by using one of the static 
+'Build' methods in one of the 'Builder' classes. The ticket can then be 
+modified and/or executed using 'send_order'; the returend order id can be 
+used to call 'cancel_order'.
+
+https://github.com/jeog/TDAmeritradeAPI/blob/master/README_EXECUTE.md
+"""
+
 from ctypes import byref as _REF, c_int, c_size_t, c_double, c_uint, \
                     c_char_p, POINTER
 import json

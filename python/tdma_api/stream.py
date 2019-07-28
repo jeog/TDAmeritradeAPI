@@ -15,7 +15,7 @@
 # along with this program.  If not, see http://www.gnu.org/licenses.
 # 
 
-"""tdma_api/stream.py the streaming interface
+"""tdma_api/stream.py - the streaming interface
 
 The stream module provides the StreamerSession class and Subscription 
 objects for getting streaming market data from the TDAmeritrade API.
@@ -25,30 +25,17 @@ TDAmeritradeAPI shared library, using the exported C/ABI methods through
 ctypes.py to replicate the functionality. 
 
 Before using you'll need to have obtained a valid Credentials object. (See
-tdma_api.auth.__doc__ or README.md for details.)
+tdma_api.auth.py)
 
 Each session is passed a Credentials object, callback function,
 and some optional timeout args.
 
-The session is started by passing a collection of Subscription objects for
-the particular streaming services desired. Subscription objects can be added 
-later and can be used to update or remove the active subscriptions using the 
-ADD, VIEW, and UNSUBS command types. 
+The session is started and updated by passing a collection of Subscription objects for
+the particular streaming services desired.
 
-THERE CAN BE ONLY ONE ACTIVE SESSION  FOR EACH PRIMARY ACCOUNT ID.
+THERE CAN BE ONLY ONE ACTIVE SESSION FOR EACH PRIMARY ACCOUNT ID.
 
-Managed Subscription types fall into two categories:
-
-Field/Symbol - these are created with symbol strings and data fields defined
-in the appropriately named module constants. (e.g QuotesSubscription)
-
-Venue/Duration - these are created with Venue and/or Duration types defined
-in the appropriately named module constants. (e.g NasdaqActivesSubscription)
-
-The Raw Subscription accepts strings for service type, command type, and
-parameters - allowing for complete control over the subscription.
-
-See README_STREAMING.md for a more thorough explanation.
+https://github.com/jeog/TDAmeritradeAPI/blob/master/README_STREAMING.md
 """
 
 from ctypes import byref as _REF, c_int, c_void_p, c_ulonglong, CFUNCTYPE, \
