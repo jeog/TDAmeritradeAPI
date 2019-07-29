@@ -2,6 +2,7 @@
 #include <iostream>
 #include <iomanip>
 #include <chrono>
+#include <ctime>
 
 #include "test.h"
 
@@ -499,21 +500,25 @@ movers_getter(Credentials& c)
 void
 market_hours_getter(Credentials& c)
 {
-    MarketHoursGetter o(c, MarketType::bond, "2019-07-04");
+    time_t t = time(0);
+    struct tm *time_struct = localtime(&t);  
+    string yr_str = std::to_string(time_struct->tm_year + 1900 + 1);
+
+    MarketHoursGetter o(c, MarketType::bond, yr_str + "-07-04");
     cout<< o.get_date() << ' ' << o.get_market_type() << endl;
 
-    if( o.get_date() != "2019-07-04" )
+    if( o.get_date() != yr_str + "-07-04" )
         throw runtime_error("invalid date");
     if( o.get_market_type() != MarketType::bond )
         throw runtime_error("invalid market type");
 
     Get(o);
 
-    o.set_date("2019-07-05");
+    o.set_date(yr_str + "-07-05");
     o.set_market_type(MarketType::equity);
     cout<< o.get_date() << ' ' << o.get_market_type() << endl;
 
-    if( o.get_date() != "2019-07-05" )
+    if( o.get_date() != yr_str + "-07-05" )
         throw runtime_error("invalid date");
     if( o.get_market_type() != MarketType::equity )
         throw runtime_error("invalid market type");

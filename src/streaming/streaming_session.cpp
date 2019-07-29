@@ -327,7 +327,7 @@ class StreamingSessionImpl{
     _exec_callback( StreamingCallbackType cb_type,
                     StreamerServiceType ss_type,
                     unsigned long long ts,
-                    json j )
+                    const json& j )
     {
         if( _callback ){
             _callback( static_cast<int>(cb_type), static_cast<int>(ss_type),
