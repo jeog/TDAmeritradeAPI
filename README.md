@@ -79,6 +79,7 @@ This project would not be possible without some of the great open-source project
 ### New Features
 - - -
 
+- (additioanl) Java Bindings - AccountInfoGetter, TransactionHistoryGetter, IndividualTransactionHistoryGetter, PreferencesGetter, StreamerSubscriptionKeysGetter
 - (additional) Java Bindings - OptionChainGetter, OptionChainStrategyGetter, OptionChainAnalyticalGetter
 - credential_builder.py - streamlineed approach to authentication and credential building
 - Java Bindings - streaming interface is complete; 'get' interface currently has Quote, Quotes, HistoricalPeriod, and HistoricalRange getters available

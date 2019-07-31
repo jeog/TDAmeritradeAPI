@@ -154,8 +154,7 @@ public class Test {
                 creds = Auth.loadCredentials(credsPath, credsPassword);
                
                 System.out.println( "*  TEST (RANDOMIZED) CREDENTIALS");
-                testCredentials(1000);
-                               
+                testCredentials(1000);                               
                 
                 System.out.println( "*  TEST C QUOTE GETTER ALLOC/DEALLOC");
                 testQuoteGetterAllocs(creds, 4, 100);
@@ -180,6 +179,21 @@ public class Test {
                 
                 System.out.println("*  TEST OPTION CHAIN ANALYTICAL GETTER ");
                 testOptionChainAnalyticalGetter(creds, liveConnect);
+                
+                System.out.println("*  TEST ACCOUNT INFO GETTER ");
+                testAccountInfoGetter(creds, accountID, liveConnect);
+                
+                System.out.println("*  TEST TRANSACTION HISTORY GETTER ");
+                testTransactionHistoryGetter(creds, accountID, liveConnect);
+                
+                System.out.println("*  TEST INDIVIDUAL TRANSACTION HISTORY GETTER ");
+                testIndividualTransactionHistoryGetter(creds, accountID, liveConnect);
+                
+                System.out.println("*  TEST STREAMER SUBSCRIPTION KEYS GETTER ");
+                testStreamerSubscriptionKeysGetter(creds, accountID, liveConnect);
+                
+                System.out.println("*  TEST PREFERENCES GETTER ");
+                testPreferencesGetter(creds, accountID, liveConnect);
             }                               
             
             System.out.println("*  TEST HISTORICAL GETTER TYPES ");
@@ -267,6 +281,224 @@ public class Test {
         for( int i = 0; i < vals.length; ++i ) {
             testEnumString(vals[i], strings.get(i), name);             
         }       
+        
+    }
+   
+    private static void
+    testPreferencesGetter(Credentials creds, String accountID, boolean liveConnect) 
+            throws Exception{
+   
+        try( PreferencesGetter getter = new PreferencesGetter(creds, "BAD_ACCOUNT_ID") ){ 
+                        
+            String accountID2 = getter.getAccountId();
+            if( !accountID2.equals("BAD_ACCOUNT_ID") )
+                throw new Exception("PreferencesGetter accountID doesn't match (1)");
+       
+            accountID = (accountID == null) ? "BAD_ACCOUNT_ID2" : accountID;
+            
+            getter.setAccountId(accountID);
+            accountID2 = getter.getAccountId();
+            if( !accountID2.equals(accountID) )
+                throw new Exception("PreferencesGetter accountID doesn't match (2)");
+  
+            if( liveConnect ) {
+                JSONObject j = (JSONObject)getter.get();
+                if( j.isEmpty() )
+                    throw new Exception("PreferencesGetter.get() returned empty string");
+                System.out.println("*   JSON: " + j.toString());
+            }else {
+                System.out.println("*   Can't get(), pass 'account_id' to run live");
+            }
+        }                                                                         
+    }
+    
+    private static void
+    testStreamerSubscriptionKeysGetter(Credentials creds, String accountID, boolean liveConnect) 
+            throws Exception{
+   
+        try( StreamerSubscriptionKeysGetter getter = new StreamerSubscriptionKeysGetter(creds, "BAD_ACCOUNT_ID") ){ 
+                        
+            String accountID2 = getter.getAccountId();
+            if( !accountID2.equals("BAD_ACCOUNT_ID") )
+                throw new Exception("StreamerSubscriptionKeysGetter accountID doesn't match (1)");
+       
+            accountID = (accountID == null) ? "BAD_ACCOUNT_ID2" : accountID;
+            
+            getter.setAccountId(accountID);
+            accountID2 = getter.getAccountId();
+            if( !accountID2.equals(accountID) )
+                throw new Exception("StreamerSubscriptionKeysGetter accountID doesn't match (2)");
+  
+            if( liveConnect ) {
+                JSONObject j = (JSONObject)getter.get();
+                if( j.isEmpty() )
+                    throw new Exception("StreamerSubscriptionKeysGetter.get() returned empty string");
+                System.out.println("*   JSON: " + j.toString());
+            }else {
+                System.out.println("*   Can't get(), pass 'account_id' to run live");
+            }
+        }                                                                         
+    }
+    
+    private static void
+    testIndividualTransactionHistoryGetter(Credentials creds, String accountID, boolean liveConnect) 
+            throws Exception{
+   
+        try( IndividualTransactionHistoryGetter getter = new IndividualTransactionHistoryGetter(creds, 
+                "BAD_ACCOUNT_ID", "BAD_TRANSACTION_ID") ){ 
+                        
+            String accountID2 = getter.getAccountId();
+            if( !accountID2.equals("BAD_ACCOUNT_ID") )
+                throw new Exception("IndividualTransactionHistoryGetter accountID doesn't match (1)");
+        
+            String transactionID = getter.getTransactionID();
+            if( !transactionID.equals("BAD_TRANSACTION_ID") )
+                throw new Exception("IndividualTransactionHistoryGetter transactionIDdoesn't match (1)");
+      
+            accountID = (accountID == null) ? "BAD_ACCOUNT_ID2" : accountID;
+            
+            getter.setAccountId(accountID);
+            accountID2 = getter.getAccountId();
+            if( !accountID2.equals(accountID) )
+                throw new Exception("IndividualTransactionHistoryGetter accountID doesn't match (2)");
+      
+            String transactionID2 = "123456789";
+            getter.setTransactionID(transactionID2);
+            transactionID = getter.getTransactionID();
+            if( !transactionID.equals(transactionID2) )
+                throw new Exception("IndividualTransactionHistoryGetter transactionIDdoesn't match (2)");
+            
+            if( liveConnect ) {
+                try {
+                    JSONArray j = (JSONArray)getter.get();                    
+                    System.out.println("*   JSON: " + j.toString());
+                }catch( CLibException exc ) {
+                        System.out.println("transaction ID not found: " + transactionID2);
+                    }
+            }else {
+                System.out.println("*   Can't get(), pass 'account_id' to run live");
+            }
+        }                                                                         
+    }
+    
+    private static void
+    testTransactionHistoryGetter(Credentials creds, String accountID, boolean liveConnect) throws Exception{
+        
+        testEnum(TransactionHistoryGetter.TransactionType.values(), 
+                Arrays.asList("ALL", "TRADE", "BUY_ONLY", "SELL_ONLY", "CASH_IN_OR_CASH_OUT",
+                "CHECKING", "DIVIDEND", "INTEREST", "OTHER", "ADVISOR_FEES"), "TransactionType" );
+        
+        Calendar c = Calendar.getInstance();        
+        int month = c.get(Calendar.MONTH) + 1;
+        int year = c.get(Calendar.YEAR);
+        int day = c.get(Calendar.DAY_OF_MONTH);
+        
+        String startDate = String.format("%d-%02d-%02d", year-1, month, day);
+        String endDate = String.format("%d-%02d-%02d", year, month, day);
+        
+        try( TransactionHistoryGetter getter = new TransactionHistoryGetter(creds, "BAD_ACCOUNT_ID", 
+                TransactionHistoryGetter.TransactionType.ADVISOR_FEES, "BAD_SYMBOL", startDate, endDate) ){
+            
+            String accountID2 = getter.getAccountId();
+            if( !accountID2.equals("BAD_ACCOUNT_ID") )
+                throw new Exception("TransactionHistoryGetter accountID doesn't match (1)");
+            
+            TransactionHistoryGetter.TransactionType transactionType = getter.getTransactionType();
+            if( transactionType != TransactionHistoryGetter.TransactionType.ADVISOR_FEES)
+                throw new Exception("TransactionHistoryGetter TransactionType doesn't match (1)");
+            
+            String startDate2 = getter.getStartDate();
+            if( !startDate.equals(startDate2) )
+                throw new Exception("TransactionHistoryGetter startDate doesn't match (1)");
+            
+            String endDate2 = getter.getEndDate();
+            if( !endDate.equals(endDate2) )
+                throw new Exception("TransactionHistoryGetter endDate doesn't match (1)");
+            
+            accountID = (accountID == null) ? "BAD_ACCOUNT_ID2" : accountID;
+            
+            getter.setAccountId(accountID);
+            accountID2 = getter.getAccountId();
+            if( !accountID2.equals(accountID) )
+                throw new Exception("TransactionHistoryGetter accountID doesn't match (2)");
+            
+            getter.setTransactionType(TransactionHistoryGetter.TransactionType.ALL);
+            transactionType = getter.getTransactionType();
+            if( transactionType != TransactionHistoryGetter.TransactionType.ALL)
+                throw new Exception("TransactionHistoryGetter TransactionType doesn't match (2)");
+            
+            if( month <= 6 ) {
+                startDate = String.format("%d-%02d-%02d", year-1, month + 6, day);
+            }else {
+                startDate = String.format("%d-%02d-%02d", year, month - 6, day);
+            }
+            
+            if( month <= 3 ) {
+                endDate = String.format("%d-%02d-%02d", year-1, month + 9, day);
+            }else {
+                endDate = String.format("%d-%02d-%02d", year, month - 3, day);
+            }
+            
+            getter.setStartDate(startDate);
+            startDate2 = getter.getStartDate();
+            if( !startDate.equals(startDate2) )
+                throw new Exception("TransactionHistoryGetter startDate doesn't match (2)");
+            
+            getter.setEndDate(endDate);
+            endDate2 = getter.getEndDate();
+            if( !endDate.equals(endDate2) )
+                throw new Exception("TransactionHistoryGetter endDate doesn't match (2)");
+            
+            if( liveConnect ) {
+                JSONArray j = (JSONArray)getter.get();           
+                System.out.println("*   JSON: " + j.toString());
+            }else {
+                System.out.println("*   Can't get(), pass 'account_id' to run live");
+            }
+        }                                                                  
+        
+    }
+    
+    
+    private static void
+    testAccountInfoGetter(Credentials creds, String accountID, boolean liveConnect ) throws Exception {
+        
+        try( AccountInfoGetter getter = new AccountInfoGetter(creds, "BAD_ACCOUNT_ID", false, false) ){
+            
+            String accountID2 = getter.getAccountId();
+            if( !accountID2.equals("BAD_ACCOUNT_ID") )
+                throw new Exception("AccountInfoGetter accountID doesn't match (1)");
+            
+            if( getter.returnsPositions() )
+                throw new Exception("AccountInfoGetter returnsPositions doesn't match (1)");
+            
+            if( getter.returnsOrders() )
+                throw new Exception("AccountInfoGetter returnsOrders doesn't match (1)");
+            
+            accountID = (accountID == null) ? "BAD_ACCOUNT_ID2" : accountID;
+            
+            getter.setAccountId(accountID);
+            accountID2= getter.getAccountId();
+            if( !accountID.equals(accountID2) )
+                throw new Exception("AccountInfoGetter accountID doesn't match (2)");
+            
+            getter.returnPositions(true);
+            if( !getter.returnsPositions() )
+                throw new Exception("AccountInfoGetter returnsPositions doesn't match (2)");
+            
+            getter.returnOrders(true);
+            if( !getter.returnsOrders() )
+                throw new Exception("AccountInfoGetter returnsOrders doesn't match (2)");           
+            
+            if( liveConnect ) {
+                JSONObject j = (JSONObject)getter.get();
+                if( j.isEmpty() )
+                    throw new Exception("AccountInfoGetter.get() returned empty string");
+                System.out.println("*   JSON: " + j.toString());
+            }else {
+                System.out.println("*   Can't get(), pass 'account_id' to run live");
+            }
+        }
         
     }
     
