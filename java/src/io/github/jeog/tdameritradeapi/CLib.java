@@ -21,6 +21,7 @@ import com.sun.jna.Library;
 import com.sun.jna.Memory;
 import com.sun.jna.Native;
 import com.sun.jna.Structure;
+import com.sun.jna.Union;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -71,6 +72,8 @@ public interface CLib extends Library {
             public interface SetInts< T >{ int call(T pObj, int[] i, size_t n, int exc); }     
             public interface GetLong< T >{ int call(T pObj, long[] i, int exc); }   
             public interface SetLong< T >{ int call(T pObj, long i, int exc); } 
+            public interface GetDouble< T >{ int call(T pObj, double[] d, int exc); }   
+            public interface SetDouble< T >{ int call(T pObj, double d, int exc); } 
             public interface GetString< T >{ int call(T pObj, PointerByReference buffer, size_t[] n, int exc); }        
             public interface SetString< T >{ int call(T pObj, String s, int exc); }     
             public interface GetStrings< T >{ int call(T pObj, PointerByReference buffers, size_t[] n, int exc); }      
@@ -101,7 +104,7 @@ public interface CLib extends Library {
             if( err != 0 )
                 throw new TDAmeritradeAPI.CLibException(err);               
         }   
-        
+            
         public static String 
         getString(FunctionType.GetString method) throws CLibException{
             PointerByReference p = new PointerByReference();
@@ -150,6 +153,22 @@ public interface CLib extends Library {
         public static <T> void
         setLong(T pObj, long l, MethodType.SetLong<T> method) throws CLibException{            
             int err = method.call(pObj, l, 0); 
+            if( err != 0 )
+                throw new TDAmeritradeAPI.CLibException(err);                
+        } 
+                
+        public static <T> double
+        getDouble(T pObj, MethodType.GetDouble<T> method) throws CLibException{
+            double d[] = {.0};
+            int err = method.call(pObj, d, 0); 
+            if( err != 0 )
+                throw new TDAmeritradeAPI.CLibException(err);
+            return d[0];        
+        }               
+        
+        public static <T> void
+        setDouble(T pObj, double d, MethodType.SetDouble<T> method) throws CLibException{            
+            int err = method.call(pObj, d, 0); 
             if( err != 0 )
                 throw new TDAmeritradeAPI.CLibException(err);                
         } 
@@ -346,6 +365,62 @@ public interface CLib extends Library {
         }       
     }
     
+    public static class _OptionChainGetter_C extends _Getter_C {
+        protected int
+        destroyNative() throws  CLibException {
+            return TDAmeritradeAPI.getCLib().OptionChainGetter_Destroy_ABI(this, 0);                         
+        }       
+    }
+    
+    public static class _OptionChainStrategyGetter_C extends _OptionChainGetter_C {
+        protected int
+        destroyNative() throws  CLibException {
+            return TDAmeritradeAPI.getCLib().OptionChainStrategyGetter_Destroy_ABI(this, 0);                         
+        }       
+    }
+    
+    public static class _OptionChainAnalyticalGetter_C extends _OptionChainGetter_C {
+        protected int
+        destroyNative() throws  CLibException {
+            return TDAmeritradeAPI.getCLib().OptionChainAnalyticalGetter_Destroy_ABI(this, 0);                         
+        }       
+    }
+    
+    public static class _AccountInfoGetter_C extends _Getter_C {
+        protected int
+        destroyNative() throws  CLibException {
+            return TDAmeritradeAPI.getCLib().AccountInfoGetter_Destroy_ABI(this, 0);                         
+        }       
+    }
+    
+    public static class _PreferencesGetter_C extends _Getter_C {
+        protected int
+        destroyNative() throws  CLibException {
+            return TDAmeritradeAPI.getCLib().PreferencesGetter_Destroy_ABI(this, 0);                         
+        }       
+    }
+    
+    public static class _StreamerSubscriptionKeysGetter_C extends _Getter_C {
+        protected int
+        destroyNative() throws  CLibException {
+            return TDAmeritradeAPI.getCLib().StreamerSubscriptionKeysGetter_Destroy_ABI(this, 0);                         
+        }       
+    }
+    
+    public static class _TransactionHistoryGetter_C extends _Getter_C {
+        protected int
+        destroyNative() throws  CLibException {
+            return TDAmeritradeAPI.getCLib().TransactionHistoryGetter_Destroy_ABI(this, 0);                         
+        }       
+    }
+    
+    public static class _IndividualTransactionHistoryGetter_C extends _Getter_C {
+        protected int
+        destroyNative() throws  CLibException {
+            return TDAmeritradeAPI.getCLib().IndividualTransactionHistoryGetter_Destroy_ABI(this, 0);                         
+        }       
+    }
+    
     public static abstract class _CProxy3 extends _CProxy2 {
         public Pointer ctx;
         
@@ -417,6 +492,40 @@ public interface CLib extends Library {
     }
 
     
+    public class OptionStrikesValue extends Union {
+        /*
+         * WARNING - purposely passing longs in place of int as a temporary
+         *           work-around to a bug in JNA
+         *           
+         *           https://github.com/java-native-access/jna/issues/1118
+         */
+        public long nAtm;
+        public double single;
+        public long range;
+        
+        public OptionStrikesValue() {
+            super();
+        }
+        
+        public OptionStrikesValue(long l) {
+            super();
+            this.range = this.nAtm = l;
+            setType(Long.TYPE);
+        }
+        
+        public OptionStrikesValue(double d) {
+            super();
+            this.single = d;
+            setType(Double.TYPE);
+        }
+          
+        public static class ByValue extends OptionStrikesValue implements Union.ByValue {            
+            public ByValue( long l ) { super(l); }
+            public ByValue( double d ) { super(d); }          
+        };        
+    }
+
+    
     /* ERROR */
     int LastErrorCode_ABI( int[] code, int exc );    
     int LastErrorMsg_ABI( PointerByReference buffer, size_t[] n, int exc ); // need to free    
@@ -447,6 +556,13 @@ public interface CLib extends Library {
     int VenueType_to_string_ABI( int service, PointerByReference buffer, size_t[] n, int exc );
     int FrequencyType_to_string_ABI( int frequencyType, PointerByReference buffer, size_t[] n, int exc );
     int PeriodType_to_string_ABI( int periodType, PointerByReference buffer, size_t[] n, int exc );
+    int OptionStrikesType_to_string_ABI( int optionStrikesType, PointerByReference buffer, size_t[] n, int exc );
+    int OptionRangeType_to_string_ABI( int optionRangeType, PointerByReference buffer, size_t[] n, int exc );
+    int OptionContractType_to_string_ABI( int optionContractType, PointerByReference buffer, size_t[] n, int exc );
+    int OptionExpMonth_to_string_ABI( int optionExpMonth, PointerByReference buffer, size_t[] n, int exc );
+    int OptionType_to_string_ABI( int optionType, PointerByReference buffer, size_t[] n, int exc );
+    int OptionStrategyType_to_string_ABI( int strategyType, PointerByReference buffer, size_t[] n, int exc );
+    int TransactionType_to_string_ABI( int transactionType, PointerByReference buffer, size_t[] n, int exc );
     
     /* AUTH */
     int LoadCredentials_ABI( String path, String password, Credentials._Credentials pCredentials, int exc );    
@@ -537,7 +653,114 @@ public interface CLib extends Library {
     int HistoricalRangeGetter_SetStartMSecSinceEpoch_ABI( _HistoricalRangeGetter_C pGetter, long endMSecSinceEpoch, int exc);   
 
     /* OPTION CHAIN GETTER */
+    int OptionChainGetter_Create_ABI( Credentials._Credentials pCredentials, String symbol, int strikesType,     
+            OptionStrikesValue.ByValue strikesValue, int contractType, int includeQuotes, String fromDate, String toDate, 
+            int expMonth, int optionType, _OptionChainGetter_C pGetter, int exc );
+    int OptionChainGetter_Destroy_ABI( _OptionChainGetter_C pGetter, int exc);
+    int OptionChainGetter_GetSymbol_ABI( _OptionChainGetter_C pGetter, PointerByReference buffer, size_t[] n, int exc);
+    int OptionChainGetter_SetSymbol_ABI( _OptionChainGetter_C pGetter, String symbol, int exc );
+    int OptionChainGetter_GetStrikes_ABI( _OptionChainGetter_C pGetter, int[] strikesType, 
+            OptionStrikesValue strikesValue, int exc );
+    int OptionChainGetter_SetStrikes_ABI( _OptionChainGetter_C pGetter, int strikesType, 
+            OptionStrikesValue.ByValue strikesValue, int exc );
+    int OptionChainGetter_GetContractType_ABI( _OptionChainGetter_C pGetter, int[] contractType, int exc );
+    int OptionChainGetter_SetContractType_ABI( _OptionChainGetter_C pGetter, int contractType, int exc );
+    int OptionChainGetter_IncludesQuotes_ABI( _OptionChainGetter_C pGetter, int[] includes_quotes, int exc );
+    int OptionChainGetter_IncludeQuotes_ABI( _OptionChainGetter_C pGetter, int include_quotes, int exc );
+    int OptionChainGetter_GetFromDate_ABI( _OptionChainGetter_C pGetter, PointerByReference buffer, size_t[] n, int exc);
+    int OptionChainGetter_SetFromDate_ABI( _OptionChainGetter_C pGetter, String date, int exc );
+    int OptionChainGetter_GetToDate_ABI( _OptionChainGetter_C pGetter, PointerByReference buffer, size_t[] n, int exc);
+    int OptionChainGetter_SetToDate_ABI( _OptionChainGetter_C pGetter, String date, int exc );
+    int OptionChainGetter_GetExpMonth_ABI( _OptionChainGetter_C pGetter, int[] expMonth, int exc );
+    int OptionChainGetter_SetExpMonth_ABI( _OptionChainGetter_C pGetter, int expMonth, int exc );
+    int OptionChainGetter_GetOptionType_ABI( _OptionChainGetter_C pGetter, int[] optionType, int exc );
+    int OptionChainGetter_SetOptionType_ABI( _OptionChainGetter_C pGetter, int optionType, int exc );
     
+    /* OPTION CHAIN STRATEGY GETTER */
+    int OptionChainStrategyGetter_Destroy_ABI( _OptionChainStrategyGetter_C pGetter, int exc);
+    int OptionChainStrategyGetter_Create_ABI( Credentials._Credentials pCredentials, String symbol, int strategyType,
+            double spreadInterval, int strikesType, OptionStrikesValue.ByValue strikesValue, int contractType, 
+            int includeQuotes, String fromDate, String toDate, int expMonth, int optionType, 
+            _OptionChainStrategyGetter_C pGetter, int exc );   
+    int OptionChainStrategyGetter_GetStrategy_ABI( _OptionChainStrategyGetter_C pGetter, int[] strategyType,
+            double[] spreadInterval, int exc );
+    int OptionChainStrategyGetter_SetStrategy_ABI( _OptionChainStrategyGetter_C pGetter, int strategyType,
+            double spreadInterval, int exc );      
+    
+    
+    /* OPTION CHAIN ANALYTICAL GETTER */
+    int OptionChainAnalyticalGetter_Create_ABI( Credentials._Credentials pCredentials, String symbol, double volatility,
+            double underlyingPirce, double interestRate, int daysToExp, int strikesType, 
+            OptionStrikesValue.ByValue strikesValue, int contractType, int includeQuotes, String fromDate, 
+            String toDate, int expMonth, int optionType, _OptionChainAnalyticalGetter_C pGetter, int exc );
+    int OptionChainAnalyticalGetter_Destroy_ABI( _OptionChainAnalyticalGetter_C pGetter, int exc);
+    int OptionChainAnalyticalGetter_GetVolatility_ABI( _OptionChainAnalyticalGetter_C pGetter, 
+            double[] volatility, int excs );
+    int OptionChainAnalyticalGetter_SetVolatility_ABI( _OptionChainAnalyticalGetter_C pGetter, 
+            double volatility, int excs );
+    int OptionChainAnalyticalGetter_GetUnderlyingPrice_ABI( _OptionChainAnalyticalGetter_C pGetter, 
+            double[] underlying_price, int excs );
+    int OptionChainAnalyticalGetter_SetUnderlyingPrice_ABI( _OptionChainAnalyticalGetter_C pGetter, 
+            double underlying_price, int excs );
+    int OptionChainAnalyticalGetter_GetInterestRate_ABI( _OptionChainAnalyticalGetter_C pGetter, 
+            double[] interest_rate, int excs );
+    int OptionChainAnalyticalGetter_SetInterestRate_ABI( _OptionChainAnalyticalGetter_C pGetter, 
+            double interest_rate, int excs );
+    int OptionChainAnalyticalGetter_GetDaysToExp_ABI( _OptionChainAnalyticalGetter_C pGetter, 
+            int[] days_to_exp, int excs );
+    int OptionChainAnalyticalGetter_SetDaysToExp_ABI( _OptionChainAnalyticalGetter_C pGetter, 
+            int days_to_exp, int excs );
+    
+    /* ACCOUNT GETTER (BASE */
+    int AccountGetterBase_GetAccountId_ABI( _Getter_C pGetter, PointerByReference buffer, size_t[] n, int exc);
+    int AccountGetterBase_SetAccountId_ABI( _Getter_C pGetter, String symbol, int exc );
+    
+    /* ACCOUNT INFO GETTER */
+    int AccountInfoGetter_Create_ABI( Credentials._Credentials pCredentials, String accountID, int positions,
+            int orders, _AccountInfoGetter_C pGetter, int exc);                              
+    int AccountInfoGetter_Destroy_ABI( _AccountInfoGetter_C pgetter, int exc );                                   
+    int AccountInfoGetter_ReturnsPositions_ABI( _AccountInfoGetter_C pGettretter, int[] returnsPositions, int exc);                                        
+    int AccountInfoGetter_ReturnPositions_ABI( _AccountInfoGetter_C pGetter, int returnPositions, int exc);                                          
+    int AccountInfoGetter_ReturnsOrders_ABI( _AccountInfoGetter_C pGetter, int[] returnsOrder, int exc);                                         
+    int AccountInfoGetter_ReturnOrders_ABI( _AccountInfoGetter_C pGetter, int returnOrders, int exc);
+    
+    /* PREFERENCES GETTER */
+    int PreferencesGetter_Create_ABI( Credentials._Credentials pCredentials, String accountID, 
+            _PreferencesGetter_C pGetter, int exc); 
+    int PreferencesGetter_Destroy_ABI( _PreferencesGetter_C pGetter, int exc );
+    
+    /* STREAMER SUBSCRIPTION KEYS GETTER */
+    int StreamerSubscriptionKeysGetter_Create_ABI( Credentials._Credentials pCredentials, String accountID, 
+            _StreamerSubscriptionKeysGetter_C pGetter, int exc); 
+    int StreamerSubscriptionKeysGetter_Destroy_ABI( _StreamerSubscriptionKeysGetter_C pGetter, int exc );                                       
+        
+    /* TRANSACTION HISTORY GETTER */
+    int TransactionHistoryGetter_Create_ABI( Credentials._Credentials pCredentials, String accountID, 
+            int transactionType, String symbol, String startDate, String endDate, 
+            _TransactionHistoryGetter_C pGetter, int exc);                                      
+    int TransactionHistoryGetter_Destroy_ABI( _TransactionHistoryGetter_C pGetter, int exc );
+    int TransactionHistoryGetter_GetTransactionType_ABI( _TransactionHistoryGetter_C pGetter, 
+            int[] transactionType, int exc );
+    int TransactionHistoryGetter_SetTransactionType_ABI( _TransactionHistoryGetter_C pGetter, 
+            int transactionType, int exc );
+    int TransactionHistoryGetter_GetSymbol_ABI( _TransactionHistoryGetter_C pGetter, PointerByReference buffer, 
+            size_t[] n, int exc);    
+    int TransactionHistoryGetter_SetSymbol_ABI( _TransactionHistoryGetter_C pGetter, String symbol, int exc );
+    int TransactionHistoryGetter_GetStartDate_ABI( _TransactionHistoryGetter_C pGetter, PointerByReference buffer, 
+            size_t[] n, int exc);  
+    int TransactionHistoryGetter_SetStartDate_ABI( _TransactionHistoryGetter_C pGetter, String startDate, int exc );
+    int TransactionHistoryGetter_GetEndDate_ABI( _TransactionHistoryGetter_C pGetter, PointerByReference buffer, 
+            size_t[] n, int exc); 
+    int TransactionHistoryGetter_SetEndDate_ABI( _TransactionHistoryGetter_C pGetter, String endDate, int exc );
+        
+    /* INDIVIDUAL TRANSACTION HISTORY GETTER */
+    int IndividualTransactionHistoryGetter_Create_ABI( Credentials._Credentials pCredentials, String accountID, 
+            String transactionID, _IndividualTransactionHistoryGetter_C pGetter, int exc);                                      
+    int IndividualTransactionHistoryGetter_Destroy_ABI( _IndividualTransactionHistoryGetter_C pGetter, int exc );
+    int IndividualTransactionHistoryGetter_GetTransactionId_ABI( _IndividualTransactionHistoryGetter_C pGetter, 
+            PointerByReference buffer, size_t[] n, int exc);    
+    int IndividualTransactionHistoryGetter_SetTransactionId_ABI( _IndividualTransactionHistoryGetter_C pGetter, 
+            String transactionID, int exc );
     
     
     /* STREAMING SESSION */

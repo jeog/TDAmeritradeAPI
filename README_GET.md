@@ -526,7 +526,7 @@ C++ Getter classes and the equivalent C interfaces are outlined below.
 
 The C interface uses appropriately named functions to mimic the methods of the C++ classes. It requires explicit use of the ```Create``` functions for construction and ```Destroy``` functions for destruction. 
 
-The Python and Java interfaces matches C++ almost exactly. *Currently only QuoteGetter, QuotesGetter, HistoricalPeriodGetter, and HistoricalRangeGetter are available in java.*
+The Python and Java interfaces matches C++ almost exactly. *Currently QuoteGetter, QuotesGetter, HistoricalPeriodGetter, HistoricalRangeGetter, OptionChainGetter, OptionChainStrategyGetter, OptionChainAnalyticalGetter, AccountInfoGetter, PreferencesGetter, StreamerSubscriptionKeysGetter, TransactionHistoryGetter, and IndividualTransactionHistoryGetter are available in java.*
 
 #### QuoteGetter
 

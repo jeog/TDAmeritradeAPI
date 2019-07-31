@@ -29,6 +29,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -40,37 +42,25 @@ import io.github.jeog.tdameritradeapi.Auth.Credentials;
 import io.github.jeog.tdameritradeapi.TDAmeritradeAPI;
 import io.github.jeog.tdameritradeapi.TDAmeritradeAPI.CLibException;
 import io.github.jeog.tdameritradeapi.TDAmeritradeAPI.LibraryNotLoaded;
-import io.github.jeog.tdameritradeapi.get.APIGetter;
-import io.github.jeog.tdameritradeapi.get.HistoricalPeriodGetter;
-import io.github.jeog.tdameritradeapi.get.QuoteGetter;
-import io.github.jeog.tdameritradeapi.get.QuotesGetter;
 import io.github.jeog.tdameritradeapi.get.HistoricalGetterBase.FrequencyType;
 import io.github.jeog.tdameritradeapi.get.HistoricalPeriodGetter.PeriodType;
-import io.github.jeog.tdameritradeapi.get.HistoricalRangeGetter;
+import io.github.jeog.tdameritradeapi.get.OptionChainGetter.InvalidOptionStrikesType;
+import io.github.jeog.tdameritradeapi.get.OptionChainGetter.OptionContractType;
+import io.github.jeog.tdameritradeapi.get.OptionChainGetter.OptionExpMonth;
+import io.github.jeog.tdameritradeapi.get.OptionChainGetter.OptionRangeType;
+import io.github.jeog.tdameritradeapi.get.OptionChainGetter.OptionStrikes;
+import io.github.jeog.tdameritradeapi.get.OptionChainGetter.OptionStrikesType;
+import io.github.jeog.tdameritradeapi.get.OptionChainGetter.OptionType;
+import io.github.jeog.tdameritradeapi.get.OptionChainStrategyGetter.OptionStrategy;
+import io.github.jeog.tdameritradeapi.get.OptionChainStrategyGetter.OptionStrategyType;
+import io.github.jeog.tdameritradeapi.get.*;
 import io.github.jeog.tdameritradeapi.stream.ActivesSubscriptionBase.DurationType;
 import io.github.jeog.tdameritradeapi.stream.OptionActivesSubscription.VenueType;
-import io.github.jeog.tdameritradeapi.stream.ChartEquitySubscription;
-import io.github.jeog.tdameritradeapi.stream.ChartFuturesSubscription;
-import io.github.jeog.tdameritradeapi.stream.ChartOptionsSubscription;
-import io.github.jeog.tdameritradeapi.stream.LevelOneForexSubscription;
-import io.github.jeog.tdameritradeapi.stream.LevelOneFuturesOptionsSubscription;
-import io.github.jeog.tdameritradeapi.stream.LevelOneFuturesSubscription;
-import io.github.jeog.tdameritradeapi.stream.NasdaqActivesSubscription;
-import io.github.jeog.tdameritradeapi.stream.NewsHeadlineSubscription;
-import io.github.jeog.tdameritradeapi.stream.OptionActivesSubscription;
-import io.github.jeog.tdameritradeapi.stream.OptionsSubscription;
-import io.github.jeog.tdameritradeapi.stream.QuotesSubscription;
-import io.github.jeog.tdameritradeapi.stream.RawSubscription;
-import io.github.jeog.tdameritradeapi.stream.StreamingSession;
-import io.github.jeog.tdameritradeapi.stream.StreamingSubscription;
-import io.github.jeog.tdameritradeapi.stream.SubscriptionBySymbolBase;
-import io.github.jeog.tdameritradeapi.stream.TimesaleEquitySubscription;
-import io.github.jeog.tdameritradeapi.stream.TimesaleFuturesSubscription;
-import io.github.jeog.tdameritradeapi.stream.TimesaleOptionsSubscription;
 import io.github.jeog.tdameritradeapi.stream.StreamingSession.CallbackType;
 import io.github.jeog.tdameritradeapi.stream.StreamingSession.CommandType;
 import io.github.jeog.tdameritradeapi.stream.StreamingSession.QOSType;
 import io.github.jeog.tdameritradeapi.stream.StreamingSession.ServiceType;
+import io.github.jeog.tdameritradeapi.stream.*;
 
 public class Test {
 
@@ -144,7 +134,10 @@ public class Test {
             }
             
             System.out.println( "*  TEST OPTION UTILITIES");
-            testOptionUtils();                 
+            testOptionUtils();    
+            
+            System.out.println("*  TEST OPTION GETTER OBJECTS");
+            testOptionGetterObjects();
                    
             if( credsPath != null) {
                 
@@ -166,7 +159,7 @@ public class Test {
                 
                 System.out.println( "*  TEST C QUOTE GETTER ALLOC/DEALLOC");
                 testQuoteGetterAllocs(creds, 4, 100);
-                
+              
                 System.out.println( "*  TEST QUOTE GETTER ");
                 testQuoteGetter(creds, liveConnect);
                     
@@ -177,16 +170,25 @@ public class Test {
                 testHistoricalPeriodGetter(creds, liveConnect);
                 
                 System.out.println("*  TEST HISTORICAL RANGE GETTER ");
-                testHistoricalRangeGetter(creds, liveConnect);                
+                testHistoricalRangeGetter(creds, liveConnect);
+             
+                System.out.println("*  TEST OPTION CHAIN GETTER ");
+                testOptionChainGetter(creds, liveConnect);
+                
+                System.out.println("*  TEST OPTION CHAIN STRATEGY GETTER ");
+                testOptionChainStrategyGetter(creds, liveConnect);
+                
+                System.out.println("*  TEST OPTION CHAIN ANALYTICAL GETTER ");
+                testOptionChainAnalyticalGetter(creds, liveConnect);
             }                               
             
             System.out.println("*  TEST HISTORICAL GETTER TYPES ");
             testHistoricalGetterTypes();
                     
-            System.out.println("*  TEST STREAMING SUBSCRIPTION FIELDS:");
+            System.out.println("*  TEST STREAMING SUBSCRIPTION FIELDS");
             testSubscriptionFields();
             
-            System.out.println("*  TEST STREAMING SUBSCRIPTIONS:");
+            System.out.println("*  TEST STREAMING SUBSCRIPTIONS");
             testRawSubscription();
             testQuotesSubscription();
             testOptionsSubscription();
@@ -196,10 +198,10 @@ public class Test {
             testNewsHeadlineSubscription();
             testNasdaqActivesSubscription();
             testOptionActivesSubscription();            
-            
+          
             System.out.println("*  TEST STREAMING:");
             testStreaming(creds, liveConnect, 5000, 30000);            
-            
+         
             success = true;    
             
         } catch (Throwable t) {        
@@ -257,8 +259,475 @@ public class Test {
         }        
     }
     
+    private static <T extends CLib.ConvertibleEnum> void
+    testEnum(T[] vals, List<String> strings, String name) throws Exception{    
+        if( strings.size() != vals.length )
+            throw new Exception(name + " enum has invalid size");
+        
+        for( int i = 0; i < vals.length; ++i ) {
+            testEnumString(vals[i], strings.get(i), name);             
+        }       
+        
+    }
     
-    private static <T extends CLib.ConvertibleEnum>void
+    private static void
+    testStrategyObj(Function<Double, OptionStrategy> method, OptionStrategyType strategyType, double spread) throws Exception{
+        OptionStrategy o1 = method.apply(spread);
+        OptionStrategyType type1 = o1.getStrategy();
+        if( type1 != strategyType )
+            throw new Exception(method.toString() + " OptionStrategy does not have type: " + strategyType.toString());
+        double spread1 = o1.getSpreadInterval();
+        if( spread1 != spread )
+            throw new Exception(method.toString() + " OptionStrategy does not have spread: " + String.valueOf(spread));
+         
+        OptionStrategy o2 = new OptionStrategy(strategyType, spread);
+        if( o2.getStrategy() != type1 || o2.getSpreadInterval() != spread )
+            throw new Exception(method.toString() + " OptionStrategy does not match manually constructed object");
+    }
+    
+    private  static void
+    testStrategyObj(Supplier<OptionStrategy> method, OptionStrategyType strategyType) throws Exception{
+        Function<Double, OptionStrategy> wrapper = new Function<Double,OptionStrategy>(){
+            @Override
+            public OptionStrategy apply(Double spread){
+                return method.get();
+            }
+        };
+        double spread = strategyType == OptionStrategyType.COVERED 
+                || strategyType == OptionStrategyType.CALENDAR ? 0 : 1.0;
+        testStrategyObj(wrapper, strategyType, spread);      
+    }
+    
+    private static void
+    testOptionGetterObjects() throws Exception {
+        testEnum(OptionStrikesType.values(), Arrays.asList("n_atm", "single", "range"), 
+                "OptionStrikesType");
+        
+        testEnum(OptionRangeType.values(), Arrays.asList("ITM","NTM","OTM","SAK","SBK","SNK","ALL"),
+                "OptionRangeType");
+        
+        testEnum(OptionContractType.values(), Arrays.asList("CALL","PUT","ALL"), "OptionContractType");
+        
+        testEnum(OptionExpMonth.values(), Arrays.asList("JAN","FEB","MAR","APR","MAY","JUN","JUL",
+                "AUG","SEP","OCT","NOV","DEC","ALL"), "OptionExpMonth");
+        
+        testEnum(OptionType.values(), Arrays.asList("S","NS","ALL"), "OptionType");
+        
+        testEnum(OptionStrategyType.values(), Arrays.asList("COVERED","VERTICAL","CALENDAR","STRANGLE",
+                "STRADDLE","BUTTERFLY","CONDOR","DIAGONAL","COLLAR","ROLL"), "OptionStrategyType");
+        
+        OptionStrikes strikes1 = OptionStrikes.buildNAtm(10);
+        if( strikes1.getType() != OptionStrikesType.N_ATM )
+            throw new Exception("strikes1 != N_ATM");
+        if( strikes1.getNAtm() != 10 )
+            throw new Exception("strikes1 value != 10");
+        try {
+            strikes1.getSingle();
+            throw new Exception("failed to catch strikes1 InvalidOptionStrikesType");
+        }catch(InvalidOptionStrikesType exc) {            
+        }
+                
+        OptionStrikes strikes2 = OptionStrikes.buildRange(OptionRangeType.ITM);
+        if( strikes2.getType() != OptionStrikesType.RANGE )
+            throw new Exception("strikes2 != RANGE");
+        if( strikes2.getRange() != OptionRangeType.ITM )
+            throw new Exception("strikes2 value !+ OptionRangeType.ITM");
+        try {
+            strikes2.getNAtm();
+            throw new Exception("failed to ctch strikes2 InvalidOptionStrikesType");
+        }catch(InvalidOptionStrikesType exc) {            
+        }        
+        
+        OptionStrikes strikes3 = OptionStrikes.buildSingle(5.55);
+        if( strikes3.getType() != OptionStrikesType.SINGLE )
+            throw new Exception("strikes3 != SINGLE");
+        if( strikes3.getSingle() != 5.55 )
+            throw new Exception("strikes3 value != 5.55");
+        try {
+            strikes3.getRange();
+            throw new Exception("failed to ctch strikes3 InvalidOptionStrikesType");
+        }catch(InvalidOptionStrikesType exc) {            
+        }  
+        
+        testStrategyObj(OptionChainStrategyGetter.OptionStrategy::buildCovered, OptionStrategyType.COVERED);
+        testStrategyObj(OptionChainStrategyGetter.OptionStrategy::buildCalendar, OptionStrategyType.CALENDAR);
+        testStrategyObj(OptionChainStrategyGetter.OptionStrategy::buildVertical, OptionStrategyType.VERTICAL);
+        testStrategyObj(OptionChainStrategyGetter.OptionStrategy::buildVertical, OptionStrategyType.VERTICAL, 1.0);
+        testStrategyObj(OptionChainStrategyGetter.OptionStrategy::buildStrangle, OptionStrategyType.STRANGLE);
+        testStrategyObj(OptionChainStrategyGetter.OptionStrategy::buildStrangle, OptionStrategyType.STRANGLE, .1);
+        testStrategyObj(OptionChainStrategyGetter.OptionStrategy::buildStraddle, OptionStrategyType.STRADDLE);
+        testStrategyObj(OptionChainStrategyGetter.OptionStrategy::buildStraddle, OptionStrategyType.STRADDLE, .001);
+        testStrategyObj(OptionChainStrategyGetter.OptionStrategy::buildButterfly, OptionStrategyType.BUTTERFLY);
+        testStrategyObj(OptionChainStrategyGetter.OptionStrategy::buildButterfly, OptionStrategyType.BUTTERFLY, 10.01);
+        testStrategyObj(OptionChainStrategyGetter.OptionStrategy::buildCondor, OptionStrategyType.CONDOR);
+        testStrategyObj(OptionChainStrategyGetter.OptionStrategy::buildCondor, OptionStrategyType.CONDOR, 99999.99);
+        testStrategyObj(OptionChainStrategyGetter.OptionStrategy::buildDiagonal, OptionStrategyType.DIAGONAL);
+        testStrategyObj(OptionChainStrategyGetter.OptionStrategy::buildDiagonal, OptionStrategyType.DIAGONAL, 1.0);
+        testStrategyObj(OptionChainStrategyGetter.OptionStrategy::buildCollar, OptionStrategyType.COLLAR);
+        testStrategyObj(OptionChainStrategyGetter.OptionStrategy::buildCollar, OptionStrategyType.COLLAR, 1.0);
+        testStrategyObj(OptionChainStrategyGetter.OptionStrategy::buildRoll, OptionStrategyType.ROLL);
+        testStrategyObj(OptionChainStrategyGetter.OptionStrategy::buildRoll, OptionStrategyType.ROLL, 1.0);
+    }
+    
+    private static String
+    iso8601DateNMonthsAhead(int nMonths, int dayOfMonth) {
+        Calendar c = Calendar.getInstance();        
+        int month = c.get(Calendar.MONTH) + nMonths;
+        int year = c.get(Calendar.YEAR);
+                
+        if( month > 11 ) {
+            int y = month / 12;
+            month %= 12;
+            year += y;
+        }
+        month += 1;
+        
+        return String.format("%d-%02d-%02d", year, month, dayOfMonth); 
+    }
+    
+    private static void
+    testOptionChainGetter(Credentials creds, boolean liveConnect) throws Exception {
+        
+        String fromDate = iso8601DateNMonthsAhead(1, 1);
+        String toDate = iso8601DateNMonthsAhead(2, 1);    
+        OptionStrikes strikes = OptionStrikes.buildNAtm(5);
+        
+        try( OptionChainGetter oGetter = new OptionChainGetter(creds, "SPY", strikes, 
+                OptionContractType.CALL,
+                true, fromDate, toDate, OptionExpMonth.ALL, OptionType.S) ){
+            
+            String symbol2 = oGetter.getSymbol();
+            if( !symbol2.equals("SPY") )
+                throw new Exception("OptionChainGetter symbol doesn't match (1)");
+            
+            OptionStrikes strikes2 = oGetter.getStrikes();
+            if( strikes2.getType() != strikes.getType()
+                    || strikes2.getNAtm() != strikes.getNAtm() )
+                throw new Exception("OptionChainGetter strikes doesn't match (1)");
+            
+            /* double check we set the union up to be read correctly */
+            oGetter.setStrikes(strikes2);
+            OptionStrikes strikes3 = oGetter.getStrikes();
+            if( strikes3.getType() != OptionStrikesType.N_ATM
+                    || strikes3.getNAtm() != 5 )
+                throw new Exception("OptionChainGetter strikes doesn't match (1b)");
+                            
+            OptionContractType contractType2 = oGetter.getContractType();
+            if( contractType2 != OptionContractType.CALL )
+                throw new Exception("OptionChainGetter contractType doesn't match (1)");
+            
+            if( !oGetter.includesQuotes() )
+                throw new Exception("OptionChainGetter includesQuotes doesn't match (1)");
+            
+            String fromDate2 = oGetter.getFromDate();
+            if( !fromDate2.equals(fromDate) )
+                throw new Exception("OptionChainGetter fromDate doesn't match (1)");
+    
+            String toDate2 = oGetter.getToDate();
+            if( !toDate2.equals(toDate) )
+                throw new Exception("OptionChainGetter toDate doesn't match (1)");
+            
+            OptionExpMonth exp2 = oGetter.getExpMonth();
+            if( exp2 != OptionExpMonth.ALL )
+                throw new Exception("OptionChainGetter expMonth doesn't match (1)");
+            
+            OptionType otype2 = oGetter.getOptionType();
+            if( otype2 != OptionType.S )
+                throw new Exception("OptionChainGetter optionType doesn't match (1)");
+            
+        
+            if( liveConnect ) {
+                JSONObject j = (JSONObject)oGetter.get();
+                if( j.isEmpty() )
+                    throw new Exception("OptionChainGetter.get() returned empty string");
+                System.out.println("*   JSON: " + j.toString());
+            }else {
+                System.out.println("*   Can't get(), pass 'account_id' to run live");
+            }
+            
+            
+            oGetter.setSymbol("QQQ");
+            if( !oGetter.getSymbol().equals("QQQ") )
+                throw new Exception("OptionChainGetter symbol doesn't match (2)");
+        
+            strikes = OptionStrikes.buildRange(OptionRangeType.ITM);
+            oGetter.setStrikes(strikes);
+            if( oGetter.getStrikes().getRange() != OptionRangeType.ITM )
+                throw new Exception("OptionChainGetter strikes doesn't match (2)");
+            
+            oGetter.setContractType(OptionContractType.ALL);
+            contractType2 = oGetter.getContractType();
+            if( contractType2 != OptionContractType.ALL )
+                throw new Exception("OptionChainGetter contractType doesn't match (2)");     
+            
+            oGetter.includeQuotes(false);
+            if( oGetter.includesQuotes() )
+                throw new Exception("OptionChainGetter includesQuotes doesn't match (2)");
+            
+            fromDate = iso8601DateNMonthsAhead(12, 1);
+            toDate = iso8601DateNMonthsAhead(24, 1);
+            
+            oGetter.setFromDate(fromDate);
+            if( !oGetter.getFromDate().equals(fromDate) )
+                throw new Exception("OptionChainGetter fromDate doesn't match (2)");
+            
+            oGetter.setToDate(toDate);
+            if( !oGetter.getToDate().equals(toDate) )
+                throw new Exception("OptionChainGetter toDate doesn't match (2)");
+            
+            oGetter.setExpMonth(OptionExpMonth.JAN);
+            if( oGetter.getExpMonth() != OptionExpMonth.JAN )
+                throw new Exception("OptionChainGetter expMonth doesn't match (2)");
+            
+            oGetter.setOptionType(OptionType.ALL);
+            if( oGetter.getOptionType() != OptionType.ALL )
+                throw new Exception("OptionChainGetter optionType doesn't match (2)");    
+            
+            if( liveConnect ) {
+                JSONObject j = (JSONObject)oGetter.get();
+                if( j.isEmpty() )
+                    throw new Exception("OptionChainGetter.get() returned empty string");
+                System.out.println("*   JSON: " + j.toString());
+            }else {
+                System.out.println("*   Can't get(), pass 'account_id' to run live");
+            }
+        }
+ 
+    }
+    
+    private static void
+    testOptionChainStrategyGetter(Credentials creds, boolean liveConnect) throws Exception {
+        
+        String fromDate = iso8601DateNMonthsAhead(1, 1);
+        String toDate = iso8601DateNMonthsAhead(23, 28);
+              
+        OptionStrikes strikes = OptionStrikes.buildSingle(200.00);
+        OptionStrategy strategy = OptionStrategy.buildCovered();  
+        
+        try( OptionChainStrategyGetter oGetter = new OptionChainStrategyGetter(creds, "QQQ", 
+                strategy, strikes, OptionContractType.ALL, false, fromDate, toDate, 
+                OptionExpMonth.DEC, OptionType.ALL) ){
+            
+            String symbol2 = oGetter.getSymbol();
+            if( !symbol2.equals("QQQ") )
+                throw new Exception("OptionChainStrategyGetter symbol doesn't match (1)");
+            
+            OptionStrategy strategy2 = oGetter.getStrategy();
+            if( strategy.getStrategy() != strategy2.getStrategy() 
+                    || strategy.getSpreadInterval() != strategy2.getSpreadInterval()
+                    || strategy.getSpreadInterval() != 0.0 )
+                throw new Exception("OptionChainStrategyGetter strategy doesn't match (1)");
+            
+            OptionStrikes strikes2 = oGetter.getStrikes();
+            if( strikes2.getType() != strikes.getType()
+                    || strikes2.getSingle() != strikes.getSingle() )
+                throw new Exception("OptionChainStrategyGetter strikes doesn't match (1)");
+    
+            OptionContractType contractType2 = oGetter.getContractType();
+            if( contractType2 != OptionContractType.ALL )
+                throw new Exception("OptionChainStrategyGetter contractType doesn't match (1)");
+            
+            if( oGetter.includesQuotes() )
+                throw new Exception("OptionChainStrategyGetter includesQuotes doesn't match (1)");
+            
+            String fromDate2 = oGetter.getFromDate();
+            if( !fromDate2.equals(fromDate) )
+                throw new Exception("OptionChainStrategyGetter fromDate doesn't match (1)");
+    
+            String toDate2 = oGetter.getToDate();
+            if( !toDate2.equals(toDate) )
+                throw new Exception("OptionChainStrategyGetter toDate doesn't match (1)");
+            
+            OptionExpMonth exp2 = oGetter.getExpMonth();
+            if( exp2 != OptionExpMonth.DEC )
+                throw new Exception("OptionChainStrategyGetter expMonth doesn't match (1)");
+            
+            OptionType otype2 = oGetter.getOptionType();
+            if( otype2 != OptionType.ALL )
+                throw new Exception("OptionChainStrategyGetter optionType doesn't match (1)");
+                    
+            if( liveConnect ) {
+                JSONObject j = (JSONObject)oGetter.get();
+                if( j.isEmpty() )
+                    throw new Exception("OptionChainStrategyGetter.get() returned empty string");
+                System.out.println("*   JSON: " + j.toString());
+            }else {
+                System.out.println("*   Can't get(), pass 'account_id' to run live");
+            }
+                        
+            oGetter.setSymbol("GLD");
+            if( !oGetter.getSymbol().equals("GLD") )
+                throw new Exception("OptionChainStrategyGetter symbol doesn't match (2)");
+        
+            strategy2 = OptionStrategy.buildButterfly();
+            oGetter.setStrategy(strategy2);
+            strategy = oGetter.getStrategy();
+            if( strategy.getStrategy() != strategy2.getStrategy() 
+                    || strategy.getSpreadInterval() != strategy2.getSpreadInterval()
+                    || strategy.getSpreadInterval() != 1.0 )
+                throw new Exception("OptionChainStrategyGetter strategy doesn't match (2a)");
+            
+            strategy2 = OptionStrategy.buildDiagonal(2.5);
+            oGetter.setStrategy(strategy2);
+            strategy = oGetter.getStrategy();
+            if( strategy.getStrategy() != strategy2.getStrategy() 
+                    || strategy.getSpreadInterval() != strategy2.getSpreadInterval()
+                    || strategy.getSpreadInterval() != 2.5 )
+                throw new Exception("OptionChainStrategyGetter strategy doesn't match (2b)");      
+            
+            strategy2 = OptionStrategy.buildVertical(1.0);
+            oGetter.setStrategy(strategy2);
+            strategy = oGetter.getStrategy();
+            if( strategy.getStrategy() != strategy2.getStrategy() 
+                    || strategy.getSpreadInterval() != strategy2.getSpreadInterval()
+                    || strategy.getSpreadInterval() != 1.0 )
+                throw new Exception("OptionChainStrategyGetter strategy doesn't match (2c)");  
+            
+            strikes = OptionStrikes.buildRange(OptionRangeType.NTM);
+            oGetter.setStrikes(strikes);
+            if( oGetter.getStrikes().getRange() != OptionRangeType.NTM )
+                throw new Exception("OptionChainStrategyGetter strikes doesn't match (2)");
+            
+            oGetter.setContractType(OptionContractType.PUT);
+            contractType2 = oGetter.getContractType();
+            if( contractType2 != OptionContractType.PUT )
+                throw new Exception("OptionChainStrategyGetter contractType doesn't match (2)");     
+            
+            oGetter.includeQuotes(false);
+            if( oGetter.includesQuotes() )
+                throw new Exception("OptionChainStrategyGetter includesQuotes doesn't match (2)");
+            
+            fromDate = iso8601DateNMonthsAhead(1, 1);
+            toDate = iso8601DateNMonthsAhead(1, 28);
+            
+            oGetter.setFromDate(fromDate);
+            if( !oGetter.getFromDate().equals(fromDate) )
+                throw new Exception("OptionChainStrategyGetter fromDate doesn't match (2)");
+            
+            oGetter.setToDate(toDate);
+            if( !oGetter.getToDate().equals(toDate) )
+                throw new Exception("OptionChainStrategyGetter toDate doesn't match (2)");
+            
+            oGetter.setExpMonth(OptionExpMonth.ALL);
+            if( oGetter.getExpMonth() != OptionExpMonth.ALL )
+                throw new Exception("OptionChainStrategyGetter expMonth doesn't match (2)");
+            
+            oGetter.setOptionType(OptionType.NS);
+            if( oGetter.getOptionType() != OptionType.NS )
+                throw new Exception("OptionChainStrategyGetter optionType doesn't match (2)");    
+            
+            if( liveConnect ) {
+                JSONObject j = (JSONObject)oGetter.get();
+                if( j.isEmpty() )
+                    throw new Exception("OptionChainStrategyGetter.get() returned empty string");
+                System.out.println("*   JSON: " + j.toString());
+            }else {
+                System.out.println("*   Can't get(), pass 'account_id' to run live");
+            }
+        }          
+    }
+    
+    private static void
+    testOptionChainAnalyticalGetter(Credentials creds, boolean liveConnect) throws Exception {
+        String fromDate = iso8601DateNMonthsAhead(1, 14);
+        String toDate = iso8601DateNMonthsAhead(1, 22);
+              
+        OptionStrikes strikes = OptionStrikes.buildRange(OptionRangeType.SNK);          
+        
+        try( OptionChainAnalyticalGetter oGetter = new OptionChainAnalyticalGetter(creds, "QQQ", 
+                20.00, 200.00, 2.50, 90, strikes, OptionContractType.ALL, false, fromDate, toDate, 
+                OptionExpMonth.ALL, OptionType.ALL) ){
+            
+            String symbol2 = oGetter.getSymbol(); 
+            if( !symbol2.equals("QQQ") )
+                throw new Exception("OptionChainAnalyticalGetter symbol doesn't match (1)");
+            
+            double v = oGetter.getVolatility();
+            if( v != 20.00 )
+                throw new Exception("OptionChainAnalyticalGetter volatility doesn't match (1)");
+            
+            v = oGetter.getUnderlyingPrice();
+            if( v != 200.00 )
+                throw new Exception("OptionChainAnalyticalGetter underlyingPrice doesn't match (1)");               
+                
+            v = oGetter.getInterestRate();
+            if( v != 2.5 )
+                throw new Exception("OptionChainAnalyticalGetter interestRate doesn't match (1)");     
+            
+            int d = oGetter.getDaysToExp();
+            if( d != 90 )
+                throw new Exception("OptionChainAnalyticalGetter daysToExp doesn't match (1)");
+            
+            OptionStrikes strikes2 = oGetter.getStrikes();
+            if( strikes2.getType() != strikes.getType()
+                    || strikes2.getRange() != strikes.getRange() )
+                throw new Exception("OptionChainAnalyticalGetter strikes doesn't match (1)");
+    
+            OptionContractType contractType2 = oGetter.getContractType();
+            if( contractType2 != OptionContractType.ALL )
+                throw new Exception("OptionChainAnalyticalGetter contractType doesn't match (1)");
+            
+            if( oGetter.includesQuotes() )
+                throw new Exception("OptionChainAnalyticalGetter includesQuotes doesn't match (1)");
+            
+            String fromDate2 = oGetter.getFromDate();
+            if( !fromDate2.equals(fromDate) )
+                throw new Exception("OptionChainAnalyticalGetter fromDate doesn't match (1)");
+    
+            String toDate2 = oGetter.getToDate();
+            if( !toDate2.equals(toDate) )
+                throw new Exception("OptionChainAnalyticalGetter toDate doesn't match (1)");
+            
+            OptionExpMonth exp2 = oGetter.getExpMonth();
+            if( exp2 != OptionExpMonth.ALL )
+                throw new Exception("OptionChainAnalyticalGetter expMonth doesn't match (1)");
+            
+            OptionType otype2 = oGetter.getOptionType();
+            if( otype2 != OptionType.ALL )
+                throw new Exception("OptionChainAnalyticalGetter optionType doesn't match (1)");
+                    
+            if( liveConnect ) {
+                JSONObject j = (JSONObject)oGetter.get();
+                if( j.isEmpty() )
+                    throw new Exception("OptionChainAnalyticalGetter.get() returned empty string");
+                System.out.println("*   JSON: " + j.toString());
+            }else {
+                System.out.println("*   Can't get(), pass 'account_id' to run live");
+            }       
+            
+            oGetter.setVolatility(30.33);
+            v = oGetter.getVolatility();
+            if( v != 30.33 )
+                throw new Exception("OptionChainAnalyticalGetter volatility doesn't match (2)");
+            
+            oGetter.setUnderlyingPrice(100.01);
+            v = oGetter.getUnderlyingPrice();
+            if( v != 100.01 )
+                throw new Exception("OptionChainAnalyticalGetter underlyingPrice doesn't match (2)"); 
+            
+            oGetter.setInterestRate(9.999);
+            v = oGetter.getInterestRate();
+            if( v != 9.999 )
+                throw new Exception("OptionChainAnalyticalGetter interestRate doesn't match (2)");   
+            
+            oGetter.setDaysToExp(720);      
+            d = oGetter.getDaysToExp();
+            if( d != 720 )
+                throw new Exception("OptionChainAnalyticalGetter daysToExp doesn't match (2)");
+            
+            if( liveConnect ) {
+                JSONObject j = (JSONObject)oGetter.get();
+                if( j.isEmpty() )
+                    throw new Exception("OptionChainAnalyticalGetter.get() returned empty string");
+                System.out.println("*   JSON: " + j.toString());
+            }else {
+                System.out.println("*   Can't get(), pass 'account_id' to run live");
+            }       
+        }    
+    }
+    
+    
+    private static <T extends CLib.ConvertibleEnum> void
     testEnumString(T e, String s, String name) throws Exception{
         if( !e.toString().equals(s) )
             throw new Exception(
@@ -267,16 +736,12 @@ public class Test {
     
     private static void
     testHistoricalGetterTypes() throws Exception {
-        testEnumString( HistoricalPeriodGetter.PeriodType.DAY, "day", "PeriodType");
-        testEnumString( HistoricalPeriodGetter.PeriodType.MONTH, "month", "PeriodType");
-        testEnumString( HistoricalPeriodGetter.PeriodType.YEAR, "year", "PeriodType");
-        testEnumString( HistoricalPeriodGetter.PeriodType.YTD, "ytd", "PeriodType");
-        
-        testEnumString( HistoricalRangeGetter.FrequencyType.MINUTE, "minute", "FrequencyType");
-        testEnumString( HistoricalRangeGetter.FrequencyType.DAILY, "daily", "FrequencyType");
-        testEnumString( HistoricalRangeGetter.FrequencyType.WEEKLY, "weekly", "FrequencyType");
-        testEnumString( HistoricalRangeGetter.FrequencyType.MONTHLY, "monthly", "FrequencyType");
-        
+        testEnum( HistoricalPeriodGetter.PeriodType.values(),
+                Arrays.asList("day", "month","year","ytd"), "PeriodType");
+   
+        testEnum( HistoricalRangeGetter.FrequencyType.values(),
+                Arrays.asList("minute","daily","weekly","monthly"), "FrequencyType");
+      
         if( !HistoricalPeriodGetter.isValidPeriod(PeriodType.DAY,1) 
                 || !HistoricalPeriodGetter.isValidPeriod(PeriodType.DAY,5)
                 || !HistoricalPeriodGetter.isValidPeriod(PeriodType.DAY,10) 
@@ -516,7 +981,7 @@ public class Test {
         
         hpg.close();
         if( !hpg.isClosed() )
-            throw new Exception("QuoteGetter wasn't closed");
+            throw new Exception("HistoricalPeriodGetter wasn't closed");
     }
     
     @SuppressWarnings("resource")
@@ -647,61 +1112,30 @@ public class Test {
         
         hpg.close();
         if( !hpg.isClosed() )
-            throw new Exception("QuoteGetter wasn't closed");
+            throw new Exception("HistoricalRangeGetter wasn't closed");
     
     
     }
     
     private static void
     testSubscriptionFields() throws Exception {
-        final List<String> SERVICES = Arrays.asList("NONE",  "QUOTE", "OPTION", "LEVELONE_FUTURES", 
+        testEnum(ServiceType.values(), Arrays.asList("NONE",  "QUOTE", "OPTION", "LEVELONE_FUTURES", 
                 "LEVELONE_FOREX", "LEVELONE_FUTURES_OPTIONS", "NEWS_HEADLINE", "CHART_EQUITY", 
                 "CHART_FOREX",  "CHART_FUTURES", "CHART_OPTIONS",  "TIMESALE_EQUITY", 
                 "TIMESALE_FOREX",  "TIMESALE_FUTURES", "TIMESALE_OPTIONS", "ACTIVES_NASDAQ", 
                 "ACTIVES_NYSE", "ACTIVES_OTCBB", "ACTIVES_OPTIONS",  "ADMIN",  "ACCT_ACTIVITY",  
                 "CHART_HISTORY_FUTURES",  "FOREX_BOOK",  "FUTURES_BOOK",  "LISTED_BOOK",  
                 "NASDAQ_BOOK",  "OPTIONS_BOOK",  "FUTURES_OPTIONS_BOOK",  "NEWS_STORY",  
-                "NEWS_HEADLINE_LIST",  "UNKNOWN"); 
+                "NEWS_HEADLINE_LIST",  "UNKNOWN"), "ServiceType");
+       
+        testEnum(CommandType.values(), Arrays.asList("SUBS", "UNSUBS", "ADD", "VIEW"), "CommandType"); 
+  
+        testEnum(QOSType.values(), Arrays.asList("express","real-time", "fast", "moderate", "slow", "delayed"),
+                "QOSTYpe");
         
-        ServiceType[] services = ServiceType.values();
-        if( SERVICES.size() != services.length )
-            throw new Exception("ServiceType enum has invalid size");
-        
-        for( int i = 0; i < services.length; ++i ) {
-            testEnumString(services[i], SERVICES.get(i), "ServiceType");                      
-        }
-        
-        final List<String> COMMANDS = Arrays.asList("SUBS", "UNSUBS", "ADD", "VIEW"); 
-        
-        CommandType[] commands = CommandType.values();
-        if( COMMANDS.size() != commands.length )
-            throw new Exception("CommandType enum has invalid size");
-        
-        for( int i = 0; i < commands.length; ++i ) {
-            testEnumString(commands[i], COMMANDS.get(i), "CommandType");             
-        }
-     
-        final List<String> QOS = Arrays.asList("express","real-time", "fast", "moderate", "slow", "delayed"); 
-        
-        QOSType[] qos = QOSType.values();
-        if( QOS.size() != qos.length )
-            throw new Exception("QOSType enum has invalid size");
-        
-        for( int i = 0; i < qos.length; ++i ) {
-            testEnumString(qos[i], QOS.get(i), "QOSType");           
-        }
-        
-        final List<String> CALLBACK = Arrays.asList("listening_start", "listening_stop", "data", 
-                "request_response", "notify", "timeout", "error"); 
-        
-        CallbackType[] callback = CallbackType.values();
-        if( CALLBACK.size() != callback.length )
-            throw new Exception("CallbackType enum has invalid size");
-        
-        for( int i = 0; i < callback.length; ++i ) {
-            testEnumString(callback[i], CALLBACK.get(i), "CallbackType");            
-        }
-        
+        testEnum(CallbackType.values(), Arrays.asList("listening_start", "listening_stop", "data", 
+                "request_response", "notify", "timeout", "error"), "CallbackType"); 
+              
         testEnumString(QuotesSubscription.FieldType.SYMBOL, "QuotesSubscriptionField-0", "QuotesSubscription");
         testEnumString(QuotesSubscription.FieldType.REGULAR_MARKET_TRADE_TIME_AS_LONG, "QuotesSubscriptionField-52", "QuotesSubscription");
 
