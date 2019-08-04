@@ -158,7 +158,7 @@ public class Test {
                 
                 System.out.println( "*  TEST C QUOTE GETTER ALLOC/DEALLOC");
                 testQuoteGetterAllocs(creds, 4, 100);
-              
+         
                 System.out.println( "*  TEST QUOTE GETTER ");
                 testQuoteGetter(creds, liveConnect);
                     
@@ -194,6 +194,24 @@ public class Test {
                 
                 System.out.println("*  TEST PREFERENCES GETTER ");
                 testPreferencesGetter(creds, accountID, liveConnect);
+                
+                System.out.println("*  USER PRINCIPALS GETTER ");
+                testUserPrincipalsGetter(creds, liveConnect);
+                
+                System.out.println("*  INSTRUMENT INFO GETTER ");
+                testInstrumentInfoGetter(creds,liveConnect);
+                
+                System.out.println("*  TEST MARKET HOURS GETTER ");
+                testMarketHoursGetter(creds,  liveConnect);
+           
+                System.out.println("*  TEST MOVERS GETTER ");
+                testMoversGetter(creds, liveConnect);
+                
+                System.out.println("*  TEST ORDER GETTER ");
+                testOrderGetter(creds, accountID, liveConnect);
+                
+                System.out.println("*  TEST ORDERS GETTER ");
+                testOrdersGetter(creds, accountID, liveConnect);
             }                               
             
             System.out.println("*  TEST HISTORICAL GETTER TYPES ");
@@ -282,6 +300,338 @@ public class Test {
             testEnumString(vals[i], strings.get(i), name);             
         }       
         
+    }
+    
+
+    
+    private static void
+    testInstrumentInfoGetter(Credentials creds, boolean liveConnect) throws Exception {
+        
+        testEnum(InstrumentInfoGetter.InstrumentSearchType.values(), 
+                Arrays.asList("fundamental", "symbol-search", "symbol-regex", "desc-search",
+                        "desc-regex", "cusip"), "InstrumentSearchType");
+        
+        try( InstrumentInfoGetter getter = new InstrumentInfoGetter( creds,
+                InstrumentInfoGetter.InstrumentSearchType.CUSIP, "BAD_CUSIP") ){
+            
+            InstrumentInfoGetter.InstrumentSearchType searchType = getter.getSearchType();
+            if( searchType != InstrumentInfoGetter.InstrumentSearchType.CUSIP )
+                throw new Exception("InstrumentInfoGetter 'searchType' doesn't match(1)");
+            
+            String queryString = getter.getQueryString();
+            if( !queryString.equals("BAD_CUSIP") )
+                throw new Exception("InstrumentInfoGetter 'queryString' doesn't match(1)");
+            
+            getter.setQuery(InstrumentInfoGetter.InstrumentSearchType.SYMBOL_EXACT, "SPY");
+            
+            searchType = getter.getSearchType();
+            if( searchType != InstrumentInfoGetter.InstrumentSearchType.SYMBOL_EXACT )
+                throw new Exception("InstrumentInfoGetter 'searchType' doesn't match(2)");
+                   
+            queryString = getter.getQueryString();
+            if( !queryString.equals("SPY") )
+                throw new Exception("InstrumentInfoGetter 'queryString' doesn't match(2)");
+                
+            if( liveConnect ) {
+                JSONObject j = (JSONObject)getter.get();
+                if( j.isEmpty() )
+                    throw new Exception("InstrumentInfoGetter.get() returned empty string");
+                System.out.println("*   JSON: " + j.toString());
+            }else {
+                System.out.println("*   Can't get(), pass 'account_id' to run live");
+            }
+        }
+        
+    }
+    
+    
+    private static void
+    testMarketHoursGetter(Credentials creds, boolean liveConnect) throws Exception {
+     
+        testEnum(MarketHoursGetter.MarketType.values(), 
+                Arrays.asList("EQUITY", "OPTION","FUTURE", "BOND", "FOREX"), "MarketType");
+        
+        Calendar c = Calendar.getInstance();        
+        int month = c.get(Calendar.MONTH) + 1;
+        int year = c.get(Calendar.YEAR);
+        int day = c.get(Calendar.DAY_OF_MONTH);
+        
+        String date;
+        if( month > 7 || (month == 7 && day >= 5) ) {
+            date = String.format("%d-%02d-%02d", year+1, 7, 5);
+        }else {
+            date = String.format("%d-%02d-%02d", year, 7, 5);
+        }        
+        
+        try( MarketHoursGetter getter = new MarketHoursGetter(creds, MarketHoursGetter.MarketType.FOREX, date) ){
+            
+            String date2 = getter.getDate();
+            if( !date2.equals(date) )
+                throw new Exception("MarketHoursGetter 'date' doesn't match(1)");
+            
+            MarketHoursGetter.MarketType marketType = getter.getMarketType();
+            if( marketType != MarketHoursGetter.MarketType.FOREX )
+                throw new Exception("MarketHoursGetter 'marketType' doesn't match(1)");
+            
+            if( month > 7 || (month == 7 && day >= 4) ) {
+                date = String.format("%d-%02d-%02d", year+1, 7, 4);
+            }else {
+                date = String.format("%d-%02d-%02d", year, 7, 4);
+            }    
+            
+            getter.setDate(date);
+            date2 = getter.getDate();
+            if( !date2.equals(date) )
+                throw new Exception("MarketHoursGetter 'date' doesn't match(2)");
+            
+            getter.setMarketType(MarketHoursGetter.MarketType.EQUITY);
+            marketType = getter.getMarketType();
+            if( marketType != MarketHoursGetter.MarketType.EQUITY )
+                throw new Exception("MarketHoursGetter 'marketType' doesn't match(2)");
+            
+            if( liveConnect ) {
+                JSONObject j = (JSONObject)getter.get();
+                if( j.isEmpty() )
+                    throw new Exception("MarketHoursGetter.get() returned empty string");
+                System.out.println("*   JSON: " + j.toString());
+            }else {
+                System.out.println("*   Can't get(), pass 'account_id' to run live");
+            }
+        }
+    
+    }
+    
+    
+    private static void
+    testMoversGetter(Credentials creds, boolean liveConnect) throws Exception {
+        
+        testEnum(MoversGetter.MoversIndexType.values(), Arrays.asList("$COMPX", "$DJI", "$SPX.X"),
+                "MoversIndexType");
+        
+        testEnum(MoversGetter.MoversDirectionType.values(), Arrays.asList("up", "down", "up_and_down"),
+                "MoversDirectionType");
+        
+        testEnum(MoversGetter.MoversChangeType.values(), Arrays.asList("value", "percent"), 
+                "MoversChangeType");
+        
+        try( MoversGetter getter = new MoversGetter(creds, MoversGetter.MoversIndexType.COMPX,
+                MoversGetter.MoversDirectionType.UP, MoversGetter.MoversChangeType.VALUE) ){
+                        
+            MoversGetter.MoversIndexType index = getter.getIndex();
+            if( index != MoversGetter.MoversIndexType.COMPX )
+                throw new Exception("MoversGetter 'index' doesn't match(1)");
+                        
+            MoversGetter.MoversDirectionType directionType = getter.getDirectionType();
+            if( directionType != MoversGetter.MoversDirectionType.UP )
+                throw new Exception("MoversGetter 'directionType' doesn't match(1)");
+                        
+            MoversGetter.MoversChangeType changeType = getter.getChangeType();
+            if( changeType != MoversGetter.MoversChangeType.VALUE )
+                throw new Exception("MoversGetter 'changeType' doesn't match(1)");
+                        
+            getter.setIndex(MoversGetter.MoversIndexType.SPX);
+            index = getter.getIndex();
+            if( index != MoversGetter.MoversIndexType.SPX )
+                throw new Exception("MoversGetter 'index' doesn't match(2)");
+                        
+            getter.setDirectionType(MoversGetter.MoversDirectionType.UP_AND_DOWN);
+            directionType = getter.getDirectionType();
+            if( directionType != MoversGetter.MoversDirectionType.UP_AND_DOWN )
+                throw new Exception("MoversGetter 'directionType' doesn't match(2)");
+                        
+            getter.setChangeType(MoversGetter.MoversChangeType.PERCENT);
+            changeType = getter.getChangeType();
+            if( changeType != MoversGetter.MoversChangeType.PERCENT )
+                throw new Exception("MoversGetter 'changeType' doesn't match(2)");
+            
+            if( liveConnect ) {
+                JSONArray j = (JSONArray)getter.get();    
+                System.out.println("*   JSON: " + j.toString());
+            }else {
+                System.out.println("*   Can't get(), pass 'account_id' to run live");
+            }
+        }
+    }
+    
+    
+    private static void
+    testOrderGetter(Credentials creds, String accountID, boolean liveConnect) throws Exception{
+        
+        try( OrderGetter getter = new OrderGetter(creds, "BAD_ACCOUNT_ID", "BAD_ORDER_ID") ){
+          
+            String accountID2 = getter.getAccountId();
+            if( !accountID2.equals("BAD_ACCOUNT_ID") )
+                throw new Exception("OrderGetter accountID doesn't match (1)");
+            
+            String orderID = getter.getOrderID();
+            if( !orderID.equals("BAD_ORDER_ID") )
+                throw new Exception("OrderGetter 'toEnteredTime' doesn't match(1)");
+       
+            accountID = (accountID == null) ? "BAD_ACCOUNT_ID2" : accountID;
+            getter.setAccountId(accountID);
+            accountID2 = getter.getAccountId();
+            if( !accountID2.equals(accountID) )
+                throw new Exception("OrderGetter accountID doesn't match (2)");
+       
+            getter.setOrderID("123456789");
+            orderID = getter.getOrderID();
+            if( !orderID.equals("123456789") )
+                throw new Exception("OrderGetter orderID doesn't match (2)");
+            
+            if( liveConnect ) {
+                try {
+                    JSONObject j = (JSONObject)getter.get();
+                    System.out.println("*   JSON: " + j.toString());
+                }catch(CLibException exc) {                    
+                }                
+            }else {
+                System.out.println("*   Can't get(), pass 'account_id' to run live");
+            }                                   
+        }   
+    }
+    
+    
+    private static void
+    testOrdersGetter(Credentials creds, String accountID, boolean liveConnect) throws Exception{
+        
+        testEnum(OrdersGetter.OrderStatusType.values(), 
+                Arrays.asList( "AWAITING_PARENT_ORDER", "AWAITING_CONDITION", "AWAITING_MANUAL_REVIEW", 
+                        "ACCEPTED", "AWAITING_UR_OUT", "PENDING_ACTIVATION", "QUEUED", "WORKING",
+                        "REJECTED", "PENDING_CANCEL", "CANCELED", "PENDING_REPLACE", "REPLACED", "FILLED", 
+                        "EXPIRED"), "OrderStatusType");
+        
+        Calendar c = Calendar.getInstance();        
+        int month = c.get(Calendar.MONTH) + 1;
+        int year = c.get(Calendar.YEAR);
+        int day = c.get(Calendar.DAY_OF_MONTH);
+        
+        String startDate = String.format("%d-%02d-%02d", year-1, month, day);
+        String endDate = String.format("%d-%02d-%02d", year, month, day);
+        
+        try( OrdersGetter getter = new OrdersGetter(creds, "BAD_ACCOUNT_ID", 10, startDate, endDate,
+                OrdersGetter.OrderStatusType.EXPIRED) ){
+            
+            String accountID2 = getter.getAccountId();
+            if( !accountID2.equals("BAD_ACCOUNT_ID") )
+                throw new Exception("OrdersGetter accountID doesn't match (1)");
+            
+            int maxResults = getter.getNMaxResults();
+            if( maxResults != 10 )
+                throw new Exception("OrdersGetter 'nMaxResults' doesn't match(1)");
+            
+            String fromTime = getter.getFromEnteredTime();
+            if( !fromTime.equals(startDate) )
+                throw new Exception("OrdersGetter 'fromEnteredTime' doesn't match(1)");
+            
+            String toTime = getter.getToEnteredTime();
+            if( !toTime.equals(endDate) )
+                throw new Exception("OrdersGetter 'toEnteredTime' doesn't match(1)");
+            
+            OrdersGetter.OrderStatusType orderStatus = getter.getOrderStatusType();
+            if( orderStatus != OrdersGetter.OrderStatusType.EXPIRED )
+                throw new Exception("OrdersGetter 'OrderStatusType' doesn't match(1)");
+            
+            if( month <= 4 ) {
+                startDate = String.format("%d-%02d-%02d", year-1, month + 8, day);
+            }else {
+                startDate = String.format("%d-%02d-%02d", year, month - 4, day);
+            }
+            
+            if( month <= 1 ) {
+                endDate = String.format("%d-%02d-%02d", year-1, month + 11, day);
+            }else {
+                endDate = String.format("%d-%02d-%02d", year, month - 1, day);
+            }
+            
+            accountID = (accountID == null) ? "BAD_ACCOUNT_ID2" : accountID;
+            getter.setAccountId(accountID);
+            accountID2 = getter.getAccountId();
+            if( !accountID2.equals(accountID) )
+                throw new Exception("OrdersGetter accountID doesn't match (2)");
+            
+            getter.setNMaxResults(1);
+            maxResults = getter.getNMaxResults();
+            if( maxResults != 1 )
+                throw new Exception("OrdersGetter 'nMaxResults' doesn't match(2)");
+            
+            getter.setFromEnteredTime(startDate);
+            fromTime = getter.getFromEnteredTime();
+            if( !fromTime.equals(startDate) )
+                throw new Exception("OrdersGetter 'fromEnteredTime' doesn't match(2)");
+            
+            getter.setToEnteredTime(endDate);
+            toTime = getter.getToEnteredTime();
+            if( !toTime.equals(endDate) )
+                throw new Exception("OrdersGetter 'toEnteredTime' doesn't match(2)");
+            
+            getter.setOrderStatusType(OrdersGetter.OrderStatusType.FILLED);
+            orderStatus = getter.getOrderStatusType();
+            if( orderStatus != OrdersGetter.OrderStatusType.FILLED )
+                throw new Exception("OrdersGetter 'OrderStatusType' doesn't match(2)");
+            
+            if( liveConnect ) {
+                try {
+                    JSONArray j = (JSONArray)getter.get();
+                    System.out.println("*   JSON: " + j.toString());
+                }catch(CLibException exc) {
+                    System.out.println("*   NO FILLED ORDERS: " + exc.getMessage());
+                }                
+            }else {
+                System.out.println("*   Can't get(), pass 'account_id' to run live");
+            }                                   
+        }        
+    }
+    
+    private static void
+    testUserPrincipalsGetter(Credentials creds, boolean liveConnect) throws Exception{
+        
+        try( UserPrincipalsGetter getter = new UserPrincipalsGetter(creds, false, false, false, false) ){
+            
+            boolean b = getter.returnsSubscriptionKeys();
+            if( b )
+                throw new Exception("UserPrincipalsGetter 'returnsSubscriptionKeys' doesn't match(1)");
+                
+            b = getter.returnsConnectionInfo();
+            if( b )
+                throw new Exception("UserPrincipalsGetter 'returnsConnectionInfo' doesn't match(1)");
+            
+            b = getter.returnsPreferences();
+            if( b )
+                throw new Exception("UserPrincipalsGetter 'returnsPreferences' doesn't match(1)");
+            
+            b = getter.returnsSurrogateIDs();
+            if( b )
+                throw new Exception("UserPrincipalsGetter 'returnsSurrogateIDs' doesn't match(1)");
+            
+            getter.returnSubscriptionKeys(true);
+            if( b )
+                throw new Exception("UserPrincipalsGetter 'returnsSubscriptionKeys' doesn't match(2)");
+                
+            getter.returnConnectionInfo(true);
+            b = getter.returnsConnectionInfo();
+            if( !b )
+                throw new Exception("UserPrincipalsGetter 'returnsConnectionInfo' doesn't match(2)");
+            
+            getter.returnPreferences(true);
+            b = getter.returnsPreferences();
+            if( !b )
+                throw new Exception("UserPrincipalsGetter 'returnsPreferences' doesn't match(2)");
+            
+            getter.returnSurrogateIDs(true);
+            b = getter.returnsSurrogateIDs();
+            if( !b )
+                throw new Exception("UserPrincipalsGetter 'returnsSurrogateIDs' doesn't match(2)");
+            
+            if( liveConnect ) {
+                JSONObject j = (JSONObject)getter.get();
+                if( j.isEmpty() )
+                    throw new Exception("UserPrincipalsGetter.get() returned empty string");
+                System.out.println("*   JSON: " + j.toString());
+            }else {
+                System.out.println("*   Can't get(), pass 'account_id' to run live");
+            }           
+            
+        }
     }
    
     private static void

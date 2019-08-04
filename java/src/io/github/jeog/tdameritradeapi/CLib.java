@@ -351,6 +351,20 @@ public interface CLib extends Library {
         }        
     }
     
+    public static class _MarketHoursGetter_C extends _Getter_C {
+        protected int
+        destroyNative() throws  CLibException {
+            return TDAmeritradeAPI.getCLib().MarketHoursGetter_Destroy_ABI(this, 0);                            
+        }        
+    }
+    
+    public static class _MoversGetter_C extends _Getter_C {
+        protected int
+        destroyNative() throws  CLibException {
+            return TDAmeritradeAPI.getCLib().MoversGetter_Destroy_ABI(this, 0);                            
+        }        
+    }
+    
     public static class _HistoricalRangeGetter_C extends _Getter_C {
         protected int
         destroyNative() throws  CLibException {
@@ -418,6 +432,34 @@ public interface CLib extends Library {
         protected int
         destroyNative() throws  CLibException {
             return TDAmeritradeAPI.getCLib().IndividualTransactionHistoryGetter_Destroy_ABI(this, 0);                         
+        }       
+    }
+    
+    public static class _OrderGetter_C extends _Getter_C {
+        protected int
+        destroyNative() throws  CLibException {
+            return TDAmeritradeAPI.getCLib().OrderGetter_Destroy_ABI(this, 0);                         
+        }       
+    }
+    
+    public static class _OrdersGetter_C extends _Getter_C {
+        protected int
+        destroyNative() throws  CLibException {
+            return TDAmeritradeAPI.getCLib().OrdersGetter_Destroy_ABI(this, 0);                         
+        }       
+    }
+
+    public static class _InstrumentInfoGetter_C extends _Getter_C {
+        protected int
+        destroyNative() throws  CLibException {
+            return TDAmeritradeAPI.getCLib().InstrumentInfoGetter_Destroy_ABI(this, 0);                         
+        }       
+    }
+    
+    public static class _UserPrincipalsGetter_C extends _Getter_C {
+        protected int
+        destroyNative() throws  CLibException {
+            return TDAmeritradeAPI.getCLib().UserPrincipalsGetter_Destroy_ABI(this, 0);                         
         }       
     }
     
@@ -563,6 +605,12 @@ public interface CLib extends Library {
     int OptionType_to_string_ABI( int optionType, PointerByReference buffer, size_t[] n, int exc );
     int OptionStrategyType_to_string_ABI( int strategyType, PointerByReference buffer, size_t[] n, int exc );
     int TransactionType_to_string_ABI( int transactionType, PointerByReference buffer, size_t[] n, int exc );
+    int OrderStatusType_to_string_ABI( int orderStatusType, PointerByReference buffer, size_t[] n, int exc );
+    int InstrumentSearchType_to_string_ABI( int instrumentSearchType, PointerByReference buffer, size_t[] n, int exc );
+    int MarketType_to_string_ABI( int marketType, PointerByReference buffer, size_t[] n, int exc );
+    int MoversIndex_to_string_ABI( int moversIndex, PointerByReference buffer, size_t[] n, int exc );
+    int MoversDirectionType_to_string_ABI( int moversDirectionType, PointerByReference buffer, size_t[] n, int exc );
+    int MoversChangeType_to_string_ABI( int moversChangeType, PointerByReference buffer, size_t[] n, int exc );
     
     /* AUTH */
     int LoadCredentials_ABI( String path, String password, Credentials._Credentials pCredentials, int exc );    
@@ -603,14 +651,14 @@ public interface CLib extends Library {
     int APIGetter_GetDefWaitMSec_ABI( long[] msec, int exc );
     int APIGetter_WaitRemaining_ABI( long[] msec, int exc );
     
-    /* QUOTE GETTERS */
+    /* QUOTE GETTER */
     int QuoteGetter_Create_ABI( Credentials._Credentials pCredentials, String symbol, 
             _QuoteGetter_C pGetter, int exc );    
     int QuoteGetter_Destroy_ABI( _QuoteGetter_C pGetter, int exc );    
     int QuoteGetter_GetSymbol_ABI(_QuoteGetter_C pGetter, PointerByReference buffer, size_t[] n, int exc );    
     int QuoteGetter_SetSymbol_ABI(_QuoteGetter_C pGetter, String symbol, int exc );
         
-    /* QUOTES GETTERS */
+    /* QUOTES GETTERS*/
     int QuotesGetter_Create_ABI( Credentials._Credentials pCredentials, String[] symbols, size_t n, 
             _QuotesGetter_C pGetter, int exc );    
     int QuotesGetter_Destroy_ABI( _QuotesGetter_C pGetter, int exc );    
@@ -620,6 +668,27 @@ public interface CLib extends Library {
     int QuotesGetter_RemoveSymbol_ABI(_QuotesGetter_C pGetter, String symbol, int exc );
     int QuotesGetter_AddSymbols_ABI(_QuotesGetter_C pGetter, String[] symbols, size_t n, int exc ); 
     int QuotesGetter_RemoveSymbols_ABI(_QuotesGetter_C pGetter, String[] symbols, size_t n, int exc );
+    
+    /* MARKET HOURS GETTER */
+    int MarketHoursGetter_Create_ABI( Credentials._Credentials pCredentials, int marketType, String date,
+            _MarketHoursGetter_C pGetter, int exc);
+    int MarketHoursGetter_Destroy_ABI( _MarketHoursGetter_C pGetter, int exc);                                  
+    int MarketHoursGetter_GetMarketType_ABI( _MarketHoursGetter_C pGetter, int[] marketType, int exc);
+    int MarketHoursGetter_SetMarketType_ABI( _MarketHoursGetter_C pGetter, int marketType, int exc);
+    int MarketHoursGetter_GetDate_ABI( _MarketHoursGetter_C pGetter, PointerByReference buffers, 
+            size_t[] n, int exc );
+    int MarketHoursGetter_SetDate_ABI( _MarketHoursGetter_C pGetter, String date, int exc );
+    
+    /* MOVERS GETTER */
+    int MoversGetter_Create_ABI( Credentials._Credentials pCredentials, int index, int directionType, 
+            int changeType, _MoversGetter_C pGetter, int exc );
+    int MoversGetter_Destroy_ABI( _MoversGetter_C pGetter, int exc );
+    int MoversGetter_GetIndex_ABI( _MoversGetter_C pGetter, int[] index, int exc );
+    int MoversGetter_SetIndex_ABI( _MoversGetter_C pGetter, int index, int exc );
+    int MoversGetter_GetDirectionType_ABI( _MoversGetter_C pGetter, int[] directionType, int exc );
+    int MoversGetter_SetDirectionType_ABI( _MoversGetter_C pGetter, int directionType, int exc );
+    int MoversGetter_GetChangeType_ABI( _MoversGetter_C pGetter, int[] changeType, int exc );
+    int MoversGetter_SetChangeType_ABI( _MoversGetter_C pGetter, int changeType, int exc );
     
     /* HISTORICAL GETTER (BASE) */
     // NOTE - use the base object (see explanation above)     
@@ -734,6 +803,28 @@ public interface CLib extends Library {
             _StreamerSubscriptionKeysGetter_C pGetter, int exc); 
     int StreamerSubscriptionKeysGetter_Destroy_ABI( _StreamerSubscriptionKeysGetter_C pGetter, int exc );                                       
         
+    /* USER PRINCIPALS GETTER */
+    int UserPrincipalsGetter_Create_ABI( Credentials._Credentials pCredentials, int streamerSubscriptionKeys, 
+            int streamerConnectionInfo, int preferences, int surrogateIds, _UserPrincipalsGetter_C pGetter, int exc );
+    int UserPrincipalsGetter_Destroy_ABI( _UserPrincipalsGetter_C pGetter, int exc );
+    int UserPrincipalsGetter_ReturnsSubscriptionKeys_ABI( _UserPrincipalsGetter_C pGetter, 
+            int[] returnsSubscriptionKeys,  int exc);
+    int UserPrincipalsGetter_ReturnSubscriptionKeys_ABI( _UserPrincipalsGetter_C pGetter, 
+            int returnSubscriptionKeys, int exc);
+    int UserPrincipalsGetter_ReturnsConnectionInfo_ABI( _UserPrincipalsGetter_C pGetter,
+            int[] returnsConnectionInfo, int exc );
+    int UserPrincipalsGetter_ReturnConnectionInfo_ABI( _UserPrincipalsGetter_C pGetter,
+            int returnConnectionInfo, int exc );       
+    int UserPrincipalsGetter_ReturnsPreferences_ABI( _UserPrincipalsGetter_C pGetter,
+            int[]  returns_preferences, int exc);
+    int UserPrincipalsGetter_ReturnPreferences_ABI( _UserPrincipalsGetter_C pGetter,
+            int returnPreferences, int exc);
+    int UserPrincipalsGetter_ReturnsSurrogateIds_ABI( _UserPrincipalsGetter_C pGetter,
+            int[] returnsSurrogateIds, int exc);       
+    int UserPrincipalsGetter_ReturnSurrogateIds_ABI( _UserPrincipalsGetter_C pGetter,
+        int returnSurrogateIds, int exc); 
+ 
+    
     /* TRANSACTION HISTORY GETTER */
     int TransactionHistoryGetter_Create_ABI( Credentials._Credentials pCredentials, String accountID, 
             int transactionType, String symbol, String startDate, String endDate, 
@@ -761,6 +852,36 @@ public interface CLib extends Library {
             PointerByReference buffer, size_t[] n, int exc);    
     int IndividualTransactionHistoryGetter_SetTransactionId_ABI( _IndividualTransactionHistoryGetter_C pGetter, 
             String transactionID, int exc );
+    
+    /* ORDER GETTER */
+    int OrderGetter_Create_ABI( Credentials._Credentials pCredentials, String accountID, String orderID,
+            _OrderGetter_C pGetter, int exc); 
+    int OrderGetter_Destroy_ABI( _OrderGetter_C pGetter, int exc );  
+    int OrderGetter_GetOrderId_ABI( _OrderGetter_C pGetter, PointerByReference buffer, size_t[] n, int exc);
+    int OrderGetter_SetOrderId_ABI( _OrderGetter_C pGetter, String symbol, int exc );     
+    
+    /* ORDERS GETTER */
+    int OrdersGetter_Create_ABI( Credentials._Credentials pCredentials, String accountID, int nMaxResults,
+            String fromEnteredTime, String toEnteredTime, int orderStatusType, _OrdersGetter_C pGetter, int exc); 
+    int OrdersGetter_Destroy_ABI( _OrdersGetter_C pGetter, int exc );    
+    int OrdersGetter_GetNMaxResults_ABI( _OrdersGetter_C pGetter, int[] nMaxResults, int exc);
+    int OrdersGetter_SetNMaxResults_ABI( _OrdersGetter_C pGetter, int nMaxResults, int exc );
+    int OrdersGetter_GetFromEnteredTime_ABI( _OrdersGetter_C pGetter, PointerByReference buffer, size_t[] n, int exc);
+    int OrdersGetter_SetFromEnteredTime_ABI( _OrdersGetter_C pGetter, String symbol, int exc );
+    int OrdersGetter_GetToEnteredTime_ABI( _OrdersGetter_C pGetter, PointerByReference buffer, size_t[] n, int exc);
+    int OrdersGetter_SetToEnteredTime_ABI( _OrdersGetter_C pGetter, String symbol, int exc );
+    int OrdersGetter_GetOrderStatusType_ABI( _OrdersGetter_C pGetter, int[] orderStatusType, int exc);
+    int OrdersGetter_SetOrderStatusType_ABI( _OrdersGetter_C pGetter, int orderStatusType, int exc );
+    
+    /* INSTRUMENT INFO GETTER*/
+    int InstrumentInfoGetter_Create_ABI( Credentials._Credentials pCredentials, int searchType, 
+            String queryString, _InstrumentInfoGetter_C pGetter, int exc); 
+    int InstrumentInfoGetter_Destroy_ABI( _InstrumentInfoGetter_C pGetter, int exc );    
+    int InstrumentInfoGetter_GetSearchType_ABI( _InstrumentInfoGetter_C pGetter, int[] searchType, int exc);  
+    int InstrumentInfoGetter_GetQueryString_ABI( _InstrumentInfoGetter_C pGetter, PointerByReference buffer, 
+            size_t[] n, int exc);
+    int InstrumentInfoGetter_SetQuery_ABI( _InstrumentInfoGetter_C pGetter, int searchType, 
+            String queryString, int exc );
     
     
     /* STREAMING SESSION */

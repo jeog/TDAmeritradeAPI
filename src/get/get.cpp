@@ -564,7 +564,7 @@ OrderStatusType_to_string_ABI( TDMA_API_TO_STRING_ABI_ARGS )
     case OrderStatusType::REJECTED:
         return to_new_char_buffer("REJECTED", buf, n, allow_exceptions);
     case OrderStatusType::PENDING_CANCEL:
-        return to_new_char_buffer("PENDING_CANCE", buf, n, allow_exceptions);
+        return to_new_char_buffer("PENDING_CANCEL", buf, n, allow_exceptions);
     case OrderStatusType::CANCELED:
         return to_new_char_buffer("CANCELED", buf, n, allow_exceptions);
     case OrderStatusType::PENDING_REPLACE:

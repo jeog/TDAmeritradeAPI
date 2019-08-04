@@ -184,6 +184,7 @@ public class StreamingSession implements AutoCloseable {
 - **DO NOT** call into StreamingSession(i.e use its methods) from inside the callback  
 - **DO NOT** block the callback thread for extended periods  
 - **DO NOT** assume exceptions will get handled higher up (assume program termination)  
+- **DO NOT** assume the memory const char* points at will be valid after callback returns(use ```strdup```, ```strcpy```, or ```std::string(...)``` to copy)
 
 ##### Callback Args 
 

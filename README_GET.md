@@ -488,11 +488,9 @@ use [StreamingSession](README_STREAMING.md) for that.
 
 #### [Java]
 ```
-    import io.github.jeog.tdameritradeapi.Auth; 
-    import io.github.jeog.tdameritradeapi.Auth.Credentials;
-    import io.github.jeog.tdameritradeapi.Auth.CredentialsManager;
     import io.github.jeog.tdameritradeapi.TDAmeritradeAPI;
     import io.github.jeog.tdameritradeapi.TDAmeritradeAPI.CLibException;
+    import io.github.jeog.tdameritradeapi.Auth.CredentialsManager; 
     import io.github.jeog.tdameritradeapi.get.QuoteGetter;
 
     import org.json.JSONObject;
@@ -512,7 +510,7 @@ use [StreamingSession](README_STREAMING.md) for that.
                 j = (JSONObject)qGetter.get(); 
                 System.out.println( qGetter.getSymbol() + ": " + j.toString(4) )  
 
-            }catch( CLibException exc ){
+            }catch( TDAmeritradeAPI.CLibException exc ){
                 // ERROR
             }
         }
@@ -526,7 +524,7 @@ C++ Getter classes and the equivalent C interfaces are outlined below.
 
 The C interface uses appropriately named functions to mimic the methods of the C++ classes. It requires explicit use of the ```Create``` functions for construction and ```Destroy``` functions for destruction. 
 
-The Python and Java interfaces matches C++ almost exactly. *Currently QuoteGetter, QuotesGetter, HistoricalPeriodGetter, HistoricalRangeGetter, OptionChainGetter, OptionChainStrategyGetter, OptionChainAnalyticalGetter, AccountInfoGetter, PreferencesGetter, StreamerSubscriptionKeysGetter, TransactionHistoryGetter, and IndividualTransactionHistoryGetter are available in java.*
+The Python and Java interfaces match C++ almost exactly. 
 
 #### QuoteGetter
 

@@ -2,29 +2,23 @@
 ### TDAmeritradeAPI
 - - -
 
-C++ front-end library - with C, Python, and Java(in development) bindings- for the recently expanded TDAmeritrade API. It provides object-oriented access to the simple HTTPS/JSON interface using *[libcurl](https://curl.haxx.se/libcurl)* and to the Streaming interface using *[uWebSockets](https://github.com/uNetworking/uWebSockets)*.
+A front-end shared library - with C, C++, Python, and Java interfaces - for the recently expanded TDAmeritrade API. It provides object-oriented access to the simple HTTPS/JSON interface using *[libcurl](https://curl.haxx.se/libcurl)* and to the Streaming interface using *[uWebSockets](https://github.com/uNetworking/uWebSockets)*.
 
-If you have an Ameritrade account you *should* be able to gain access to the API by following the instructions in the Authentication section below. 
+After setting up a TDAmeritrade [developer account](https://developer.tdameritrade.com/) you should be able to gain access to the API by following the instructions in the Authentication section below. 
 
-The library is designed to abstract away many of the lower level details of 
-accessing the API while still providing almost complete control over authentication,
-access, data handling, and order execution.
+The library is designed to abstract away many of the lower level details of accessing the API while still providing almost complete control over authentication, access, data handling, and order execution.
 
-- It does not provide complete OAuth2 authentication management, allowing users to 
-customize for their particular needs. The user retrieves an access code(see below), 
-and then uses the library to request an access token, which is refreshed automatically.
+- Provides a collection of API calls and stand-alone tools for custom authentication management. 
 
-- It does not completely parse returned data, allowing users to handle it as they see fit. 
+- Does not completely parse returned data, allowing users to handle it as they see fit. 
     - C++ interface returns [json](https://github.com/nlohmann/json) objects
     - C interface populates char buffers w/ un-parsed json strings
     - Python interface returns builtin objects(list, dict etc.) via json.loads().
     - Java interface returns [org.json](https://stleary.github.io/JSON-java/) objects
 
-- This is a new library, built by a single developer, for an API that is still in flux. As such you should expect plenty of bumps along the way, with changes to both the interface and the implementation.       
+- Exposes a stable C ABI to support a portable C++ interface and bindings for other languages.
 
-- Please report bugs via issues: be desciptive and try to replicate if possible. 
-
-- If you're capable of and interested in contributing please communicate your intentions first. 
+If you're interested in contributing - or would like to write bindings for a currently unsupported language - please communicate your intentions first. 
 
 *Communicating w/ 3rd party servers, accessing financial accounts, and automating trade execution are all operations that present risk and require responsibility. **By using this software you agree that you understand and accept these risks and responsibilities. You accept sole responsibility for the results of said use. You completely absolve the author of any damages, financial or otherwise, incurred personally or by 3rd parties, directly or indirectly, by using this software - even those resulting from the gross negligence of the author. All communication with TDAmeritrade servers, access of accounts, and execution of orders must adhere to their policies and terms of service and is your repsonsibility, and yours alone.***
 
@@ -79,15 +73,13 @@ This project would not be possible without some of the great open-source project
 ### New Features
 - - -
 
-- (additioanl) Java Bindings - AccountInfoGetter, TransactionHistoryGetter, IndividualTransactionHistoryGetter, PreferencesGetter, StreamerSubscriptionKeysGetter
-- (additional) Java Bindings - OptionChainGetter, OptionChainStrategyGetter, OptionChainAnalyticalGetter
+- Java Bindings - get interface
 - credential_builder.py - streamlineed approach to authentication and credential building
-- Java Bindings - streaming interface is complete; 'get' interface currently has Quote, Quotes, HistoricalPeriod, and HistoricalRange getters available
+- Java Bindings - streaming interface 
 - [DynamicDataStore](DynamicDataStore) - module that abstracts away data retrieval, providing a simple bar-based interface
 - Mac build (see below)
 - Raw Subscriptions for complete control over accessing the Streaming interface
 - ADD, VIEW, UNSUBS commands for Streaming interface
-- Setters for Subscription objects, copy semantics for C++ versions
 
 ### Status
 - - -
@@ -96,7 +88,7 @@ This project would not be possible without some of the great open-source project
 **C**              | *Working*     | *Working*   | *OrderTicket, Builders, Send/Cancel*
 **C++**            | *Working*     | *Working*   | *OrderTicket, Builders, Send/Cancel*
 **Python**         | *Working*     | *Working*   | *OrderTicket, Builders, Send/Cancel*
-**Java**           | *In progress* | *Working*   | *Comming Soon*
+**Java**           | *Working*     | *Working*   | *Comming Soon*
 
 
 *Note: 'Working' does not necessarily mean 'Stable'*  
