@@ -4,7 +4,6 @@ import io.github.jeog.tdameritradeapi.CLib;
 import io.github.jeog.tdameritradeapi.TDAmeritradeAPI;
 import io.github.jeog.tdameritradeapi.Auth.Credentials;
 import io.github.jeog.tdameritradeapi.TDAmeritradeAPI.CLibException;
-import io.github.jeog.tdameritradeapi.get.InstrumentInfoGetter.InstrumentSearchType;
 
 public class InstrumentInfoGetter extends APIGetter {
 

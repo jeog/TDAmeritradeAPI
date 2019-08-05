@@ -510,7 +510,7 @@ use [StreamingSession](README_STREAMING.md) for that.
                 j = (JSONObject)qGetter.get(); 
                 System.out.println( qGetter.getSymbol() + ": " + j.toString(4) )  
 
-            }catch( TDAmeritradeAPI.CLibException exc ){
+            }catch( CLibException exc ){
                 // ERROR
             }
         }

@@ -255,10 +255,13 @@ Once built, make sure the TDAmeritradeAPI library and dependencies are in a loca
 If dependencies were built/installed using a package manager they should be in the correct location already.
 
 To make *libTDAmeritradeAPI.so* available to your program:
-- move it to the a directory in the search path e.g ```/usr/local/lib```
+- move it to a directory already in the search path e.g ```/usr/local/lib```
+- *-or-* [add the directory](http://howtolamp.com/articles/adding-shared-libraries-to-system-library-path/) to the system library path
 - *-or-* link your code with the appropriate flags ```'-L/path/to/lib -Wl,-rpath,/path/to/lib'```
 - *-or-* add its path to the LD_LIBRARY_PATH environment variable
 - *-or-* move the file to the location of the binary that will link to it  
+
+The simple approach for supporting all language bindings, generally, is to include the directory of the library(and any dependencies built manually and not installed) in the system library path, so it will be found automatically on load/import. 
 
 ##### Windows
 
@@ -291,8 +294,10 @@ The simplest approach for supporting all language bindings, generally, is to put
     - if your ```python``` links to ```python2``` run ```python3 setup.py install``` instead
     - depending on how/where you've installed python you may need elevated privileges (e.g sudo, admin) to write to the python directory
     - some packages may not include distutils; if you get a ```ModuleNotFoundError``` you'll need to install e.g ```apt-get install python3-distutils```
-
-4. import the package or module(s):
+4. (optional) setup the package to load the C/C++ shared lib automatically by:
+    - using one of the options in the [install section](https://github.com/jeog/TDAmeritradeAPI#install)
+    - moving the library and (un-installed) dependencies to the location of python executable
+5. import the package or module(s):
     ``` 
     import tdma_api # -or-
     from tdma_api import auth     # authorization methods and objects
@@ -300,7 +305,7 @@ The simplest approach for supporting all language bindings, generally, is to put
     from tdma_api import stream   # 'streaming' class and subscriptions
     from tdma_api import execute  # order objects, builders and execution calls
     ```
-    - the python package will try to load the library automatically
+    - the python package will try to load the library automatically (see #4 above)
     - if it can't, it will output an error message on package import 
         - the most common issue is the library not being installed in the default library search path
         - move the lib(see [Install](#install)) or load it manually:   
@@ -313,10 +318,8 @@ The simplest approach for supporting all language bindings, generally, is to put
 1. be sure to have built/installed the dependencies and shared library(above)
 2. be sure you're working with Java 8 or higher (Major Version 52 or higher)
 3. be sure the library build(32 vs 64 bit) matches the JRE (```java -version``` will mention "64-Bit")
-4. (optional) setup TDAmeritradeAPI.jar to init/load the C/C++ shared lib automatically by:
-    - moving the shared lib to the directory of the executable (your java program)  
-    - moving the shared lib to the system lookup directories (e.g C:/Windows/System32, /usr/lib)  
-    - moving the shared lib to a custom directory and setting PATH(Windows) or LD_LIBRARY_PATH(unix)
+4. (optional) setup TDAmeritradeAPI.jar to load the C/C++ shared lib automatically by:
+    - using one of the options in the [install section](https://github.com/jeog/TDAmeritradeAPI#install)
     - bundling the shared lib with TDAmeritradeAPI.jar in the appropriately named folder (e.g linux-x86-64/TDAmeritradeAPI.so) 
 5. add library/API calls to your code  
     - (if not done automatically in step 4) pass the path of the C/C++ shared lib to ```tdameritradeapi.TDAmeritradeAPI.init(String path)```   
