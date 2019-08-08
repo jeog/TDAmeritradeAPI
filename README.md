@@ -32,12 +32,13 @@ If you're interested in contributing - or would like to write bindings for a cur
 - [Getting Started](#getting-started)
     - [Build Dependencies](#build-dependencies)
     - [Build Library](#build-library)
-        - [Precompiled](#precompiled)
+    - [Precompiled](#precompiled)
     - [Install](#install)
-    - [Use - C/C++](#use---cc)
-    - [Use - Python3](#use---python3)
-    - [Use - Java](#use---java)
-    - [Use - Scala/SBT](#use---scalasbt)
+    - [Use](#use)
+        - [C/C++](#cc)
+        - [Python3](#python3)
+        - [Java](#java)
+        - [Scala/SBT](#scalasbt)
 - [Conventions](#conventions)
 - [Errors & Exceptions](#errors--exceptions)
 - [Authentication](#authentication)
@@ -58,7 +59,7 @@ If you're interested in contributing - or would like to write bindings for a cur
 ### Dependencies
 - - -
 
-This project would not be possible without some of the great open-source projects listed below.
+This project would not be possible without some of the great open-source projects listed below. 
 
 - [libcurl](https://curl.haxx.se/libcurl) - Client-side C library supporting a ton of transfer protocols
 - [openssl](https://www.openssl.org) - C library for tls/ssl and crypto 
@@ -114,15 +115,15 @@ There are certain binary compatibility issues when exporting C++ code accross co
 ### Getting Started
 - - -
 
-1. build the necessary dependencies
-2. build the TDAmeritradeAPI shared library(or use a precompiled version).
-3. install the dependencies and TDAmeritradeAPI library in a place the linker can find
-4. 
-    - (**C/C++**) include the necessary headers in your code and link to the library
-    - (**Python**) install the tdma_api package
-    - (**Java**) add the .jar's to your classpath and import the necessary packages/classes 
+It's recommended you build from source. If not comfortable with this, or you just want to use the Python or Java interface, it may be easier to use a [precompiled linux/windows library](#precompiled). 
 
-It's recommend you build from source. If you're not comfortable with this or just want to use the Python interface it may be easier to use a [precompiled linux/windows library](#precompiled). 
+To more easily support different platforms, bindings, and use-cases while the library is in development we don't use a unified build system. The current approach:
+1. build dependencies 
+2. build library
+3. install dependencies and library
+4. link to or load the library
+
+*We are currently in the process of converting to a (manually) generated makefile project - if you would like to contribute (or simply test on non-linux systems) please send an email or file an issue.*
 
 #### Build Dependencies 
 
@@ -130,54 +131,53 @@ It's recommend you build from source. If you're not comfortable with this or jus
 
 If using a package manager, like apt, install the libcurl, libssl, and zlib dev packages: 
 
-    user@host:~$ sudo apt-get install libcurl4-openssl-dev libssl-dev zlib1g-dev
+        sudo apt-get install libcurl4-openssl-dev libssl-dev zlib1g-dev
 
 Alternatively, you can download them manually via github:
+    
+        git clone https://github.com/openssl/openssl.git
+        git clone https://github.com/curl/curl.git 
+        git clone https://github.com/madler/zlib.git   
 
-    user@host:~$ git clone https://github.com/openssl/openssl.git
-    user@host:~$ git clone https://github.com/curl/curl.git 
-    user@host:~$ git clone https://github.com/madler/zlib.git
-
-...or the individual project sites:
+... or the individual project sites:
 - [openssl](https://www.openssl.org/source)
 - [libcurl](https://curl.haxx.se/download.html)
 - [zlib](https://zlib.net) 
 
-Then follow the build/install instructions in each project's README/INSTALL files.
-
-*[libuv](https://github/com/libuv/libuv) is not necessary if epoll is available.*
-
 ##### Mac
 
-You'll need the same libraries as the Unix/Linux build AND libuv.
+You'll need the same libraries as the Unix/Linux build **AND** [libuv](https://github/com/libuv/libuv).
+
+        brew install libuv
 
 ##### Windows
 
-Compiled dependencies - 32 and 64 bit release builds of openssl, curl, zlib, and uv - are included in the *vsbuild/deps/libs* directory. If you'd still like to download and build them yourselves visit the links from the section above.
+Compiled dependencies - 32 and 64 bit release builds of openssl, curl, zlib, and uv - are included in the *vsbuild/deps/libs* directory. If you'd still like to download and build them yourselves visit the links from the sections above. Pay attention to the install section below.
 
 
 #### Build Library
 
-The library is implemented in C++ and needs to be built accordingly. It exports a C/ABI layer which is wrapped by header defined C calls and C++ calls/objects, allowing for access from pure C, C++ and Python via ctypes.py.
+The library is implemented in C++ and needs to be built accordingly. It exports a C/ABI layer which is wrapped by header defined C calls and C++ calls/objects, allowing for access from pure C, C++, Python via ctypes.py, and Java via JNA.
 ```
   FunctionImpl(string)                [C++ implementation code defined in lib]
   Funtion_ABI(const char*)            [C ABI code defined in lib and exported]
-    /\    /\   /\
-====||====||===||=====================[lib boundary]==========================
-    ||    ||   ||
-    ||    ||   ||   ---------------------[headers]----------------------------
-    ||    ||   ||      #ifdef __cplusplus
-    ||    ||   ||<===  Function(string)        [C++ wrapper defined in header]
-    ||    ||           #else
-    ||    ||<=======   Function(const char *)  [C wrapper defined in header]
-    ||                 #endif
-    ||              --------/\------------------------------------------------
-    ||              --------||-------------------------------------------------
-    ||                 Function("foo")         [Client C/C++]
-    ||              ----------------------------------------------------------
-    ||   
-    ||<===  ctypes.CDll.Function_ABI("foo")    [ctypes.py access to library] 
-    ||<===  jna.Library.Function_ABI("foo")    [JNA access to library]
+    /\  /\  /\  /\
+====||==||==||==||=====================[lib boundary]==========================
+    ||  ||  ||  ||
+    ||  ||  ||  ||    ---------------------[headers]----------------------------
+    ||  ||  ||  ||       #ifdef __cplusplus
+    ||  ||  ||  ||<===   Function(string)        [C++ wrapper defined in header]
+    ||  ||  ||           #else
+    ||  ||  ||<=======   Function(const char *)  [C wrapper defined in header]
+    ||  ||               #endif
+    ||  ||            --------/\------------------------------------------------
+    ||  ||            --------||------------------------------------------------
+    ||  ||               Function("foo")         [Client C/C++]
+    ||  ||            ----------------------------------------------------------
+    ||  || 
+    ||  ||<=== ctypes.CDll.Function_ABI("foo")   [ctypes.py access to library] 
+    ||
+    ||<======= jna.Library.Function_ABI("foo")   [JNA access to library]
            
 ```
 
@@ -189,18 +189,17 @@ The library is implemented in C++ and needs to be built accordingly. It exports 
 
 - ```#define DEBUG_VERBOSE_1_``` to send verbose logging/debug info to stdout. (Debug builds do this automatically.)
 
-- If you have a build issue file an issue or send an email.
 
 ##### Unix/Linux
 
-The Eclipse/CDT generated makefiles are in the  'Debug' and 'Release' subdirectories. *(The makefiles may need some tweaks for non-linux systems.)*
+The Eclipse/CDT generated makefiles are in the  'Debug' and 'Release' subdirectories. 
 
-    user@host:~/dev/TDAmeritradeAPI/Release$ make
+        user@host:~/dev/TDAmeritradeAPI/Release$ make
 
 
 ##### Mac
 
-Same as for Unix/Linux except you need to manually add '-luv' to objects.mk. It should read:
+Same as for Unix/Linux except you need to **manually add** '-luv' to objects.mk. It should read:
 ```
 USER_OBJS := 
 LIBS := -lssl -lcrypto -lz -lcurl -lpthread -lutil -ldl -luv
@@ -208,7 +207,7 @@ LIBS := -lssl -lcrypto -lz -lcurl -lpthread -lutil -ldl -luv
 
 ##### Windows
 
-The build solution provided was created in ***VisualStudio2017*** using toolset ***v141***. (*If it doesn't work in your version of VS you'll need to tweak the project settings and/or source.*)
+The build solution provided was created in ***VisualStudio2017*** using toolset ***v141***. 
 
 1. Open vsbuild/vsbuild.sln in VisualStudio
 2. Select an x64 or Win32 Release build configuration. 
@@ -248,7 +247,7 @@ The Windows/PE binaries are built using VisualStudio2017 and statically linked a
 
 #### Install
 
-Once built, make sure the TDAmeritradeAPI library and dependencies are in a location the linker can find, or you'll need to tell the linker where to look.
+Once built, you need to make sure the TDAmeritradeAPI library and dependencies are in a location the linker can find.
 
 ##### Unix/Linux
 
@@ -261,8 +260,6 @@ To make *libTDAmeritradeAPI.so* available to your program:
 - *-or-* add its path to the LD_LIBRARY_PATH environment variable
 - *-or-* move the file to the location of the binary that will link to it  
 
-The simple approach for supporting all language bindings, generally, is to include the directory of the library(and any dependencies built manually and not installed) in the system library path, so it will be found automatically on load/import. 
-
 ##### Windows
 
 Since all the dependencies are included(or built manually) you'll need to manage them AND *TDAmeritradeAPI.dll*.
@@ -274,19 +271,23 @@ Since all the dependencies are included(or built manually) you'll need to manage
 
 The simplest approach for supporting all language bindings, generally, is to put TDAmeritrade.dll and its dependencies (libcurl.dll etc.) in a single folder, then add that folder location to your PATH: ControlPanel -> System -> Advanced System Settings -> Advanced Tab -> Environmental Variables -> Select 'Path' -> Edit -> append ';C:/my/library/path' to string in 'Variable' -> Ok -> log out and in again.
 
-#### Use - C/C++
+#### Use 
+
+The sections below outline basic steps for loading and using the library. 
+
+##### C/C++
 
 1. include headers:
     - "tdma_api_get.h" for the 'HTTPS Get' interface 
     - "tdma_api_streaming.h" for the 'Streaming' interface  
     - "tdma_api_execute.h" for the 'Execute' interface
     - *(headers/source use relative include links, don't change the directory structure)*
-2. add Library/API calls to your code
+2. add Library/API calls to your code (C++ uses namespace ```tdma```)
 3. compile 
-4. link your code with the TDAmeritradeAPI library *(be sure the linker can find it)*
+4. link your code with the TDAmeritradeAPI library 
 5. run 
 
-#### Use - Python3
+##### Python3
 
 1. be sure to have built/installed the dependencies and shared library(above)
 2. be sure the library build(32 vs 64 bit) matches the python build
@@ -313,7 +314,7 @@ The simplest approach for supporting all language bindings, generally, is to put
     - if you get an error message concerning the dependencies you'll need to
       move them to a location the dynamic linker can find. (see [Install](#install))
 
-#### Use - Java
+##### Java
 
 1. be sure to have built/installed the dependencies and shared library(above)
 2. be sure you're working with Java 8 or higher (Major Version 52 or higher)
@@ -341,7 +342,7 @@ The simplest approach for supporting all language bindings, generally, is to put
         user@host:~/dev/TDAmeritradeAPI/test/java$ java -cp ".:../../java/*" Test ../../Release/libTDAmeritradeAPI.so
 ```
 
-#### Use - Scala/SBT
+##### Scala/SBT
 
 1. see steps 1 - 5 in the [Use - Java section](#use---java)
 2. add *java/json.jar*, *java/jna.jar*, and *java/TDAmeritradeAPI.jar* to the ```lib/``` folder in the root directory 

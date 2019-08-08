@@ -17,6 +17,8 @@ along with this program.  If not, see http://www.gnu.org/licenses.
 
 package io.github.jeog.tdameritradeapi.get;
 
+import org.json.JSONArray;
+
 import io.github.jeog.tdameritradeapi.CLib;
 import io.github.jeog.tdameritradeapi.TDAmeritradeAPI;
 import io.github.jeog.tdameritradeapi.Auth.Credentials;
@@ -63,6 +65,12 @@ public class TransactionHistoryGetter extends AccountGetterBase {
     public TransactionHistoryGetter( Credentials creds, String accountID, TransactionType transactionType,
             String symbol, String startDate, String endDate ) throws CLibException {
         super( create(creds, accountID, transactionType, symbol, startDate, endDate) );
+    }
+        
+    @Override
+    public JSONArray
+    get() throws  CLibException {        
+        return new JSONArray( getRaw() );
     }
     
     public TransactionType

@@ -18,6 +18,9 @@ along with this program.  If not, see http://www.gnu.org/licenses.
 package io.github.jeog.tdameritradeapi.get;
 
 import io.github.jeog.tdameritradeapi.Auth.Credentials;
+
+import org.json.JSONObject;
+
 import io.github.jeog.tdameritradeapi.CLib;
 import io.github.jeog.tdameritradeapi.TDAmeritradeAPI;
 import io.github.jeog.tdameritradeapi.TDAmeritradeAPI.CLibException;
@@ -27,6 +30,13 @@ public class AccountInfoGetter extends AccountGetterBase {
     public AccountInfoGetter( Credentials creds, String accountID, boolean positions, boolean orders ) 
             throws CLibException {
         super( create(creds, accountID, positions, orders) );
+    }
+    
+    
+    @Override
+    public JSONObject
+    get() throws  CLibException {        
+        return new JSONObject( getRaw() );
     }
     
     public boolean

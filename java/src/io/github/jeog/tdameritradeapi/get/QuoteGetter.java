@@ -19,6 +19,9 @@ package io.github.jeog.tdameritradeapi.get;
 
 import io.github.jeog.tdameritradeapi.CLib;
 import io.github.jeog.tdameritradeapi.TDAmeritradeAPI;
+
+import org.json.JSONObject;
+
 import io.github.jeog.tdameritradeapi.Auth.Credentials;
 import io.github.jeog.tdameritradeapi.TDAmeritradeAPI.CLibException;
 
@@ -36,6 +39,12 @@ public class QuoteGetter extends APIGetter{
     
     public QuoteGetter( Credentials creds, String symbol ) throws  CLibException {
         super( create(creds, symbol) ) ;
+    }
+    
+    @Override
+    public JSONObject
+    get() throws  CLibException {        
+        return new JSONObject( getRaw() );
     }
 
     public String

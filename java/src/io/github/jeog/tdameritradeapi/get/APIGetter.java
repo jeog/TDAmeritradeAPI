@@ -28,19 +28,15 @@ import io.github.jeog.tdameritradeapi.TDAmeritradeAPI.CLibException;
 
 public class APIGetter implements AutoCloseable {    
     private CLib._Getter_C pGetter;
+ 
+    public String
+    getRaw() throws CLibException {
+        return CLib.Helpers.getString( pGetter, TDAmeritradeAPI.getCLib()::APIGetter_Get_ABI );
+    }
     
-    protected APIGetter(CLib._Getter_C pGetter){
-        this.pGetter = pGetter;    
-    }
-
-    protected CLib._Getter_C
-    getProxy(){
-        return pGetter;
-    }
-        
     public Object
     get() throws  CLibException {        
-        String j = CLib.Helpers.getString( pGetter, TDAmeritradeAPI.getCLib()::APIGetter_Get_ABI );
+        String j = getRaw();
         try {
             return new JSONObject(j);
         }catch( JSONException exc ) {
@@ -81,6 +77,14 @@ public class APIGetter implements AutoCloseable {
     waitRemaining() throws  CLibException {
         return CLib.Helpers.getLong( TDAmeritradeAPI.getCLib()::APIGetter_WaitRemaining_ABI);
     }
-    
+        
+    protected APIGetter(CLib._Getter_C pGetter){
+        this.pGetter = pGetter;    
+    }
 
+    protected CLib._Getter_C
+    getProxy(){
+        return pGetter;
+    }
+       
 }

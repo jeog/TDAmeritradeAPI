@@ -103,7 +103,7 @@ Each object sets up an underlying HTTPS/Get connection on construction. The conn
 #### [C++]
 
 1. Construct a Getter object 
-2. Use the ```.get()``` method which returns a json object from the server OR throws an exception.
+2. Use the ```.get()``` method which returns a ```nlohmann::json``` object from the server OR throws an exception.
 3. Use the objects's accessor methods for querying the fields passed to the constructor and/or updating those to be used in subsequent ```.get()``` calls. 
 
     To make this more concrete here is the Getter interface for individual price quotes:
@@ -242,7 +242,7 @@ those to be used in subsequent ```.get()``` call.
 
 1. Construct a Getter object (package ```io.github.jeog.tdameritradeapi.get```)
     - you can use Getter objects in a 'try-with-resources' block to close the connection immediately when done
-2. Use the ```.get()``` method which returns an `Object` that is either of type ```JSONObject``` or ```JSONArray``` OR throws ```TDameritradeAPI.CLibException```
+2. Use the ```.get()``` method which returns either ```org.json.JSONObject``` or ```org.json.JSONArray``` OR throws ```TDameritradeAPI.CLibException```. Alternatively, use ```getRaw()``` to get a json string to parse yourself. [***Earlier versions of ```.get()``` returned an ```Object``` - last used in commit c15dd0f (Aug 4 2019)***]
 3. Use the object's accessor methods for querying the fields passed to the constructor and updating 
 those to be used in subsequent ```.get()``` calls. 
 
@@ -258,9 +258,13 @@ those to be used in subsequent ```.get()``` calls.
         
         public void
         setSymbol(String symbol) throws  CLibException;
+        
+        @Override
+        public JSONObject
+        get() throws CLibException;
 
-        public Object
-        get() throws  CLibException; /* INHERITED */
+        public String
+        getRaw() throws  CLibException; /* INHERITED */
         
         @Override
         public void
@@ -355,31 +359,26 @@ use [StreamingSession](README_STREAMING.md) for that.
     
     ...    
     
-        /* 
-         * this could throw LocalCredentialsException (e.g empty access token in 
-         * Credentials struct) or ValueException (e.g empty symbol string) 
-         */
-        QuoteGetter qg(credentials_manager.credentials, "SPY");
-        
-        json j;
-        try{
-            j = qg.get();
-        }catch( InvalidRequest& e){
-            // invalid symbol ?
-        }catch( ConnectException& e ){
-            // something more serious 
-        }
-        
-        cout<< qg.get_symbol() << ' ' << j << endl;
-        this_thread::sleep_for( chrono::seconds(2) );
-        
-        j = qg.get()
-        cout<< qg.get_symbol() << ' ' << j << endl;
-        this_thread::sleep_for( chrono::seconds(2) );
-        
-        qg.set_symbol("QQQ");
-        j = qg.get();    
-        cout<< qg.get_symbol() << ' ' << j << endl;
+        {     
+            CredentialsManager credentials_manager( "path/to/creds/file", "password" );
+          
+            QuoteGetter qg(credentials_manager.credentials, "SPY");
+            
+            json j;
+            try{
+                j = qg.get();
+            }catch( InvalidRequest& e){
+                // invalid symbol ?
+            }catch( ConnectException& e ){
+                // something more serious 
+            }
+            
+            cout<< qg.get_symbol() << ' ' << j << endl;          
+         
+            qg.set_symbol("QQQ");
+            j = qg.get();    
+            cout<< qg.get_symbol() << ' ' << j << endl;
+        } 
     
     ...
     
@@ -394,11 +393,17 @@ use [StreamingSession](README_STREAMING.md) for that.
   
     ...    
     
-         int err = 0;
-         char *buf = NULL, *symbol = NULL;
-         size_t n = 0;
+        int err = 0;
+        char *buf = NULL, *symbol = NULL;
+        size_t n = 0;
 
-         QuoteGetter_C qg = {0,0};
+        struct Credentials creds;
+
+        QuoteGetter_C qg = {0,0};
+
+        
+        if( (err = LoadCredentials( "path/to/creds/file", "password", &creds) )
+            CHECK_AND_RETURN_ON_ERROR(err, "LoadCredentials");     
 
         if( (err = QuoteGetter_Create(creds, "SPY", &qg)) )
             CHECK_AND_RETURN_ON_ERROR(err, "QuoteGetter_Create");
@@ -450,6 +455,7 @@ use [StreamingSession](README_STREAMING.md) for that.
         }
 
         memset(&qg, 0, sizeof(QuoteGetter_C));
+
     ...
     
 ```
@@ -460,24 +466,25 @@ use [StreamingSession](README_STREAMING.md) for that.
     
     ...    
 
-        if not clib._lib:
+        if not clib.is_loaded():
             clib.init("path/to/lib/libTDAmeritrade.so")
 
         with auth.CredentialManager("path/to/creds/file", "password") as cm:
             try:
                 g = get.QuoteGetter(cm.credentials, "SPY")
-                assert q.credentials
-
+            
                 j = g.get()
                 s = g.get_symbol()
                 assert s == "SPY"
                 print(s, j[s])
 
                 g.set_symbol("QQQ")
+
                 j = g.get()
                 s = g.get_symbol()
                 assert s == "QQQ"
                 print(s, j[s])
+
             except clib.CLibException as e:
                 print( str(e) )
                 raise
@@ -497,16 +504,18 @@ use [StreamingSession](README_STREAMING.md) for that.
 
     ...
 
-        TDAmeritradeAPI.init(libPath);
+        if( !TDAmeritradeAPI.libraryIsLoaded() )
+            TDAmeritradeAPI.init(libPath);
         
         try( CredentialsManager cm = new CredentialsManager(credsPath, credsPassword) ){
         
             try( QuoteGetter qGetter = new QuoteGetter(cm.getCredentials(), "SPY") ){
 
-                JSONObject j = (JSONObject)qGetter.get(); // we know its JSONObject in this case
+                JSONObject j = qGetter.get(); 
                 System.out.println( qGetter.getSymbol() + ": " + j.toString(4) )
 
                 qGetter.setSymbol("QQQ");
+
                 j = (JSONObject)qGetter.get(); 
                 System.out.println( qGetter.getSymbol() + ": " + j.toString(4) )  
 

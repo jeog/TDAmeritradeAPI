@@ -17,6 +17,8 @@ along with this program.  If not, see http://www.gnu.org/licenses.
 
 package io.github.jeog.tdameritradeapi.get;
 
+import org.json.JSONObject;
+
 import io.github.jeog.tdameritradeapi.CLib;
 import io.github.jeog.tdameritradeapi.TDAmeritradeAPI;
 import io.github.jeog.tdameritradeapi.Auth.Credentials;
@@ -29,7 +31,12 @@ public class UserPrincipalsGetter extends APIGetter {
          super( create(creds, returnSubscriptionKeys, returnConnectionInfo, returnPreferences, returnSurrogateIDs) );
     }
   
-
+    @Override
+    public JSONObject
+    get() throws  CLibException {        
+        return new JSONObject( getRaw() );
+    }
+    
     public boolean
     returnsSubscriptionKeys() throws CLibException {
         return CLib.Helpers.getInt( getProxy(),

@@ -26,6 +26,8 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import org.json.JSONObject;
+
 import io.github.jeog.tdameritradeapi.TDAmeritradeAPI.CLibException;
 
 public abstract class HistoricalGetterBase extends APIGetter {
@@ -79,6 +81,12 @@ public abstract class HistoricalGetterBase extends APIGetter {
         super( pGetter );
     }
 
+    @Override
+    public JSONObject
+    get() throws  CLibException {        
+        return new JSONObject( getRaw() );
+    }
+    
     public String
     getSymbol() throws  CLibException {
         return CLib.Helpers.getString( getProxy(), 

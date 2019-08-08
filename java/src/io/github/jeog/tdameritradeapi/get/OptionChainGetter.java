@@ -18,6 +18,9 @@ along with this program.  If not, see http://www.gnu.org/licenses.
 package io.github.jeog.tdameritradeapi.get;
 
 import io.github.jeog.tdameritradeapi.Auth.Credentials;
+
+import org.json.JSONObject;
+
 import io.github.jeog.tdameritradeapi.CLib;
 import io.github.jeog.tdameritradeapi.CLib.OptionStrikesValue;
 import io.github.jeog.tdameritradeapi.TDAmeritradeAPI;
@@ -258,6 +261,12 @@ public class OptionChainGetter extends APIGetter {
             OptionExpMonth expMonth, OptionType optionType) throws CLibException {
         super( create(creds, symbol, strikes, contractType, includeQuotes, fromDate, toDate, 
                 expMonth, optionType) );
+    }
+    
+    @Override
+    public JSONObject
+    get() throws  CLibException {        
+        return new JSONObject( getRaw() );
     }
     
     public String

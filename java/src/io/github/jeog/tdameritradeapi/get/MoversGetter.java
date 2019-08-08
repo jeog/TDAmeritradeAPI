@@ -17,6 +17,8 @@ along with this program.  If not, see http://www.gnu.org/licenses.
 
 package io.github.jeog.tdameritradeapi.get;
 
+import org.json.JSONArray;
+
 import io.github.jeog.tdameritradeapi.CLib;
 import io.github.jeog.tdameritradeapi.TDAmeritradeAPI;
 import io.github.jeog.tdameritradeapi.Auth.Credentials;
@@ -116,6 +118,11 @@ public class MoversGetter extends APIGetter {
         super( create(creds, index, directionType, changeType) );
     }
     
+    @Override
+    public JSONArray
+    get() throws  CLibException {        
+        return new JSONArray( getRaw() );
+    }    
      
     public MoversIndexType
     getIndex() throws CLibException {

@@ -19,6 +19,8 @@ package io.github.jeog.tdameritradeapi.get;
 
 import java.util.Set;
 
+import org.json.JSONObject;
+
 import io.github.jeog.tdameritradeapi.CLib;
 import io.github.jeog.tdameritradeapi.TDAmeritradeAPI;
 import io.github.jeog.tdameritradeapi.Auth.Credentials;
@@ -40,6 +42,12 @@ public class QuotesGetter extends APIGetter{
     
     public QuotesGetter( Credentials creds, Set<String> symbols ) throws  CLibException {
         super( create(creds, symbols) ) ;
+    }
+    
+    @Override
+    public JSONObject
+    get() throws  CLibException {        
+        return new JSONObject( getRaw() );
     }
 
     public Set<String>

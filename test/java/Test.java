@@ -333,7 +333,7 @@ public class Test {
                 throw new Exception("InstrumentInfoGetter 'queryString' doesn't match(2)");
                 
             if( liveConnect ) {
-                JSONObject j = (JSONObject)getter.get();
+                JSONObject j = getter.get();
                 if( j.isEmpty() )
                     throw new Exception("InstrumentInfoGetter.get() returned empty string");
                 System.out.println("*   JSON: " + j.toString());
@@ -390,7 +390,7 @@ public class Test {
                 throw new Exception("MarketHoursGetter 'marketType' doesn't match(2)");
             
             if( liveConnect ) {
-                JSONObject j = (JSONObject)getter.get();
+                JSONObject j = getter.get();
                 if( j.isEmpty() )
                     throw new Exception("MarketHoursGetter.get() returned empty string");
                 System.out.println("*   JSON: " + j.toString());
@@ -445,7 +445,7 @@ public class Test {
                 throw new Exception("MoversGetter 'changeType' doesn't match(2)");
             
             if( liveConnect ) {
-                JSONArray j = (JSONArray)getter.get();    
+                JSONArray j = getter.get();    
                 System.out.println("*   JSON: " + j.toString());
             }else {
                 System.out.println("*   Can't get(), pass 'account_id' to run live");
@@ -480,7 +480,7 @@ public class Test {
             
             if( liveConnect ) {
                 try {
-                    JSONObject j = (JSONObject)getter.get();
+                    JSONObject j = getter.get();
                     System.out.println("*   JSON: " + j.toString());
                 }catch(CLibException exc) {                    
                 }                
@@ -571,7 +571,7 @@ public class Test {
             
             if( liveConnect ) {
                 try {
-                    JSONArray j = (JSONArray)getter.get();
+                    JSONArray j = getter.get();
                     System.out.println("*   JSON: " + j.toString());
                 }catch(CLibException exc) {
                     System.out.println("*   NO FILLED ORDERS: " + exc.getMessage());
@@ -623,7 +623,7 @@ public class Test {
                 throw new Exception("UserPrincipalsGetter 'returnsSurrogateIDs' doesn't match(2)");
             
             if( liveConnect ) {
-                JSONObject j = (JSONObject)getter.get();
+                JSONObject j = getter.get();
                 if( j.isEmpty() )
                     throw new Exception("UserPrincipalsGetter.get() returned empty string");
                 System.out.println("*   JSON: " + j.toString());
@@ -652,7 +652,7 @@ public class Test {
                 throw new Exception("PreferencesGetter accountID doesn't match (2)");
   
             if( liveConnect ) {
-                JSONObject j = (JSONObject)getter.get();
+                JSONObject j = getter.get();
                 if( j.isEmpty() )
                     throw new Exception("PreferencesGetter.get() returned empty string");
                 System.out.println("*   JSON: " + j.toString());
@@ -680,7 +680,7 @@ public class Test {
                 throw new Exception("StreamerSubscriptionKeysGetter accountID doesn't match (2)");
   
             if( liveConnect ) {
-                JSONObject j = (JSONObject)getter.get();
+                JSONObject j = getter.get();
                 if( j.isEmpty() )
                     throw new Exception("StreamerSubscriptionKeysGetter.get() returned empty string");
                 System.out.println("*   JSON: " + j.toString());
@@ -712,7 +712,7 @@ public class Test {
             if( !accountID2.equals(accountID) )
                 throw new Exception("IndividualTransactionHistoryGetter accountID doesn't match (2)");
       
-            String transactionID2 = "123456789";
+            String transactionID2 = "22345678999";
             getter.setTransactionID(transactionID2);
             transactionID = getter.getTransactionID();
             if( !transactionID.equals(transactionID2) )
@@ -720,7 +720,7 @@ public class Test {
             
             if( liveConnect ) {
                 try {
-                    JSONArray j = (JSONArray)getter.get();                    
+                    JSONObject j = getter.get();                    
                     System.out.println("*   JSON: " + j.toString());
                 }catch( CLibException exc ) {
                         System.out.println("transaction ID not found: " + transactionID2);
@@ -749,6 +749,10 @@ public class Test {
         try( TransactionHistoryGetter getter = new TransactionHistoryGetter(creds, "BAD_ACCOUNT_ID", 
                 TransactionHistoryGetter.TransactionType.ADVISOR_FEES, "BAD_SYMBOL", startDate, endDate) ){
             
+            String symbol = getter.getSymbol();
+            if( !symbol.equals("BAD_SYMBOL") )
+                throw new Exception("TransactionHistoryGetter symbol doesn't match (1)");
+            
             String accountID2 = getter.getAccountId();
             if( !accountID2.equals("BAD_ACCOUNT_ID") )
                 throw new Exception("TransactionHistoryGetter accountID doesn't match (1)");
@@ -764,6 +768,11 @@ public class Test {
             String endDate2 = getter.getEndDate();
             if( !endDate.equals(endDate2) )
                 throw new Exception("TransactionHistoryGetter endDate doesn't match (1)");
+            
+            getter.setSymbol("SPY");
+            symbol = getter.getSymbol();
+            if( !symbol.equals("SPY") )
+                throw new Exception("TransactionHistoryGetter symbol doesn't match (2)");
             
             accountID = (accountID == null) ? "BAD_ACCOUNT_ID2" : accountID;
             
@@ -782,13 +791,13 @@ public class Test {
             }else {
                 startDate = String.format("%d-%02d-%02d", year, month - 6, day);
             }
-            
+       
             if( month <= 3 ) {
                 endDate = String.format("%d-%02d-%02d", year-1, month + 9, day);
             }else {
                 endDate = String.format("%d-%02d-%02d", year, month - 3, day);
             }
-            
+          
             getter.setStartDate(startDate);
             startDate2 = getter.getStartDate();
             if( !startDate.equals(startDate2) )
@@ -800,7 +809,7 @@ public class Test {
                 throw new Exception("TransactionHistoryGetter endDate doesn't match (2)");
             
             if( liveConnect ) {
-                JSONArray j = (JSONArray)getter.get();           
+                JSONArray j = getter.get();           
                 System.out.println("*   JSON: " + j.toString());
             }else {
                 System.out.println("*   Can't get(), pass 'account_id' to run live");
@@ -841,7 +850,7 @@ public class Test {
                 throw new Exception("AccountInfoGetter returnsOrders doesn't match (2)");           
             
             if( liveConnect ) {
-                JSONObject j = (JSONObject)getter.get();
+                JSONObject j = getter.get();
                 if( j.isEmpty() )
                     throw new Exception("AccountInfoGetter.get() returned empty string");
                 System.out.println("*   JSON: " + j.toString());
@@ -1019,7 +1028,7 @@ public class Test {
             
         
             if( liveConnect ) {
-                JSONObject j = (JSONObject)oGetter.get();
+                JSONObject j = oGetter.get();
                 if( j.isEmpty() )
                     throw new Exception("OptionChainGetter.get() returned empty string");
                 System.out.println("*   JSON: " + j.toString());
@@ -1066,7 +1075,7 @@ public class Test {
                 throw new Exception("OptionChainGetter optionType doesn't match (2)");    
             
             if( liveConnect ) {
-                JSONObject j = (JSONObject)oGetter.get();
+                JSONObject j = oGetter.get();
                 if( j.isEmpty() )
                     throw new Exception("OptionChainGetter.get() returned empty string");
                 System.out.println("*   JSON: " + j.toString());
@@ -1129,7 +1138,7 @@ public class Test {
                 throw new Exception("OptionChainStrategyGetter optionType doesn't match (1)");
                     
             if( liveConnect ) {
-                JSONObject j = (JSONObject)oGetter.get();
+                JSONObject j = oGetter.get();
                 if( j.isEmpty() )
                     throw new Exception("OptionChainStrategyGetter.get() returned empty string");
                 System.out.println("*   JSON: " + j.toString());
@@ -1199,7 +1208,7 @@ public class Test {
                 throw new Exception("OptionChainStrategyGetter optionType doesn't match (2)");    
             
             if( liveConnect ) {
-                JSONObject j = (JSONObject)oGetter.get();
+                JSONObject j = oGetter.get();
                 if( j.isEmpty() )
                     throw new Exception("OptionChainStrategyGetter.get() returned empty string");
                 System.out.println("*   JSON: " + j.toString());
@@ -1269,7 +1278,7 @@ public class Test {
                 throw new Exception("OptionChainAnalyticalGetter optionType doesn't match (1)");
                     
             if( liveConnect ) {
-                JSONObject j = (JSONObject)oGetter.get();
+                JSONObject j = oGetter.get();
                 if( j.isEmpty() )
                     throw new Exception("OptionChainAnalyticalGetter.get() returned empty string");
                 System.out.println("*   JSON: " + j.toString());
@@ -1298,7 +1307,7 @@ public class Test {
                 throw new Exception("OptionChainAnalyticalGetter daysToExp doesn't match (2)");
             
             if( liveConnect ) {
-                JSONObject j = (JSONObject)oGetter.get();
+                JSONObject j = oGetter.get();
                 if( j.isEmpty() )
                     throw new Exception("OptionChainAnalyticalGetter.get() returned empty string");
                 System.out.println("*   JSON: " + j.toString());
@@ -1553,7 +1562,7 @@ public class Test {
                 
                 
         if( liveConnect ) {
-            JSONObject j = (JSONObject)hpg.get();
+            JSONObject j = hpg.get();
             if( j.isEmpty() )
                 throw new Exception("HistoricalPeriod.get() returned empty string");
             System.out.println("*   JSON: " + j.toString(4));
@@ -1684,7 +1693,7 @@ public class Test {
         hpg.setExtendedHours(false);
                 
         if( liveConnect ) {
-            JSONObject j = (JSONObject)hpg.get();
+            JSONObject j = hpg.get();
             if( j.isEmpty() )
                 throw new Exception("HistoricalRange.get() returned empty string");
             System.out.println("*   JSON: " + j.toString(4));
@@ -2533,7 +2542,7 @@ public class Test {
             throw new Exception("invalid symbol in QuoteGetter: SPY, " + s);                
         
         if( liveConnect ) {
-            JSONObject j = (JSONObject)qg.get(); 
+            JSONObject j = qg.get(); 
             if( j.isEmpty() )
                 throw new Exception("QuoteGetter.get() returned empty string");
             System.out.println("*   JSON: " + j.toString(4));
@@ -2561,7 +2570,7 @@ public class Test {
             throw new Exception("invalid symbol in QuoteGetter: QQQ, " + s);        
         
         if( liveConnect ) {
-            JSONObject j = (JSONObject)qg.get();
+            JSONObject j = qg.get();
             if( j.isEmpty() )
                 throw new Exception("QuoteGetter.get() returned empty string");
             System.out.println("*   JSON: " + j.toString(4));
