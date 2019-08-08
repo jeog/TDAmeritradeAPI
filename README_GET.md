@@ -91,8 +91,7 @@ public class Auth{
 ```
 
 There is a default 'cacert.pem' file in the base directory extracted from Firefox that you can use. 
-(You can get updated versions from the [curl site](https://curl.haxx.se/docs/caextract.html).) The 
-path of this file, *hard-coded during compilation*, can be found in the DEF_CERTIFICATE_BUNDLE_PATH string.
+(You can get updated versions from the [curl site](https://curl.haxx.se/docs/caextract.html).)
 
 ### Using Getter Objects 
 

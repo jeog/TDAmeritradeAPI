@@ -24,6 +24,7 @@ along with this program.  If not, see http://www.gnu.org/licenses.
 #include <random>
 
 #include "../include/_tdma_api.h"
+#include "../include/curl_connect.h"
 
 #include "openssl/evp.h"
 #include "openssl/conf.h"
@@ -38,12 +39,6 @@ using std::cerr;
 using std::endl;
 using tdma::LocalCredentialException;
 
-std::string certificate_bundle_path;
-/*
- * Empty certificate_bundle_path means we let curl use the default store. 
- * If that works w/ openssl great, otherwise (if client doesn't set it
- * w/ SetCertificateBundlePath() ) we'll fail w/ CURLE_SSL_CACERT and throw 
- */
 
 namespace tdma {
 
@@ -760,15 +755,15 @@ SetCertificateBundlePathImpl(const string& path)
                         "certicate bundle path is not valid '.pem' file path" );
     }
 
-    if( !fstream(path).is_open() )
+    if( !fstream(path, ios_base::in).is_open() )
         TDMA_API_THROW( ValueException,"invalid certificate bundle file" );
 
-    certificate_bundle_path = path;
+    conn::set_certificate_bundle_path(path);
 }
 
 string
 GetCertificateBundlePathImpl()
-{ return certificate_bundle_path; }
+{ return conn::get_certificate_bundle_path(); }
 
 string
 GetDefaultCertificateBundlePathImpl()

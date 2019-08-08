@@ -190,7 +190,7 @@ SetCertificateBundlePath_ABI(const char* path, int allow_exceptions );
 EXTERN_C_SPEC_ DLL_SPEC_ int
 GetCertificateBundlePath_ABI(char **path, size_t *n, int allow_exceptions );
 
-EXTERN_C_SPEC_ DLL_SPEC_ int
+/* DEPRECATED */ EXTERN_C_SPEC_ DLL_SPEC_ int
 GetDefaultCertificateBundlePath_ABI( char **path,
                                      size_t *n,
                                      int allow_exceptions );
@@ -310,7 +310,7 @@ static inline int
 GetCertificateBundlePath(char **path, size_t *n)
 { return GetCertificateBundlePath_ABI(path, n, 0); }
 
-static inline int
+/* DEPRECATED */ static inline int
 GetDefaultCertificateBundlePath(char **path, size_t *n )
 { return GetDefaultCertificateBundlePath_ABI(path, n, 0); }
 
@@ -628,7 +628,7 @@ inline std::string
 GetCertificateBundlePath()
 { return str_from_abi_vargs(GetCertificateBundlePath_ABI, ALLOW_EXCEPTIONS); }
 
-inline std::string
+/* DEPRECATED */ inline std::string
 GetDefaultCertificateBundlePath()
 { return str_from_abi_vargs(GetDefaultCertificateBundlePath_ABI, ALLOW_EXCEPTIONS); }
 

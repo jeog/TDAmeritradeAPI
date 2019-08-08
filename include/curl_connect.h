@@ -27,7 +27,6 @@ along with this program.  If not, see http://www.gnu.org/licenses.
 #include <tuple>
 #include <memory>
 
-#include "_common.h"
 #include "curl/curl.h"
 
 namespace conn{
@@ -195,6 +194,13 @@ public:
     const CURLcode code;
     CurlConnectionError(CURLcode code);
 };
+
+
+void
+set_certificate_bundle_path( const std::string& path );
+
+std::string
+get_certificate_bundle_path();
 
 } /* conn */
 

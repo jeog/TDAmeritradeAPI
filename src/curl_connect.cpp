@@ -22,7 +22,7 @@ along with this program.  If not, see http://www.gnu.org/licenses.
 #include <iostream>
 
 #include "../include/curl_connect.h"
-#include "../include/util.h"
+//#include "../include/util.h"
 
 using std::string;
 using std::map;
@@ -32,6 +32,12 @@ using std::tuple;
 using std::ostream;
 
 namespace conn{
+
+/*
+ * If empty certificate_bundle_path(default) curl uses the default store.
+ * If that works w/ openssl great, otherwise we'll fail w/ CURLE_SSL_CACERT
+ */
+std::string certificate_bundle_path;
 
 class CurlConnection::CurlConnectionImpl_ { 
     static struct Init {
@@ -63,7 +69,7 @@ class CurlConnection::CurlConnectionImpl_ {
         {
             std::stringbuf& buf = ((WriteCallback*)output)->_buf;
             std::streamsize ssz = buf.sputn(input, sz*n);
-            assert(ssz >= 0);
+            //assert(ssz >= 0);
             return ssz;
         }
 
@@ -317,7 +323,7 @@ public:
             }
             string s(ss.str());
             if (!s.empty()) {
-                assert(s.back() == '&');
+                //assert(s.back() == '&');
                 s.erase(s.end() - 1, s.end());
             }
             set_option(CURLOPT_COPYPOSTFIELDS, s.c_str());
@@ -705,5 +711,13 @@ const map<CURLoption, string> CurlConnection::option_strings = {
     { CURLOPT_NOSIGNAL, "CURLOPT_NOSIGNAL"}
 };
 
+
+void
+set_certificate_bundle_path( const std::string& path )
+{ certificate_bundle_path = path; }
+
+std::string
+get_certificate_bundle_path()
+{ return certificate_bundle_path; }
 
 } /* conn */
