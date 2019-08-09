@@ -590,21 +590,19 @@ StreamingSessionImpl::ListenerThreadTarget::parse_response_notify(
     )
 {
     auto r = response.find("heartbeat");
-
     if( r != response.end() ){
         string hb_str = r.value();
         _ss->_last_heartbeat = stoull(hb_str);
-    }else{
+    }
 
 #ifdef DEBUG_VERBOSE_1_
-       stringstream ss;
-       ss << response;
-       D("notify: " + ss.str(), _ss);
+    stringstream ss;
+    ss << response;
+    D("notify: " + ss.str(), _ss);
 #endif /* DEBUG_VERBOSE_1_ */
 
-        _ss->_exec_callback( StreamingCallbackType::notify,
-                             StreamerServiceType::NONE, 0, response );
-    }
+    _ss->_exec_callback( StreamingCallbackType::notify,
+                         StreamerServiceType::NONE, 0, response );
 }
 
 

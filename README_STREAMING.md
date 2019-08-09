@@ -245,11 +245,11 @@ certain values to native types. It's the client's responsibility to parse respon
 
     - ***```request_response```*** - indicates a response from the server for a particular request e.g LOGIN or set SUBS. The 4th arg will contain a json string of relevant fields of the form ```{"request_id":<id>,"command":<command>, "code":<code> , "message":<message>}```
 
-    - ***```error```*** - indicates some type of error/exception state has propagated up from the listening thread and caused it to close. The 4th arg will be a json string of the form ```{"error": <error message>}```
+    - ***```error```*** - indicates some type of error/exception state has propagated up from the listening thread and caused it to close. The 4th arg will be a json string of the form ```{"error": <error message>}```. This error is generated from the client side but may be in response to something on the server side(e.g. unparsable json).
 
     - ***```timeout```*** - indicates the listening thread hasn't received a message in *listening_timeout* milliseconds (defaults to 30000) and has shutdown. You'll need to restart the session ***from the original thread*** or destroy it.
 
-    - ***```notify```*** - indicates some type of 'urgent' message from the server. The actual message will be in json form and passed to the 4th arg.
+    - ***```notify```*** - indicates a heartbeat(every 10 seconds) OR some type of 'urgent' message from the server. The actual message will be in json form and passed to the 4th arg. This message may indicate a condition that will close the streaming session from the server side. The heartbeat message will contain a millisecond timestamp and be of the form ```{"heartbeat":"1565322739463"}```. [***Earlier versions of of ```notify``` ignored the heartbeat - last used in commit b2d88d (Aug 8 2019)***]
 
     - ***```data```*** - will be the bulk of the callbacks and contain the subscribed-to data (see below).
 
@@ -415,6 +415,7 @@ StreamingCallbackType | StreamingService  | timestamp   | json
 ```data```            | *YES*           | *YES*       | *StreamingService dependent*
 ```request_response```| *YES*           | *YES*       | {"request_id":12, "command":"SUBS", "code":0, "message":"msg from server"}
 ```notify```          | ```NONE```      | 0           | *Message Type dependent*
+```notify```          | ```NONE```      | 0           | {"heartbeat":"1565322739463"}
 ```timeout```         | ```NONE```      | 0           | {}
 ```error```           | ```NONE```      | 0           | {"error":"error message"}
 
