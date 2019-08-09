@@ -5,6 +5,7 @@
 *.cproject
 *.project
 *.creds
+*.creds.backup
 *core
 *.info
 *.class

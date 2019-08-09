@@ -229,19 +229,14 @@ Files you should have:
 
 Some precompiled versions of the library are provided for convenience. You'll still need to [build](#build-dependencies) and/or [install](#install) the dependencies. *For practical reasons these binaries will not be re-compiled with each commit so you may be using a stale library. **See bin/BUILD_NOTES.txt for which commit they are built from.***
 
-##### Linux
+bin/[os]--[architecture]--[toolchain]
 
-bin/[distro]-[kernel version]--[architecture]--[toolchain]
+- bin/debian-4.19--i686--gcc/
+- bin/debian-4.19--x86_64--gcc/
+- bin/win--x64--mscv/
+- bin/win--x86--msvc/
 
-- ~~bin/debian-3.16--i386--gcc/~~
-- bin/debian-3.20--x86_64--gcc/  
-
-The Linux/ELF binaries in the directories above may or may not work on your particular system/distro BUT [building the library from source](#unix-like-1) is pretty straight forward. 
- 
-##### Windows
-
-- bin/windows-msvc/Win32
-- bin/windows-msvc/x64
+The Linux/ELF binaries may or may not work on your particular system/distro BUT [building the library from source](#unix-like-1) is pretty straight forward. 
 
 The Windows/PE binaries are built using VisualStudio2017 and statically linked against the runtime libraries to limit dependency issues.
 

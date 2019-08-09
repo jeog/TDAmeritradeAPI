@@ -1,83 +1,18 @@
-compilation date: 7-14-2019
+compilation date: 8-09--2019
 
-previous commit: c7f168d (built using source of commit *after* this one)
+previous commit: e3942c (built using source of commit *after* this one)
 
 sha256 checksums:
 
-cc47975035de2ffeb694ff5fc12e9c50eda1cef7dc0eb1618ec92b488b3af936 debian-3.20--x86_64--gcc/libTDAmeritradeAPI.so
-15970c64510b0d126c09b10a491c4f03fbfcff3d4c6cf1bd31c4f3ca4d827f1f windows-msvc/x64/TDAmeritradeAPI.dll
-a9054aaffc116adb3d497454d3c9372f2a2a2c51c644dcb7417cf1852d52d37a windows-msvc/x64/TDAmeritradeAPI.exp
-ebee6fce35be6275467fc37453a3f8c7c104914cbe330ce40825794cc258e633 windows-msvc/x64/TDAmeritradeAPI.lib
-963898249753210886a80f2fd556fac16210ffbd2e701b48a8dd2336c8cfbcf5 windows-msvc/x64/TDAmeritradeAPI.pdb
-fd483e08e3ecf56ee1d4847cab1c5f5b535f51b85ffda9e475a9f11a71b93834 windows-msvc/Win32/TDAmeritradeAPI.dll
-5c259621e0c7f6f9cd0fde47448e090331d8a9c6c71ec55629883394592fccf7 windows-msvc/Win32/TDAmeritradeAPI.exp
-253d4f8e2401e66eb1cbce51659be9cedc9773155d2230714d87d1d3b48a3c46 windows-msvc/Win32/TDAmeritradeAPI.lib
-3b6048ad45770572d9b6b743c7d7eadec0f5ab676d5d8659c9f532c9eb2a00a7 windows-msvc/Win32/TDAmeritradeAPI.pdb
-
-
-
-Dependency Info:
-
-debian-3.20--x86_64--gcc/libTDAmeritradeAPI.so
-
-  Dynamic Section:
-    NEEDED               libssl.so.1.0.0
-    NEEDED               libz.so.1
-    NEEDED               libcurl.so.4
-    NEEDED               libpthread.so.0
-    NEEDED               libutil.so.1
-    NEEDED               libdl.so.2
-    NEEDED               libstdc++.so.6
-    NEEDED               libm.so.6
-    NEEDED               libgcc_s.so.1
-    NEEDED               libc.so.6
-    NEEDED               ld-linux-x86-64.so.2
-
-  Version References:	
-    required from libgcc_s.so.1:
-      0x0b792650 0x00 23 GCC_3.0
-    required from ld-linux-x86-64.so.2:
-      0x0d696913 0x00 15 GLIBC_2.3
-    required from libcurl.so.4:
-      0x044a42e3 0x00 10 CURL_OPENSSL_3
-    required from libm.so.6:
-      0x09691a75 0x00 08 GLIBC_2.2.5
-    required from libpthread.so.0:
-      0x09691972 0x00 13 GLIBC_2.3.2
-      0x09691a75 0x00 07 GLIBC_2.2.5
-    required from libc.so.6:
-      0x06969194 0x00 24 GLIBC_2.14
-      0x06969190 0x00 21 GLIBC_2.10
-      0x09691972 0x00 17 GLIBC_2.3.2
-      0x0d696919 0x00 16 GLIBC_2.9
-      0x0d696917 0x00 14 GLIBC_2.7
-      0x09691a75 0x00 04 GLIBC_2.2.5
-    required from libssl.so.1.0.0:
-      0x066a2b20 0x00 03 OPENSSL_1.0.0
-    required from libstdc++.so.6:
-      0x0297f864 0x00 22 GLIBCXX_3.4.14
-      0x0297f868 0x00 20 GLIBCXX_3.4.18
-      0x0297f865 0x00 19 GLIBCXX_3.4.15
-      0x0297f863 0x00 18 GLIBCXX_3.4.13
-      0x0297f869 0x00 12 GLIBCXX_3.4.19
-      0x0297f861 0x00 11 GLIBCXX_3.4.11
-      0x056bafd3 0x00 09 CXXABI_1.3
-      0x0297f870 0x00 06 GLIBCXX_3.4.20
-      0x02297f89 0x00 05 GLIBCXX_3.4.9
-      0x08922974 0x00 02 GLIBCXX_3.4
-
-
-windows-msvc/Win32/TDAmeritradeAPI.dll
-windows-msvc/x64/TDAmeritradeAPI.dll
-
-  dumpbin /dependents:
-
-    libcurl.dll
-    libuv.dll
-    libssl-1_1.dll
-    libcrypto-1_1.dll
-    zlibwapi.dll
-    KERNEL32.dll  
-    WS2_32.dll
+e6d37d1a7157a201999683f9fef1b02d87977f0b3727e82cee905f2ff78acf96  debian-4.19--x86_64--gcc/libTDAmeritradeAPI.so
+d9c9fa353dbc2ead022f6f44624de69c2e6ff024318fe67ad3b0b2d70fd56c19  debian-4.19--i686--gcc/libTDAmeritradeAPI.so
+04c1e846246760f205fcca68cd635345f85bb12fd53e6a04dca76f5a3f4989f0  win--x64--msvc/TDAmeritradeAPI.dll
+a9054aaffc116adb3d497454d3c9372f2a2a2c51c644dcb7417cf1852d52d37a  win--x64--msvc/TDAmeritradeAPI.exp
+ebee6fce35be6275467fc37453a3f8c7c104914cbe330ce40825794cc258e633  win--x64--msvc/TDAmeritradeAPI.lib
+58db292e48e94a51c4a88673035bea5d01d35abb7e11babf23d848fab7bd4f62  win--x64--msvc/TDAmeritradeAPI.pdb
+d959db0d4376e82af083df28ef9b01a964d4d107796ac820fc173ca37cf49d4f  win--x86--msvc/TDAmeritradeAPI.dll
+5c259621e0c7f6f9cd0fde47448e090331d8a9c6c71ec55629883394592fccf7  win--x86--msvc/TDAmeritradeAPI.exp
+253d4f8e2401e66eb1cbce51659be9cedc9773155d2230714d87d1d3b48a3c46  win--x86--msvc/TDAmeritradeAPI.lib
+e1daa280484c32cb20b947645ed47848860df3981a3ab73f4cc1e247842163e7  win--x86--msvc/TDAmeritradeAPI.pdb
 
 
