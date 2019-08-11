@@ -664,7 +664,7 @@ RequestAccessTokenImpl( const string& code,
     if( client_id.empty() )
         TDMA_API_THROW(LocalCredentialException,"'client_id' required");
 
-    conn::HTTPSPostConnection connection(URL_ACCESS_TOKEN);
+    conn::HTTPPostConnection connection(URL_ACCESS_TOKEN);
 
     vector<pair<string, string>> fields = {
         {"grant_type","authorization_code"},
@@ -717,7 +717,7 @@ RefreshAccessTokenImpl(Credentials* creds)
     if( string(creds->refresh_token).empty() )
         TDMA_API_THROW(LocalCredentialException,"creds.refresh_token is empty");
 
-    conn::HTTPSPostConnection connection(URL_ACCESS_TOKEN);
+    conn::HTTPPostConnection connection(URL_ACCESS_TOKEN);
 
     vector<pair<string, string>> fields = {
         {"grant_type","refresh_token"},

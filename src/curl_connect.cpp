@@ -31,13 +31,8 @@ using std::pair;
 using std::tuple;
 using std::ostream;
 
-namespace conn{
 
-/*
- * If empty certificate_bundle_path(default) curl uses the default store.
- * If that works w/ openssl great, otherwise we'll fail w/ CURLE_SSL_CACERT
- */
-std::string certificate_bundle_path;
+namespace conn{
 
 class CurlConnection::CurlConnectionImpl_ { 
     static struct Init {
@@ -56,6 +51,7 @@ class CurlConnection::CurlConnectionImpl_ {
     struct curl_slist *_header;
     CURL *_handle;
     map<CURLoption, string> _options;
+    char *_error_buffer;
  
     /* to string overloads for our different stored option values */
     template<typename T, typename Dummy = void>
@@ -84,30 +80,40 @@ class CurlConnection::CurlConnectionImpl_ {
 
 public:
     CurlConnectionImpl_(string url)
-        : CurlConnectionImpl_()
-        { SET_url(url); }
+        :
+            CurlConnectionImpl_()
+        {
+            SET_url(url);
+        }
     
     CurlConnectionImpl_()
         :
             _header(nullptr),
-            _handle(curl_easy_init())
-        { set_option(CURLOPT_NOSIGNAL, 1L); }
+            _handle(curl_easy_init()),
+            _error_buffer(new char[CURL_ERROR_SIZE+1])
+        {
+            set_option(CURLOPT_NOSIGNAL, 1L);
+            _error_buffer[CURL_ERROR_SIZE] = 0;
+            set_option(CURLOPT_ERRORBUFFER, _error_buffer);
+        }
     
     ~CurlConnectionImpl_()
-        { close(); }
-    
-    // NO COPY
+        {
+            close();
+            delete[] _error_buffer;
+        }
 
-    // NO ASSIGN
 
     CurlConnectionImpl_(CurlConnectionImpl_&& connection)
         :
             _header(connection._header),
             _handle(connection._handle),
-            _options(move(connection._options))
+            _options(move(connection._options)),
+            _error_buffer(connection._error_buffer)
         {
             connection._header = nullptr;
             connection._handle = nullptr;
+            connection._error_buffer = nullptr;
         }
     
     CurlConnectionImpl_&
@@ -120,26 +126,41 @@ public:
             if (_handle)
                 curl_easy_cleanup(_handle);
 
+            if (_error_buffer)
+                delete[] _error_buffer;
+
             _header = connection._header;
             _handle = connection._handle;
             _options = move(connection._options);
+            _error_buffer = connection._error_buffer;
+
             connection._header = nullptr;
             connection._handle = nullptr;
+            connection._error_buffer = nullptr;
         }
         return *this;
+    }
+
+    CurlConnectionImpl_(const CurlConnectionImpl_& connection) = delete;
+
+    CurlConnectionImpl_&
+    operator=( const CurlConnectionImpl_& connection) = delete;
+
+
+    bool /* only use is to avoid move-assign to self */
+    operator==(const CurlConnectionImpl_& connection)
+    {
+        return (_handle == connection._handle &&
+                _header == connection._header &&
+                _options == connection._options &&
+                _error_buffer == connection._error_buffer );
     }
 
     bool
     operator!=(const CurlConnectionImpl_& connection)
     {
-        return (_handle != connection._handle ||
-                _header != connection._header ||
-                _options != connection._options);
+        return !operator==(connection);
     }
-
-    bool
-    operator==(const CurlConnectionImpl_& connection)
-    { return !operator!=(connection); }
 
     const map<CURLoption, string>&
     get_option_strings() const
@@ -185,7 +206,7 @@ public:
         CURLcode ccode = curl_easy_perform(_handle);
         auto tp = clock_ty::now();
         if (ccode != CURLE_OK)
-            throw CurlConnectionError(ccode);
+            throw CurlConnectionError(ccode, _error_buffer);
 
         string res = cb_data.str();
         cb_data.clear();
@@ -226,24 +247,31 @@ public:
     SET_url(string url)
     { set_option(CURLOPT_URL, url.c_str()); }
 
-    void
-    SET_ssl_verify()
+    string
+    GET_url() const
     {
-        set_option(CURLOPT_SSL_VERIFYPEER, 1L);
-        set_option(CURLOPT_SSL_VERIFYHOST, 2L);
+        auto v = _options.find(CURLOPT_URL);
+        return (v == _options.end()) ? "" : v->second;
+    }
+
+    void
+    SET_ssl_verify(bool on)
+    {
+        set_option(CURLOPT_SSL_VERIFYPEER, on ? 1L : 0L);
+        set_option(CURLOPT_SSL_VERIFYHOST, on ? 2L : 0L);
     }
 
     void
     SET_ssl_verify_using_ca_bundle(string path)
     {
-        SET_ssl_verify();
+        SET_ssl_verify(true);
         set_option(CURLOPT_CAINFO, path.c_str());
     }
 
     void
     SET_ssl_verify_using_ca_certs(string dir)
     {
-        SET_ssl_verify();
+        SET_ssl_verify(true);
         set_option(CURLOPT_CAPATH, dir.c_str());
     }
 
@@ -252,8 +280,8 @@ public:
     { set_option(CURLOPT_ACCEPT_ENCODING, enc.c_str()); }
     
     void
-    SET_keepalive()
-    { set_option(CURLOPT_TCP_KEEPALIVE, 1L); }
+    SET_keepalive(bool on)
+    { set_option(CURLOPT_TCP_KEEPALIVE, on ? 1L : 0L); }
 
     void
     ADD_headers(const vector<pair<string, string>>& headers)
@@ -356,6 +384,7 @@ public:
     to_out(ostream& out);
 };
 
+
 CurlConnection::CurlConnectionImpl_::Init CurlConnection::CurlConnectionImpl_::_init;
 
 template<typename T, typename Dummy>
@@ -379,11 +408,13 @@ struct CurlConnection::CurlConnectionImpl_::to<T*, Dummy> {
 
 CurlConnection::CurlConnection()
     : _pimpl( new CurlConnectionImpl_() )
-    {}
+    {
+    }
 
 CurlConnection::CurlConnection(string url)
     : _pimpl( new CurlConnectionImpl_(url) )
-    {}
+    {
+    }
 
 
 CurlConnection::CurlConnection( CurlConnection&& connection )
@@ -449,9 +480,13 @@ void
 CurlConnection::SET_url(string url)
 { _pimpl->SET_url(url); }
 
+string
+CurlConnection::GET_url() const
+{ return _pimpl->GET_url(); }
+
 void
-CurlConnection::CurlConnection::SET_ssl_verify()
-{ _pimpl->SET_ssl_verify(); }
+CurlConnection::CurlConnection::SET_ssl_verify(bool on)
+{ _pimpl->SET_ssl_verify(on); }
 
 void
 CurlConnection::SET_ssl_verify_using_ca_bundle(string path)
@@ -466,8 +501,8 @@ CurlConnection::SET_encoding(string enc)
 { _pimpl->SET_encoding(enc); }
 
 void
-CurlConnection::SET_keepalive()
-{ _pimpl->SET_keepalive(); }
+CurlConnection::SET_keepalive(bool on)
+{ _pimpl->SET_keepalive(on); }
 
 void
 CurlConnection::ADD_headers(const vector<pair<string,string>>& headers)
@@ -489,87 +524,77 @@ void
 CurlConnection::RESET_options()
 { _pimpl->RESET_options(); }
 
-const string HTTPSConnection::DEFAULT_ENCODING("gzip");
-
-HTTPSConnection::HTTPSConnection()
-    : CurlConnection()
-    { _set(); }
-
-HTTPSConnection::HTTPSConnection(string url)
-    : CurlConnection(url)
-    { _set(); }
+void
+CurlConnection::SET_fields(const vector<pair<string, string>>& fields)
+{ _pimpl->SET_fields(fields); }
 
 void
-HTTPSConnection::_set()
-{
-    if( certificate_bundle_path.empty() ) {
+CurlConnection::SET_fields(const string& fields)
+{ _pimpl->SET_fields(fields); }
+
 /*
-        cerr << "no 'certificate_bundle_path' w/ non-native SSL support - "
-                "CurlConnectionError(CURLE_SSL_CACERT) likely..." << endl;
-*/
-        SET_ssl_verify();
-    } else 
-         SET_ssl_verify_using_ca_bundle(certificate_bundle_path);    
+ * If empty certificate_bundle_path(default) curl uses the default store.
+ * If that works w/ openssl great, otherwise we'll fail w/ CURLE_SSL_CACERT
+ */
+std::string certificate_bundle_path;
+
+
+const string HTTPConnection::DEFAULT_ENCODING("gzip");
+
+void
+HTTPConnection::init(HttpMethod meth)
+{
+    switch( meth ){
+    case HttpMethod::http_get:
+        set_option(CURLOPT_HTTPGET, 1L);
+        SET_keepalive(true);
+        break;
+    case HttpMethod::http_post:
+        set_option(CURLOPT_POST, 1L);
+        break;
+    case HttpMethod::http_delete:
+        set_option(CURLOPT_CUSTOMREQUEST, "DELETE");
+        break;
+    case HttpMethod::http_put:
+        set_option(CURLOPT_CUSTOMREQUEST, "PUT");
+        break;
+    default:
+        throw new std::runtime_error("invalid HttpMethod");
+    }
+
+    SET_encoding(DEFAULT_ENCODING);
 }
 
+HTTPConnection::HTTPConnection( const std::string& url, HttpMethod method )
+    :
+        CurlConnection(url),
+        method(method)
+    {
+        SET_url(url);
+        init(method);
 
-HTTPSGetConnection::HTTPSGetConnection()
-    : HTTPSConnection()
-    { _set(); }
+    }
 
-
-HTTPSGetConnection::HTTPSGetConnection(string url)
-    : HTTPSConnection(url)
-    { _set(); }
+HTTPConnection::HTTPConnection( HttpMethod method )
+    :
+        CurlConnection(),
+        method(method)
+    {
+        init(method);
+    }
 
 void
-HTTPSGetConnection::_set()
+HTTPConnection::SET_url(std::string url)
 {
-    set_option(CURLOPT_HTTPGET, 1L);
-    SET_encoding(DEFAULT_ENCODING);
-    SET_keepalive();
-}
-
-
-HTTPSPostConnection::HTTPSPostConnection()
-    : HTTPSConnection()
-    { _set(); }
-
-HTTPSPostConnection::HTTPSPostConnection(string url)
-    : HTTPSConnection(url)
-    { _set(); }
-
-void
-HTTPSPostConnection::_set()
-{
-    set_option(CURLOPT_POST, 1L);
-    SET_encoding(DEFAULT_ENCODING);
-    SET_keepalive();
-}
-
-void
-HTTPSPostConnection::SET_fields(const vector<pair<string,string>>& fields)
-{ _pimpl->SET_fields(fields); }
-
-void
-HTTPSPostConnection::SET_fields(const string& fields)
-{ _pimpl->SET_fields(fields); }
-
-
-HTTPSDeleteConnection::HTTPSDeleteConnection()
-    : HTTPSConnection()
-    { _set(); }
-
-
-HTTPSDeleteConnection::HTTPSDeleteConnection(string url)
-    : HTTPSConnection(url)
-    { _set(); }
-
-void
-HTTPSDeleteConnection::_set()
-{
-    set_option(CURLOPT_CUSTOMREQUEST, "DELETE");
-    SET_encoding(DEFAULT_ENCODING);
+    if( url.rfind("https://",0) == 0 ){
+        if( certificate_bundle_path.empty() )
+            _pimpl->SET_ssl_verify(true);
+        else
+            _pimpl->SET_ssl_verify_using_ca_bundle(certificate_bundle_path);
+    }else if( url.rfind("http://", 0) != 0){
+        throw new CurlException("invalid protocol in url: " + url);
+    }
+    _pimpl->SET_url(url);
 }
 
 
@@ -599,9 +624,10 @@ CurlOptionException::CurlOptionException(string what, CURLoption opt, string val
     {}
 
 
-CurlConnectionError::CurlConnectionError(CURLcode code)
+CurlConnectionError::CurlConnectionError(CURLcode code, const std::string& msg)
     :
-        CurlException("curl connection error"),
+        CurlException("curl connection error (" + std::to_string(code) + "): "
+                + msg),
         code(code)
     {}
 
@@ -708,7 +734,8 @@ const map<CURLoption, string> CurlConnection::option_strings = {
     { CURLOPT_WRITEFUNCTION, "CURLOPT_WRITEFUNCTION"},
     { CURLOPT_WRITEDATA, "CURLOPT_WRITEDATA"},
     { CURLOPT_HTTPHEADER, "CURLOPT_HTTPHEADER"},
-    { CURLOPT_NOSIGNAL, "CURLOPT_NOSIGNAL"}
+    { CURLOPT_NOSIGNAL, "CURLOPT_NOSIGNAL"},
+    { CURLOPT_CUSTOMREQUEST, "CURLOPT_CUSTOMREQUEST" }
 };
 
 

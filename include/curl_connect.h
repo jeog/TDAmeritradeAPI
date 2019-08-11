@@ -50,17 +50,15 @@ public:
     static const std::map<CURLoption, std::string> option_strings;
 
     CurlConnection();
-
     CurlConnection(std::string url);
-
-    // NO COPY
-
-    // NO ASSIGN
-
     CurlConnection( CurlConnection&& connection );
-
     CurlConnection&
     operator=( CurlConnection&& connection );
+
+    CurlConnection( const CurlConnection& ) = delete;
+
+    CurlConnection&
+    operator=( const CurlConnection& ) = delete;
 
     virtual
     ~CurlConnection();
@@ -71,6 +69,7 @@ public:
     bool
     operator!=( const CurlConnection& connection );
 
+    // use this to get any options that don't have their own 'GET' method
     const std::map<CURLoption, std::string>&
     get_option_strings() const;
 
@@ -78,7 +77,7 @@ public:
     void
     set_option(CURLoption option, T param);
 
-    // <status code, data, time>
+    // <status code, body, header(optional), time>
     std::tuple<long, std::string, std::string, clock_ty::time_point>
     execute(bool return_header_data);
 
@@ -93,8 +92,11 @@ public:
     void
     SET_url(std::string url);
 
+    std::string
+    GET_url() const;
+
     void
-    SET_ssl_verify();
+    SET_ssl_verify(bool on);
 
     void
     SET_ssl_verify_using_ca_bundle(std::string path);
@@ -106,7 +108,7 @@ public:
     SET_encoding(std::string enc);
 
     void
-    SET_keepalive();
+    SET_keepalive(bool on);
 
     void
     ADD_headers(const std::vector<std::pair<std::string,std::string>>& headers);
@@ -122,49 +124,74 @@ public:
 
     void
     RESET_options();
-};
-
-
-class HTTPSConnection // TODO check valid HTTPS
-        : public CurlConnection{
-    void _set();
-public:
-    static const std::string DEFAULT_ENCODING;
-    HTTPSConnection();
-    HTTPSConnection(std::string url);
-};
-
-
-class HTTPSGetConnection
-        : public HTTPSConnection{
-    void _set();
-public:
-    HTTPSGetConnection();
-    HTTPSGetConnection(std::string url);
-};
-
-
-class HTTPSPostConnection
-        : public HTTPSConnection{
-    void _set();
-public:
-    HTTPSPostConnection();
-    HTTPSPostConnection(std::string url);
 
     void
-    SET_fields(const std::vector<std::pair<std::string,std::string>>& fields);
+    SET_fields(const std::vector<std::pair<std::string, std::string>>& fields);
 
     void
     SET_fields(const std::string& fields);
 };
 
-
-class HTTPSDeleteConnection
-        : public HTTPSConnection{
-    void _set();
+// defaults to 'gzip' content encoding
+class HTTPConnection : public CurlConnection {
 public:
-    HTTPSDeleteConnection();
-    HTTPSDeleteConnection(std::string url);
+    static const std::string DEFAULT_ENCODING;
+    enum class HttpMethod { http_get, http_post, http_delete, http_put };
+                            //, HEAD, CONNECT, OPTIONS, TRACE, PATCH };
+private:
+    HttpMethod method;
+    void init(HttpMethod meth);
+
+public:
+    HTTPConnection( const std::string& url, HttpMethod method );
+    HTTPConnection( HttpMethod method );
+
+    void /* looks for 'http:://' or 'https://' */
+    SET_url(std::string url);
+
+    HttpMethod
+    getMethod() const
+    { return method; }
+};
+
+
+// defaults to KeepAlive flag set
+class HTTPGetConnection : public HTTPConnection{
+public:
+    static const HttpMethod http_method = HttpMethod::http_get;
+    HTTPGetConnection()
+        : HTTPConnection( http_method) {}
+    HTTPGetConnection(const std::string& url)
+        : HTTPConnection(url, http_method) {}
+};
+
+
+class HTTPPostConnection : public HTTPConnection {
+public:
+    static const HttpMethod http_method = HttpMethod::http_post;
+    HTTPPostConnection()
+        : HTTPConnection( http_method ) { }
+    HTTPPostConnection(const std::string& url)
+        : HTTPConnection(url, http_method) { }
+};
+
+
+class HTTPDeleteConnection : public HTTPConnection {
+public:
+    static const HttpMethod http_method = HttpMethod::http_delete;
+    HTTPDeleteConnection()
+        : HTTPConnection(http_method) { }
+    HTTPDeleteConnection(const std::string& url)
+        : HTTPConnection(url, http_method) { }
+};
+
+class HTTPPutConnection : public HTTPConnection {
+public:
+    static const HttpMethod http_method = HttpMethod::http_put;
+    HTTPPutConnection()
+        : HTTPConnection(http_method) { }
+    HTTPPutConnection(const std::string& url)
+        : HTTPConnection(url, http_method) { }
 };
 
 
@@ -192,7 +219,7 @@ class CurlConnectionError
         : public CurlException {
 public:
     const CURLcode code;
-    CurlConnectionError(CURLcode code);
+    CurlConnectionError(CURLcode code, const std::string& msg);
 };
 
 

@@ -40,15 +40,15 @@ const std::string URL_INSTRUMENTS = URL_BASE + "instruments";
 typedef std::function<void(long, const std::string&)> api_on_error_cb_ty;
 
 json
-connect_auth( conn::HTTPSPostConnection& connection, std::string fname);
+connect_auth( conn::HTTPPostConnection& connection, std::string fname);
 
 std::pair<std::string, conn::clock_ty::time_point>
-connect_get( conn::HTTPSConnection& connection,
+connect_get( conn::HTTPConnection& connection,
              Credentials& creds,
              api_on_error_cb_ty on_error_cb );
 
 std::pair<std::string, conn::clock_ty::time_point>
-connect_execute( conn::HTTPSConnection& connection,
+connect_execute( conn::HTTPConnection& connection,
                    Credentials& creds,
                    long success_code );
 

@@ -148,7 +148,7 @@ query_api_on_error_callback(long code, const string& data)
 
 
 tuple<long, string, string, conn::clock_ty::time_point>
-curl_execute(conn::HTTPSConnection& connection, bool return_header_data)
+curl_execute(conn::HTTPConnection& connection, bool return_header_data)
 {   /*
      * Curl exceptions are not exposed publicly so we catch and wrap
      */
@@ -205,7 +205,7 @@ build_auth_headers( const vector<pair<string,string>>& headers,
 
 
 tuple<string, string, conn::clock_ty::time_point>
-connect( conn::HTTPSConnection& connection,
+connect( conn::HTTPConnection& connection,
          Credentials& creds,
          const vector<pair<string,string>>& static_headers,
          api_on_error_cb_ty on_error_cb,
@@ -317,7 +317,7 @@ connect( conn::HTTPSConnection& connection,
 
 
 pair<string, conn::clock_ty::time_point>
-connect_get( conn::HTTPSConnection& connection,
+connect_get( conn::HTTPConnection& connection,
              Credentials& creds,
              api_on_error_cb_ty on_error_cb )
 {
@@ -336,7 +336,7 @@ connect_get( conn::HTTPSConnection& connection,
 
 
 pair<string, conn::clock_ty::time_point>
-connect_execute( conn::HTTPSConnection& connection,
+connect_execute( conn::HTTPConnection& connection,
                  Credentials& creds,
                  long success_code )
 {
@@ -356,7 +356,7 @@ connect_execute( conn::HTTPSConnection& connection,
 
 
 json
-connect_auth(conn::HTTPSPostConnection& connection, std::string fname)
+connect_auth(conn::HTTPPostConnection& connection, std::string fname)
 {
     static const vector<pair<string,string>> STATIC_HEADERS = {
         {"Content-Type", "application/x-www-form-urlencoded"}

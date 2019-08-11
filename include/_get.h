@@ -55,7 +55,7 @@ class APIGetterImpl{
 
     api_on_error_cb_ty _on_error_callback;
     std::reference_wrapper<Credentials> _credentials;
-    conn::HTTPSGetConnection _connection;
+    conn::HTTPGetConnection _connection;
 
 protected:
     APIGetterImpl(Credentials& creds, api_on_error_cb_ty on_error_callback);
