@@ -2282,9 +2282,9 @@ public class Test {
             if( !session.isActive() )
                 throw new Exception("session isn't active be active");
                
-            qos = session.setQOS(QOSType.REAL_TIME);
-            if( !qos.equals(QOSType.REAL_TIME) )
-                throw new Exception("qos type != 'REAL_TIME' (1)");
+            boolean qosResult = session.setQOS(QOSType.REAL_TIME);
+            if( !qosResult )
+                throw new Exception("setQOS failed");
             
             qos = session.getQOS();
             if( !qos.equals(QOSType.REAL_TIME) )

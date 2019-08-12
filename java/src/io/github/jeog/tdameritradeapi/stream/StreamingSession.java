@@ -274,13 +274,13 @@ public class StreamingSession implements AutoCloseable {
         return QOSType.fromInt(qos);        
     }
     
-    public QOSType
+    public boolean
     setQOS( QOSType qos ) throws CLibException {
-        int[] q = {0};
-        int err = TDAmeritradeAPI.getCLib().StreamingSession_SetQOS_ABI(pSession, qos.toInt(), q, 0);
+        int[] b = {0};
+        int err = TDAmeritradeAPI.getCLib().StreamingSession_SetQOS_ABI(pSession, qos.toInt(), b, 0);
         if(err != 0)
             throw new CLibException(err);
-        return QOSType.fromInt(q[0]);
+        return (b[0] == 1);
     }
     
     @Override

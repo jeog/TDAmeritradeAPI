@@ -589,7 +589,7 @@ def stream.StreamingSession.set_qos(self, qos):
 [Java]
 public class StreamingSession implements AutoCloseable {
     ...
-    public QOSType setQOS( QOSType qos ) throws CLibException 
+    public boolean setQOS( QOSType qos ) throws CLibException 
     ...
 }
 ```
