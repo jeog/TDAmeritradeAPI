@@ -20,6 +20,9 @@ along with this program.  If not, see http://www.gnu.org/licenses.
 #include <algorithm>
 #include <iomanip>
 #include <iostream>
+#include <regex>
+
+#include <assert.h>
 
 #include "../include/curl_connect.h"
 //#include "../include/util.h"
@@ -332,31 +335,7 @@ public:
     
     bool
     has_headers()
-    {
-        return _header != nullptr;
-    }
-
-
-    void
-    SET_fields(const vector<pair<string, string>>& fields)
-    {
-        if (is_closed())
-            throw CurlException("connection/handle has been closed");
-
-        /* CURLOPT_POST FIELDS DOES NOT COPY STRING */
-        if (!fields.empty()) {
-            std::stringstream ss;
-            for (auto& f : fields) {
-                ss << f.first << "=" << f.second << "&";
-            }
-            string s(ss.str());
-            if (!s.empty()) {
-                //assert(s.back() == '&');
-                s.erase(s.end() - 1, s.end());
-            }
-            set_option(CURLOPT_COPYPOSTFIELDS, s.c_str());
-        }
-    }
+    { return _header != nullptr; }
 
     void
     SET_fields(const string& fields)
@@ -364,11 +343,15 @@ public:
         if (is_closed())
             throw CurlException("connection/handle has been closed");
 
-        /* CURLOPT_POST FIELDS DOES NOT COPY STRING */
-        if (!fields.empty()) {
+        if( !fields.empty() )
             set_option(CURLOPT_COPYPOSTFIELDS, fields.c_str());
-        }
     }
+
+
+    void
+    SET_fields(const vector<pair<string, string>>& fields)
+    { SET_fields( pairs_to_fields_str(fields) ); }
+
     
     void
     RESET_options()
@@ -459,6 +442,10 @@ void
 CurlConnection::set_option(CURLoption option, T param)
 { _pimpl->set_option(option, param); }
 
+void
+CurlConnection::reset_options()
+{ _pimpl->RESET_options(); }
+
 // <status code, data, time>
 tuple<long, string, string, clock_ty::time_point>
 CurlConnection::execute( bool return_header_data )
@@ -477,43 +464,43 @@ CurlConnection::operator bool() const
 { return _pimpl->operator bool(); }
 
 void
-CurlConnection::SET_url(string url)
+CurlConnection::set_url(string url)
 { _pimpl->SET_url(url); }
 
 string
-CurlConnection::GET_url() const
+CurlConnection::get_url() const
 { return _pimpl->GET_url(); }
 
 void
-CurlConnection::CurlConnection::SET_ssl_verify(bool on)
+CurlConnection::CurlConnection::set_ssl_verify(bool on)
 { _pimpl->SET_ssl_verify(on); }
 
 void
-CurlConnection::SET_ssl_verify_using_ca_bundle(string path)
+CurlConnection::set_ssl_verify_using_ca_bundle(string path)
 { _pimpl->SET_ssl_verify_using_ca_bundle(path); }
 
 void
-CurlConnection::SET_ssl_verify_using_ca_certs(string dir)
+CurlConnection::set_ssl_verify_using_ca_certs(string dir)
 { _pimpl->SET_ssl_verify_using_ca_certs(dir); }
 
 void
-CurlConnection::SET_encoding(string enc)
+CurlConnection::set_encoding(string enc)
 { _pimpl->SET_encoding(enc); }
 
 void
-CurlConnection::SET_keepalive(bool on)
+CurlConnection::set_keepalive(bool on)
 { _pimpl->SET_keepalive(on); }
 
 void
-CurlConnection::ADD_headers(const vector<pair<string,string>>& headers)
+CurlConnection::add_headers(const vector<pair<string,string>>& headers)
 { _pimpl->ADD_headers(headers); }
 
 vector<pair<string,string>>
-CurlConnection::GET_headers() const
+CurlConnection::get_headers() const
 { return _pimpl->GET_headers(); }
 
 void
-CurlConnection::RESET_headers()
+CurlConnection::reset_headers()
 { _pimpl->RESET_headers(); }
 
 bool
@@ -521,15 +508,11 @@ CurlConnection::has_headers()
 { return _pimpl->has_headers(); }
 
 void
-CurlConnection::RESET_options()
-{ _pimpl->RESET_options(); }
-
-void
-CurlConnection::SET_fields(const vector<pair<string, string>>& fields)
+CurlConnection::set_fields(const vector<pair<string, string>>& fields)
 { _pimpl->SET_fields(fields); }
 
 void
-CurlConnection::SET_fields(const string& fields)
+CurlConnection::set_fields(const string& fields)
 { _pimpl->SET_fields(fields); }
 
 /*
@@ -541,13 +524,12 @@ std::string certificate_bundle_path;
 
 const string HTTPConnection::DEFAULT_ENCODING("gzip");
 
-void
-HTTPConnection::init(HttpMethod meth)
+HttpMethod
+HTTPConnection::_set_method(HttpMethod meth)
 {
     switch( meth ){
     case HttpMethod::http_get:
         set_option(CURLOPT_HTTPGET, 1L);
-        SET_keepalive(true);
         break;
     case HttpMethod::http_post:
         set_option(CURLOPT_POST, 1L);
@@ -559,47 +541,250 @@ HTTPConnection::init(HttpMethod meth)
         set_option(CURLOPT_CUSTOMREQUEST, "PUT");
         break;
     default:
-        throw new std::runtime_error("invalid HttpMethod");
+        throw std::runtime_error("invalid HttpMethod");
     }
-
-    SET_encoding(DEFAULT_ENCODING);
+    return meth;
 }
 
-HTTPConnection::HTTPConnection( const std::string& url, HttpMethod method )
-    :
-        CurlConnection(url),
-        method(method)
-    {
-        SET_url(url);
-        init(method);
 
+HTTPConnection::HTTPConnection( const std::string& url,
+                                HttpMethod meth )
+    :
+        CurlConnection(), // do manual url check in set_url
+        _proto(Protocol::none),
+        _meth( _set_method(meth) )
+    {
+        set_encoding(DEFAULT_ENCODING);
+        set_keepalive(true);
+        set_url(url);
     }
 
-HTTPConnection::HTTPConnection( HttpMethod method )
+HTTPConnection::HTTPConnection( HttpMethod meth )
     :
         CurlConnection(),
-        method(method)
+        _proto(Protocol::none),
+        _meth( _set_method(meth) )
     {
-        init(method);
+        set_encoding(DEFAULT_ENCODING);
+        set_keepalive(true);
     }
 
+
 void
-HTTPConnection::SET_url(std::string url)
+HTTPConnection::set_url(const std::string& url)
 {
     if( url.rfind("https://",0) == 0 ){
-        if( certificate_bundle_path.empty() )
-            _pimpl->SET_ssl_verify(true);
-        else
-            _pimpl->SET_ssl_verify_using_ca_bundle(certificate_bundle_path);
-    }else if( url.rfind("http://", 0) != 0){
-        throw new CurlException("invalid protocol in url: " + url);
-    }
+        if(_proto != Protocol::https ){
+            if( certificate_bundle_path.empty() )
+                _pimpl->SET_ssl_verify(true);
+            else
+                _pimpl->SET_ssl_verify_using_ca_bundle(certificate_bundle_path);
+            _proto = Protocol::https;
+        }
+    }else if( url.rfind("http://", 0) == 0 )
+        _proto = Protocol::http;
+    else
+        throw CurlException("invalid protocol in url: " + url);
+
     _pimpl->SET_url(url);
 }
 
 
+std::unordered_map<int, SharedHTTPConnection::Context> SharedHTTPConnection::contexts;
+std::mutex SharedHTTPConnection::contexts_mtx;
+
+SharedHTTPConnection::SharedHTTPConnection( const std::string& url,
+                                            HttpMethod meth,
+                                            int context_id )
+    :
+        _is_open(false),
+        _url(url),
+        _meth(meth),
+        _headers(),
+        _fields(),
+        _id(context_id)
+    {
+        { // all 'opening' context ops should hold static mutex
+            std::lock_guard<std::mutex> lock(contexts_mtx);
+
+            auto citer = contexts.find(context_id);
+            if( citer == contexts.cend() ){
+                // if new id add a context with new connection
+                contexts[context_id] = Context(
+                        url.empty() ? new HTTPConnection(meth)
+                                    : new HTTPConnection(url,meth)
+                );
+            }else{
+                assert( citer->second.nref > 0 );
+                {
+                    // if old but not all have been closed
+                    std::lock_guard<std::mutex> lock( *(citer->second.mtx) );
+                    citer->second.conn->set_method(meth);
+                    // set url (redundant) to force ssl verify check
+                    if( !url.empty() )
+                        citer->second.conn->set_url(url);
+                }
+            }
+            incr_ref(context_id);
+        }
+        _is_open = true;
+    }
+
+
+SharedHTTPConnection::SharedHTTPConnection( const SharedHTTPConnection& connection )
+    :
+        _is_open( connection._is_open ),
+        _url( connection._url ),
+        _meth( connection._meth),
+        _headers( connection._headers ),
+        _fields( connection._fields ),
+        _id( connection._id )
+    {
+        if( _is_open ){
+            std::lock_guard<std::mutex> lock(contexts_mtx);
+            incr_ref(connection._id);
+        }
+    }
+
+
+SharedHTTPConnection&
+SharedHTTPConnection::operator=( const SharedHTTPConnection& connection )
+{
+    if( *this != connection ){
+        {
+            std::lock_guard<std::mutex> lock(contexts_mtx);
+            if( _is_open != connection._is_open ){
+                if( connection._is_open )
+                    incr_ref(connection._id);
+                else
+                    decr_ref(_id);
+            }else if( _id != connection._id && _is_open ){
+                decr_ref(_id);
+                incr_ref(connection._id);
+            }
+        }
+        _is_open = connection._is_open;
+        _url = connection._url;
+        _meth = connection._meth;
+        _headers = connection._headers;
+        _fields = connection._fields;
+        _id = connection._id;
+    }
+    return *this;
+}
+
+bool
+SharedHTTPConnection::operator==( const SharedHTTPConnection& connection )
+{
+    return _is_open == connection._is_open
+            && _url == connection._url
+            && _meth == connection._meth
+            && _headers == connection._headers
+            && _fields == connection._fields
+            && _id == connection._id;
+
+}
+
+std::tuple<long, std::string, std::string, clock_ty::time_point>
+SharedHTTPConnection::execute(bool return_header_data)
+{
+    if( is_closed() )
+        throw CurlException("connection has been closed");
+
+    Context& ctx = _get_context();
+    assert( ctx.conn );
+    assert( ctx.mtx );
+
+    // protect from concurrent access by other shared connections
+    std::lock_guard<std::mutex> lock( *ctx.mtx );
+
+    ctx.conn->set_url(_url);
+
+    ctx.conn->reset_headers();
+    if( !_headers.empty() )
+        ctx.conn->add_headers(_headers);
+
+    ctx.conn->set_method(_meth);
+    if( _meth != HttpMethod::http_get && !_fields.empty() )
+        ctx.conn->set_fields(_fields);
+    _fields.clear();
+
+    return ctx.conn->execute(return_header_data);
+}
+
+SharedHTTPConnection::Context&
+SharedHTTPConnection::_get_context() const
+{
+    std::lock_guard<std::mutex> lock(contexts_mtx);
+    /*
+     * only hold the static mutex for the find - if open the only
+     *   shared-state at risk of data race is nref which we don't need
+     */
+    auto citer = contexts.find(_id);
+    assert( citer != contexts.cend() );
+    return citer->second;
+}
+
+void
+SharedHTTPConnection::close()
+{
+    if( is_closed() )
+        return;
+    {
+        std::lock_guard<std::mutex> lock(contexts_mtx);
+        decr_ref(_id);
+    }
+    _is_open = false;
+}
+
+void
+SharedHTTPConnection::set_url(const std::string& url)
+{
+    using namespace std::regex_constants;
+
+    static const std::regex PROTO_RX("http[s]?\\://");
+
+    if( !std::regex_search(url, PROTO_RX, match_continuous) )
+        throw CurlException("invalid protocol in url: " + url);
+
+    _url = url;
+}
+
+
+// caller needs to hold static mutex
+void
+SharedHTTPConnection::decr_ref(int id)
+{
+    auto citer = contexts.find(id);
+    assert( citer != contexts.cend() );
+    assert( citer->second.conn );
+    --(citer->second.nref);
+    assert(citer->second.nref >= 0);
+    if( citer->second.nref == 0 )
+        contexts.erase(citer);
+}
+
+// caller needs to hold static mutex
+void
+SharedHTTPConnection::incr_ref(int id)
+{
+    auto citer = contexts.find(id);
+    assert( citer != contexts.cend() );
+    assert( citer->second.conn );
+    ++(citer->second.nref);
+}
+
+int
+SharedHTTPConnection::nconnections(int context_id)
+{
+    std::lock_guard<std::mutex> lock(contexts_mtx);
+    auto citer = contexts.find(context_id);
+    return (citer == contexts.end()) ? 0 : citer->second.nref;
+}
+
 CurlException::CurlException(string what)
-    : _what(what)
+    :
+        _what(what)
     {}
 
 const char*
@@ -630,6 +815,21 @@ CurlConnectionError::CurlConnectionError(CURLcode code, const std::string& msg)
                 + msg),
         code(code)
     {}
+
+
+std::string
+pairs_to_fields_str(const std::vector<std::pair<std::string, std::string>>& fields)
+{
+    std::stringstream ss;
+    for (auto& f : fields)
+        ss << f.first << "=" << f.second << "&";
+
+    std::string s = ss.str();
+    if ( !s.empty() )
+        s.erase(s.end() - 1, s.end());
+
+    return s.c_str();
+}
 
 
 vector<pair<string, string>>

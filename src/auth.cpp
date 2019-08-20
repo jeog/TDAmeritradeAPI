@@ -664,7 +664,8 @@ RequestAccessTokenImpl( const string& code,
     if( client_id.empty() )
         TDMA_API_THROW(LocalCredentialException,"'client_id' required");
 
-    conn::HTTPPostConnection connection(URL_ACCESS_TOKEN);
+    conn::HTTPConnection connection( URL_ACCESS_TOKEN,
+                                     conn::HttpMethod::http_post );
 
     vector<pair<string, string>> fields = {
         {"grant_type","authorization_code"},
@@ -674,7 +675,7 @@ RequestAccessTokenImpl( const string& code,
         {"client_id", util::url_encode(client_id)},
         {"redirect_uri", util::url_encode(redirect_uri)}
     };
-    connection.SET_fields(fields);
+    connection.set_fields(fields);
 
     auto r_json = connect_auth(connection, "RequestAccessTokenImpl");
 
@@ -717,7 +718,8 @@ RefreshAccessTokenImpl(Credentials* creds)
     if( string(creds->refresh_token).empty() )
         TDMA_API_THROW(LocalCredentialException,"creds.refresh_token is empty");
 
-    conn::HTTPPostConnection connection(URL_ACCESS_TOKEN);
+    conn::HTTPConnection connection( URL_ACCESS_TOKEN,
+                                     conn::HttpMethod::http_post );
 
     vector<pair<string, string>> fields = {
         {"grant_type","refresh_token"},
@@ -727,7 +729,7 @@ RefreshAccessTokenImpl(Credentials* creds)
         {"client_id", util::url_encode(creds->client_id)},
         {"redirect_uri", ""}
     };
-    connection.SET_fields(fields);
+    connection.set_fields(fields);
 
     auto r_json = connect_auth(connection, "RefreshAccessTokenImpl");
     string r_str = r_json["access_token"];

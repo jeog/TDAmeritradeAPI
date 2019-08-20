@@ -177,8 +177,16 @@ def set_wait_msec(msec):
     clib.set_val('APIGetter_SetWaitMSec_ABI', c_ulonglong, msec)
 
 def wait_remaining():
-    """milliseconds of waiting before .get() can be called without blocking"""
+    """milliseconds before .get() can be called without blocking"""
     return clib.get_val("APIGetter_WaitRemaining_ABI", c_ulonglong)
+
+def share_connections(share):
+    """True to make new getters share TCP/HTTP Connection. (default)"""
+    clib.set_val('APIGetter_ShareConnections_ABI', c_int, share)
+
+def is_sharing_connections():
+    """returns if newly created getters will share TCP/HTTP Connection."""
+    return bool(clib.get_val("APIGetter_IsSharingConnections_ABI", c_int))
 
 
 class _APIGetter( clib._ProxyBase ):

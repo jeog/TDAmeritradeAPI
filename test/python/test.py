@@ -85,6 +85,13 @@ def init():
             print("+ Successfully loaded: ", LIBRARY_PATH)
             print("+ Last Build:", clib.lib_build_datetime())
 
+def test_share_connections():
+    assert get.is_sharing_connections() 
+    get.share_connections(False)
+    assert not get.is_sharing_connections()
+    get.share_connections(True)
+    assert get.is_sharing_connections()
+
 def test_option_symbol_builder():
     B = get.build_option_symbol
     assert "SPY_010118C300" == B("SpY",1,1,2018,True,300)
@@ -2770,6 +2777,7 @@ if __name__ == '__main__':
         test(test_option_symbol_builder)
         test(test_execute_order_objects)
         test(test_execute_order_builders)
+        test(test_share_connections)
         test(test_quote_getters, cm.credentials)
         test(test_throttling, cm.credentials)
         test(test_quotes_getters, cm.credentials)

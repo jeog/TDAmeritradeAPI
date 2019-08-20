@@ -40,15 +40,15 @@ const std::string URL_INSTRUMENTS = URL_BASE + "instruments";
 typedef std::function<void(long, const std::string&)> api_on_error_cb_ty;
 
 json
-connect_auth( conn::HTTPPostConnection& connection, std::string fname);
+connect_auth( conn::HTTPConnectionInterface& connection, std::string fname);
 
 std::pair<std::string, conn::clock_ty::time_point>
-connect_get( conn::HTTPConnection& connection,
+connect_get( conn::HTTPConnectionInterface& connection,
              Credentials& creds,
              api_on_error_cb_ty on_error_cb );
 
 std::pair<std::string, conn::clock_ty::time_point>
-connect_execute( conn::HTTPConnection& connection,
+connect_execute( conn::HTTPConnectionInterface& connection,
                    Credentials& creds,
                    long success_code );
 
@@ -140,13 +140,6 @@ CallImplFromABI(bool allow_throw, RetTy(*func)(Args...), Args2... args)
 
     try{
         return ImplReturnHelper<RetTy>::from_call(func, args...);
-    }catch(ConnectException& e){
-        err = e.error_code();
-        msg = e.what();
-        lineno = e.lineno();
-        filename = e.filename();
-        std::cerr<< "ABI :: " << e.name() << " --> error code " << err
-                 << std::endl;
     }catch(APIException& e){
         err = e.error_code();
         msg = e.what();
@@ -154,6 +147,11 @@ CallImplFromABI(bool allow_throw, RetTy(*func)(Args...), Args2... args)
         filename = e.filename();
         std::cerr<< "ABI :: " << e.name() << " --> error code " << err
                  << std::endl;
+    }catch(conn::CurlException& e){
+        err = TDMA_API_ERROR;
+        msg = e.what();
+        std::cerr<< "ABI :: conn::CurlException(" << msg << ") --> error code "
+                << err << std::endl;
     }catch(std::exception& e){
         err = TDMA_API_STD_EXCEPTION;
         msg = e.what();
@@ -162,7 +160,7 @@ CallImplFromABI(bool allow_throw, RetTy(*func)(Args...), Args2... args)
     }catch(...){
         err = TDMA_API_UNKNOWN_EXCEPTION;
         msg = "unknown exception";
-        std::cerr<< "ABI :: unknown exception --> error code" << err
+        std::cerr<< "ABI :: unknown exception --> error code " << err
                  << std::endl;
     }
 

@@ -138,6 +138,9 @@ public class Test {
             
             System.out.println("*  TEST OPTION GETTER OBJECTS");
             testOptionGetterObjects();
+            
+            System.out.println("*  TEST SHARE CONNECTIONS");
+            testShareConnections();
                    
             if( credsPath != null) {
                 
@@ -253,6 +256,21 @@ public class Test {
         System.out.println("* END TEST - " + (success ? "SUCCESS" : "FAIL"));
 
                         
+    }
+    
+    static private void
+    testShareConnections() throws Exception
+    {
+        if( !APIGetter.isSharingConnections() )
+            throw new Exception("not sharing connections by default");
+        
+        APIGetter.shareConnections(false);
+        if( APIGetter.isSharingConnections() )
+            throw new Exception("still sharing connections");   
+        
+        APIGetter.shareConnections(true);
+        if( !APIGetter.isSharingConnections() )
+            throw new Exception("not sharing connections after reset");        
     }
     
     // issue calling back into lib ????

@@ -4,6 +4,7 @@
 - [Overview](#overview)
 - [Certificates](#certificates)
 - [Using Getter Objects](#using-getter-objects)
+    - [Backend](#backend)
     - [C++](#c)
     - [C](#c-1)
     - [Python](#python)
@@ -56,7 +57,7 @@ from tdma_api import get
 import io.github.jeog.tdameritradeapi.get.*; 
 ```
 
-The C++ Get Interface consists of 'Getter' objects - all derived from ```APIGetter``` and defined inline - that call through the ABI to the corresponding implementation objects. The implementation objects are built on top of ```conn::CurlConnection```, an object-oriented wrapper to libcurl found in curl_connect.h/cpp.
+The C++ Get Interface consists of 'Getter' objects - all derived from ```APIGetter``` and defined inline - that call through the ABI to the corresponding implementation objects. The implementation objects are built on top of object-oriented wrappers to libcurl found in curl_connect.h/cpp.
 
 C uses a similar object-oriented approach where functions are passed a pointer to proxy objects that are manually created and destroyed by the client.
 
@@ -93,11 +94,70 @@ public class Auth{
 There is a default 'cacert.pem' file in the base directory extracted from Firefox that you can use. 
 (You can get updated versions from the [curl site](https://curl.haxx.se/docs/caextract.html).)
 
+
 ### Using Getter Objects 
 
 Getter objects are fundamental to accessing the API and require a valid [Credentials object](README.md#authentication). 
 
-Each object sets up an underlying HTTPS/Get connection on construction. The connection sets the Keep-Alive header and will execute a request each time ```get()/Get()``` is called, until ```close()/Close()``` is called. C++, Java, and Python getters will call ```close()``` on destruction. Symbol strings are automatically converted to upper-case.
+The relevant fields are passed on construction and can be accessed with similarly named getter/setter methods. The instance will execute a request each time ```get()/Get()``` is called, until ```close()/Close()``` is called. C++, Java, and Python getters will call ```close()``` on destruction. 
+
+Symbol strings are automatically converted to upper-case.
+
+#### Backend
+
+Previously, for simplicity, Getter objects were built on top of ```conn::HTTPConnection``` and each instance created a new TCP/HTTPS connection - not ideal when using multiple instances simultaneously.
+
+Now **[after commit 724346]**, the default behavior is to share a connection using ```conn::SharedHTTPConnection``` which manages a single curl handle for a particular context group. Currently, all getter objects use context group '0' but in the future we may allow for custom context groups to be used so the interface may change slightly. ```.close``` should still be used when done with the instance; once there are no longer any references to the underlying connection it will be closed automatically.
+
+This was designed to be thread-safe with respect to the context group but NOT the instance itself and has undergone limited testing so please report issues. Different instances within different threads should be safe to construct, destruct, access, and execute concurrently, but a particular instance's methods should only be used within a single thread.
+
+If you still need to create an instance with its own connection you can alternate between this behavior and the old with the following api calls. (*Keep in mind that only the instances created after this api call is made will be affected.*)
+
+```
+[C++]
+static void
+APIGetter::share_connections(bool share);
+
+[C]
+static inline int
+APIGetter_ShareConnections(int share);
+
+[Python]
+def get.share_connections(share):
+
+[Java]
+public class APIGetter implements AutoCloseable { 
+    ...
+    static public void
+    shareConnections(boolean share) throws CLibException;
+    ...
+}   
+```
+
+To get the current beavior:
+
+```
+[C++]
+static bool
+APIGetter::is_sharing_connections();
+
+[C]
+static inline int
+APIGetter_IsSharingConnections(int *share);
+
+[Python]
+def get.is_sharing_connections():   
+
+[Java]
+public class APIGetter implements AutoCloseable { 
+    ...
+    static public boolean
+    isSharingConnections() throws CLibException;
+    ...
+}
+    
+```
+
 
 #### [C++]
 

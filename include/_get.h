@@ -46,6 +46,7 @@ class APIGetterImpl{
     static std::chrono::milliseconds wait_msec; // DEF_WAIT_MSEC
     static std::chrono::milliseconds last_get_msec; // 0
     static std::mutex get_mtx;
+    static int current_connection_group;
 
     static std::string
     throttled_get(APIGetterImpl& getter);
@@ -55,22 +56,16 @@ class APIGetterImpl{
 
     api_on_error_cb_ty _on_error_callback;
     std::reference_wrapper<Credentials> _credentials;
-    conn::HTTPGetConnection _connection;
+    std::unique_ptr<conn::HTTPConnectionInterface> _connection;
+    int _connection_group_id;
 
 protected:
     APIGetterImpl(Credentials& creds, api_on_error_cb_ty on_error_callback);
 
-    /*
-     * restrict copy and assign (for now at least):
-     *
-     *   1) should there ever be more than one of the same exact getter?
-     *   2) want to restrict copy/assign of the underlying connection
-     *      object to simplify things so if we share refs to it:
-     *         a) one ref can close() on another
-     *         b) destruction becomes more complicated
-     *
-     * allow move (consistent w/ underlying connection objects)
-     */
+    APIGetterImpl( const APIGetterImpl& ) = delete;
+
+    APIGetterImpl&
+    operator=( const APIGetterImpl& ) = delete;
 
     APIGetterImpl( APIGetterImpl&& ) = default;
 
@@ -81,7 +76,7 @@ protected:
     ~APIGetterImpl(){}
 
     void
-    set_url(std::string url);
+    set_url(const std::string& url);
 
 public:
     typedef APIGetter ProxyType;
@@ -98,6 +93,14 @@ public:
 
     static std::chrono::milliseconds
     wait_remaining();
+
+    static void
+    share_connections(bool share)
+    { current_connection_group = (share ? 0 : -1); }
+
+    static bool
+    is_sharing_connections()
+    { return current_connection_group == 0; }
 
     virtual std::string
     get();

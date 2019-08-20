@@ -73,6 +73,18 @@ public class APIGetter implements AutoCloseable {
         return CLib.Helpers.getLong( TDAmeritradeAPI.getCLib()::APIGetter_GetDefWaitMSec_ABI);        
     }
     
+    static public void
+    shareConnections(boolean share) throws CLibException{
+        CLib.Helpers.setInt( share ? 1 : 0,
+                TDAmeritradeAPI.getCLib()::APIGetter_ShareConnections_ABI);
+    }
+    
+    static public boolean
+    isSharingConnections() throws CLibException{
+        return CLib.Helpers.getInt( TDAmeritradeAPI.getCLib()::APIGetter_IsSharingConnections_ABI) == 1;
+        
+    }
+    
     static public long
     waitRemaining() throws  CLibException {
         return CLib.Helpers.getLong( TDAmeritradeAPI.getCLib()::APIGetter_WaitRemaining_ABI);

@@ -328,6 +328,12 @@ APIGetter_GetDefWaitMSec_ABI(unsigned long long *msec, int allow_exceptions);
 EXTERN_C_SPEC_ DLL_SPEC_ int
 APIGetter_WaitRemaining_ABI(unsigned long long *msec, int allow_exceptions);
 
+EXTERN_C_SPEC_ DLL_SPEC_ int
+APIGetter_ShareConnections_ABI(int b, int allow_exceptions);
+
+EXTERN_C_SPEC_ DLL_SPEC_ int
+APIGetter_IsSharingConnections_ABI(int *b, int allow_exceptions);
+
 /* QuoteGetter */
 EXTERN_C_SPEC_ DLL_SPEC_ int
 QuoteGetter_Create_ABI( struct Credentials *pcreds,
@@ -1212,6 +1218,14 @@ APIGetter_GetDefWaitMSec(unsigned long long *msec)
 static inline int
 APIGetter_WaitRemaining(unsigned long long *msec)
 { return APIGetter_WaitRemaining_ABI(msec, 0); }
+
+static inline int
+APIGetter_ShareConnections(int share)
+{ return APIGetter_ShareConnections_ABI(share, 0); }
+
+static inline int
+APIGetter_IsSharingConnections(int *share)
+{ return APIGetter_IsSharingConnections(share, 0); }
 
 /* declare derived versions of Get, Close, IsClosed for each getter*/
 #define DECL_WRAPPED_API_GETTER_BASE_FUNCS(name) \
@@ -2556,6 +2570,20 @@ public:
         unsigned long long w;
         call_abi( APIGetter_WaitRemaining_ABI, &w );
         return std::chrono::milliseconds(w);
+    }
+
+    static void
+    share_connections(bool share)
+    {
+        call_abi( APIGetter_ShareConnections_ABI, static_cast<int>(share) );
+    }
+
+    static bool
+    is_sharing_connections()
+    {
+        int b;
+        call_abi( APIGetter_IsSharingConnections_ABI, &b );
+        return static_cast<bool>(b);
     }
 
     json

@@ -148,7 +148,7 @@ query_api_on_error_callback(long code, const string& data)
 
 
 tuple<long, string, string, conn::clock_ty::time_point>
-curl_execute(conn::HTTPConnection& connection, bool return_header_data)
+curl_execute(conn::HTTPConnectionInterface& connection, bool return_header_data)
 {   /*
      * Curl exceptions are not exposed publicly so we catch and wrap
      */
@@ -205,7 +205,7 @@ build_auth_headers( const vector<pair<string,string>>& headers,
 
 
 tuple<string, string, conn::clock_ty::time_point>
-connect( conn::HTTPConnection& connection,
+connect( conn::HTTPConnectionInterface& connection,
          Credentials& creds,
          const vector<pair<string,string>>& static_headers,
          api_on_error_cb_ty on_error_cb,
@@ -220,6 +220,9 @@ connect( conn::HTTPConnection& connection,
 
     if( creds.client_id[0] == '\0' )
         TDMA_API_THROW( LocalCredentialException, "empty client_id");
+
+    if( connection.is_closed() )
+        TDMA_API_THROW( APIException, "connection is closed");
 
     /*
      * cache access tokens across calls by client_id so all cred structs
@@ -236,7 +239,7 @@ connect( conn::HTTPConnection& connection,
     /* only add headers if we don't already have them */
     if( !connection.has_headers() ){
         auto headers = build_auth_headers(static_headers, cached_token);
-        connection.ADD_headers(headers);
+        connection.add_headers(headers);
     }
 
     long r_code;
@@ -260,7 +263,7 @@ connect( conn::HTTPConnection& connection,
          * 5) try again (this should either return true or THROW)
          */
 
-        auto old_headers = connection.GET_headers();
+        auto old_headers = connection.get_headers();
         assert( old_headers.back().first == "Authorization");
 
         /* first check that header token is same as cached version */
@@ -279,9 +282,9 @@ connect( conn::HTTPConnection& connection,
             }
 
             /* update headers w/ cached */
-            connection.RESET_headers();
+            connection.reset_headers();
             auto new_headers = build_auth_headers(static_headers, cached_token);
-            connection.ADD_headers(new_headers);
+            connection.add_headers(new_headers);
 
             /* try again */
             tie(r_code, r_data, r_head, r_tp) =
@@ -299,9 +302,9 @@ connect( conn::HTTPConnection& connection,
         cached_token = creds.access_token;
 
         /* update the header */
-        connection.RESET_headers();
+        connection.reset_headers();
         auto new_headers = build_auth_headers(static_headers, cached_token);
-        connection.ADD_headers(new_headers);
+        connection.add_headers(new_headers);
 
         /* try again */
         tie(r_code, r_data, r_head, r_tp) =
@@ -317,13 +320,15 @@ connect( conn::HTTPConnection& connection,
 
 
 pair<string, conn::clock_ty::time_point>
-connect_get( conn::HTTPConnection& connection,
+connect_get( conn::HTTPConnectionInterface& connection,
              Credentials& creds,
              api_on_error_cb_ty on_error_cb )
 {
     static const vector<pair<string,string>> STATIC_HEADERS = {
         {"Accept", "application/json"}
     };
+
+    assert( connection.get_method() == conn::HttpMethod::http_get );
 
     string r_data, r_head;
     conn::clock_ty::time_point r_tp;
@@ -336,7 +341,7 @@ connect_get( conn::HTTPConnection& connection,
 
 
 pair<string, conn::clock_ty::time_point>
-connect_execute( conn::HTTPConnection& connection,
+connect_execute( conn::HTTPConnectionInterface& connection,
                  Credentials& creds,
                  long success_code )
 {
@@ -344,6 +349,8 @@ connect_execute( conn::HTTPConnection& connection,
         {"Accept", "*/*"},
         {"Content-Type", "application/json"}
     };
+
+    assert( connection.get_method() != conn::HttpMethod::http_get );
 
     string r_data, r_head;
     conn::clock_ty::time_point r_tp;
@@ -356,13 +363,15 @@ connect_execute( conn::HTTPConnection& connection,
 
 
 json
-connect_auth(conn::HTTPPostConnection& connection, std::string fname)
+connect_auth(conn::HTTPConnectionInterface& connection, std::string fname)
 {
     static const vector<pair<string,string>> STATIC_HEADERS = {
         {"Content-Type", "application/x-www-form-urlencoded"}
     };
 
-    connection.ADD_headers(STATIC_HEADERS);
+    assert( connection.get_method() == conn::HttpMethod::http_post );
+
+    connection.add_headers(STATIC_HEADERS);
 
     long r_code;
     string r_data, h_data;

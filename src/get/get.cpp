@@ -41,36 +41,50 @@ milliseconds APIGetterImpl::last_get_msec(
 
 std::mutex APIGetterImpl::get_mtx;
 
+int APIGetterImpl::current_connection_group = 0;
+
 APIGetterImpl::APIGetterImpl( Credentials& creds,
                               api_on_error_cb_ty on_error_callback )
     :
         _on_error_callback(on_error_callback),
         _credentials(creds),
-        _connection()
+        _connection(
+            (current_connection_group < 0)
+                ? reinterpret_cast<conn::HTTPConnectionInterface*>(
+                        new conn::HTTPConnection(conn::HttpMethod::http_get)
+                        )
+                : reinterpret_cast<conn::HTTPConnectionInterface*>(
+                        new conn::SharedHTTPConnection(
+                                conn::HttpMethod::http_get,
+                                current_connection_group)
+                        )
+                )
     {
     }
 
 void
-APIGetterImpl::set_url(string url)
-{ _connection.SET_url(url); }
+APIGetterImpl::set_url(const string& url)
+{
+    _connection->set_url(url);
+}
 
 string
 APIGetterImpl::get()
 {
-    if( is_closed() )
-        TDMA_API_THROW(APIException, "connection is closed");
-
-    assert( !_connection.is_closed() );
     return APIGetterImpl::throttled_get(*this);
 }
 
 void
 APIGetterImpl::close()
-{ _connection.close(); }
+{
+    _connection->close();
+}
 
 bool
 APIGetterImpl::is_closed() const
-{ return !_connection; }
+{
+    return _connection->is_closed();
+}
 
 string
 APIGetterImpl::throttled_get(APIGetterImpl& getter)
@@ -83,6 +97,7 @@ APIGetterImpl::throttled_get(APIGetterImpl& getter)
      * CLASSES.
      */
     std::lock_guard<std::mutex> _(get_mtx);
+
     auto remaining = throttled_wait_remaining();
     if( remaining.count() > 0 ){
         /*
@@ -95,7 +110,7 @@ APIGetterImpl::throttled_get(APIGetterImpl& getter)
 
     string s;
     conn::clock_ty::time_point tp;
-    tie(s, tp) = connect_get( getter._connection, getter._credentials,
+    tie(s, tp) = connect_get( *(getter._connection), getter._credentials,
                               getter._on_error_callback );
 
     last_get_msec =
@@ -219,6 +234,22 @@ APIGetter_WaitRemaining_ABI(unsigned long long *msec, int allow_exceptions)
     *msec = static_cast<unsigned long long>(
         APIGetterImpl::wait_remaining().count()
         );
+    return 0;
+}
+
+int
+APIGetter_ShareConnections_ABI(int b, int allow_exceptions)
+{
+    return CallImplFromABI( allow_exceptions, APIGetterImpl::share_connections,
+            static_cast<bool>(b) );
+}
+
+int
+APIGetter_IsSharingConnections_ABI(int *b, int allow_exceptions)
+{
+    CHECK_PTR(b, "b", allow_exceptions);
+
+    *b = static_cast<int>( APIGetterImpl::is_sharing_connections() );
     return 0;
 }
 

@@ -70,7 +70,7 @@ int main(int argc, char* argv[])
         cout<< "*** [END] TEST GETTERS [END] ***" << endl << endl;
 
         cout<< "*** [BEGIN] TEST STREAMING [BEGIN] ***" << endl;
-        test_streaming(account_id, cmanager.credentials);
+        //test_streaming(account_id, cmanager.credentials);
 
         cout<< "*** [END] TEST STREAMING [END] ***" << endl << endl;       
     }

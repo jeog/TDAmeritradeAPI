@@ -56,8 +56,8 @@ Execute_SendOrderImpl( Credentials& creds,
     if( body.empty() )
         TDMA_API_THROW(ValueException, "order json is empty");
 
-    conn::HTTPPostConnection connection(url);
-    connection.SET_fields(body);
+    conn::HTTPConnection connection( url, conn::HttpMethod::http_post );
+    connection.set_fields(body);
 
     string r_head;
     conn::clock_ty::time_point r_tp;
@@ -75,7 +75,7 @@ Execute_CancelOrderImpl( Credentials& creds,
     string url = URL_ACCOUNTS + util::url_encode(account_id)
                + "/orders/" + util::url_encode(order_id); // encode uncessary
 
-    conn::HTTPDeleteConnection connection(url);
+    conn::HTTPConnection connection( url, conn::HttpMethod::http_delete );
 
     // TODO catch exceptions and return fail state ??
     connect_execute(connection, creds, conn::HTTP_RESPONSE_OK);

@@ -32,10 +32,25 @@ void transaction_history_getter(string id, Credentials& c);
 void individual_transaction_history_getter(string id, Credentials& c);
 void order_getters(string id, Credentials& c);
 
+#include "curl_connect.h"
+
 void
 test_getters(const string& account_id, Credentials& creds)
 {
     using namespace chrono;
+
+    if( !APIGetter::is_sharing_connections() )
+        throw new std::runtime_error("not sharing connections (default)");
+
+    cout<< endl << "*** STOP SHARING CONNECTIONS ***" << endl;
+    APIGetter::share_connections(false);
+    if( APIGetter::is_sharing_connections() )
+        throw new std::runtime_error("sharing connections");
+
+    cout<< endl << "*** RE(START) SHARING CONNECTIONS ***" << endl;
+    APIGetter::share_connections(true);
+    if( !APIGetter::is_sharing_connections() )
+        throw new std::runtime_error("not sharing connections");
 
     cout<< endl <<"*** SET WAIT ***" << endl;
     cout<< APIGetter::get_wait_msec().count() << " --> ";
@@ -44,6 +59,7 @@ test_getters(const string& account_id, Credentials& creds)
 
     cout<< endl << "*** QUOTE DATA ***" << endl;
     quote_getters(creds);
+    return;
     cout<< "WaitRemaining: " << APIGetter::wait_remaining().count() << endl;
 
     historical_getters(creds);

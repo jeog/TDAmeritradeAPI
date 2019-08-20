@@ -58,9 +58,10 @@ public interface CLib extends Library {
     
     public static class Helpers{
         public static class FunctionType{
+            public interface SetInt{ int call(int i, int exc); }
             public interface GetInt{ int call(int[] i, int exc); }              
             public interface GetLong{ int call(long[] l, int exc); }        
-            public interface SetLong{ int call(long l, int exc); }
+            public interface SetLong{ int call(long l, int exc); }            
             public interface GetString{ int call(PointerByReference buffer, size_t[] n, int exc); }
             public interface GetStringFromInt{ int call(int i, PointerByReference buffer, size_t[] n, int exc); }
         }
@@ -80,6 +81,14 @@ public interface CLib extends Library {
             public interface SetStrings< T >{ int call(T pObj, String[] buffers, size_t n, int exc); }                          
         }                   
    
+        
+        public static void
+        setInt(int i, FunctionType.SetInt method) throws CLibException{    
+            int err = method.call(i, 0); 
+            if( err != 0 )
+                throw new TDAmeritradeAPI.CLibException(err);               
+        }  
+        
         public static int
         getInt( FunctionType.GetInt method) throws CLibException{
             int i[] = {0};
@@ -650,6 +659,8 @@ public interface CLib extends Library {
     int APIGetter_GetWaitMSec_ABI( long[] msec, int exc );
     int APIGetter_GetDefWaitMSec_ABI( long[] msec, int exc );
     int APIGetter_WaitRemaining_ABI( long[] msec, int exc );
+    int APIGetter_ShareConnections_ABI( int b, int exc );
+    int APIGetter_IsSharingConnections_ABI( int[] b, int exc);
     
     /* QUOTE GETTER */
     int QuoteGetter_Create_ABI( Credentials._Credentials pCredentials, String symbol, 
