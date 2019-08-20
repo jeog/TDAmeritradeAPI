@@ -32,8 +32,6 @@ void transaction_history_getter(string id, Credentials& c);
 void individual_transaction_history_getter(string id, Credentials& c);
 void order_getters(string id, Credentials& c);
 
-#include "curl_connect.h"
-
 void
 test_getters(const string& account_id, Credentials& creds)
 {
