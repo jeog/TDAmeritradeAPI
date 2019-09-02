@@ -41,7 +41,8 @@ public class OrdersGetter extends AccountGetterBase {
         PENDING_REPLACE(11),
         REPLACED(12),
         FILLED(13),
-        EXPIRED(14);
+        EXPIRED(14),
+        ALL(15);
             
         private int value;
         
@@ -70,6 +71,12 @@ public class OrdersGetter extends AccountGetterBase {
     public OrdersGetter( Credentials creds, String accountID, int nMaxResults, String fromEnteredTime, 
             String toEnteredTime, OrderStatusType orderStatusType) throws CLibException {
         super( create(creds, accountID, nMaxResults, fromEnteredTime, toEnteredTime, orderStatusType) );
+    }
+    
+    public OrdersGetter( Credentials creds, String accountID, int nMaxResults, String fromEnteredTime, 
+            String toEnteredTime) throws CLibException {
+        super( create(creds, accountID, nMaxResults, fromEnteredTime, toEnteredTime, 
+                OrderStatusType.ALL) );
     }
     
     @Override

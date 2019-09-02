@@ -643,6 +643,9 @@ def test_order_getters(creds, account_id):
     dt_to = build_iso8601_date(0)
     dt_from = build_iso8601_date(59)
 
+    ogall = get.OrdersGetter(creds, account_id, 10, dt_from, dt_to)
+    assert ogall.get_order_status_type() == get.ORDER_STATUS_TYPE_ALL
+
     og = get.OrdersGetter(creds, account_id, 10, dt_from, dt_to,
                           get.ORDER_STATUS_TYPE_CANCELED)
     assert og.get_account_id() == account_id
@@ -664,6 +667,12 @@ def test_order_getters(creds, account_id):
     print("Orders(Filled):", str(tmp))
     if tmp:
         orders.extend(tmp)
+
+    og.set_order_status_type(get.ORDER_STATUS_TYPE_ALL)
+    assert og.get_order_status_type() == get.ORDER_STATUS_TYPE_ALL
+
+    tmp = Get(og)
+    print("Orders(ALL):", str(tmp))
 
     dt_to = build_iso8601_date(1)
     dt_from = build_iso8601_date(10)

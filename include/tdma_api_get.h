@@ -150,7 +150,7 @@ DECL_C_CPP_TDMA_ENUM(OptionStrikesType, 0, 2,
     BUILD_C_CPP_TDMA_ENUM_NAME(OptionStrikesType, none) // dont use
 );
 
-DECL_C_CPP_TDMA_ENUM(OrderStatusType, 0, 14,
+DECL_C_CPP_TDMA_ENUM(OrderStatusType, 0, 15,
     BUILD_C_CPP_TDMA_ENUM_NAME(OrderStatusType, AWAITING_PARENT_ORDER),
     BUILD_C_CPP_TDMA_ENUM_NAME(OrderStatusType, AWAITING_CONDITION),
     BUILD_C_CPP_TDMA_ENUM_NAME(OrderStatusType, AWAITING_MANUAL_REVIEW),
@@ -165,7 +165,8 @@ DECL_C_CPP_TDMA_ENUM(OrderStatusType, 0, 14,
     BUILD_C_CPP_TDMA_ENUM_NAME(OrderStatusType, PENDING_REPLACE),
     BUILD_C_CPP_TDMA_ENUM_NAME(OrderStatusType, REPLACED),
     BUILD_C_CPP_TDMA_ENUM_NAME(OrderStatusType, FILLED),
-    BUILD_C_CPP_TDMA_ENUM_NAME(OrderStatusType, EXPIRED)
+    BUILD_C_CPP_TDMA_ENUM_NAME(OrderStatusType, EXPIRED),
+    BUILD_C_CPP_TDMA_ENUM_NAME(OrderStatusType, ALL)
 );
 
 typedef union {
@@ -3969,7 +3970,7 @@ public:
                   unsigned int nmax_results,
                   const std::string& from_entered_time,
                   const std::string& to_entered_time,
-                  OrderStatusType order_status_type )
+                  OrderStatusType order_status_type = OrderStatusType::ALL )
         :
             AccountGetterBase( OrdersGetter_C{},
                                OrdersGetter_Create_ABI,

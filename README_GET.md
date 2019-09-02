@@ -20,7 +20,7 @@
     - [QuotesGetter](#quotesgetter)  
     - [MarketHoursGetter](#markethoursgetter)  
     - [MoversGetter](#moversgetter)  
-    - [HistoricalPeriodGetter](#historicalperiodgetter)  ***\*UPDATED\****
+    - [HistoricalPeriodGetter](#historicalperiodgetter)  
     - [HistoricalRangeGetter](#historicalrangegetter)  
     - [OptionChainGetter](#optionchaingetter)  
     - [OptionChainStrategyGetter](#optionchainstrategygetter)  
@@ -32,8 +32,8 @@
     - [TransactionHistoryGetter](#transactionhistorygetter)  
     - [IndividualTransactionHistoryGetter](#individualtransactionhistorygetter)  
     - [InstrumentInfoGetter](#instrumentinfogetter)  
-    - [OrderGetter](#ordergetter)  ***\*NEW\****
-    - [OrdersGetter](#ordersgetter)  ***\*NEW\****
+    - [OrderGetter](#ordergetter)  
+    - [OrdersGetter](#ordersgetter)  ***\*UPDATED\****
 
 *UPDATES*
 
@@ -4348,7 +4348,7 @@ OrdersGetter::OrdersGetter( Credentials& creds,
                             unsigned int nmax_results,
                             const std::string& from_entered_time,
                             const std::string& to_entered_time,
-                            OrderStatusType order_status_type );
+                            OrderStatusType order_status_type = OrderStatusType::ALL );
 
     creds             :: credentials struct received from RequestAccessToken 
                           / LoadCredentials / CredentialsManager.credentials
@@ -4381,7 +4381,8 @@ enum class OrderStatusType : int{
     PENDING_REPLACE,
     REPLACED,
     FILLED,
-    EXPIRED
+    EXPIRED,
+    ALL
 };
 
 ```
@@ -4463,7 +4464,8 @@ enum OrderStatusType {
     OrderStatusType_PENDING_REPLACE,
     OrderStatusType_REPLACED,
     OrderStatusType_FILLED,
-    OrderStatusType_EXPIRED
+    OrderStatusType_EXPIRED,
+    OrderStatusType_ALL,
 };
 
 ```

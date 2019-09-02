@@ -516,7 +516,7 @@ public class Test {
                 Arrays.asList( "AWAITING_PARENT_ORDER", "AWAITING_CONDITION", "AWAITING_MANUAL_REVIEW", 
                         "ACCEPTED", "AWAITING_UR_OUT", "PENDING_ACTIVATION", "QUEUED", "WORKING",
                         "REJECTED", "PENDING_CANCEL", "CANCELED", "PENDING_REPLACE", "REPLACED", "FILLED", 
-                        "EXPIRED"), "OrderStatusType");
+                        "EXPIRED", "ALL"), "OrderStatusType");
         
         Calendar c = Calendar.getInstance();        
         int month = c.get(Calendar.MONTH) + 1;
@@ -525,6 +525,12 @@ public class Test {
         
         String startDate = String.format("%d-%02d-%02d", year-1, month, day);
         String endDate = String.format("%d-%02d-%02d", year, month, day);
+        
+        try( OrdersGetter getter = new OrdersGetter(creds, "BAD_ACCOUNT_ID", 10, startDate, endDate) ){
+            OrdersGetter.OrderStatusType orderStatus = getter.getOrderStatusType();
+            if( orderStatus != OrdersGetter.OrderStatusType.ALL)
+                throw new Exception("OrdersGetter 'OrderStatusType' doesn't match ALL");            
+        }
         
         try( OrdersGetter getter = new OrdersGetter(creds, "BAD_ACCOUNT_ID", 10, startDate, endDate,
                 OrdersGetter.OrderStatusType.EXPIRED) ){
@@ -596,7 +602,12 @@ public class Test {
                 }                
             }else {
                 System.out.println("*   Can't get(), pass 'account_id' to run live");
-            }                                   
+            }      
+            
+            getter.setOrderStatusType(OrdersGetter.OrderStatusType.ALL);
+            orderStatus = getter.getOrderStatusType();
+            if( orderStatus != OrdersGetter.OrderStatusType.ALL)
+                throw new Exception("OrdersGetter 'OrderStatusType' doesn't match ALL (2)");
         }        
     }
     

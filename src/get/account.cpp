@@ -526,9 +526,11 @@ class OrdersGetterImpl
         vector<pair<string,string>> params{
             {"maxResults", std::to_string(_nmax_results)},
             {"fromEnteredTime", _from_entered_time},
-            {"toEnteredTime", _to_entered_time},
-            {"status", to_string(_order_status_type)}
+            {"toEnteredTime", _to_entered_time}
         };
+
+        if( _order_status_type != OrderStatusType::ALL )
+            params.push_back( {"status", to_string(_order_status_type)} );
 
         string qstr = util::build_encoded_query_str(params);
         string url = URL_ACCOUNTS + util::url_encode(get_account_id())

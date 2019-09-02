@@ -74,6 +74,7 @@ This project would not be possible without some of the great open-source project
 ### New Features
 - - -
 
+- Update OrdersGetter to return all status types by default
 - HTTPSharedConnection allows multiple getter instances to share a single connection(by default)
 - Streaming Session calls back with a heartbeat every 10 seconds
 - Java Bindings - get and streaming interfaces

@@ -606,6 +606,8 @@ OrderStatusType_to_string_ABI( TDMA_API_TO_STRING_ABI_ARGS )
         return to_new_char_buffer("FILLED", buf, n, allow_exceptions);
     case OrderStatusType::EXPIRED:
         return to_new_char_buffer("EXPIRED", buf, n, allow_exceptions);
+    case OrderStatusType::ALL:
+        return to_new_char_buffer("ALL", buf, n, allow_exceptions);
     default:
         throw std::runtime_error("invalid OrderStatusType");
     }

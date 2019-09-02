@@ -57,7 +57,6 @@ test_getters(const string& account_id, Credentials& creds)
 
     cout<< endl << "*** QUOTE DATA ***" << endl;
     quote_getters(creds);
-    return;
     cout<< "WaitRemaining: " << APIGetter::wait_remaining().count() << endl;
 
     historical_getters(creds);
@@ -194,8 +193,8 @@ order_getters(string id, Credentials& c)
         orders.push_back( to_string((unsigned long long)o["orderId"]) );
     }
 
-    os.set_order_status_type(OrderStatusType::QUEUED);
-    if( os.get_order_status_type() != OrderStatusType::QUEUED )
+    os.set_order_status_type(OrderStatusType::ALL);
+    if( os.get_order_status_type() != OrderStatusType::ALL )
         throw runtime_error("invalid order_status_type");
 
     orders_j = GetJson(os);
@@ -248,6 +247,10 @@ order_getters(string id, Credentials& c)
     }catch(APIException& e){
         cout<< "successfully caught: " << e << endl << endl;
     }
+
+    OrdersGetter osall(c, id, 10, fromdate1, todate1);
+    if( osall.get_order_status_type() != OrderStatusType::ALL )
+        throw runtime_error("invalid order_status_type");
 
     if( orders.empty() ){
         cout<< "NO CANCELED/QUEUED/WORKING ORDERS OVER LAST 59 DAYS"

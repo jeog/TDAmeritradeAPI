@@ -157,6 +157,7 @@ ORDER_STATUS_TYPE_PENDING_REPLACE = 11
 ORDER_STATUS_TYPE_REPLACED = 12
 ORDER_STATUS_TYPE_FILLED = 13
 ORDER_STATUS_TYPE_EXPIRED = 14
+ORDER_STATUS_TYPE_ALL = 15
 
 
 class _Getter_C(clib._CProxy2):
@@ -1338,7 +1339,7 @@ class OrdersGetter(_AccountGetterBase):
     """OrdersGetter - Retrieve orders within a date/time range.
 
         def __init__(self, creds, account_id, nmax_results, from_entered_time,
-                     to_entered_time, order_status_type):
+                     to_entered_time, order_status_type = ORDER_STATUS_TYPE_ALL):
 
             creds :: Credentials :: instance received from auth.py
 
@@ -1356,7 +1357,7 @@ class OrdersGetter(_AccountGetterBase):
          *date formats: "yyyy-MM-dd", "yyyy-MM-dd'T'HH::mm::ssz"
     """
     def __init__(self, creds, account_id, nmax_results, from_entered_time,
-                 to_entered_time, order_status_type):
+                 to_entered_time, order_status_type=ORDER_STATUS_TYPE_ALL):
         super().__init__(creds, account_id, c_uint(nmax_results),
                          PCHAR(from_entered_time), PCHAR(to_entered_time),
                          c_int(order_status_type))
