@@ -528,6 +528,7 @@ public interface CLib extends Library {
     public static class _NYSEActivesSubscription_C extends _StreamingSubscription_C { }
     public static class _OTCBBActivesSubscription_C extends _StreamingSubscription_C { }
     public static class _OptionActivesSubscription_C extends _StreamingSubscription_C { }
+    public static class _AcctActivitySubscription_C extends _StreamingSubscription_C { }
     
     public static class KeyValPair extends Structure {
         public String key;
@@ -911,6 +912,8 @@ public interface CLib extends Library {
     
     /* STREAMING SUBCRIPTION (BASE) */
     int StreamingSubscription_Destroy_ABI( _StreamingSubscription_C pSubscription, int exc );
+    int StreamingSubscription_IsSame_ABI( _StreamingSubscription_C lSubscription, 
+            _StreamingSubscription_C rSubscription, int[] b, int exc );
     
     /* RAW SUBSCRIPTION */
     int RawSubscription_Create_ABI( String service, String command, KeyValPair[] kvPairs, size_t n, 
@@ -1047,8 +1050,10 @@ public interface CLib extends Library {
     int OptionActivesSubscription_GetVenue_ABI( _OptionActivesSubscription_C pSubscription, int[] venue, int exc);
     int OptionActivesSubscription_SetVenue_ABI( _OptionActivesSubscription_C pSubscription, int venue, int exc);
     
-    /* EXEC */
-    
+    /* ACCOUNT ACTIVITY SUBSCRIPTION */
+    int AcctActivitySubscription_Create_ABI( int command, _AcctActivitySubscription_C pSubscription, int exc );   
+   
+    /* EXEC */    
     
 
 }

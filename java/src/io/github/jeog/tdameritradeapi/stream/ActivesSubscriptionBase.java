@@ -70,6 +70,16 @@ public abstract class ActivesSubscriptionBase extends ManagedSubscriptionBase {
                 TDAmeritradeAPI.getCLib()::ActivesSubscriptionBase_SetDuration_ABI );
     }
     
+    @Override
+    public int
+    hashCode() {     
+        try {
+            return TDAmeritradeAPI.combineHashCodes(getDuration().hashCode(), super.hashCode());
+        } catch (CLibException e) {
+            return this.getClass().hashCode();
+        }               
+    }
+    
     protected static interface DurationCreatable <O extends CLib._StreamingSubscription_C>{
         int create(int duration, int command, O pSubscription, int exc);
     }

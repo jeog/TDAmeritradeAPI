@@ -137,6 +137,22 @@ get_streamer_info(Credentials& creds)
                            " StreamerInfo: " + string(e.what()));
     }
 
+    auto i_skeys = j.find("streamerSubscriptionKeys");
+    if( i_skeys != j.end() ){
+        // if we don't have a key no need to fail, only necessary for
+        // ACCT_ACTIVITY sub which will check itself
+        auto i_keys = i_skeys->find("keys");
+        if( i_keys != i_skeys->end() ){
+            if( i_keys->size() > 0 ){
+                auto elem0 = i_keys->at(0);
+                auto i_key = elem0.find("key");
+                if( i_key != elem0.end() )
+                    si.streamer_subscription_key = *i_key;
+            }
+        }
+    }
+
+
     return si;
 }
 

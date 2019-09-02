@@ -59,6 +59,17 @@ public abstract class SubscriptionBySymbolBase extends ManagedSubscriptionBase {
         setFieldsAsInts( fields.stream().mapToInt(Integer::intValue).toArray() ); 
     }
     
+    @Override
+    public int
+    hashCode() {     
+        try {
+            return TDAmeritradeAPI.combineHashCodes(getRawFields().hashCode(), 
+                    getSymbols().hashCode(), super.hashCode());
+        } catch (CLibException e) {
+            return this.getClass().hashCode();
+        }               
+    }
+    
     protected abstract int[]
     getFieldsAsInts() throws CLibException;
     

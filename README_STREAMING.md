@@ -41,6 +41,7 @@
         - [NYSEActivesSubscription](#nyseactivessubscription)  
         - [OTCBBActivesSubscription](#otcbbactivessubscription)  
         - [OptionActivesSubscription](#optionactivessubscription)  
+        - [AcctActivitySubscription](#acctactivitysubscription) ***\*NEW\****
     - [RawSubscription](#rawsubscription)  
 - - -
 
@@ -2692,3 +2693,97 @@ void
 RawSubscription::set_parameters( std::map<std::string, std::string>& parameters );
 ```
 <br>
+
+#### AcctActivitySubscription
+
+Order & Position updates. Returned data is an array of JSON; successfull responses
+will contain message data as a string of XML. (Sorry, this is what they return!)
+
+See the python ```ParseResponseData``` docstring (below in utilities secion) 
+for a basic explanation of the structure of returned data. For more information see 
+[section 6.0 ACCT_ACTIVITY of the TDMA docs](https://developer.tdameritrade.com/content/streaming-data).
+
+
+**constructors**
+```
+AcctActivitySubscription::AcctActivitySubscription( 
+    CommandType command = CommandType::SUBS
+);
+   
+    command    :: control the subscription type (SUBS or UNSUBS)  
+```
+
+**methods**
+```
+StreamerServiceType
+ManagedSubscription::get_service() const;
+```
+```
+string
+ManagedSubscription::get_command() const;
+```
+```
+void
+ManagedSubscription::set_command(CommandType command);
+```
+
+**utilities**
+
+Python provides a static parse call for converting the returned JSON/XML to python objects.
+
+The docstring may be helpful if you're trying to parse the JSON/XML from another language.
+
+```
+    @staticmethod
+    def AcctActivitySubscription.ParseResponseData(data):
+        """Convert responses containing XML to a list-of-dict-of-[dict|str|None]
+
+        The 'data' 4th arg of the callback should be passed ONLY when the callback
+        type is of CALLBACK_TYPE_DATA and the service type is of 
+        SERVICE_TYPE_ACCT_ACTIVITY. 
+
+        'data' should be of form:
+        [ 
+            {"1":"<account>", "2":"SUBSCRIBED", "3":"",
+            {"1":"<account>", "2":"<message_type>", "3":"<message_data xml></>",
+            {"1":"<account>", "2":"ERROR", "3":"error message",
+            {"1":"<account>", "2":"<message_type>", "3":"<message_data xml></>",
+            ...
+        ]
+
+        Returns an array of dicts of one of the following forms:
+                                
+        1) {"account":"<account>", "message_type":"SUBSCRIBED", "message_data":""}
+        2) {"account":"<account>", "message_type":"ERROR", "message_data":"error message"}
+        3) {"account":"<account>", "message_type":"<message_type>", "message_data":dict() }
+
+        Form 1 is returned initially on subscription, form 3 contains valid responses 
+        and its message_type is one of the strs represented by the MSG_TYPE_[] constants. 
+        "message_data" is a dict of (flattened) key/val (tag/text) pairs pulled from the 
+        returned XML.
+
+        e.g 
+
+        >> def callback(cb, ss, t, data):
+        >>   if cb == CALLBACK_TYPE_DATA and ss == SERVICE_TYPE_ACCT_ACTIVITY:
+        >>      resp = AcctActivitySubscription.ParseResponseData(data)
+        >>      msg_ty = resp['message_type']
+        >>      if msg_ty == MSG_TYPE_SUBSCRIBED:
+        >>          pass
+        >>      elif msg_ty == MSG_TYPE_ERROR:
+        >>          print("ERROR: ", resp['message_data'])
+        >>      else:
+        >>          print("ACCT ACTIVITY RESPONSE: %s" % resp['message_type'])
+        >>          for k,v in resp['message_data'].items():
+        >>              print('   ',k, v)
+        >>
+        >> (on callback)
+        >> ...
+        >> ACCT ACTIVITY RESPONSE: OrderEntryRequest
+        >>     SecurityType ETF
+        >>     AccountKey 123456789
+        >>     ...
+        >>     OrderKey 111111111
+        >>           
+        
+```

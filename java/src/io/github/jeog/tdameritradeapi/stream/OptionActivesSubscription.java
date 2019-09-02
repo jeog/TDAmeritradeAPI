@@ -79,6 +79,16 @@ public class OptionActivesSubscription extends ActivesSubscriptionBase {
     }
     
     @Override
+    public int
+    hashCode() {     
+        try {
+            return TDAmeritradeAPI.combineHashCodes(getVenue().hashCode(), super.hashCode());
+        } catch (CLibException e) {
+            return this.getClass().hashCode();
+        }               
+    }
+    
+    @Override
     protected CLib._OptionActivesSubscription_C
     getProxy(){
         return (CLib._OptionActivesSubscription_C)super.getProxy();

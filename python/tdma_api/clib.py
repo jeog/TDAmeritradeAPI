@@ -137,7 +137,12 @@ PCHAR = lambda s: c_char_p(s.encode())
 
 
 def init(lib_path, reload=False):
-    """Load shared library located at 'lib_path'."""
+    """Load shared library located at 'lib_path'.
+
+    def init(lib_path, reload=False):
+        lib_path :: str  :: path of library
+        reload   :: bool :: reload if already loaded
+    """
     global _lib
     if _lib is None or reload:
         _lib = CDLL(lib_path)           

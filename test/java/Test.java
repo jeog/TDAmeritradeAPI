@@ -232,7 +232,8 @@ public class Test {
             testChartOptionsSubscription();
             testNewsHeadlineSubscription();
             testNasdaqActivesSubscription();
-            testOptionActivesSubscription();            
+            testOptionActivesSubscription();   
+            testAcctActivitySubscription();
           
             System.out.println("*  TEST STREAMING:");
             testStreaming(creds, liveConnect, 5000, 30000);            
@@ -2147,6 +2148,28 @@ public class Test {
             throw new Exception("OPTION sub failed to catch invalid enum from c lib exception");
         }catch(CLibException exc) {}                   
         
+    }
+    
+    private static void
+    testAcctActivitySubscription() throws Exception {
+        AcctActivitySubscription aSub = new AcctActivitySubscription();
+        if( aSub.getCommand() != CommandType.SUBS )
+            throw new Exception("ACCT ACTIVITY sub invalid command type (1)");
+        if( aSub.getService() != ServiceType.ACCT_ACTIVITY )
+            throw new Exception("ACCT ACTIVITY sub invalid service type (1)");
+        
+        AcctActivitySubscription aSub2 = new AcctActivitySubscription(CommandType.UNSUBS);
+        if( aSub2.getCommand() != CommandType.UNSUBS )
+            throw new Exception("ACCT ACTIVITY sub invalid command type (2)");
+        if( aSub2.getService() != ServiceType.ACCT_ACTIVITY )
+            throw new Exception("ACCT ACTIVITY sub invalid service type (2)");
+ 
+        aSub.setCommand(CommandType.UNSUBS);
+        if( aSub.getCommand() != CommandType.UNSUBS )
+            throw new Exception("ACCT ACTIVITY sub invalid command type (3)");
+        
+        if( !aSub.equals(aSub2) )
+            throw new Exception("ACCT ACTIVITY subs don't match");  
     }
     
     

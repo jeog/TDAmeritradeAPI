@@ -113,7 +113,7 @@ protected:
 public:
     typedef StreamingSubscription ProxyType;
     static const int TYPE_ID_LOW = TYPE_ID_SUB_QUOTES;
-    static const int TYPE_ID_HIGH = TYPE_ID_SUB_ACTIVES_OPTION;
+    static const int TYPE_ID_HIGH = TYPE_ID_SUB_ACCT_ACTIVITY;
 
     StreamerServiceType
     get_service() const
@@ -149,6 +149,21 @@ public:
     { return !(*this == sub); }
 
     ~ManagedSubscriptionImpl(){}
+};
+
+
+class AcctActivitySubscriptionImpl
+        : public ManagedSubscriptionImpl {
+public:
+    typedef AcctActivitySubscription ProxyType;
+    static const int TYPE_ID_LOW = TYPE_ID_SUB_ACCT_ACTIVITY;
+    static const int TYPE_ID_HIGH = TYPE_ID_SUB_ACCT_ACTIVITY;
+
+    AcctActivitySubscriptionImpl( CommandType command = CommandType::SUBS )
+        :
+            ManagedSubscriptionImpl(StreamerServiceType::ACCT_ACTIVITY, command)
+        {
+        }
 };
 
 
@@ -1044,6 +1059,8 @@ C_sub_ptr_to_impl_ptr(StreamingSubscription_C *psub)
         return reinterpret_cast<OTCBBActivesSubscriptionImpl*>(psub->obj);
     case TYPE_ID_SUB_ACTIVES_OPTION:
         return reinterpret_cast<OptionActivesSubscriptionImpl*>(psub->obj);
+    case TYPE_ID_SUB_ACCT_ACTIVITY:
+        return reinterpret_cast<AcctActivitySubscriptionImpl*>(psub->obj);
     case TYPE_ID_SUB_RAW:
         return reinterpret_cast<RawSubscriptionImpl*>(psub->obj);
     default:
@@ -1320,6 +1337,18 @@ copy_construct_impl( RawSubscriptionImpl *from, int allow_exceptions )
 
 
 template<typename ImplTy>
+std::pair<void*, int>
+copy_construct_impl( AcctActivitySubscriptionImpl *from, int allow_exceptions )
+{
+    static auto meth = +[]( CommandType cmd ){
+        return reinterpret_cast<void*>( new AcctActivitySubscriptionImpl(cmd) );
+    };
+
+    return CallImplFromABI( allow_exceptions, meth,  from->get_command() );
+}
+
+
+template<typename ImplTy>
 int
 copy_construct( typename ImplTy::ProxyType::CType *from,
                 typename ImplTy::ProxyType::CType *to,
@@ -1390,6 +1419,8 @@ copy_construct<name##Impl>( reinterpret_cast<name##_C*>(from), \
         return CAST_TO_COPY_CONSTRUCT(OTCBBActivesSubscription);
     case TYPE_ID_SUB_ACTIVES_OPTION:
         return CAST_TO_COPY_CONSTRUCT(OptionActivesSubscription);
+    case TYPE_ID_SUB_ACCT_ACTIVITY:
+        return CAST_TO_COPY_CONSTRUCT(AcctActivitySubscription);
     case TYPE_ID_SUB_RAW:
         return CAST_TO_COPY_CONSTRUCT(RawSubscription);
     default:
@@ -1473,6 +1504,8 @@ is_same_impl_generic( StreamingSubscription_C *l,
         return CALL_IS_SAME_IMPL(OTCBBActivesSubscription);
     case TYPE_ID_SUB_ACTIVES_OPTION:
         return CALL_IS_SAME_IMPL(OptionActivesSubscription);
+    case TYPE_ID_SUB_ACCT_ACTIVITY:
+        return CALL_IS_SAME_IMPL(AcctActivitySubscription);
     case TYPE_ID_SUB_RAW:
         return CALL_IS_SAME_IMPL(RawSubscription);
     default:
@@ -1509,6 +1542,7 @@ DEFINE_CSUB_DESTROY_FUNC(NasdaqActivesSubscription);
 DEFINE_CSUB_DESTROY_FUNC(NYSEActivesSubscription);
 DEFINE_CSUB_DESTROY_FUNC(OTCBBActivesSubscription);
 DEFINE_CSUB_DESTROY_FUNC(OptionActivesSubscription);
+DEFINE_CSUB_DESTROY_FUNC(AcctActivitySubscription);
 DEFINE_CSUB_DESTROY_FUNC(RawSubscription);
 #undef DEFINE_CSUB_DESTROY_FUNC
 
@@ -1554,6 +1588,7 @@ DEFINE_CSUB_COPY_FUNC(NasdaqActivesSubscription);
 DEFINE_CSUB_COPY_FUNC(NYSEActivesSubscription);
 DEFINE_CSUB_COPY_FUNC(OTCBBActivesSubscription);
 DEFINE_CSUB_COPY_FUNC(OptionActivesSubscription);
+DEFINE_CSUB_COPY_FUNC(AcctActivitySubscription);
 DEFINE_CSUB_COPY_FUNC(RawSubscription);
 #undef DEFINE_CSUB_COPY_FUNC
 
@@ -1852,6 +1887,7 @@ OptionActivesSubscription_SetVenue_ABI( OptionActivesSubscription_C *psub,
     return CallImplFromABI( allow_exceptions, meth, psub->obj, venue);
 }
 
+
 int
 QuotesSubscription_Create_ABI( const char **symbols,
                                size_t nsymbols,
@@ -2116,6 +2152,38 @@ OptionActivesSubscription_Create_ABI( int venue,
     psub->type_id = OptionActivesSubscriptionImpl::TYPE_ID_LOW;
     return 0;
 }
+
+
+int
+AcctActivitySubscription_Create_ABI( int command,
+                                     AcctActivitySubscription_C *psub,
+                                     int allow_exceptions )
+{
+    int err = subscription_is_creatable<AcctActivitySubscriptionImpl>(
+            psub, allow_exceptions
+            );
+    if( err )
+        return err;
+
+    CHECK_ENUM_KILL_PROXY(CommandType, command, allow_exceptions, psub);
+
+    static auto meth = +[]( int cmd ){
+        return new AcctActivitySubscriptionImpl( static_cast<CommandType>(cmd) );
+    };
+
+    AcctActivitySubscriptionImpl *obj;
+    tie(obj, err) = CallImplFromABI(allow_exceptions, meth, command);
+    if( err ){
+        kill_proxy(psub);
+        return err;
+    }
+
+    psub->obj = reinterpret_cast<void*>(obj);
+    psub->type_id = AcctActivitySubscriptionImpl::TYPE_ID_LOW;
+    return 0;
+}
+
+
 
 // TODO Max Parameters
 int

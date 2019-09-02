@@ -171,6 +171,37 @@ test_streaming(const string& account_id, Credentials& c)
     test_sub_fields_symbols(q1, "QuotesSubscription (2)", {"SPY"}, fields1,
                             StreamerServiceType::QUOTE);
 
+    // NEW ACCT ACTIVITY
+    AcctActivitySubscription aa1;
+    if( aa1.get_service() != StreamerServiceType::ACCT_ACTIVITY )
+        throw std::runtime_error(" AcctActivitySubscription : bad StreamerServiceType");
+    if( to_string(aa1.get_command()) != "SUBS" )
+        throw std::runtime_error(" AcctActivitySubscription : bad command");
+
+    aa1.set_command( CommandType::UNSUBS );
+    if( to_string(aa1.get_command()) != "UNSUBS" )
+        throw std::runtime_error(" AcctActivitySubscription : bad command");
+
+    AcctActivitySubscription aa2(CommandType::UNSUBS);
+    if( to_string(aa2.get_command()) != "UNSUBS" )
+        throw std::runtime_error(" AcctActivitySubscription : bad command");
+
+    aa2.set_command(CommandType::SUBS);
+    aa1 = aa2;
+    if( aa1.get_service() != StreamerServiceType::ACCT_ACTIVITY )
+        throw std::runtime_error(" AcctActivitySubscription : bad StreamerServiceType");
+    if( to_string(aa1.get_command()) != "SUBS" )
+        throw std::runtime_error(" AcctActivitySubscription : bad command");
+    if( aa1 != aa2 )
+        throw std::runtime_error( "AcctActivitySubscriptions don't match");
+
+    AcctActivitySubscription aa3(aa1);
+    if( aa1 != aa3 )
+        throw std::runtime_error( "AcctActivitySubscriptions don't match (2)");
+    aa2.set_command(CommandType::UNSUBS);
+    if( to_string(aa2.get_command()) != "UNSUBS" )
+        throw std::runtime_error(" AcctActivitySubscription : bad command");
+
     // ADD
     set<string> symbols1b = {"qqq", "iwm"};
     set<ft> fields1b = {ft::last_size};
@@ -406,7 +437,7 @@ test_streaming(const string& account_id, Credentials& c)
 
         std::this_thread::sleep_for( seconds(3) );
 
-        results = ss->add_subscriptions( {q1c, q1d, q3b} );
+        results = ss->add_subscriptions( {q1c, q1d, q3b, aa1} );
         for(auto r : results)
             cout<< boolalpha << r << ' ';
         cout<<endl;
@@ -414,6 +445,9 @@ test_streaming(const string& account_id, Credentials& c)
         std::this_thread::sleep_for( seconds(3) );
 
         res = ss->add_subscription( q3c );
+        cout<< boolalpha << res << endl;
+
+        res = ss->add_subscription(aa2);
         cout<< boolalpha << res << endl;
 
         std::this_thread::sleep_for( seconds(3) );

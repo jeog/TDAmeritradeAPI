@@ -47,6 +47,7 @@ parser.add_argument("credentials_path", type=str,
 parser.add_argument("credentials_password", type=str,
                     help="password to decrypt credentials files")
 parser.add_argument("--no-live-connect", action='store_true')
+parser.add_argument("--lib-path", type=str)
 
 use_live_connection = True
 
@@ -76,14 +77,17 @@ def test(func, *args):
         print_exc()
         raise SystemExit()
 
-def init():
-    if not clib._lib:
-        print("+ try to manually load: ", LIBRARY_PATH)
-        if not clib.init(LIBRARY_PATH):
-            raise clib.LibraryNotLoaded()
-        else:
-            print("+ Successfully loaded: ", LIBRARY_PATH)
-            print("+ Last Build:", clib.lib_build_datetime())
+def load(lib_path):
+    print("+ try to manually load: ", lib_path)
+    if not clib.init(lib_path, True):
+        raise clib.LibraryNotLoaded()
+    else:
+        print("+ Successfully loaded: ", lib_path)
+        print("+ Last Build:", clib.lib_build_datetime())
+
+def init(custom_lib_path= None):
+    if not clib._lib or custom_lib_path:
+        load( custom_lib_path if custom_lib_path else LIBRARY_PATH )
 
 def test_share_connections():
     assert get.is_sharing_connections() 
@@ -984,6 +988,19 @@ def test_streaming(creds):
     assert opas2.get_duration() == OPAS.DURATION_TYPE_MIN_60
     assert opas2.get_venue() == OPAS.VENUE_TYPE_CALLS   
     
+    #ACCT ACTIVITY
+    AAS = stream.AcctActivitySubscription
+    aas = AAS()
+    assert aas.get_service() == stream.SERVICE_TYPE_ACCT_ACTIVITY
+    assert aas.get_command() == stream.COMMAND_TYPE_SUBS
+    assert aas == AAS()
+
+    aas2 = AAS(stream.COMMAND_TYPE_UNSUBS)
+    assert aas2.get_service() == stream.SERVICE_TYPE_ACCT_ACTIVITY
+    assert aas2.get_command() == stream.COMMAND_TYPE_UNSUBS
+    assert aas != aas2
+    
+    
     #RAW
     rparams = { "keys":"BAD", "fields":"BAD" }
     nbookbad = stream.RawSubscription("BAD1", "BAD2", rparams)
@@ -1065,10 +1082,10 @@ def test_streaming(creds):
     except clib.CLibException as e:
         print("+ successfully caught exception: ", str(e))
 
-    assert all(session.add_subscriptions(os))
+    assert all(session.add_subscriptions(os, aas))
     _pause(1)
 
-    assert all(session.add_subscriptions(lofs))
+    assert all(session.add_subscriptions(lofs, aas2))
     _pause(1)
 
     assert all(session.add_subscriptions(lofxs, lofos))
@@ -2777,7 +2794,10 @@ if __name__ == '__main__':
     args = parser.parse_args()
     use_live_connection = not args.no_live_connect
     print("+ live-connection:", str(use_live_connection))
-    test(init)
+    if args.lib_path:
+        test(init, args.lib_path)
+    else:
+        test(init)
     print_title("load credentials")
     with auth.CredentialsManager(args.credentials_path, \
                                   args.credentials_password, True) as cm:

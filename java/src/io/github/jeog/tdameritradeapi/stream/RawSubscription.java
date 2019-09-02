@@ -94,6 +94,17 @@ public class RawSubscription extends StreamingSubscription {
         if( err != 0 )
             throw new CLibException(err);                        
     }
+    
+    @Override
+    public int
+    hashCode() {     
+        try {
+            return TDAmeritradeAPI.combineHashCodes(getServiceString().hashCode(),
+                    getCommandString().hashCode(), getParameters().hashCode(), super.hashCode());
+        } catch (CLibException e) {
+            return this.getClass().hashCode();
+        }               
+    }
         
     @Override
     protected CLib._RawSubscription_C

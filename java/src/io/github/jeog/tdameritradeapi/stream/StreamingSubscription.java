@@ -18,6 +18,7 @@ along with this program.  If not, see http://www.gnu.org/licenses.
 package io.github.jeog.tdameritradeapi.stream;
 
 import io.github.jeog.tdameritradeapi.CLib;
+import io.github.jeog.tdameritradeapi.TDAmeritradeAPI;
 
 public class StreamingSubscription {
     
@@ -32,5 +33,25 @@ public class StreamingSubscription {
         return pSubscription; 
     }
     
+    @Override
+    public boolean
+    equals( Object other ) { // NO THROW
+        if( other == this )
+            return true;
+        
+        if( !(other instanceof StreamingSubscription) )
+            return false;
+        
+        int b[] = {0};
+        int err = TDAmeritradeAPI.getCLib().StreamingSubscription_IsSame_ABI(getProxy(),
+                ((StreamingSubscription)other).getProxy(), b, 0);          
+        return (err == 0) && (b[0] == 1);
+    }
     
+    @Override
+    public int
+    hashCode() {       
+        return pSubscription.getClass().hashCode();
+    }
+
 }

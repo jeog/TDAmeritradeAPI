@@ -406,6 +406,10 @@ public:
     string
     get_primary_account_id() const
     { return _streamer_info.primary_acct_id; }
+
+    string
+    get_streamer_subscription_key() const
+    { return _streamer_info.streamer_subscription_key; }
 };
 
 
@@ -950,6 +954,8 @@ StreamingSessionImpl::add_subscriptions(
             bndl->cond.notify_all();
         };
 
+
+
     _send_requests(subscriptions, cb);
 
     std::unique_lock<mutex> lock(bndl->mtx);
@@ -1087,6 +1093,39 @@ StreamingSessionImpl::_stop_listener_thread()
 
 namespace{
 
+
+tdma::StreamingSubscriptionImpl
+create_impl_sub( StreamingSession_C *psession, StreamingSubscription_C *psub )
+{
+    using namespace tdma;
+
+    StreamingSubscriptionImpl sub = C_sub_ptr_to_impl(psub);
+    if( psub->type_id == TYPE_ID_SUB_ACCT_ACTIVITY ){
+        // TODO - handle empty subscript key
+        string skey = reinterpret_cast<StreamingSessionImpl*>(psession->obj)
+                        ->get_streamer_subscription_key();
+        sub.set_parameters( { {"keys", skey}, {"fields", "0,1,2,3"} } );
+    }
+    return sub;
+}
+
+
+vector<tdma::StreamingSubscriptionImpl>
+create_impl_subs( StreamingSession_C *psession,
+                  StreamingSubscription_C **subs,
+                  size_t nsubs )
+{
+    using namespace tdma;
+    vector<StreamingSubscriptionImpl> res;
+    for(size_t i = 0; i < nsubs; ++i){
+        StreamingSubscription_C *c = subs[i];
+        assert(c);
+        res.emplace_back( create_impl_sub(psession, c) );
+    }
+    return res;
+}
+
+
 int
 call_session_with_subs(
     StreamingSession_C *psession,
@@ -1113,11 +1152,7 @@ call_session_with_subs(
 
     vector<StreamingSubscriptionImpl> res;
     try{
-        for(size_t i = 0; i < nsubs; ++i){
-            StreamingSubscription_C *c = subs[i];
-            assert(c);
-            res.emplace_back( C_sub_ptr_to_impl(c) );
-        }
+        res = create_impl_subs(psession, subs, nsubs);
     }catch(std::exception& e){
         return HANDLE_ERROR(StreamingException, e.what(), allow_exceptions);
     }

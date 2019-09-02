@@ -49,4 +49,15 @@ public abstract class ManagedSubscriptionBase extends StreamingSubscription {
         CLib.Helpers.setInt(getProxy(), command.toInt(), 
                 TDAmeritradeAPI.getCLib()::StreamingSubscription_SetCommand_ABI );        
     }
+    
+    @Override
+    public int
+    hashCode() {     
+        try {
+            return TDAmeritradeAPI.combineHashCodes(getService().hashCode(), 
+                    getCommand().hashCode(), super.hashCode());
+        } catch (CLibException e) {
+            return this.getClass().hashCode();
+        }               
+    }
 }

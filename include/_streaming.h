@@ -42,6 +42,7 @@ const int TYPE_ID_SUB_ACTIVES_NASDAQ = 15;
 const int TYPE_ID_SUB_ACTIVES_NYSE = 16;
 const int TYPE_ID_SUB_ACTIVES_OTCBB = 17;
 const int TYPE_ID_SUB_ACTIVES_OPTION = 18;
+const int TYPE_ID_SUB_ACCT_ACTIVITY = 20;
 
 const int TYPE_ID_SUB_RAW = 99;
 
@@ -72,6 +73,7 @@ class StreamingSubscriptionImpl{
 protected:
     StreamingSubscriptionImpl(std::string service, std::string command );
 
+public:
     void
     set_parameters(const std::map<std::string, std::string>& parameters)
     { _parameters = parameters; }
@@ -88,7 +90,6 @@ protected:
     set_service_str(const std::string& service_str)
     { _service_str = service_str; }
 
-public:
     typedef StreamingSubscription ProxyType;
     static const int TYPE_ID_LOW = TYPE_ID_SUB_QUOTES;
 

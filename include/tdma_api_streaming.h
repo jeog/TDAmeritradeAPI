@@ -58,12 +58,11 @@ DECL_C_CPP_TDMA_ENUM(StreamerServiceType, 1, 29,
     BUILD_ENUM_NAME( ACTIVES_OTCBB ),
     BUILD_ENUM_NAME( ACTIVES_OPTIONS ),
     BUILD_ENUM_NAME( ADMIN ), // <- THIS DOESNT MATCH TYPE_ID_SUB_[] consts
-
+    BUILD_ENUM_NAME( ACCT_ACTIVITY ),
     /*
      * EVERYTHING BELOW HERE DOES NOT HAVE A CORRESPONDING
      * MANAGED SUBSCRIPTION - TRY USING 'RawSubscription'
      */
-    BUILD_ENUM_NAME( ACCT_ACTIVITY ),
     BUILD_ENUM_NAME( CHART_HISTORY_FUTURES ),
     BUILD_ENUM_NAME( FOREX_BOOK ), /* NOT DOCUMENTED BY TDMA */
     BUILD_ENUM_NAME( FUTURES_BOOK ), /* NOT DOCUMENTED BY TDMA */
@@ -437,6 +436,7 @@ DECL_CSUB_STRUCT(NasdaqActivesSubscription_C);
 DECL_CSUB_STRUCT(NYSEActivesSubscription_C);
 DECL_CSUB_STRUCT(OTCBBActivesSubscription_C);
 DECL_CSUB_STRUCT(OptionActivesSubscription_C);
+DECL_CSUB_STRUCT(AcctActivitySubscription_C);
 
 // Raw Subscription *NEW*
 DECL_CSUB_STRUCT(RawSubscription_C);
@@ -494,6 +494,12 @@ RawSubscription_Create_ABI( const char* service,
                             RawSubscription_C *psub,
                             int allow_exceptions );
 
+/* Create method of AcctActivitySubscription */
+EXTERN_C_SPEC_ DLL_SPEC_ int
+AcctActivitySubscription_Create_ABI( int command,
+                                     AcctActivitySubscription_C *psub,
+                                     int allow_exceptions );
+
 
 /* SUBSCRIPTION COPY (CONSTRUCT) METHODS */
 #define DECL_CSUB_COPY_FUNC(name) \
@@ -516,6 +522,7 @@ DECL_CSUB_COPY_FUNC(NasdaqActivesSubscription);
 DECL_CSUB_COPY_FUNC(NYSEActivesSubscription);
 DECL_CSUB_COPY_FUNC(OTCBBActivesSubscription);
 DECL_CSUB_COPY_FUNC(OptionActivesSubscription);
+DECL_CSUB_COPY_FUNC(AcctActivitySubscription);
 DECL_CSUB_COPY_FUNC(RawSubscription);
 #undef DECL_CSUB_COPY_FUNC
 
@@ -556,6 +563,7 @@ DECL_CSUB_DESTROY_FUNC(NasdaqActivesSubscription);
 DECL_CSUB_DESTROY_FUNC(NYSEActivesSubscription);
 DECL_CSUB_DESTROY_FUNC(OTCBBActivesSubscription);
 DECL_CSUB_DESTROY_FUNC(OptionActivesSubscription);
+DECL_CSUB_DESTROY_FUNC(AcctActivitySubscription);
 DECL_CSUB_DESTROY_FUNC(RawSubscription);
 #undef DECL_CSUB_DESTROY_FUNC
 
@@ -563,6 +571,26 @@ DECL_CSUB_DESTROY_FUNC(RawSubscription);
 EXTERN_C_SPEC_ DLL_SPEC_ int
 StreamingSubscription_Destroy_ABI( StreamingSubscription_C *psub,
                                    int allow_exceptions );
+
+
+/*
+ *  *** IMPORTANT ***
+ *
+ *  GetService, GetCommand, and SetCommand functions are incorrectly prefixed
+ *  with 'StreamingSubscription', indicating they can be called on the entire
+ *  Subscription hierarchy.
+ *
+ *  The should ONLY BE USED on 'ManagedSubscription' AND derived classes.
+ *
+ *  Internally the pointers are cast to ManagedSubscriptionImpl* and will
+ *  seg-fault or return junk if used on anything not derived from
+ *  ManagedSubscription, e.g RawSubscription
+ *
+ *  This was a result of adjusting the underlying implementation hierarchy when
+ *  adding 'RawSubscription' and not wanting to break the ABI for other bindings.
+ *
+ *  *** IMPORTANT ***
+ */
 
 
 /* SUBSCRIPTION GET METHODS */
@@ -769,6 +797,13 @@ RawSubscription_Create( const char* service,
                         RawSubscription_C *psub )
 { return RawSubscription_Create_ABI(service, command, kvpairs, n, psub, 0); }
 
+/* Create for Acct Activity Subscription */
+static inline int
+AcctActivitySubscription_Create( CommandType command,
+                                 AcctActivitySubscription_C *psub )
+{ return AcctActivitySubscription_Create_ABI((int)command, psub, 0); }
+
+
 /* SUBSCRIPTION COPY (CONSTRUCTOR) METHODS */
 
 #define DECL_CSUB_COPY_FUNC(name) \
@@ -793,6 +828,7 @@ DECL_CSUB_COPY_FUNC(NasdaqActivesSubscription);
 DECL_CSUB_COPY_FUNC(NYSEActivesSubscription);
 DECL_CSUB_COPY_FUNC(OTCBBActivesSubscription);
 DECL_CSUB_COPY_FUNC(OptionActivesSubscription);
+DECL_CSUB_COPY_FUNC(AcctActivitySubscription);
 DECL_CSUB_COPY_FUNC(RawSubscription);
 #undef DECL_CSUB_DESTROY_FUNC
 
@@ -828,6 +864,7 @@ DECL_CSUB_DESTROY_FUNC(NasdaqActivesSubscription);
 DECL_CSUB_DESTROY_FUNC(NYSEActivesSubscription);
 DECL_CSUB_DESTROY_FUNC(OTCBBActivesSubscription);
 DECL_CSUB_DESTROY_FUNC(OptionActivesSubscription);
+DECL_CSUB_DESTROY_FUNC(AcctActivitySubscription);
 DECL_CSUB_DESTROY_FUNC(RawSubscription);
 #undef DECL_CSUB_DESTROY_FUNC
 
@@ -862,6 +899,7 @@ DECL_CSUB_GET_SERVICE_FUNC(NasdaqActivesSubscription);
 DECL_CSUB_GET_SERVICE_FUNC(NYSEActivesSubscription);
 DECL_CSUB_GET_SERVICE_FUNC(OTCBBActivesSubscription);
 DECL_CSUB_GET_SERVICE_FUNC(OptionActivesSubscription);
+DECL_CSUB_GET_SERVICE_FUNC(AcctActivitySubscription);
 /* GetService generic method (cast to StreamerSubscription_C*) */
 DECL_CSUB_GET_SERVICE_FUNC(StreamingSubscription);
 #undef DECL_CSUB_GET_SERVICE_FUNC
@@ -890,6 +928,7 @@ DECL_CSUB_GET_COMMAND_FUNC(NasdaqActivesSubscription);
 DECL_CSUB_GET_COMMAND_FUNC(NYSEActivesSubscription);
 DECL_CSUB_GET_COMMAND_FUNC(OTCBBActivesSubscription);
 DECL_CSUB_GET_COMMAND_FUNC(OptionActivesSubscription);
+DECL_CSUB_GET_COMMAND_FUNC(AcctActivitySubscription);
 /* GetCommand generic method (cast to StreamerSubscription_C*) */
 DECL_CSUB_GET_COMMAND_FUNC(StreamingSubscription);
 #undef DECL_CSUB_GET_COMMAND_FUNC
@@ -991,6 +1030,7 @@ DECL_CSUB_SET_COMMAND_FUNC(NasdaqActivesSubscription);
 DECL_CSUB_SET_COMMAND_FUNC(NYSEActivesSubscription);
 DECL_CSUB_SET_COMMAND_FUNC(OTCBBActivesSubscription);
 DECL_CSUB_SET_COMMAND_FUNC(OptionActivesSubscription);
+DECL_CSUB_SET_COMMAND_FUNC(AcctActivitySubscription);
 /* GetCommand generic method (cast to StreamerSubscription_C*) */
 DECL_CSUB_SET_COMMAND_FUNC(StreamingSubscription);
 #undef DECL_CSUB_SET_COMMAND_FUNC
@@ -1118,6 +1158,7 @@ struct StreamerInfo{
     std::string credentials_encoded;
     std::string url;
     std::string primary_acct_id;
+    std::string streamer_subscription_key;
 
     void
     encode_credentials();
@@ -1197,6 +1238,7 @@ public:
     { return !(*this == sub); }
 
 };
+
 
 
 class RawSubscription
@@ -1328,6 +1370,24 @@ public:
                   static_cast<int>(command) );
     }
 };
+
+
+
+class AcctActivitySubscription
+        : public ManagedSubscriptionBase {
+public:
+    typedef AcctActivitySubscription_C CType;
+
+    AcctActivitySubscription( CommandType command = CommandType::SUBS  )
+        :
+            ManagedSubscriptionBase( AcctActivitySubscription_C{},
+                                     AcctActivitySubscription_Create_ABI,
+                                     nullptr,
+                                     static_cast<int>(command) )
+        {
+        }
+};
+
 
 
 class SubscriptionBySymbolBase

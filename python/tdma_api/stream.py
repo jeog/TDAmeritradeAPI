@@ -41,7 +41,7 @@ https://github.com/jeog/TDAmeritradeAPI/blob/master/README_STREAMING.md
 from ctypes import byref as _REF, c_int, c_void_p, c_ulonglong, CFUNCTYPE, \
                     c_char_p, c_ulong, c_size_t, pointer, POINTER
 from inspect import signature
-                    
+from xml.etree import ElementTree                    
 import json
 
 from . import clib
@@ -75,7 +75,7 @@ SERVICE_TYPE_ACTIVES_NYSE = 16
 SERVICE_TYPE_ACTIVES_OTCBB = 17
 SERVICE_TYPE_ACTIVES_OPTIONS = 18 
 SERVICE_TYPE_ADMIN = 19 # NOT MANAGED
-SERVICE_TYPE_ACCT_ACTIVITY = 20 # NOT MANAGED
+SERVICE_TYPE_ACCT_ACTIVITY = 20
 SERVICE_TYPE_CHART_HISTORY_FUTURES = 21 # NOT MANAGED
 SERVICE_TYPE_FOREX_BOOK = 22 # NOT MANAGED
 SERVICE_TYPE_FUTURES_BOOK = 23 # NOT MANAGED
@@ -118,7 +118,7 @@ def callback_type_to_str(cb_type):
     
 def command_type_to_str(command):
     """Convers COMMAND_TYPE_[] constatnt to str."""
-    return clib.to_str("CommandType_to_string_ABI", c_init, command)    
+    return clib.to_str("CommandType_to_string_ABI", c_int, command)    
 
 
 class _StreamingSession_C(clib._CProxy3): 
@@ -372,6 +372,113 @@ class _ManagedSubscriptionBase(_StreamingSubscription):
         clib.set_val("StreamingSubscription_SetCommand_ABI", c_int,
                      command, self._obj)      
     
+
+class AcctActivitySubscription( _ManagedSubscriptionBase ):
+    """AcctActivitySubscription - account activity 
+    
+    ALL (instance) METHODS THROW -> LibraryNotLoaded, CLibException
+    """
+    def __init__(self, command=COMMAND_TYPE_SUBS):
+        super().__init__(command) 
+
+    MSG_TYPE_SUBSCRIPED = "SUBSCRIBED"
+    MSG_TYPE_ERROR = "ERROR"
+    MSG_TYPE_BROKEN_TRADE = "BrokenTrade"
+    MSG_TYPE_MANUAL_EXECUTION = "ManualExecution"
+    MSG_TYPE_ORDER_ACTIVATION = "OrderActivation"
+    MSG_TYPE_ORDER_CANCEL_REPLACE_REQUEST = "OrderCancelReplaceRequest"
+    MSG_TYPE_ORDER_CANCEL_REQUEST = "OrderCancelRequest"
+    MSG_TYPE_ORDER_ENTRY_REQUEST = "OrderEntryRequest"
+    MSG_TYPE_ORDER_FILL = "OrderFill"
+    MSG_TYPE_ORDER_PARTIAL_FILL = "OrderPartialFill"
+    MSG_TYPE_ORDER_REJECTION = "OrderRejection"
+    MSG_TYPE_TOO_LATE_TO_CANCEL = "TooLateToCancel"
+    MSG_TYPE_UROUT = "UROUT"
+
+    @staticmethod
+    def ParseResponseData(data):
+        """Convert responses containing XML to a list-of-dict-of-[dict|str|None]
+
+        The 'data' 4th arg of the callback should be passed ONLY when the callback
+        type is of CALLBACK_TYPE_DATA and the service type is of 
+        SERVICE_TYPE_ACCT_ACTIVITY. 
+
+        'data' should be of form:
+        [ 
+            {"1":"<account>", "2":"SUBSCRIBED", "3":"",
+            {"1":"<account>", "2":"<message_type>", "3":"<message_data xml></>",
+            {"1":"<account>", "2":"ERROR", "3":"error message",
+            {"1":"<account>", "2":"<message_type>", "3":"<message_data xml></>",
+            ...
+        ]
+
+        Returns an array of dicts of one of the following forms:
+                                
+        1) {"account":"<account>", "message_type":"SUBSCRIBED", "message_data":""}
+        2) {"account":"<account>", "message_type":"ERROR", "message_data":"error message"}
+        3) {"account":"<account>", "message_type":"<message_type>", "message_data":dict() }
+
+        Form 1 is returned initially on subscription, form 3 contains valid responses 
+        and its message_type is one of the strs represented by the MSG_TYPE_[] constants. 
+        "message_data" is a dict of (flattened) key/val (tag/text) pairs pulled from the 
+        returned XML.
+
+        e.g 
+
+        >> def callback(cb, ss, t, data):
+        >>   if cb == CALLBACK_TYPE_DATA and ss == SERVICE_TYPE_ACCT_ACTIVITY:
+        >>      resp = AcctActivitySubscription.ParseResponseData(data)
+        >>      msg_ty = resp['message_type']
+        >>      if msg_ty == MSG_TYPE_SUBSCRIBED:
+        >>          pass
+        >>      elif msg_ty == MSG_TYPE_ERROR:
+        >>          print("ERROR: ", resp['message_data'])
+        >>      else:
+        >>          print("ACCT ACTIVITY RESPONSE: %s" % resp['message_type'])
+        >>          for k,v in resp['message_data'].items():
+        >>              print('   ',k, v)
+        >>
+        >> (on callback)
+        >> ...
+        >> ACCT ACTIVITY RESPONSE: OrderEntryRequest
+        >>     SecurityType ETF
+        >>     AccountKey 123456789
+        >>     ...
+        >>     OrderKey 111111111
+        >>                 
+        """
+        results = []
+        for elem in data:
+            msg_type = elem["2"]
+            res = {"account":elem["1"], "message_type":msg_type, "message_data":None}
+            if msg_type == "SUBSCRIBED":
+                res["message_data"] = ""
+            elif msg_type == "ERROR":
+                res["message_data"] = elem["3"]
+            else:
+                try:
+                    root = ElementTree.fromstring( elem["3"] )
+                    res["message_data"] = AcctActivitySubscription.FlattenXML(root)
+                except ElementTree.ParseError as exc:
+                    print( "Error parsing ACCT ACTIVITY response XML: %s" % str(exc) )
+                except Exception as exc:
+                    print( "Error handling ACCT ACTIVITY response: %s" % str(exc) )
+            results.append(res)
+
+        return results
+
+    @staticmethod
+    def FlattenXML(root):
+        d = dict()
+        for n in root.iter():
+            if not hasattr(n.tag, 'find'):
+                continue
+            p = n.tag.find('}')
+            if p >= 0: # strip namespace
+               d[n.tag[p+1:]] = n.text
+        return d
+    
+
     
 class _SubscriptionBySymbolBase(_ManagedSubscriptionBase):
     """_SubscriptionBySymbolBase - Base Subscription class. DO NOT INSTANTIATE!
@@ -937,7 +1044,7 @@ SERVICE_TO_SUBSCRIPTION = {
     SERVICE_TYPE_ACTIVES_OTCBB : OTCBBActivesSubscription,
     SERVICE_TYPE_ACTIVES_OPTIONS : OptionActivesSubscription,
     SERVICE_TYPE_ADMIN : None,
-    SERVICE_TYPE_ACCT_ACTIVITY : None,
+    SERVICE_TYPE_ACCT_ACTIVITY : AcctActivitySubscription,
     SERVICE_TYPE_CHART_HISTORY_FUTURES : None,
     SERVICE_TYPE_FOREX_BOOK : None,
     SERVICE_TYPE_FUTURES_BOOK : None,

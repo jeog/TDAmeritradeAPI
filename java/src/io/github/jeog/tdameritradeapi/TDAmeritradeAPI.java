@@ -22,6 +22,8 @@ import java.util.Map;
 
 import com.sun.jna.ptr.PointerByReference;
 
+import io.github.jeog.tdameritradeapi.TDAmeritradeAPI.CLibException;
+
 import com.sun.jna.Native;
 import com.sun.jna.Platform;
 
@@ -170,7 +172,20 @@ public final class TDAmeritradeAPI {
         if( err != 0 )
             throw new CLibException(err);        
     }
-
+ 
+    
+    public static int
+    combineHashCodes(int code, int ...codes) {                  
+        int tot = code;
+        for(int c : codes) {
+            int hash = 17;        
+            hash = hash * 31 + tot;
+            hash = hash * 31 + c;
+            tot = hash;            
+        }      
+        return tot;
+    }
+    
     public static void
     test() {
         //
