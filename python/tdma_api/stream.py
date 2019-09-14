@@ -381,7 +381,7 @@ class AcctActivitySubscription( _ManagedSubscriptionBase ):
     def __init__(self, command=COMMAND_TYPE_SUBS):
         super().__init__(command) 
 
-    MSG_TYPE_SUBSCRIPED = "SUBSCRIBED"
+    MSG_TYPE_SUBSCRIBED = "SUBSCRIBED"
     MSG_TYPE_ERROR = "ERROR"
     MSG_TYPE_BROKEN_TRADE = "BrokenTrade"
     MSG_TYPE_MANUAL_EXECUTION = "ManualExecution"
@@ -427,16 +427,16 @@ class AcctActivitySubscription( _ManagedSubscriptionBase ):
 
         >> def callback(cb, ss, t, data):
         >>   if cb == CALLBACK_TYPE_DATA and ss == SERVICE_TYPE_ACCT_ACTIVITY:
-        >>      resp = AcctActivitySubscription.ParseResponseData(data)
-        >>      msg_ty = resp['message_type']
-        >>      if msg_ty == MSG_TYPE_SUBSCRIBED:
-        >>          pass
-        >>      elif msg_ty == MSG_TYPE_ERROR:
-        >>          print("ERROR: ", resp['message_data'])
-        >>      else:
-        >>          print("ACCT ACTIVITY RESPONSE: %s" % resp['message_type'])
-        >>          for k,v in resp['message_data'].items():
-        >>              print('   ',k, v)
+        >>      for resp in AcctActivitySubscription.ParseResponseData(data):
+        >>          msg_ty = resp['message_type']
+        >>          if msg_ty == MSG_TYPE_SUBSCRIBED:
+        >>              pass
+        >>          elif msg_ty == MSG_TYPE_ERROR:
+        >>              print("ERROR: ", resp['message_data'])
+        >>          else:
+        >>              print("ACCT ACTIVITY RESPONSE: %s" % resp['message_type'])
+        >>              for k,v in resp['message_data'].items():
+        >>                  print('   ',k, v)
         >>
         >> (on callback)
         >> ...
