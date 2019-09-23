@@ -2759,31 +2759,49 @@ The docstring may be helpful if you're trying to parse the JSON/XML from another
 
         Form 1 is returned initially on subscription, form 3 contains valid responses 
         and its message_type is one of the strs represented by the MSG_TYPE_[] constants. 
-        "message_data" is a dict of (flattened) key/val (tag/text) pairs pulled from the 
-        returned XML.
+        "message_data" is a dict of (hierarchical) key/val (tag/text) pairs pulled from the 
+        returned XML. 
+
+        NOTES:
+            1) the returned dict excludes the top-level message-type tag 
+               (e.g 'OrderCancelRequestMessage')
+            2) all data are of type str or None      
+            3) if xml (unexpectedly) has 'text' and child nodes the text will be added to the 
+               dict with key '#text'
+            4) earlier versions returned a flattend dict(changed because of naming collisions)
 
         e.g 
 
         >> def callback(cb, ss, t, data):
-        >>   if cb == CALLBACK_TYPE_DATA and ss == SERVICE_TYPE_ACCT_ACTIVITY:
-        >>      resp = AcctActivitySubscription.ParseResponseData(data)
-        >>      msg_ty = resp['message_type']
-        >>      if msg_ty == MSG_TYPE_SUBSCRIBED:
-        >>          pass
-        >>      elif msg_ty == MSG_TYPE_ERROR:
-        >>          print("ERROR: ", resp['message_data'])
-        >>      else:
-        >>          print("ACCT ACTIVITY RESPONSE: %s" % resp['message_type'])
-        >>          for k,v in resp['message_data'].items():
-        >>              print('   ',k, v)
+        >>   if cb == stream.CALLBACK_TYPE_DATA and ss == stream.SERVICE_TYPE_ACCT_ACTIVITY:
+        >>      for resp in AcctActivitySubscription.ParseResponseData(data):
+        >>          msg_ty = resp['message_type']
+        >>          if msg_ty == MSG_TYPE_SUBSCRIBED:
+        >>              print("SUBCSRIBED")
+        >>          elif msg_ty == MSG_TYPE_ERROR:
+        >>              print("ERROR: ", resp['message_data'])
+        >>          else:
+        >>              print("ACCT ACTIVITY RESPONSE: %s" % resp['message_type'])
+        >>              print( json.dumps(resp['message_data'], indent=4) )
         >>
-        >> (on callback)
-        >> ...
+        >> ... (on callback) ...
+        >>
         >> ACCT ACTIVITY RESPONSE: OrderEntryRequest
-        >>     SecurityType ETF
-        >>     AccountKey 123456789
+        >> {
+        >>     "ActivityTimestamp": "2019-09-22T19:41:25.582-05:00",
+        >>     "LastUpdated": "2019-09-22T19:41:25.582-05:00",
         >>     ...
-        >>     OrderKey 111111111
-        >>           
+        >>     "Order": {
+        >>         "OpenClose": "Open",
+        >>         "Security": {
+        >>             "CUSIP": "0SPY..JI90250000",
+        >>             "SecurityType": "Call Option",
+        >>             "Symbol": "SPY_101819C250"
+        >>         },
+        >>         ...
+        >>    ...
+        >> } 
+        >>                 
+        """          
         
 ```

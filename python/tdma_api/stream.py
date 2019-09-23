@@ -420,31 +420,48 @@ class AcctActivitySubscription( _ManagedSubscriptionBase ):
 
         Form 1 is returned initially on subscription, form 3 contains valid responses 
         and its message_type is one of the strs represented by the MSG_TYPE_[] constants. 
-        "message_data" is a dict of (flattened) key/val (tag/text) pairs pulled from the 
-        returned XML.
+        "message_data" is a dict of (hierarchical) key/val (tag/text) pairs pulled from the 
+        returned XML. 
+
+        NOTES:
+            1) the returned dict excludes the top-level message-type tag 
+               (e.g 'OrderCancelRequestMessage')
+            2) all data are of type str or None      
+            3) if xml (unexpectedly) has 'text' and child nodes the text will be added to the 
+               dict with key '#text'
+            4) earlier versions returned a flattend dict(changed because of naming collisions)
 
         e.g 
 
         >> def callback(cb, ss, t, data):
-        >>   if cb == CALLBACK_TYPE_DATA and ss == SERVICE_TYPE_ACCT_ACTIVITY:
+        >>   if cb == stream.CALLBACK_TYPE_DATA and ss == stream.SERVICE_TYPE_ACCT_ACTIVITY:
         >>      for resp in AcctActivitySubscription.ParseResponseData(data):
         >>          msg_ty = resp['message_type']
         >>          if msg_ty == MSG_TYPE_SUBSCRIBED:
-        >>              pass
+        >>              print("SUBCSRIBED")
         >>          elif msg_ty == MSG_TYPE_ERROR:
         >>              print("ERROR: ", resp['message_data'])
         >>          else:
         >>              print("ACCT ACTIVITY RESPONSE: %s" % resp['message_type'])
-        >>              for k,v in resp['message_data'].items():
-        >>                  print('   ',k, v)
+        >>              print( json.dumps(resp['message_data'], indent=4) )
         >>
-        >> (on callback)
-        >> ...
+        >> ... (on callback) ...
+        >>
         >> ACCT ACTIVITY RESPONSE: OrderEntryRequest
-        >>     SecurityType ETF
-        >>     AccountKey 123456789
+        >> {
+        >>     "ActivityTimestamp": "2019-09-22T19:41:25.582-05:00",
+        >>     "LastUpdated": "2019-09-22T19:41:25.582-05:00",
         >>     ...
-        >>     OrderKey 111111111
+        >>     "Order": {
+        >>         "OpenClose": "Open",
+        >>         "Security": {
+        >>             "CUSIP": "0SPY..JI90250000",
+        >>             "SecurityType": "Call Option",
+        >>             "Symbol": "SPY_101819C250"
+        >>         },
+        >>         ...
+        >>    ...
+        >> } 
         >>                 
         """
         results = []
@@ -458,7 +475,7 @@ class AcctActivitySubscription( _ManagedSubscriptionBase ):
             else:
                 try:
                     root = ElementTree.fromstring( elem["3"] )
-                    res["message_data"] = AcctActivitySubscription.FlattenXML(root)
+                    res["message_data"] = AcctActivitySubscription.XMLtoDict(root)
                 except ElementTree.ParseError as exc:
                     print( "Error parsing ACCT ACTIVITY response XML: %s" % str(exc) )
                 except Exception as exc:
@@ -468,15 +485,24 @@ class AcctActivitySubscription( _ManagedSubscriptionBase ):
         return results
 
     @staticmethod
-    def FlattenXML(root):
-        d = dict()
-        for n in root.iter():
-            if not hasattr(n.tag, 'find'):
-                continue
-            p = n.tag.find('}')
-            if p >= 0: # strip namespace
-               d[n.tag[p+1:]] = n.text
-        return d
+    def XMLtoDict(root):
+        def todict(r, d):
+            if not r.tag:
+                raise KeyError("no xml tag for dict key")
+            tag = r.tag[ r.tag.find('}') + 1 : ]
+            kids = list(r)
+            if kids:
+                d[tag] = dict()
+                if r.text:
+                    d[tag]["#text"] = r.text
+                for k in kids:
+                    todict(k, d[tag])
+            else:
+                d[tag] = r.text
+        D = dict()
+        todict(root, D)
+        return list(D.values())[0]
+
     
 
     
