@@ -318,6 +318,12 @@ EXTERN_C_SPEC_ DLL_SPEC_ int
 APIGetter_IsClosed_ABI(Getter_C *pgetter, int*b, int allow_exceptions);
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
+APIGetter_SetTimeout_ABI(Getter_C *pgetter, unsigned long long msec, int allow_exceptions);
+
+EXTERN_C_SPEC_ DLL_SPEC_ int
+APIGetter_GetTimeout_ABI(Getter_C *pgetter, unsigned long long *msec, int allow_exceptions);
+
+EXTERN_C_SPEC_ DLL_SPEC_ int
 APIGetter_SetWaitMSec_ABI(unsigned long long msec, int allow_exceptions);
 
 EXTERN_C_SPEC_ DLL_SPEC_ int
@@ -1203,6 +1209,14 @@ APIGetter_Close(Getter_C *pgetter)
 static inline int
 APIGetter_IsClosed(Getter_C *pgetter, int *b)
 { return APIGetter_IsClosed_ABI(pgetter,b, 0); }
+
+static inline int
+APIGetter_SetTimeout(Getter_C *pgetter, unsigned long long msec)
+{ return APIGetter_SetTimeout_ABI(pgetter, msec, 0): }
+
+static inline int
+APIGetter_GetTimeout(Getter_C *pgetter, unsigned long long *msec)
+{ return APIGetter_GetTimeout_ABI(pgetter, msec, 0): }
 
 static inline int
 APIGetter_SetWaitMSec(unsigned long long msec)
@@ -2588,7 +2602,7 @@ public:
     }
 
     json
-    get()
+    get() const
     {
         char *buf;
         size_t n;
@@ -2609,6 +2623,21 @@ public:
         int b;
         call_abi( APIGetter_IsClosed_ABI, _cgetter.get(), &b );
         return static_cast<bool>(b);
+    }
+
+    void
+    set_timeout(std::chrono::milliseconds timeout)
+    {
+        call_abi(APIGetter_SetTimeout_ABI, _cgetter.get(),
+                static_cast<unsigned long long>(timeout.count()) );
+    }
+
+    std::chrono::milliseconds
+    get_timeout() const
+    {
+        unsigned long long t;
+        call_abi( APIGetter_GetTimeout_ABI, _cgetter.get(), &t);
+        return std::chrono::milliseconds(t);
     }
 };
 

@@ -995,6 +995,13 @@ quote_getters(Credentials& c)
     if( qg.get_symbol() != "SPY")
         throw runtime_error("invalid symbol");
 
+    if( qg.get_timeout() != std::chrono::milliseconds(0) )
+        throw runtime_error("invalid timeout");
+
+    qg.set_timeout(std::chrono::milliseconds(3001));
+    if( qg.get_timeout() != std::chrono::milliseconds(3001) )
+        throw runtime_error("invalid timeout(2)");
+
     Get(qg);
 
     QuoteGetter qg2(move(qg));

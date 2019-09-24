@@ -86,6 +86,20 @@ APIGetterImpl::is_closed() const
     return _connection->is_closed();
 }
 
+void
+APIGetterImpl::set_timeout(milliseconds msec)
+{
+    _connection->set_timeout(
+            std::min( std::numeric_limits<long>::max(), msec.count() )
+            );
+}
+
+milliseconds
+APIGetterImpl::get_timeout() const
+{
+    return milliseconds( _connection->get_timeout() );
+}
+
 string
 APIGetterImpl::throttled_get(APIGetterImpl& getter)
 {
@@ -191,6 +205,41 @@ APIGetter_IsClosed_ABI(Getter_C *pgetter, int*b, int allow_exceptions)
     tie(*b, err) = CallImplFromABI(allow_exceptions, meth, pgetter->obj);
     return err;
 }
+
+
+int
+APIGetter_SetTimeout_ABI(Getter_C *pgetter, unsigned long long msec, int allow_exceptions)
+{
+    int err = proxy_is_callable<APIGetterImpl>(pgetter, allow_exceptions);
+    if( err )
+        return err;
+
+    static auto meth = +[](void* obj, unsigned long long m){
+        reinterpret_cast<APIGetterImpl*>(obj)->set_timeout(milliseconds(m));
+    };
+
+    return CallImplFromABI(allow_exceptions, meth, pgetter->obj, msec);
+}
+
+int
+APIGetter_GetTimeout_ABI(Getter_C *pgetter, unsigned long long *msec, int allow_exceptions)
+{
+    int err = proxy_is_callable<APIGetterImpl>(pgetter, allow_exceptions);
+    if( err )
+        return err;
+
+    CHECK_PTR(msec, "msec", allow_exceptions);
+
+    static auto meth = +[](void* obj){
+        return static_cast<unsigned long long>(
+                reinterpret_cast<APIGetterImpl*>(obj)->get_timeout().count()
+                );
+    };
+
+    tie(*msec,err) = CallImplFromABI(allow_exceptions, meth, pgetter->obj);
+    return err;
+}
+
 
 int
 APIGetter_SetWaitMSec_ABI(unsigned long long msec, int allow_exceptions)

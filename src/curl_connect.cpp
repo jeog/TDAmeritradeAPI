@@ -287,6 +287,17 @@ public:
     { set_option(CURLOPT_TCP_KEEPALIVE, on ? 1L : 0L); }
 
     void
+    SET_timeout(long timeout)
+    { set_option(CURLOPT_TIMEOUT_MS, (timeout > 0 ? timeout : 0)); }
+
+    long
+    GET_timeout() const
+    {
+        auto f = _options.find(CURLOPT_TIMEOUT_MS);
+        return (f != _options.end()) ? std::stol(f->second) : 0;
+    }
+
+    void
     ADD_headers(const vector<pair<string, string>>& headers)
     {
         if (!_handle)
@@ -492,6 +503,14 @@ CurlConnection::set_keepalive(bool on)
 { _pimpl->SET_keepalive(on); }
 
 void
+CurlConnection::set_timeout(long timeout)
+{ _pimpl->SET_timeout(timeout); }
+
+long
+CurlConnection::get_timeout() const
+{ return _pimpl->GET_timeout(); }
+
+void
 CurlConnection::add_headers(const vector<pair<string,string>>& headers)
 { _pimpl->ADD_headers(headers); }
 
@@ -602,6 +621,7 @@ SharedHTTPConnection::SharedHTTPConnection( const std::string& url,
         _meth(meth),
         _headers(),
         _fields(),
+        _timeout(0),
         _id(context_id)
     {
         { // all 'opening' context ops should hold static mutex
@@ -638,6 +658,7 @@ SharedHTTPConnection::SharedHTTPConnection( const SharedHTTPConnection& connecti
         _meth( connection._meth),
         _headers( connection._headers ),
         _fields( connection._fields ),
+        _timeout( connection._timeout ),
         _id( connection._id )
     {
         if( _is_open ){
@@ -668,6 +689,7 @@ SharedHTTPConnection::operator=( const SharedHTTPConnection& connection )
         _meth = connection._meth;
         _headers = connection._headers;
         _fields = connection._fields;
+        _timeout = connection._timeout;
         _id = connection._id;
     }
     return *this;
@@ -681,6 +703,7 @@ SharedHTTPConnection::operator==( const SharedHTTPConnection& connection )
             && _meth == connection._meth
             && _headers == connection._headers
             && _fields == connection._fields
+            && _timeout == connection._timeout
             && _id == connection._id;
 
 }
@@ -708,6 +731,8 @@ SharedHTTPConnection::execute(bool return_header_data)
     if( _meth != HttpMethod::http_get && !_fields.empty() )
         ctx.conn->set_fields(_fields);
     _fields.clear();
+
+    ctx.conn->set_timeout(_timeout);
 
     return ctx.conn->execute(return_header_data);
 }
@@ -935,7 +960,8 @@ const map<CURLoption, string> CurlConnection::option_strings = {
     { CURLOPT_WRITEDATA, "CURLOPT_WRITEDATA"},
     { CURLOPT_HTTPHEADER, "CURLOPT_HTTPHEADER"},
     { CURLOPT_NOSIGNAL, "CURLOPT_NOSIGNAL"},
-    { CURLOPT_CUSTOMREQUEST, "CURLOPT_CUSTOMREQUEST" }
+    { CURLOPT_CUSTOMREQUEST, "CURLOPT_CUSTOMREQUEST" },
+    { CURLOPT_TIMEOUT_MS, "CURLOPT_TIMEOUT_MS" }
 };
 
 

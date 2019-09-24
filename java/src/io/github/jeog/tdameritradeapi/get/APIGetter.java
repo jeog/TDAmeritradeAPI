@@ -58,6 +58,16 @@ public class APIGetter implements AutoCloseable {
         return b != 0;
     }
     
+    public void
+    setTimeout(long msec) throws CLibException{
+        CLib.Helpers.setLong(pGetter, msec, TDAmeritradeAPI.getCLib()::APIGetter_SetTimeout_ABI);     
+    }
+    
+    public long
+    getTimeout() throws CLibException{
+        return CLib.Helpers.getLong(pGetter, TDAmeritradeAPI.getCLib()::APIGetter_GetTimeout_ABI);
+    }
+    
     static public void
     setWaitMSec( long msec ) throws  CLibException {
         CLib.Helpers.setLong(msec, TDAmeritradeAPI.getCLib()::APIGetter_SetWaitMSec_ABI);

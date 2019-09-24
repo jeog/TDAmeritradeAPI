@@ -236,6 +236,20 @@ class _APIGetter( clib._ProxyBase ):
         """Returns True/False if underlying connection is open/closed."""
         return bool(clib.get_val('APIGetter_IsClosed_ABI', c_int, self._obj))
 
+    def set_timeout(self, msec):
+        """Set transfer timeout in milliseconds(NOT the connection timeout).
+
+        Use 0 for no timeout(default). 
+        """
+        clib.set_val('APIGetter_SetTimeout_ABI', c_ulonglong, msec, self._obj)
+    
+    def get_timeout(self):
+        """Get transfer timeout in milliseconds(NOT the connection timeout).
+
+        0 indicates no timeout(default). 
+        """
+        return clib.get_val('APIGetter_GetTimeout_ABI', c_ulonglong, self._obj)
+    
 
 class QuoteGetter(_APIGetter):
     """QuoteGetter - Retrieve quotes for a single security.

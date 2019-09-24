@@ -110,6 +110,12 @@ public:
 
     bool
     is_closed() const;
+
+    void
+    set_timeout(std::chrono::milliseconds msec);
+
+    std::chrono::milliseconds
+    get_timeout() const;
 };
 
 } /* tdma */

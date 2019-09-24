@@ -4,7 +4,8 @@
 - [Overview](#overview)
 - [Certificates](#certificates)
 - [Using Getter Objects](#using-getter-objects)
-    - [Backend](#backend)
+    - [Timeout](#timeout)
+    - [Backend](#backend) 
     - [C++](#c)
     - [C](#c-1)
     - [Python](#python)
@@ -103,6 +104,10 @@ The relevant fields are passed on construction and can be accessed with similarl
 
 Symbol strings are automatically converted to upper-case.
 
+#### Timeout
+
+Getter objects will use the default curl (initital) connection timeout of 300 seconds and will default to NO transfer timeout. To set/get the transfer timeout use the appropriately named functions. If a timeout occurs a 'Connect' error/exception will be returned/thrown.
+
 #### Backend
 
 Previously, for simplicity, Getter objects were built on top of ```conn::HTTPConnection``` and each instance created a new TCP/HTTPS connection - not ideal when using multiple instances simultaneously.
@@ -181,13 +186,19 @@ public class APIGetter implements AutoCloseable {
         set_symbol(const string& symbol);
         
         json /* INHERITED FROM APIGetter */
-        get();
+        get() const;
         
         void /* INHERITED FROM APIGetter */
         close();
 
         bool /* INHERITED FROM APIGetter */
-        is_closed();
+        is_closed() const;
+
+        void /* INHERITED FROM APIGetter */
+        set_timeout(std::chrono::milliseconds msec);
+
+        std::chrono::milliseconds /* INHERITED FROM APIGetter */
+        get_timeout() const;
     };
     ```
 
@@ -295,6 +306,10 @@ those to be used in subsequent ```.get()``` call.
         def close(self) /* INHERITED */
 
         def is_closed(self) /* INHERITED */
+
+        def set_timeout(self, msec) /* INHERITED */
+
+        def get_timeout(self) /* INHERITED */
     ```
 
 #### [Java]
@@ -331,6 +346,12 @@ those to be used in subsequent ```.get()``` calls.
         
         public boolean
         isClosed() throws  CLibException /* INHERITED */
+    
+        public void
+        setTimeout(long msec) throws  CLibException /* INHERITED */
+        
+        public long
+        getTimeout() throws  CLibException /* INHERITED */
     }
     ```
 

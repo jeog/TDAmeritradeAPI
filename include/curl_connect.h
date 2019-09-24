@@ -114,6 +114,12 @@ public:
     set_keepalive(bool on);
 
     void
+    set_timeout(long timeout);
+
+    long
+    get_timeout() const;
+
+    void
     add_headers(const std::vector<std::pair<std::string,std::string>>& headers);
 
     std::vector<std::pair<std::string,std::string>>
@@ -171,6 +177,10 @@ public:
     set_fields(const std::vector<std::pair<std::string, std::string>>& fields) =0;
 
     virtual void set_fields(const std::string& fields)= 0;
+
+    virtual void set_timeout(long timeout) = 0;
+
+    virtual long get_timeout() const = 0;
 };
 
 
@@ -253,6 +263,16 @@ public:
     void
     set_fields(const std::string& fields)
     { CurlConnection::set_fields(fields); }
+
+    void
+    set_timeout(long timeout)
+    { CurlConnection::set_timeout(timeout); }
+
+    long
+    get_timeout() const
+    { return CurlConnection::get_timeout(); }
+
+
 };
 
 
@@ -291,6 +311,7 @@ class SharedHTTPConnection : public HTTPConnectionInterface {
     HttpMethod _meth;
     std::vector<std::pair<std::string,std::string>> _headers;
     std::string _fields;
+    long _timeout;
     int _id;
 
     Context&
@@ -372,6 +393,14 @@ public:
 
     void set_fields(const std::string& fields)
     { _fields = fields; }
+
+    void
+    set_timeout(long timeout)
+    { _timeout = (timeout > 0 ? timeout : 0); }
+
+    long
+    get_timeout() const
+    { return _timeout; }
 };
 
 

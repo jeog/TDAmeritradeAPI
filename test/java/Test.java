@@ -2587,7 +2587,14 @@ public class Test {
     private static void
     testQuoteGetter(Credentials creds, boolean liveConnect) throws Exception {            
         System.out.println("*  CREATE QuoteGetter");
-        QuoteGetter qg = new QuoteGetter(creds, "SPY");    
+        QuoteGetter qg = new QuoteGetter(creds, "SPY");  
+
+        if( qg.getTimeout() != 0 )
+            throw new Exception("invalid timeout");
+        
+        qg.setTimeout(3001);
+        if( qg.getTimeout() != 3001 )
+            throw new Exception("invalid timeout(2)");
     
         String s= qg.getSymbol();
         if( !s.equals("SPY") ) 

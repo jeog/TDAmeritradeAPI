@@ -655,7 +655,9 @@ public interface CLib extends Library {
     /* GETTERS (BASE) */
     int APIGetter_Get_ABI( _Getter_C pGetter, PointerByReference buffer, size_t[] n, int exc );    
     int APIGetter_Close_ABI( _Getter_C pGetter, int exc );    
-    int APIGetter_IsClosed_ABI( _Getter_C pGetter, int[] b, int exc );    
+    int APIGetter_IsClosed_ABI( _Getter_C pGetter, int[] b, int exc );
+    int APIGetter_SetTimeout_ABI( _Getter_C pGetter, long msec, int exc );
+    int APIGetter_GetTimeout_ABI( _Getter_C pGetter, long[] msec, int exc );
     int APIGetter_SetWaitMSec_ABI( long msec, int exc );
     int APIGetter_GetWaitMSec_ABI( long[] msec, int exc );
     int APIGetter_GetDefWaitMSec_ABI( long[] msec, int exc );
