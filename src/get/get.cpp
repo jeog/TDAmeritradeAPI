@@ -89,9 +89,7 @@ APIGetterImpl::is_closed() const
 void
 APIGetterImpl::set_timeout(milliseconds msec)
 {
-    _connection->set_timeout(
-            std::min( std::numeric_limits<long>::max(), msec.count() )
-            );
+    _connection->set_timeout( msec.count() );
 }
 
 milliseconds
@@ -214,8 +212,11 @@ APIGetter_SetTimeout_ABI(Getter_C *pgetter, unsigned long long msec, int allow_e
     if( err )
         return err;
 
+    static const unsigned long long MAX_LONG = (std::numeric_limits<long>::max)();
     static auto meth = +[](void* obj, unsigned long long m){
-        reinterpret_cast<APIGetterImpl*>(obj)->set_timeout(milliseconds(m));
+        reinterpret_cast<APIGetterImpl*>(obj)->set_timeout(
+                milliseconds(m > MAX_LONG ? MAX_LONG : m)
+                );
     };
 
     return CallImplFromABI(allow_exceptions, meth, pgetter->obj, msec);
