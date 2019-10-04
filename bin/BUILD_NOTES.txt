@@ -1,8 +1,17 @@
 compilation date: 10-04-2019
 
-built from commit immediately following: 6ca8c8
+built from commit: f2a09fe
 
 sha256 checksums:
 
 d01cc7dcddf31c3e79850cbbb7eb993bd43cc2722078d7b711624b3586612ab0  debian-4.19--x86_64--gcc/libTDAmeritradeAPI.so
+57714a03d61eb42ed613d162a2238a3b727f2683bd09ba19edbe798b58b1e0c8  win-x64-msvc/TDAmeritradeAPI.dll
+ac913e40064f6425bc9ea10a1bd502f34176875d19bb7e3acd4285f22b5be026  win-x64-msvc/TDAmeritradeAPI.exp
+93c17ed7d6785e4e9fe1a04b6f77152b7209f0cb6867535d6c7efd11895ec112  win-x64-msvc/TDAmeritradeAPI.lib
+920b7ebe3a49e5b583ceba94de43332f6fd49c7a006d073d40aaadd7209e94aa  win-x64-msvc/TDAmeritradeAPI.pdb
+a4761cf84da38d46d28556ad303908f4470a959bb7d82ca77562fc6d061179f4  win-x86-msvc/TDAmeritradeAPI.dll
+dee2ab2149d7d31a5f83ddd4d44945c2f5bf11837117befb5d2fa8436325e4dc  win-x86-msvc/TDAmeritradeAPI.exp
+28de2f27ecf9556927652b34678c2353ebca8a0212b3d306325de5cac212bdb0  win-x86-msvc/TDAmeritradeAPI.lib
+eae503a90645a321ba16b7c134b7a6121e95d9811070235926501ec8ebe387a5  win-x86-msvc/TDAmeritradeAPI.pdb
+
 

@@ -46,7 +46,7 @@
 
 *UPDATES*
 
-- *On Oct 4 2019 a major bug was fixed that was causing streaming sessions(created with different credentials) to spontaneously close with a notification message about only having one session per user name and password. It's recommended to use commits later than 6ca8c8*
+- *On Oct 4 2019 a major bug was fixed (commit f2a09fe) that was causing streaming sessions(created with different credentials) to spontaneously close with a notification message about only having one session per user name and password.*
 
 - - -
 
@@ -150,8 +150,10 @@ As does the java interface:
 ```
 public class StreamingSession implements AutoCloseable {
     ...
-    public StreamingSession( Credentials creds, Callback callback, long connectTimeout,
+    public StreamingSession( Credentials creds, Callback callback, String accountID, long connectTimeout,
             long listeningTimeout, long subscribeTimeout ) throws CLibException;
+
+    public StreamingSession( Credentials creds, Callback callback, String accountID) throws CLibException;
     
     public StreamingSession( Credentials creds, Callback callback) throws CLibException;
     ...
