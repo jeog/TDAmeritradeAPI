@@ -169,6 +169,7 @@ class StreamingSession( clib._ProxyBase ):
     When done call .stop() to logout and close the connection.
     
         def __init__( self, creds, callback, 
+                      account_id=None,
                       connect_timeout=DEF_CONNECT_TIMEOUT,
                       listening_timeout=DEF_LISTENING_TIMEOUT,
                       subscribe_timeout=DEF_SUBSCRIBE_TIMEOUT ):
@@ -176,7 +177,8 @@ class StreamingSession( clib._ProxyBase ):
             creds :: Credentials :: instance class received from auth.py            
             
             callback           :: func :: callback function for changes in
-                                          session state or returned data                                               
+                                          session state or returned data     
+            account_id         :: str  :: account id(defaults to primary)                                          
             connect_timeout    :: int  :: time to wait for connection
             listening_timeout  :: int  :: time to wait for any message
             subscribe_timeout  :: int  :: time to wait for subscription
@@ -184,6 +186,7 @@ class StreamingSession( clib._ProxyBase ):
         ALL METHODS THROW -> LibraryNotLoaded, CLibException
     """
     def __init__( self, creds, callback, 
+                  account_id=None,
                   connect_timeout=DEF_CONNECT_TIMEOUT,
                   listening_timeout=DEF_LISTENING_TIMEOUT,
                   subscribe_timeout=DEF_SUBSCRIBE_TIMEOUT ):                
@@ -191,6 +194,7 @@ class StreamingSession( clib._ProxyBase ):
         self._cb_raw = callback
         self._cb_wrapper = self._build_callback_wrapper(callback)
         super().__init__(_REF(creds), self._cb_wrapper, 
+                         PCHAR(account_id if account_id else ""),
                          c_ulong(connect_timeout), c_ulong(listening_timeout), 
                          c_ulong(subscribe_timeout))                                    
                                                      

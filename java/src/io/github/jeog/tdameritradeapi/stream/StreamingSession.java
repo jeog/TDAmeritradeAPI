@@ -208,18 +208,22 @@ public class StreamingSession implements AutoCloseable {
     private CLib._StreamingSession_C pSession; 
     private _CallbackWrapper callback;
     
-    public StreamingSession( Credentials creds, Callback callback, long connectTimeout,
-            long listeningTimeout, long subscribeTimeout ) throws CLibException{
+    public StreamingSession( Credentials creds, Callback callback, String accountID,
+            long connectTimeout, long listeningTimeout, long subscribeTimeout ) throws CLibException{
         this.callback = new _CallbackWrapper(callback);
         this.pSession = new CLib._StreamingSession_C();       
         int err = TDAmeritradeAPI.getCLib().StreamingSession_Create_ABI( creds.getNativeCredentials(), 
-                this.callback, connectTimeout, listeningTimeout, subscribeTimeout, pSession, 0);
+                this.callback, accountID, connectTimeout, listeningTimeout, subscribeTimeout, pSession, 0);
         if( err != 0 )
             throw new CLibException(err);
     }
     
+    public StreamingSession( Credentials creds, Callback callback, String accountID) throws CLibException{
+        this(creds,callback, accountID, DEF_CONNECT_TIMEOUT, DEF_LISTENING_TIMEOUT, DEF_SUBSCRIBE_TIMEOUT);
+    }
+    
     public StreamingSession( Credentials creds, Callback callback) throws CLibException{
-        this(creds,callback, DEF_CONNECT_TIMEOUT, DEF_LISTENING_TIMEOUT, DEF_SUBSCRIBE_TIMEOUT);
+        this(creds,callback, "");
     }
    
     public List<Boolean>

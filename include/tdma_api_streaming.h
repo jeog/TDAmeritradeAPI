@@ -1158,6 +1158,7 @@ struct StreamerInfo{
     std::string credentials_encoded;
     std::string url;
     std::string primary_acct_id;
+    std::string desired_acct_id;
     std::string streamer_subscription_key;
 
     void
@@ -2038,6 +2039,7 @@ typedef void(*streaming_cb_ty)(int, int, unsigned long long, const char*);
 EXTERN_C_SPEC_ DLL_SPEC_ int
 StreamingSession_Create_ABI( struct Credentials *pcreds,
                              streaming_cb_ty callback,
+                             const char* account_id,
                              unsigned long connect_timeout,
                              unsigned long listening_timeout,
                              unsigned long subscribe_timeout,
@@ -2093,7 +2095,7 @@ StreamingSession_Create( struct Credentials *pcreds,
                          streaming_cb_ty callback,
                          StreamingSession_C *psession )
 {
-    return StreamingSession_Create_ABI(pcreds, callback,
+    return StreamingSession_Create_ABI(pcreds, callback, 0,
                                        STREAMING_DEF_CONNECT_TIMEOUT,
                                        STREAMING_DEF_LISTENING_TIMEOUT,
                                        STREAMING_DEF_SUBSCRIBE_TIMEOUT,
@@ -2103,12 +2105,13 @@ StreamingSession_Create( struct Credentials *pcreds,
 static inline int
 StreamingSession_CreateEx( struct Credentials *pcreds,
                            streaming_cb_ty callback,
+                           const char* account_id,
                            unsigned long connect_timeout,
                            unsigned long listening_timeout,
                            unsigned long subscribe_timeout,
                            StreamingSession_C *psession )
 {
-    return StreamingSession_Create_ABI(pcreds, callback,
+    return StreamingSession_Create_ABI(pcreds, callback, account_id,
                                        connect_timeout, listening_timeout,
                                        subscribe_timeout, psession, 0);
 }
@@ -2214,6 +2217,7 @@ public:
     static std::shared_ptr<StreamingSession>
     Create( Credentials& creds,
              streaming_cb_ty callback,
+             std::string account_id = "",
              std::chrono::milliseconds connect_timeout=DEF_CONNECT_TIMEOUT,
              std::chrono::milliseconds listening_timeout=DEF_LISTENING_TIMEOUT,
              std::chrono::milliseconds subscribe_timeout=DEF_SUBSCRIBE_TIMEOUT
@@ -2223,8 +2227,9 @@ public:
         try{
             ss = new StreamingSession;
             call_abi( StreamingSession_Create_ABI, &creds, callback,
-                      connect_timeout.count(), listening_timeout.count(),
-                      subscribe_timeout.count(), ss->_obj.get() );
+                      account_id.c_str(), connect_timeout.count(),
+                      listening_timeout.count(), subscribe_timeout.count(),
+                      ss->_obj.get() );
         }catch(...){
             if( ss ) delete ss;
             throw;

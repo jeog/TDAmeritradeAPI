@@ -53,7 +53,7 @@ StreamerServiceType
 streamer_service_from_str(std::string service_name);
 
 StreamerInfo
-get_streamer_info(Credentials& creds);
+get_streamer_info(Credentials& creds, const std::string& desired_acct);
 
 
 /* Subscription Impl Hierarchy

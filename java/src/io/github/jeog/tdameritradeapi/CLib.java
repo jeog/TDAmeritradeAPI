@@ -900,8 +900,8 @@ public interface CLib extends Library {
     
     /* STREAMING SESSION */
     int StreamingSession_Create_ABI( Credentials._Credentials pCredentials, 
-            StreamingSession._CallbackWrapper callback, long connectTimeout, long listeningTimeout, 
-            long subscribeTimeout, _StreamingSession_C pSession, int exc );
+            StreamingSession._CallbackWrapper callback, String accountID, long connectTimeout, 
+            long listeningTimeout, long subscribeTimeout, _StreamingSession_C pSession, int exc );
     int StreamingSession_Destroy_ABI( _StreamingSession_C pSession, int exc );
     int StreamingSession_Start_ABI( _StreamingSession_C pSession, 
             _StreamingSubscription_C.ByReference[] pSubscriptions, size_t n, int[] results, int exc);

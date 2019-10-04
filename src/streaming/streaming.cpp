@@ -100,37 +100,54 @@ namespace tdma {
 
 // TODO allow to search multiple accounts; for now just default to first
 StreamerInfo
-get_streamer_info(Credentials& creds)
+get_streamer_info(Credentials& creds, const std::string& desired_acct)
 {
     json j = get_user_principals_for_streaming(creds);
+    StreamerInfo si;
+
+    auto p_acct = j.find("primaryAccountId");
+    if( p_acct == j.end() )
+        TDMA_API_THROW(APIException,"returned user principals has no 'primaryAccountId'");
+
+    si.primary_acct_id = *p_acct;
+    si.desired_acct_id = desired_acct.empty() ? si.primary_acct_id : desired_acct;
 
     auto i_acct = j.find("accounts");
     if( i_acct == j.end() )
-        TDMA_API_THROW(APIException,"returned user principals has no 'accounts'");
+        TDMA_API_THROW(APIException, "returned user principals has no 'accounts'");
+
+    json acct;
+    try{
+        for(auto a : *i_acct)
+            if( a.at("accountId") == si.desired_acct_id ){
+                acct = a;
+                break;
+            }
+    }catch(json::exception& e){
+        TDMA_API_THROW(APIException,"failed to get accountId: " + string(e.what()));
+    }
+
+    if( acct.is_null() )
+        TDMA_API_THROW(APIException, "failed to find account: " + desired_acct);
 
     auto i_sinfo = j.find("streamerInfo");
     if( i_sinfo == j.end() )
         TDMA_API_THROW(APIException,"returned user principals has no 'streamerInfo");
 
-    json acct = (*i_acct)[0];
-    json sinfo = *i_sinfo;
-
-    StreamerInfo si;
     try{
         si.credentials.user_id = acct.at("accountId");
-        si.credentials.token= sinfo.at("token");
+        si.credentials.token= i_sinfo->at("token");
         si.credentials.company = acct.at("company");
         si.credentials.segment = acct.at("segment");
         si.credentials.cd_domain = acct.at("accountCdDomainId");
-        si.credentials.user_group = sinfo.at("userGroup");
-        si.credentials.access_level = sinfo.at("accessLevel");
+        si.credentials.user_group = i_sinfo->at("userGroup");
+        si.credentials.access_level = i_sinfo->at("accessLevel");
         si.credentials.authorized = true;
-        si.credentials.timestamp = timestamp_to_ms(sinfo.at("tokenTimestamp"));
-        si.credentials.app_id = sinfo.at("appId");
-        si.credentials.acl = sinfo.at("acl");
-        string addr = sinfo.at("streamerSocketUrl");
+        si.credentials.timestamp = timestamp_to_ms(i_sinfo->at("tokenTimestamp"));
+        si.credentials.app_id = i_sinfo->at("appId");
+        si.credentials.acl = i_sinfo->at("acl");
+        string addr = i_sinfo->at("streamerSocketUrl");
         si.url = "wss://" + addr + "/ws";
-        si.primary_acct_id = j.at("primaryAccountId");
         si.encode_credentials();
     }catch(json::exception& e){
         TDMA_API_THROW(APIException,"failed to convert UserPrincipals JSON to"
@@ -151,7 +168,6 @@ get_streamer_info(Credentials& creds)
             }
         }
     }
-
 
     return si;
 }

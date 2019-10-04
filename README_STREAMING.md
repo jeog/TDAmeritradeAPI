@@ -43,6 +43,11 @@
         - [OptionActivesSubscription](#optionactivessubscription)  
         - [AcctActivitySubscription](#acctactivitysubscription) ***\*NEW\****
     - [RawSubscription](#rawsubscription)  
+
+*UPDATES*
+
+- *On Oct 4 2019 a major bug was fixed that was causing streaming sessions(created with different credentials) to spontaneously close with a notification message about only having one session per user name and password. It's recommended to use commits later than 6ca8c8*
+
 - - -
 
 ### Overview
@@ -72,7 +77,7 @@ Once created, streaming objects are passed subscription objects for the particul
 
 ### StreamingSession
 
-To create a new session the authenticated user will pass their Credentials object (as they did for the [HTTPS Get Interface](README_GET.md)), a callback function, and some optional timeout args to the static factory.
+To create a new session the authenticated user will pass their Credentials object (as they did for the [HTTPS Get Interface](README_GET.md)), a callback function, an option account ID, and some optional timeout args to the static factory.
 
 ```
 [C++]
@@ -80,6 +85,7 @@ static shared_ptr<StreamingSession>
 StreamingSession::Create( 
         Credentials& creds,     
         streaming_cb_ty callback,
+        std::string account_id="",
         std::chrono::milliseconds connect_timeout=DEF_CONNECT_TIMEOUT,
         std::chrono::milliseconds listening_timeout=DEF_LISTENING_TIMEOUT,
         std::chrono::milliseconds subscribe_timeout=DEF_SUBSCRIBE_TIMEOUT 
@@ -88,6 +94,7 @@ StreamingSession::Create(
     creds             ::  credentials struct received from RequestAccessToken 
                           / LoadCredentials / CredentialsManager.credentials
     callback          ::  callback for when notifications, data etc. 
+    account_id        ::  account to use (defaults to primary account)
     connect_timeout   ::  milliseconds to wait for a connection
     listening_timeout ::  milliseconds to wait for any response from server
     subscribe_timeout ::  milliseconds to wait for a subscription response 
@@ -120,6 +127,7 @@ StreamingSession_Create( struct Credentials *pcreds,
 inline int
 StreamingSession_CreateEx( struct Credentials *pcreds,
                            streaming_cb_ty callback,
+                           const char* account_id,
                            unsigned long connect_timeout,
                            unsigned long listening_timeout,
                            unsigned long subscribe_timeout                         
@@ -132,6 +140,7 @@ The Python interface uses the ```stream.StreamingSession``` class directly.
 ```
 class StreamingSession:
     def __init__( self, creds, callback, 
+                  account_id=None,
                   connect_timeout=DEF_CONNECT_TIMEOUT,
                   listening_timeout=DEF_LISTENING_TIMEOUT,
                   subscribe_timeout=DEF_SUBSCRIBE_TIMEOUT ):

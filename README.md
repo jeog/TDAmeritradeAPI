@@ -74,6 +74,7 @@ This project would not be possible without some of the great open-source project
 ### New Features
 - - -
 
+- Fix Account ID bug in streamer, allow for optional account
 - Transfer timeouts for Getters
 - Account Activity Subscription to Streaming Session
 - Update OrdersGetter to return ALL status types by default

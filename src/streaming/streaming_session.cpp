@@ -347,6 +347,7 @@ public:
                           milliseconds subscribe_timeout )
         :
             _streamer_info( streamer_info ),
+            _account_id( streamer_info.desired_acct_id ),
             _client(nullptr),
             _callback( callback ),
             _connect_timeout( max(connect_timeout,
@@ -1181,6 +1182,7 @@ using namespace tdma;
 int
 StreamingSession_Create_ABI( struct Credentials *pcreds,
                              streaming_cb_ty callback,
+                             const char* account_id,
                              unsigned long connect_timeout,
                              unsigned long listening_timeout,
                              unsigned long subscribe_timeout,
@@ -1198,18 +1200,18 @@ StreamingSession_Create_ABI( struct Credentials *pcreds,
     }
 
     static auto meth = +[](struct Credentials *pcreds, streaming_cb_ty cb,
-                           unsigned long cto, unsigned long lto,
-                           unsigned long sto)
+                            const char* acct, unsigned long cto,
+                           unsigned long lto, unsigned long sto)
                            {
-        StreamerInfo si = get_streamer_info(*pcreds);
+        StreamerInfo si = get_streamer_info(*pcreds, acct ? acct : "");
         return new StreamingSessionImpl( si, cb, milliseconds(cto),
                                          milliseconds(lto), milliseconds(sto) );
     };
 
     int err;
     StreamingSessionImpl *obj;
-    tie(obj, err) = CallImplFromABI( allow_exceptions, meth, pcreds,
-                                     callback, connect_timeout,
+    tie(obj, err) = CallImplFromABI( allow_exceptions, meth, pcreds, callback,
+                                     account_id, connect_timeout,
                                      listening_timeout, subscribe_timeout);
     if( err ){
         kill_proxy(psession);
