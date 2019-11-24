@@ -26,7 +26,7 @@ If you're interested in contributing - or would like to write bindings for a cur
 ### Index
 - - -
 - [Dependencies](#dependencies)
-- [New Features](#new-features)
+- [Updates](#updates)
 - [Status](#status)
 - [Structure](#structure)
 - [Getting Started](#getting-started)
@@ -71,9 +71,9 @@ This project would not be possible without some of the great open-source project
 - [org.json](https://github.com/stleary/JSON-java) - Reference implementation of a Java JSON package
 - [cefpython3](https://github.com/cztomczak/cefpython) - Python bindings for the Chromium Embedded Framework
 
-### New Features
+### Updates
 - - -
-
+- New single makefile build for unix/linux/mac in 'Release2/'
 - Fix Account ID bug in streamer, allow for optional account
 - Transfer timeouts for Getters
 - Account Activity Subscription to Streaming Session
@@ -195,20 +195,19 @@ The library is implemented in C++ and needs to be built accordingly. It exports 
 - ```#define DEBUG_VERBOSE_1_``` to send verbose logging/debug info to stdout. (Debug builds do this automatically.)
 
 
-##### Unix/Linux
+##### Unix/Linux/Mac (NEW)
 
-The Eclipse/CDT generated makefiles are in the  'Debug' and 'Release' subdirectories. 
+Currently transitioning to a single makefile build that can be run from the 'Release2' subdirectory. ***If you have a problem w/ this please file an issue.*** (There are a few references to the the 'Release/' directory that may need to be manually changed to 'Release2/' until the two build approaches are fully merged e.g. test/python/test.py looks for 'Release/').
 
-        user@host:~/dev/TDAmeritradeAPI/Release$ make
+        user@host:~/dev/TDAmeritradeAPI/Release2$ make all
 
 
-##### Mac
 
-Same as for Unix/Linux except you need to **manually add** '-luv' to objects.mk. It should read:
-```
-USER_OBJS := 
-LIBS := -lssl -lcrypto -lz -lcurl -lpthread -lutil -ldl -luv
-```
+##### Unix/Linux/Mac (OLD)
+
+The Eclipse/CDT generated makefiles are in the  'Debug' and 'Release' subdirectories. **For Mac** you need to **manually add** '-luv' to objects.mk(LIBS := -lssl -lcrypto -lz -lcurl -lpthread -lutil -ldl -luv)
+
+        user@host:~/dev/TDAmeritradeAPI/Release$ make all
 
 ##### Windows
 
