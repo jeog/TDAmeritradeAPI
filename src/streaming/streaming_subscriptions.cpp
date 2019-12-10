@@ -39,9 +39,19 @@ StreamingSubscriptionImpl::StreamingSubscriptionImpl(
     {
     }
 
+
 string
 StreamingSubscriptionImpl::encode_symbol(string symbol)
 {
+    /*
+     * NOTE - removing the symbology conversions as they only apply to certain
+     *        equities and end up screwing up other security types e.g options
+     *        that require a decimal point - Dec 09 2019 -
+     *
+     * *** USER IS NOW RESPONSIBLE FOR THE CONVERSIONS ***
+     */
+
+    /*
     static std::unordered_map<char, string> R{
         {'.',"/"}, {'-',"p"}, {'+', "/WS/"}
     };
@@ -50,10 +60,12 @@ StreamingSubscriptionImpl::encode_symbol(string symbol)
     size_t s = symbol.size();
     if(s < 2)
         return symbol;
+    */
 
     for(auto& s : symbol)
         s = toupper(s);
 
+    /*
     char c2 = symbol[s-2];
     auto r = R.find(c2);
     if( r != REND ){
@@ -62,6 +74,7 @@ StreamingSubscriptionImpl::encode_symbol(string symbol)
         symbol.pop_back();
         symbol += "/WS";
     }
+    */
 
     return symbol;
 }
