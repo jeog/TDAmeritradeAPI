@@ -73,6 +73,7 @@ This project would not be possible without some of the great open-source project
 
 ### Updates
 - - -
+- Remove symbology conversions from streaming session to fix bug with decimal-strike option symbols
 - New single makefile build for unix/linux/mac in 'Release2/'
 - Fix Account ID bug in streamer, allow for optional account
 - Transfer timeouts for Getters
