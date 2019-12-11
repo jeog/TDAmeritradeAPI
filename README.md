@@ -212,7 +212,7 @@ The Eclipse/CDT generated makefiles are in the  'Debug' and 'Release' subdirecto
 
 ##### Windows
 
-The build solution provided was created in ***VisualStudio2017*** using toolset ***v141***. 
+The build solution provided was created in ***VisualStudio2019*** using toolset ***v142***. 
 
 1. Open vsbuild/vsbuild.sln in VisualStudio
 2. Select an x64 or Win32 Release build configuration. 

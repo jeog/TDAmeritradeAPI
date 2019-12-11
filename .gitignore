@@ -9,6 +9,7 @@
 *core
 *.info
 *.class
+*.vcxproj.FileListAbsolute.txt
 
 python/build/*
 *.pydevproject
