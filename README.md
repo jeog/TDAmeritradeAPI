@@ -215,8 +215,8 @@ The Eclipse/CDT generated makefiles are in the  'Debug' and 'Release' subdirecto
 The build solution provided was created in ***VisualStudio2019*** using toolset ***v142***. 
 
 1. Open vsbuild/vsbuild.sln in VisualStudio
-2. Select an x64 or Win32 Release build configuration. 
-    - ***(optional)*** *If you want a debug configuration you'll have to edit the 'Additional Library Directories' in Properties->Linker->General for the TDAmeritradeAPI project so it looks for Release builds of the dependencies. In the path strings change '$(Configuration)' to 'Release\\'.*
+2. **IMPORTANT** Select an x64 or Win32 * **Release** * build configuration. (Build -> Configuration Manager -> Active solution configuration -> Release)
+    - If you want a debug configuration you'll have to edit the 'Additional Library Directories' in Properties->Linker->General for the TDAmeritradeAPI project so it looks for Release builds of the dependencies. In the path strings change '$(Configuration)' to 'Release\\'.*
 3. Build->Build Solution. 
  
 If sucessful, the library and dependencies will be in *vsbuild\\x64* or *vsbuild\\Win32*. 

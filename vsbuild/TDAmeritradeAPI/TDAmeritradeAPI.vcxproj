@@ -95,6 +95,7 @@
       <AdditionalIncludeDirectories>$(SolutionDir)deps\includes\curl;$(SolutionDir)deps\includes\z;$(SolutionDir)deps\includes\ssl;$(SolutionDir)deps\includes\uv;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>THIS_EXPORTS_INTERFACE;TDMA_API_ROOT_DIR=(R"($(SolutionDir)..)");DEBUG;ZLIB_WINAPI;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>SyncCThrow</ExceptionHandling>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -102,7 +103,7 @@
       <AdditionalDependencies>libcurl_debug.lib;libuv.lib;libssl.lib;libcrypto.lib;zlibwapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
-      <Command>for /R $(SolutionDir)deps\libs\$(Platform)\$(Configuration) %%f in (*.dll *.exe) do copy %%f $(SolutionDir)$(Platform)\$(Configuration)</Command>
+      <Command>for /R "$(SolutionDir)deps\libs\$(Platform)\$(Configuration)" %%f in (*.dll *.exe) do copy "%%f" "$(SolutionDir)$(Platform)\$(Configuration)"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -111,7 +112,7 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>false</SDLCheck>
       <AdditionalIncludeDirectories>$(SolutionDir)deps\includes\curl;$(SolutionDir)deps\includes\z;$(SolutionDir)deps\includes\ssl;$(SolutionDir)deps\includes\uv;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <LanguageStandard>stdcpp14</LanguageStandard>
+      <LanguageStandard>stdcpp17</LanguageStandard>
       <CompileAs>CompileAsCpp</CompileAs>
       <PreprocessorDefinitions>THIS_EXPORTS_INTERFACE;TDMA_API_ROOT_DIR=(R"($(SolutionDir)..)");DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>SyncCThrow</ExceptionHandling>
@@ -123,7 +124,7 @@
       <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
     </Link>
     <PostBuildEvent>
-      <Command>for /R $(SolutionDir)deps\libs\$(Platform)\$(Configuration) %%f in (*.dll *.exe) do copy %%f $(SolutionDir)$(Platform)\$(Configuration)</Command>
+      <Command>for /R "$(SolutionDir)deps\libs\$(Platform)\$(Configuration)" %%f in (*.dll *.exe) do copy "%%f" "$(SolutionDir)$(Platform)\$(Configuration)"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -136,6 +137,7 @@
       <AdditionalIncludeDirectories>$(SolutionDir)deps\includes\curl;$(SolutionDir)deps\includes\z;$(SolutionDir)deps\includes\ssl;$(SolutionDir)deps\includes\uv;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>THIS_EXPORTS_INTERFACE;TDMA_API_ROOT_DIR=(R"($(SolutionDir)..)");NDEBUG;ZLIB_WINAPI;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>SyncCThrow</ExceptionHandling>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -145,7 +147,7 @@
       <AdditionalDependencies>libcurl.lib;libuv.lib;libssl.lib;libcrypto.lib;zlibwapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
-      <Command>for /R $(SolutionDir)deps\libs\$(Platform)\$(Configuration) %%f in (*.dll *.exe) do copy %%f $(SolutionDir)$(Platform)\$(Configuration)</Command>
+      <Command>for /R "$(SolutionDir)deps\libs\$(Platform)\$(Configuration)" %%f in (*.dll *.exe) do copy "%%f" "$(SolutionDir)$(Platform)\$(Configuration)"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -158,6 +160,7 @@
       <AdditionalIncludeDirectories>$(SolutionDir)deps\includes\curl;$(SolutionDir)deps\includes\z;$(SolutionDir)deps\includes\ssl;$(SolutionDir)deps\includes\uv;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>THIS_EXPORTS_INTERFACE;TDMA_API_ROOT_DIR=(R"($(SolutionDir)..)");NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>SyncCThrow</ExceptionHandling>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -167,7 +170,7 @@
       <AdditionalDependencies>libcurl.lib;libuv.lib;libssl.lib;libcrypto.lib;zlibwapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
-      <Command>for /R $(SolutionDir)deps\libs\$(Platform)\$(Configuration) %%f in (*.dll *.exe) do copy %%f $(SolutionDir)$(Platform)\$(Configuration)</Command>
+      <Command>for /R "$(SolutionDir)deps\libs\$(Platform)\$(Configuration)" %%f in (*.dll *.exe) do copy "%%f" "$(SolutionDir)$(Platform)\$(Configuration)"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
