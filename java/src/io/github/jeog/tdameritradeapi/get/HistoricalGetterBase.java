@@ -66,7 +66,7 @@ public abstract class HistoricalGetterBase extends APIGetter {
             new HashMap<FrequencyType, Set<Integer>>();
     static {      
         VALID_FREQUENCIES_BY_FREQUENCY_TYPE.put(FrequencyType.MINUTE, 
-                new HashSet<Integer>( Arrays.asList(1,5,10,30) ) );
+                new HashSet<Integer>( Arrays.asList(1,5,10,15,30) ) );
         VALID_FREQUENCIES_BY_FREQUENCY_TYPE.put(FrequencyType.DAILY, 
                 new HashSet<Integer>( Arrays.asList(1) ) );
         VALID_FREQUENCIES_BY_FREQUENCY_TYPE.put(FrequencyType.WEEKLY, 
