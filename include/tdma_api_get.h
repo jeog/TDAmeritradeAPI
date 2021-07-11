@@ -230,7 +230,7 @@ VALID_FREQUENCY_TYPES_BY_PERIOD_TYPE = {
 static const
 std::unordered_map< FrequencyType, std::set<int>, EnumHash<FrequencyType> >
 VALID_FREQUENCIES_BY_FREQUENCY_TYPE = {
-    {FrequencyType::minute, std::set<int>{1,5,10,30}},
+    {FrequencyType::minute, std::set<int>{1,5,10,15,30}},
     {FrequencyType::daily, std::set<int>{1}},
     {FrequencyType::weekly, std::set<int>{1}},
     {FrequencyType::monthly, std::set<int>{1}},
@@ -258,7 +258,7 @@ VALID_FREQUENCY_TYPES_BY_PERIOD_TYPE[PeriodType_ytd + 1][4] = {
 
 static const int
 VALID_FREQUENCIES_BY_FREQUENCY_TYPE[FrequencyType_monthly + 1][5] = {
-    {1, 5, 10, 30, -1},
+    {1, 5, 10, 15, 30},
     {1, -1, -1, -1 ,-1},
     {1, -1, -1, -1 ,-1},
     {1, -1, -1, -1 ,-1}

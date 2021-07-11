@@ -1260,7 +1260,7 @@ VALID_FREQUENCY_TYPES_BY_PERIOD_TYPE ={
 ```
 const unordered_map<FrequencyType, set<int>, EnumHash<FrequencyType>>
 VALID_FREQUENCIES_BY_FREQUENCY_TYPE = {
-    {FrequencyType::minute, set<int>{1,5,10,30}},
+    {FrequencyType::minute, set<int>{1,5,10,15,30}},
     {FrequencyType::daily, set<int>{1}},
     {FrequencyType::weekly, set<int>{1}},
     {FrequencyType::monthly, set<int>{1}},
@@ -1388,7 +1388,7 @@ VALID_FREQUENCY_TYPES_BY_PERIOD_TYPE[PeriodType_ytd + 1][4] = {
 ```
 static const int
 VALID_FREQUENCIES_BY_FREQUENCY_TYPE[FrequencyType_monthly + 1][5] = {
-    {1, 5, 10, 30, -1},
+    {1, 5, 10, 15, 30},
     {1, -1, -1, -1 ,-1},
     {1, -1, -1, -1 ,-1},
     {1, -1, -1, -1 ,-1}
@@ -1561,7 +1561,7 @@ frequency amounts for a particular frequency type. (e.g ```FrequencyType::daily`
 ```
 const unordered_map<FrequencyType, set<int>, EnumHash<FrequencyType>>
 VALID_FREQUENCIES_BY_FREQUENCY_TYPE = {
-    {FrequencyType::minute, set<int>{1,5,10,30}},
+    {FrequencyType::minute, set<int>{1,5,10,15,30}},
     {FrequencyType::daily, set<int>{1}},
     {FrequencyType::weekly, set<int>{1}},
     {FrequencyType::monthly, set<int>{1}},
@@ -1654,7 +1654,7 @@ enum FrequencyType {
 ```
 static const int
 VALID_FREQUENCIES_BY_FREQUENCY_TYPE[FrequencyType_monthly + 1][5] = {
-    {1, 5, 10, 30, -1},
+    {1, 5, 10, 15, 30},
     {1, -1, -1, -1 ,-1},
     {1, -1, -1, -1 ,-1},
     {1, -1, -1, -1 ,-1}
